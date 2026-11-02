@@ -1,0 +1,2063 @@
+[
+ {
+  "t": "2026-11-01T21:19:37+00:00",
+  "round": "680072",
+  "title": "Избори за народне посланике Народне скупштине 2026.",
+  "kind": "parliamentary",
+  "counted": 8392,
+  "total": 8392,
+  "flags": [
+   {
+    "id": "80063/7:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "80063/7",
+    "data": {
+     "voted": 1071,
+     "ballots": 1068,
+     "diff": 3
+    },
+    "m": "Бачка Паланка",
+    "mc": "80063",
+    "no": "7",
+    "name": "ГИМНАЗИЈА \"20. ОКТОБАР\""
+   },
+   {
+    "id": "70335/21:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70335/21",
+    "data": {
+     "voted": 78,
+     "ballots": 44,
+     "diff": 34
+    },
+    "m": "Босилеград",
+    "mc": "70335",
+    "no": "21",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70335/21:full_turnout_typo",
+    "code": "full_turnout_typo",
+    "station": "70335/21",
+    "data": {
+     "registered": 78,
+     "voted": 78,
+     "median": 0.5655445810656454
+    },
+    "m": "Босилеград",
+    "mc": "70335",
+    "no": "21",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70335/21:correction_still_odd",
+    "code": "correction_still_odd",
+    "station": "70335/21",
+    "data": {
+     "form": "RG-7-2"
+    },
+    "m": "Босилеград",
+    "mc": "70335",
+    "no": "21",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70343/13:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70343/13",
+    "data": {
+     "voted": 332,
+     "ballots": 246,
+     "diff": 86
+    },
+    "m": "Брус",
+    "mc": "70343",
+    "no": "13",
+    "name": "ПРЕДУЗЕЋЕ ЗА ПУТЕВЕ"
+   },
+   {
+    "id": "70343/13:full_turnout_typo",
+    "code": "full_turnout_typo",
+    "station": "70343/13",
+    "data": {
+     "registered": 332,
+     "voted": 332,
+     "median": 0.7526132404181185
+    },
+    "m": "Брус",
+    "mc": "70343",
+    "no": "13",
+    "name": "ПРЕДУЗЕЋЕ ЗА ПУТЕВЕ"
+   },
+   {
+    "id": "70351/1:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70351/1",
+    "data": {
+     "voted": 520,
+     "ballots": 516,
+     "diff": 4
+    },
+    "m": "Бујановац",
+    "mc": "70351",
+    "no": "1",
+    "name": "ОШ \"МУХАРЕМ КАДРИУ\" - ХОЛ"
+   },
+   {
+    "id": "70351/2:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70351/2",
+    "data": {
+     "voted": 642,
+     "ballots": 637,
+     "diff": 5
+    },
+    "m": "Бујановац",
+    "mc": "70351",
+    "no": "2",
+    "name": "ОШ \"МУХАРЕМ КАДРИУ\" - УЧИОНИЦА"
+   },
+   {
+    "id": "70351/52:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70351/52",
+    "data": {
+     "voted": 1035,
+     "ballots": 431,
+     "diff": 604
+    },
+    "m": "Бујановац",
+    "mc": "70351",
+    "no": "52",
+    "name": "ОШ \"НАИМ ФРАШЕРИ\" - ХОЛ"
+   },
+   {
+    "id": "70351/52:full_turnout_typo",
+    "code": "full_turnout_typo",
+    "station": "70351/52",
+    "data": {
+     "registered": 1035,
+     "voted": 1035,
+     "median": 0.5698485455103877
+    },
+    "m": "Бујановац",
+    "mc": "70351",
+    "no": "52",
+    "name": "ОШ \"НАИМ ФРАШЕРИ\" - ХОЛ"
+   },
+   {
+    "id": "70408/2:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70408/2",
+    "data": {
+     "voted": 210,
+     "ballots": 206,
+     "diff": 4
+    },
+    "m": "Владимирци",
+    "mc": "70408",
+    "no": "2",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70360/2:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70360/2",
+    "data": {
+     "voted": 1411,
+     "ballots": 1408,
+     "diff": 3
+    },
+    "m": "Град Ваљево",
+    "mc": "70360",
+    "no": "2",
+    "name": "МЗ \"ГРАДАЦ\" - МАЛА САЛА"
+   },
+   {
+    "id": "70432/6:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70432/6",
+    "data": {
+     "voted": 933,
+     "ballots": 928,
+     "diff": 5
+    },
+    "m": "Град Врање",
+    "mc": "70432",
+    "no": "6",
+    "name": "ОШ \"СВЕТОЗАР МАРКОВИЋ\""
+   },
+   {
+    "id": "70556/21:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70556/21",
+    "data": {
+     "voted": 1126,
+     "ballots": 1113,
+     "diff": 13
+    },
+    "m": "Град Зајечар",
+    "mc": "70556",
+    "no": "21",
+    "name": "ДОМ КУЛТУРЕ МЗ \"КОТЛУЈЕВАЦ\" – ШАЛТЕР САЛА ГРАДСКЕ УПРАВЕ"
+   },
+   {
+    "id": "80152/33:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "80152/33",
+    "data": {
+     "voted": 1255,
+     "ballots": 1244,
+     "diff": 11
+    },
+    "m": "Град Зрењанин",
+    "mc": "80152",
+    "no": "33",
+    "name": "ОШ \"ПЕТАР ПЕТРОВИЋ ЊЕГОШ\" - УЧИОНИЦА 17 - УЛАЗ ИЗ СТРАЖИЛОВСКЕ"
+   },
+   {
+    "id": "70645/28:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70645/28",
+    "data": {
+     "voted": 1045,
+     "ballots": 1039,
+     "diff": 6
+    },
+    "m": "Град Крагујевац",
+    "mc": "70645",
+    "no": "28",
+    "name": "МЗ БАГРЕМАР - БИФЕ \"БАГРЕМАР\""
+   },
+   {
+    "id": "70645/29:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70645/29",
+    "data": {
+     "voted": 929,
+     "ballots": 923,
+     "diff": 6
+    },
+    "m": "Град Крагујевац",
+    "mc": "70645",
+    "no": "29",
+    "name": "МЗ БАГРЕМАР - ОБДАНИШТЕ \"КОЛИБРИ\""
+   },
+   {
+    "id": "70645/3:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70645/3",
+    "data": {
+     "voted": 864,
+     "ballots": 858,
+     "diff": 6
+    },
+    "m": "Град Крагујевац",
+    "mc": "70645",
+    "no": "3",
+    "name": "МЗ АЕРОДРОМ - ОБДАНИШТЕ \"ПОЛЕТАРАЦ\""
+   },
+   {
+    "id": "70645/58:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70645/58",
+    "data": {
+     "voted": 1158,
+     "ballots": 1145,
+     "diff": 13
+    },
+    "m": "Град Крагујевац",
+    "mc": "70645",
+    "no": "58",
+    "name": "МЗ ВЕЛИКО ПОЉЕ - ОШ \"НАТАЛИЈА НАНА НЕДЕЉКОВИЋ\""
+   },
+   {
+    "id": "70653/13:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70653/13",
+    "data": {
+     "voted": 1335,
+     "ballots": 1328,
+     "diff": 7
+    },
+    "m": "Град Краљево",
+    "mc": "70653",
+    "no": "13",
+    "name": "ОШ \"СВЕТОЗАР МАРКОВИЋ\""
+   },
+   {
+    "id": "70653/14:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70653/14",
+    "data": {
+     "voted": 1128,
+     "ballots": 1122,
+     "diff": 6
+    },
+    "m": "Град Краљево",
+    "mc": "70653",
+    "no": "14",
+    "name": "ЖЕЛЕЗНИЧКА ЛОЖИОНИЦА"
+   },
+   {
+    "id": "70670/24:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70670/24",
+    "data": {
+     "voted": 1181,
+     "ballots": 1174,
+     "diff": 7
+    },
+    "m": "Град Крушевац",
+    "mc": "70670",
+    "no": "24",
+    "name": "МЗ \"ДОЊА ПАКАШНИЦА\""
+   },
+   {
+    "id": "70670/3:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70670/3",
+    "data": {
+     "voted": 1347,
+     "ballots": 1344,
+     "diff": 3
+    },
+    "m": "Град Крушевац",
+    "mc": "70670",
+    "no": "3",
+    "name": "КЛУБ ПЕНЗИОНЕРА У ПРВОЈ МЕСНОЈ ЗАЈЕДНИЦИ"
+   },
+   {
+    "id": "70670/50:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70670/50",
+    "data": {
+     "voted": 1164,
+     "ballots": 1154,
+     "diff": 10
+    },
+    "m": "Град Крушевац",
+    "mc": "70670",
+    "no": "50",
+    "name": "ДОМ КУЛТУРЕ"
+   },
+   {
+    "id": "89010/102:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "89010/102",
+    "data": {
+     "voted": 1306,
+     "ballots": 1301,
+     "diff": 5
+    },
+    "m": "Град Нови Сад",
+    "mc": "89010",
+    "no": "102",
+    "name": "МЗ \"ПОДБАРА\""
+   },
+   {
+    "id": "89010/14:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "89010/14",
+    "data": {
+     "voted": 1279,
+     "ballots": 1276,
+     "diff": 3
+    },
+    "m": "Град Нови Сад",
+    "mc": "89010",
+    "no": "14",
+    "name": "МЗ \"СТЕПАНОВИЋЕВО\""
+   },
+   {
+    "id": "89010/198:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "89010/198",
+    "data": {
+     "voted": 1379,
+     "ballots": 1376,
+     "diff": 3
+    },
+    "m": "Град Нови Сад",
+    "mc": "89010",
+    "no": "198",
+    "name": "ГИМНАЗИЈА \"ЛАЗА КОСТИЋ\""
+   },
+   {
+    "id": "89010/206:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "89010/206",
+    "data": {
+     "voted": 1360,
+     "ballots": 1357,
+     "diff": 3
+    },
+    "m": "Град Нови Сад",
+    "mc": "89010",
+    "no": "206",
+    "name": "СРЕДЊА МЕДИЦИНСКА ШКОЛА \"ДОСИТЕЈ ОБРАДОВИЋ\""
+   },
+   {
+    "id": "89010/56:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "89010/56",
+    "data": {
+     "voted": 1040,
+     "ballots": 1021,
+     "diff": 19
+    },
+    "m": "Град Нови Сад",
+    "mc": "89010",
+    "no": "56",
+    "name": "ОШ \"I ВОЈВОЂАНСКА БРИГАДА\""
+   },
+   {
+    "id": "89010/6:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "89010/6",
+    "data": {
+     "voted": 1389,
+     "ballots": 1385,
+     "diff": 4
+    },
+    "m": "Град Нови Сад",
+    "mc": "89010",
+    "no": "6",
+    "name": "ВАТРОГАСНИ ДОМ"
+   },
+   {
+    "id": "89010/68:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "89010/68",
+    "data": {
+     "voted": 1253,
+     "ballots": 1249,
+     "diff": 4
+    },
+    "m": "Град Нови Сад",
+    "mc": "89010",
+    "no": "68",
+    "name": "ШКОЛА ЗА ДИЗАЈН \"БОГДАН ШУПУТ\""
+   },
+   {
+    "id": "80314/44:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "80314/44",
+    "data": {
+     "voted": 1278,
+     "ballots": 1260,
+     "diff": 18
+    },
+    "m": "Град Панчево",
+    "mc": "80314",
+    "no": "44",
+    "name": "ДЕЧЈА УСТАНОВА \"ЧУПЕРАК\""
+   },
+   {
+    "id": "80314/76:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "80314/76",
+    "data": {
+     "voted": 1236,
+     "ballots": 1207,
+     "diff": 29
+    },
+    "m": "Град Панчево",
+    "mc": "80314",
+    "no": "76",
+    "name": "ОШ \"БРАТСТВО ЈЕДИНСТВО\""
+   },
+   {
+    "id": "70947/35:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70947/35",
+    "data": {
+     "voted": 1083,
+     "ballots": 1079,
+     "diff": 4
+    },
+    "m": "Град Пожаревац",
+    "mc": "70947",
+    "no": "35",
+    "name": "ОШ \"КРАЉ АЛЕКСАНДАР ПРВИ\""
+   },
+   {
+    "id": "71099/52:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71099/52",
+    "data": {
+     "voted": 1476,
+     "ballots": 779,
+     "diff": 697
+    },
+    "m": "Град Смедерево",
+    "mc": "71099",
+    "no": "52",
+    "name": "ОШШ \"ИВО ЛОЛА РИБАР\" - УЧИОНИЦА 3"
+   },
+   {
+    "id": "71099/52:full_turnout_typo",
+    "code": "full_turnout_typo",
+    "station": "71099/52",
+    "data": {
+     "registered": 1476,
+     "voted": 1476,
+     "median": 0.664179104477612
+    },
+    "m": "Град Смедерево",
+    "mc": "71099",
+    "no": "52",
+    "name": "ОШШ \"ИВО ЛОЛА РИБАР\" - УЧИОНИЦА 3"
+   },
+   {
+    "id": "71145/77:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71145/77",
+    "data": {
+     "voted": 1023,
+     "ballots": 1020,
+     "diff": 3
+    },
+    "m": "Град Ужице",
+    "mc": "71145",
+    "no": "77",
+    "name": "ОШ \"МИОДРАГ В. МАТИЋ\""
+   },
+   {
+    "id": "71242/24:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71242/24",
+    "data": {
+     "voted": 1164,
+     "ballots": 1161,
+     "diff": 3
+    },
+    "m": "Град Чачак",
+    "mc": "71242",
+    "no": "24",
+    "name": "МЕСНА ЗАЈЕДНИЦА \"ПАЛИЛУЛА\""
+   },
+   {
+    "id": "71242/4:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71242/4",
+    "data": {
+     "voted": 1581,
+     "ballots": 1491,
+     "diff": 90
+    },
+    "m": "Град Чачак",
+    "mc": "71242",
+    "no": "4",
+    "name": "МЕДИЦИНСКА ШКОЛА"
+   },
+   {
+    "id": "71269/31:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71269/31",
+    "data": {
+     "voted": 1075,
+     "ballots": 1049,
+     "diff": 26
+    },
+    "m": "Град Шабац",
+    "mc": "71269",
+    "no": "31",
+    "name": "ОШ \"СТОЈАН НОВАКОВИЋ\""
+   },
+   {
+    "id": "71269/55:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71269/55",
+    "data": {
+     "voted": 690,
+     "ballots": 685,
+     "diff": 5
+    },
+    "m": "Град Шабац",
+    "mc": "71269",
+    "no": "55",
+    "name": "ОСНОВНА ШКОЛА - УЧИОНИЦА БР. 5"
+   },
+   {
+    "id": "70106/104:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70106/104",
+    "data": {
+     "voted": 1000,
+     "ballots": 997,
+     "diff": 3
+    },
+    "m": "Градска општина Вождовац",
+    "mc": "70106",
+    "no": "104",
+    "name": "МЗ \"МИТРОВО БРДО\""
+   },
+   {
+    "id": "70106/30:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70106/30",
+    "data": {
+     "voted": 1192,
+     "ballots": 1188,
+     "diff": 4
+    },
+    "m": "Градска општина Вождовац",
+    "mc": "70106",
+    "no": "30",
+    "name": "ШКОЛА ЗА НЕГУ ЛЕПОТЕ"
+   },
+   {
+    "id": "70106/39:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70106/39",
+    "data": {
+     "voted": 1168,
+     "ballots": 1138,
+     "diff": 30
+    },
+    "m": "Градска општина Вождовац",
+    "mc": "70106",
+    "no": "39",
+    "name": "ДВ \"СЕСТРЕ БУКУМИРОВИЋ\""
+   },
+   {
+    "id": "70106/51:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70106/51",
+    "data": {
+     "voted": 1277,
+     "ballots": 1273,
+     "diff": 4
+    },
+    "m": "Градска општина Вождовац",
+    "mc": "70106",
+    "no": "51",
+    "name": "ОШ \"ЂУРА ДАНИЧИЋ\""
+   },
+   {
+    "id": "70106/72:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70106/72",
+    "data": {
+     "voted": 867,
+     "ballots": 850,
+     "diff": 17
+    },
+    "m": "Градска општина Вождовац",
+    "mc": "70106",
+    "no": "72",
+    "name": "ОШ \"ВОЈВОДА ПУТНИК\""
+   },
+   {
+    "id": "70106/74:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70106/74",
+    "data": {
+     "voted": 874,
+     "ballots": 871,
+     "diff": 3
+    },
+    "m": "Градска општина Вождовац",
+    "mc": "70106",
+    "no": "74",
+    "name": "ОШ \"ВУК КАРАЏИЋ\" - ИСТУРЕНО ОДЕЉЕЊЕ ПРЊАВОР"
+   },
+   {
+    "id": "70122/11:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70122/11",
+    "data": {
+     "voted": 1088,
+     "ballots": 1077,
+     "diff": 11
+    },
+    "m": "Градска општина Гроцка",
+    "mc": "70122",
+    "no": "11",
+    "name": "ОШ \"СВЕТИ САВА\" (ЦЕНТАР)"
+   },
+   {
+    "id": "70122/44:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70122/44",
+    "data": {
+     "voted": 1089,
+     "ballots": 1085,
+     "diff": 4
+    },
+    "m": "Градска општина Гроцка",
+    "mc": "70122",
+    "no": "44",
+    "name": "ОШ \"ИЛИЈА ГАРАШАНИН\""
+   },
+   {
+    "id": "70149/84:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70149/84",
+    "data": {
+     "voted": 1223,
+     "ballots": 1219,
+     "diff": 4
+    },
+    "m": "Градска општина Звездара",
+    "mc": "70149",
+    "no": "84",
+    "name": "ОШ\" ПАВЛЕ САВИЋ\" -4"
+   },
+   {
+    "id": "70157/56:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70157/56",
+    "data": {
+     "voted": 763,
+     "ballots": 759,
+     "diff": 4
+    },
+    "m": "Градска општина Земун",
+    "mc": "70157",
+    "no": "56",
+    "name": "САОБРАЋАЈНО ТЕХНИЧКА ШКОЛА"
+   },
+   {
+    "id": "71331/48:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71331/48",
+    "data": {
+     "voted": 1026,
+     "ballots": 1022,
+     "diff": 4
+    },
+    "m": "Градска општина Медијана",
+    "mc": "71331",
+    "no": "48",
+    "name": "ОШ \"РАДОЈЕ ДОМАНОВИЋ\""
+   },
+   {
+    "id": "70181/142:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70181/142",
+    "data": {
+     "voted": 1306,
+     "ballots": 1298,
+     "diff": 8
+    },
+    "m": "Градска општина Нови Београд",
+    "mc": "70181",
+    "no": "142",
+    "name": "ОШ \"ВЛАДА ОБРАДОВИЋ - КАМЕНИ\""
+   },
+   {
+    "id": "70181/142:correction_still_odd",
+    "code": "correction_still_odd",
+    "station": "70181/142",
+    "data": {
+     "form": "RG-7-1"
+    },
+    "m": "Градска општина Нови Београд",
+    "mc": "70181",
+    "no": "142",
+    "name": "ОШ \"ВЛАДА ОБРАДОВИЋ - КАМЕНИ\""
+   },
+   {
+    "id": "70203/64:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70203/64",
+    "data": {
+     "voted": 1058,
+     "ballots": 1055,
+     "diff": 3
+    },
+    "m": "Градска општина Палилула (Београд)",
+    "mc": "70203",
+    "no": "64",
+    "name": "ОШ \"ВАСА ПЕЛАГИЋ\""
+   },
+   {
+    "id": "70203/89:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70203/89",
+    "data": {
+     "voted": 1089,
+     "ballots": 1086,
+     "diff": 3
+    },
+    "m": "Градска општина Палилула (Београд)",
+    "mc": "70203",
+    "no": "89",
+    "name": "ОШ \"ЈОВАН РИСТИЋ\""
+   },
+   {
+    "id": "70203/89:correction_still_odd",
+    "code": "correction_still_odd",
+    "station": "70203/89",
+    "data": {
+     "form": "RG-7-1"
+    },
+    "m": "Градска општина Палилула (Београд)",
+    "mc": "70203",
+    "no": "89",
+    "name": "ОШ \"ЈОВАН РИСТИЋ\""
+   },
+   {
+    "id": "71307/21:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71307/21",
+    "data": {
+     "voted": 1119,
+     "ballots": 1100,
+     "diff": 19
+    },
+    "m": "Градска општина Пантелеј",
+    "mc": "71307",
+    "no": "21",
+    "name": "ОШ \"СТЕФАН НЕМАЊА\""
+   },
+   {
+    "id": "70211/26:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70211/26",
+    "data": {
+     "voted": 894,
+     "ballots": 890,
+     "diff": 4
+    },
+    "m": "Градска општина Раковица",
+    "mc": "70211",
+    "no": "26",
+    "name": "ОШ \"НИКОЛА ТЕСЛА\""
+   },
+   {
+    "id": "70211/67:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70211/67",
+    "data": {
+     "voted": 1136,
+     "ballots": 1133,
+     "diff": 3
+    },
+    "m": "Градска општина Раковица",
+    "mc": "70211",
+    "no": "67",
+    "name": "\"ШКОЛИЦА\""
+   },
+   {
+    "id": "71293/8:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71293/8",
+    "data": {
+     "voted": 1055,
+     "ballots": 1025,
+     "diff": 30
+    },
+    "m": "Градска општина Сурчин",
+    "mc": "71293",
+    "no": "8",
+    "name": "ОШ \"22. ОКТОБАР\""
+   },
+   {
+    "id": "71293/8:correction_still_odd",
+    "code": "correction_still_odd",
+    "station": "71293/8",
+    "data": {
+     "form": "RG-7-2"
+    },
+    "m": "Градска општина Сурчин",
+    "mc": "71293",
+    "no": "8",
+    "name": "ОШ \"22. ОКТОБАР\""
+   },
+   {
+    "id": "71315/1:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "71315/1",
+    "data": {
+     "voted": 707,
+     "ballots": 681,
+     "diff": 26
+    },
+    "m": "Градска општина Црвени крст",
+    "mc": "71315",
+    "no": "1",
+    "name": "ЗАВОД ЗА ЗДРАВСТВЕНУ ЗАШТИТУ РАДНИКА \"ЖЕЛЕЗНИЦА СРБИЈЕ\" ОГРАНАК НИШ - АМБУЛАНТА ЦРВЕНИ КРСТ"
+   },
+   {
+    "id": "70254/105:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70254/105",
+    "data": {
+     "voted": 1160,
+     "ballots": 1156,
+     "diff": 4
+    },
+    "m": "Градска општина Чукарица",
+    "mc": "70254",
+    "no": "105",
+    "name": "ДОМ ЗДРАВЉА"
+   },
+   {
+    "id": "70254/28:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70254/28",
+    "data": {
+     "voted": 1169,
+     "ballots": 1166,
+     "diff": 3
+    },
+    "m": "Градска општина Чукарица",
+    "mc": "70254",
+    "no": "28",
+    "name": "МЗ \"МИЛАН ТОМИЋ ЧАРЕ\" - ВЕЛИКА САЛА"
+   },
+   {
+    "id": "70254/75:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70254/75",
+    "data": {
+     "voted": 1208,
+     "ballots": 1204,
+     "diff": 4
+    },
+    "m": "Градска општина Чукарица",
+    "mc": "70254",
+    "no": "75",
+    "name": "ДТВ \"ПАРТИЗАН\" - САЛА 1"
+   },
+   {
+    "id": "70513/23:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70513/23",
+    "data": {
+     "voted": 499,
+     "ballots": 482,
+     "diff": 17
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "23",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/24:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70513/24",
+    "data": {
+     "voted": 515,
+     "ballots": 503,
+     "diff": 12
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "24",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/3:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70513/3",
+    "data": {
+     "voted": 387,
+     "ballots": 377,
+     "diff": 10
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "3",
+    "name": "СРЕДЊА ШКОЛА"
+   },
+   {
+    "id": "33000/56:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "33000/56",
+    "data": {
+     "voted": 2271,
+     "ballots": 2267,
+     "diff": 4
+    },
+    "m": "Иностранство",
+    "mc": "33000",
+    "no": "56",
+    "name": "ГЕНЕРАЛНИ КОНЗУЛАТ РС ДИСЕЛДОРФ"
+   },
+   {
+    "id": "33000/62:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "33000/62",
+    "data": {
+     "voted": 1343,
+     "ballots": 1340,
+     "diff": 3
+    },
+    "m": "Иностранство",
+    "mc": "33000",
+    "no": "62",
+    "name": "ГЕНЕРАЛНИ КОНЗУЛАТ РС ХАМБУРГ"
+   },
+   {
+    "id": "70866/6:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70866/6",
+    "data": {
+     "voted": 79,
+     "ballots": 73,
+     "diff": 6
+    },
+    "m": "Нова Варош",
+    "mc": "70866",
+    "no": "6",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "80306/27:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "80306/27",
+    "data": {
+     "voted": 784,
+     "ballots": 781,
+     "diff": 3
+    },
+    "m": "Оџаци",
+    "mc": "80306",
+    "no": "27",
+    "name": "ОШ \"ВУК КАРАЏИЋ\""
+   },
+   {
+    "id": "70955/9:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70955/9",
+    "data": {
+     "voted": 1321,
+     "ballots": 1317,
+     "diff": 4
+    },
+    "m": "Пожега",
+    "mc": "70955",
+    "no": "9",
+    "name": "ЦРВЕНИ КРСТ"
+   },
+   {
+    "id": "70980/35:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70980/35",
+    "data": {
+     "voted": 71,
+     "ballots": 25,
+     "diff": 46
+    },
+    "m": "Пријепоље",
+    "mc": "70980",
+    "no": "35",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70980/35:full_turnout_typo",
+    "code": "full_turnout_typo",
+    "station": "70980/35",
+    "data": {
+     "registered": 71,
+     "voted": 71,
+     "median": 0.6252729257641921
+    },
+    "m": "Пријепоље",
+    "mc": "70980",
+    "no": "35",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70980/42:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "70980/42",
+    "data": {
+     "voted": 760,
+     "ballots": 757,
+     "diff": 3
+    },
+    "m": "Пријепоље",
+    "mc": "70980",
+    "no": "42",
+    "name": "ПОСЛОВНИ ПРОСТОР СРЕДОЈЕВИЋ НИКОЛЕ 2"
+   },
+   {
+    "id": "80357/26:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "80357/26",
+    "data": {
+     "voted": 500,
+     "ballots": 497,
+     "diff": 3
+    },
+    "m": "Рума",
+    "mc": "80357",
+    "no": "26",
+    "name": "МЕСНА КАНЦЕЛАРИЈА"
+   },
+   {
+    "id": "80357/26:correction_still_odd",
+    "code": "correction_still_odd",
+    "station": "80357/26",
+    "data": {
+     "form": "RG-7-1"
+    },
+    "m": "Рума",
+    "mc": "80357",
+    "no": "26",
+    "name": "МЕСНА КАНЦЕЛАРИЈА"
+   },
+   {
+    "id": "80446/13:signed_over_ballots",
+    "code": "signed_over_ballots",
+    "station": "80446/13",
+    "data": {
+     "voted": 594,
+     "ballots": 591,
+     "diff": 3
+    },
+    "m": "Темерин",
+    "mc": "80446",
+    "no": "13",
+    "name": "ОШ \"ПЕТАР КОЧИЋ\""
+   },
+   {
+    "id": "70025/16:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70025/16",
+    "data": {
+     "invalid": 14,
+     "share": 0.040345821325648415,
+     "median": 0.010025062656641603,
+     "basis": "address"
+    },
+    "m": "Алексинац",
+    "mc": "70025",
+    "no": "16",
+    "name": "ДОМ КУЛТУРЕ"
+   },
+   {
+    "id": "70084/3:high_turnout",
+    "code": "high_turnout",
+    "station": "70084/3",
+    "data": {
+     "turnout": 0.900398406374502,
+     "registered": 251
+    },
+    "m": "Бела Паланка",
+    "mc": "70084",
+    "no": "3",
+    "name": "БИБЛИОТЕКА"
+   },
+   {
+    "id": "70335/16:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70335/16",
+    "data": {
+     "turnout": 0.9333333333333333,
+     "contestant": 1,
+     "share": 0.8928571428571429,
+     "registered": 60
+    },
+    "m": "Босилеград",
+    "mc": "70335",
+    "no": "16",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70297/14:high_turnout",
+    "code": "high_turnout",
+    "station": "70297/14",
+    "data": {
+     "turnout": 0.900990099009901,
+     "registered": 202
+    },
+    "m": "Бојник",
+    "mc": "70297",
+    "no": "14",
+    "name": "ОШ \"СТАНИМИР ВЕЉКОВИЋ-ЗЕЛЕ\""
+   },
+   {
+    "id": "70351/43:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70351/43",
+    "data": {
+     "turnout": 0.9140625,
+     "contestant": 1,
+     "share": 0.926605504587156,
+     "registered": 128
+    },
+    "m": "Бујановац",
+    "mc": "70351",
+    "no": "43",
+    "name": "ЗАДРУЖНИ ДОМ"
+   },
+   {
+    "id": "70351/50:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70351/50",
+    "data": {
+     "invalid": 22,
+     "share": 0.06769230769230769,
+     "median": 0.014594201355619433,
+     "basis": "municipality"
+    },
+    "m": "Бујановац",
+    "mc": "70351",
+    "no": "50",
+    "name": "ДОМ ЗДРАВЉА"
+   },
+   {
+    "id": "70351/52:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70351/52",
+    "data": {
+     "invalid": 31,
+     "share": 0.07192575406032482,
+     "median": 0.014594201355619433,
+     "basis": "municipality"
+    },
+    "m": "Бујановац",
+    "mc": "70351",
+    "no": "52",
+    "name": "ОШ \"НАИМ ФРАШЕРИ\" - ХОЛ"
+   },
+   {
+    "id": "70416/21:high_turnout",
+    "code": "high_turnout",
+    "station": "70416/21",
+    "data": {
+     "turnout": 0.9603960396039604,
+     "registered": 101
+    },
+    "m": "Владичин Хан",
+    "mc": "70416",
+    "no": "21",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70416/41:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70416/41",
+    "data": {
+     "turnout": 0.9864864864864865,
+     "contestant": 1,
+     "share": 0.9178082191780822,
+     "registered": 74
+    },
+    "m": "Владичин Хан",
+    "mc": "70416",
+    "no": "41",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70459/23:high_turnout",
+    "code": "high_turnout",
+    "station": "70459/23",
+    "data": {
+     "turnout": 0.9318181818181818,
+     "registered": 220
+    },
+    "m": "Врњачка Бања",
+    "mc": "70459",
+    "no": "23",
+    "name": "ОПШТИНСКИ ОБЈЕКАТ НА ГЛАВИЦИ"
+   },
+   {
+    "id": "70467/9:high_turnout",
+    "code": "high_turnout",
+    "station": "70467/9",
+    "data": {
+     "turnout": 0.9010989010989011,
+     "registered": 91
+    },
+    "m": "Гаџин Хан",
+    "mc": "70467",
+    "no": "9",
+    "name": "МЕСНА ЗАЈЕДНИЦА"
+   },
+   {
+    "id": "90336/2:invalid_spike",
+    "code": "invalid_spike",
+    "station": "90336/2",
+    "data": {
+     "invalid": 10,
+     "share": 0.07352941176470588,
+     "median": 0.00510204081632653,
+     "basis": "municipality"
+    },
+    "m": "Гора",
+    "mc": "90336",
+    "no": "2",
+    "name": "ОСНОВНА ШКОЛА „МЕША СЕЛИМОВИЋ“ – УЧИОНИЦА БР. 6 (СПРАТ ЛЕВО)"
+   },
+   {
+    "id": "70360/75:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70360/75",
+    "data": {
+     "invalid": 10,
+     "share": 0.0625,
+     "median": 0.014258297584104764,
+     "basis": "municipality"
+    },
+    "m": "Град Ваљево",
+    "mc": "70360",
+    "no": "75",
+    "name": "СЕОСКИ ДОМ"
+   },
+   {
+    "id": "70432/102:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70432/102",
+    "data": {
+     "invalid": 12,
+     "share": 0.048582995951417005,
+     "median": 0.0091324200913242,
+     "basis": "address"
+    },
+    "m": "Град Врање",
+    "mc": "70432",
+    "no": "102",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70432/106:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70432/106",
+    "data": {
+     "turnout": 0.928,
+     "contestant": 1,
+     "share": 0.8230088495575221,
+     "registered": 125
+    },
+    "m": "Град Врање",
+    "mc": "70432",
+    "no": "106",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70432/81:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70432/81",
+    "data": {
+     "invalid": 10,
+     "share": 0.050505050505050504,
+     "median": 0.0091324200913242,
+     "basis": "address"
+    },
+    "m": "Град Врање",
+    "mc": "70432",
+    "no": "81",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70432/99:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70432/99",
+    "data": {
+     "invalid": 10,
+     "share": 0.07633587786259542,
+     "median": 0.01642710472279261,
+     "basis": "address"
+    },
+    "m": "Град Врање",
+    "mc": "70432",
+    "no": "99",
+    "name": "КОМБИНАТ \"ЦВЕЋЕ\""
+   },
+   {
+    "id": "80128/27:invalid_spike",
+    "code": "invalid_spike",
+    "station": "80128/27",
+    "data": {
+     "invalid": 22,
+     "share": 0.040968342644320296,
+     "median": 0.009722222222222222,
+     "basis": "address"
+    },
+    "m": "Град Вршац",
+    "mc": "80128",
+    "no": "27",
+    "name": "ОШ \"ПАЈА ЈОВАНОВИЋ\""
+   },
+   {
+    "id": "80209/60:invalid_spike",
+    "code": "invalid_spike",
+    "station": "80209/60",
+    "data": {
+     "invalid": 25,
+     "share": 0.09090909090909091,
+     "basis": "absolute"
+    },
+    "m": "Град Кикинда",
+    "mc": "80209",
+    "no": "60",
+    "name": "ДОМ КУЛТУРЕ"
+   },
+   {
+    "id": "70726/117:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70726/117",
+    "data": {
+     "turnout": 0.9206349206349206,
+     "contestant": 1,
+     "share": 0.8620689655172413,
+     "registered": 63
+    },
+    "m": "Град Лесковац",
+    "mc": "70726",
+    "no": "117",
+    "name": "ОШ \"ВУК КАРАЏИЋ\" - ИЗДВОЈЕНО ОДЕЉЕЊЕ"
+   },
+   {
+    "id": "70726/128:high_turnout",
+    "code": "high_turnout",
+    "station": "70726/128",
+    "data": {
+     "turnout": 0.9285714285714286,
+     "registered": 140
+    },
+    "m": "Град Лесковац",
+    "mc": "70726",
+    "no": "128",
+    "name": "МЕСНА ЗАЈЕДНИЦА"
+   },
+   {
+    "id": "70726/136:high_turnout",
+    "code": "high_turnout",
+    "station": "70726/136",
+    "data": {
+     "turnout": 0.9325153374233128,
+     "registered": 163
+    },
+    "m": "Град Лесковац",
+    "mc": "70726",
+    "no": "136",
+    "name": "МЕСНА ЗАЈЕДНИЦА"
+   },
+   {
+    "id": "70726/161:high_turnout",
+    "code": "high_turnout",
+    "station": "70726/161",
+    "data": {
+     "turnout": 0.9206349206349206,
+     "registered": 189
+    },
+    "m": "Град Лесковац",
+    "mc": "70726",
+    "no": "161",
+    "name": "ОШ \"ВУК КАРАЏИЋ\" - ИЗДВОЈЕНО ОДЕЉЕЊЕ"
+   },
+   {
+    "id": "70874/28:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70874/28",
+    "data": {
+     "invalid": 54,
+     "share": 0.07510431154381085,
+     "median": 0.023527793065492568,
+     "basis": "address"
+    },
+    "m": "Град Нови Пазар",
+    "mc": "70874",
+    "no": "28",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70874/41:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70874/41",
+    "data": {
+     "invalid": 77,
+     "share": 0.09961190168175937,
+     "basis": "absolute"
+    },
+    "m": "Град Нови Пазар",
+    "mc": "70874",
+    "no": "41",
+    "name": "ОШ \"ХАЛИФА БИН ЗАИД АЛ НАХЈАН\" НОВИ ПАЗАР"
+   },
+   {
+    "id": "70874/46:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70874/46",
+    "data": {
+     "invalid": 31,
+     "share": 0.09117647058823529,
+     "basis": "absolute"
+    },
+    "m": "Град Нови Пазар",
+    "mc": "70874",
+    "no": "46",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70874/47:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70874/47",
+    "data": {
+     "invalid": 38,
+     "share": 0.1292517006802721,
+     "basis": "absolute"
+    },
+    "m": "Град Нови Пазар",
+    "mc": "70874",
+    "no": "47",
+    "name": "ОШ \"ЂУРА ЈАКШИЋ\" ТРНАВА"
+   },
+   {
+    "id": "70874/54:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70874/54",
+    "data": {
+     "invalid": 10,
+     "share": 0.10309278350515463,
+     "median": 0.027657372335750018,
+     "basis": "municipality"
+    },
+    "m": "Град Нови Пазар",
+    "mc": "70874",
+    "no": "54",
+    "name": "КУЋА ДУПЉАК ХАРУНА"
+   },
+   {
+    "id": "80438/83:invalid_spike",
+    "code": "invalid_spike",
+    "station": "80438/83",
+    "data": {
+     "invalid": 51,
+     "share": 0.061004784688995214,
+     "median": 0.019417475728155338,
+     "basis": "municipality"
+    },
+    "m": "Град Суботица",
+    "mc": "80438",
+    "no": "83",
+    "name": "КЛУБ ПЕНЗИОНЕРА"
+   },
+   {
+    "id": "71145/29:high_turnout",
+    "code": "high_turnout",
+    "station": "71145/29",
+    "data": {
+     "turnout": 0.9083503054989817,
+     "registered": 491
+    },
+    "m": "Град Ужице",
+    "mc": "71145",
+    "no": "29",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "71315/1:invalid_spike",
+    "code": "invalid_spike",
+    "station": "71315/1",
+    "data": {
+     "invalid": 29,
+     "share": 0.042584434654919234,
+     "median": 0.013054830287206266,
+     "basis": "municipality"
+    },
+    "m": "Градска општина Црвени крст",
+    "mc": "71315",
+    "no": "1",
+    "name": "ЗАВОД ЗА ЗДРАВСТВЕНУ ЗАШТИТУ РАДНИКА \"ЖЕЛЕЗНИЦА СРБИЈЕ\" ОГРАНАК НИШ - АМБУЛАНТА ЦРВЕНИ КРСТ"
+   },
+   {
+    "id": "70513/11:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70513/11",
+    "data": {
+     "invalid": 28,
+     "share": 0.07547169811320754,
+     "median": 0.016585593756011763,
+     "basis": "address"
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "11",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/11:high_turnout",
+    "code": "high_turnout",
+    "station": "70513/11",
+    "data": {
+     "turnout": 0.9251870324189526,
+     "registered": 401
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "11",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/12:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70513/12",
+    "data": {
+     "invalid": 34,
+     "share": 0.0921409214092141,
+     "basis": "absolute"
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "12",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/12:high_turnout",
+    "code": "high_turnout",
+    "station": "70513/12",
+    "data": {
+     "turnout": 0.9201995012468828,
+     "registered": 401
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "12",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/22:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70513/22",
+    "data": {
+     "turnout": 0.9861386138613861,
+     "contestant": 1,
+     "share": 0.9749478079331941,
+     "registered": 505
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "22",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/23:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70513/23",
+    "data": {
+     "invalid": 72,
+     "share": 0.14937759336099585,
+     "basis": "absolute"
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "23",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/23:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70513/23",
+    "data": {
+     "turnout": 0.9275092936802974,
+     "contestant": 1,
+     "share": 0.926829268292683,
+     "registered": 538
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "23",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/24:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70513/24",
+    "data": {
+     "invalid": 52,
+     "share": 0.10337972166998012,
+     "basis": "absolute"
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "24",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/24:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70513/24",
+    "data": {
+     "turnout": 0.9466911764705882,
+     "contestant": 1,
+     "share": 0.9534368070953437,
+     "registered": 544
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "24",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/25:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70513/25",
+    "data": {
+     "invalid": 33,
+     "share": 0.0829145728643216,
+     "basis": "absolute"
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "25",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/25:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70513/25",
+    "data": {
+     "turnout": 0.9299065420560748,
+     "contestant": 1,
+     "share": 0.9397260273972603,
+     "registered": 428
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "25",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70513/27:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70513/27",
+    "data": {
+     "turnout": 0.9086460032626428,
+     "contestant": 1,
+     "share": 0.981203007518797,
+     "registered": 613
+    },
+    "m": "Дољевац",
+    "mc": "70513",
+    "no": "27",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70637/7:high_turnout",
+    "code": "high_turnout",
+    "station": "70637/7",
+    "data": {
+     "turnout": 0.926605504587156,
+     "registered": 109
+    },
+    "m": "Коцељева",
+    "mc": "70637",
+    "no": "7",
+    "name": "ОШ \"МИЋА СТАНОЈЛОВИЋ\" - ИЗДВОЈЕНО ОДЕЉЕЊЕ"
+   },
+   {
+    "id": "70696/34:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70696/34",
+    "data": {
+     "invalid": 12,
+     "share": 0.06818181818181818,
+     "median": 0.01611522554583053,
+     "basis": "municipality"
+    },
+    "m": "Кучево",
+    "mc": "70696",
+    "no": "34",
+    "name": "ОШ \"СЛОБОДАН ЈОВИЋ\" - БРОДИЦА"
+   },
+   {
+    "id": "70718/35:high_turnout",
+    "code": "high_turnout",
+    "station": "70718/35",
+    "data": {
+     "turnout": 0.9259259259259259,
+     "registered": 135
+    },
+    "m": "Лебане",
+    "mc": "70718",
+    "no": "35",
+    "name": "ДОМ КУЛТУРЕ"
+   },
+   {
+    "id": "70823/3:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70823/3",
+    "data": {
+     "invalid": 15,
+     "share": 0.06329113924050633,
+     "median": 0.005042016806722689,
+     "basis": "address"
+    },
+    "m": "Мерошина",
+    "mc": "70823",
+    "no": "3",
+    "name": "ЗГРАДА МЕСНЕ ЗАЈЕДНИЦЕ"
+   },
+   {
+    "id": "70823/5:high_turnout",
+    "code": "high_turnout",
+    "station": "70823/5",
+    "data": {
+     "turnout": 0.9078694817658349,
+     "registered": 521
+    },
+    "m": "Мерошина",
+    "mc": "70823",
+    "no": "5",
+    "name": "ДОМ КУЛТУРЕ"
+   },
+   {
+    "id": "70840/48:near_unanimity",
+    "code": "near_unanimity",
+    "station": "70840/48",
+    "data": {
+     "turnout": 0.9322033898305084,
+     "contestant": 1,
+     "share": 0.926605504587156,
+     "registered": 118
+    },
+    "m": "Неготин",
+    "mc": "70840",
+    "no": "48",
+    "name": "РЕОНСКА ШКОЛА \"ТУРИЈА\""
+   },
+   {
+    "id": "80322/8:high_turnout",
+    "code": "high_turnout",
+    "station": "80322/8",
+    "data": {
+     "turnout": 0.924924924924925,
+     "registered": 333
+    },
+    "m": "Пећинци",
+    "mc": "80322",
+    "no": "8",
+    "name": "ЛОВАЧКИ ДОМ"
+   },
+   {
+    "id": "70963/20:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70963/20",
+    "data": {
+     "invalid": 13,
+     "share": 0.04,
+     "median": 0.009109311740890687,
+     "basis": "address"
+    },
+    "m": "Прешево",
+    "mc": "70963",
+    "no": "20",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70980/38:invalid_spike",
+    "code": "invalid_spike",
+    "station": "70980/38",
+    "data": {
+     "invalid": 22,
+     "share": 0.045081967213114756,
+     "median": 0.009131000638299636,
+     "basis": "municipality"
+    },
+    "m": "Пријепоље",
+    "mc": "70980",
+    "no": "38",
+    "name": "ОСНОВНА ШКОЛА (НОВА)"
+   },
+   {
+    "id": "70998/39:high_turnout",
+    "code": "high_turnout",
+    "station": "70998/39",
+    "data": {
+     "turnout": 0.923728813559322,
+     "registered": 118
+    },
+    "m": "Прокупље",
+    "mc": "70998",
+    "no": "39",
+    "name": "ЛОКАЛ ДРАГОСЛАВА АРСЕНИЈЕВИЋА"
+   },
+   {
+    "id": "80390/19:invalid_spike",
+    "code": "invalid_spike",
+    "station": "80390/19",
+    "data": {
+     "invalid": 15,
+     "share": 0.04437869822485207,
+     "median": 0.014285714285714285,
+     "basis": "municipality"
+    },
+    "m": "Србобран",
+    "mc": "80390",
+    "no": "19",
+    "name": "ПОШТА \"БЕГЛУК\""
+   },
+   {
+    "id": "71072/25:high_turnout",
+    "code": "high_turnout",
+    "station": "71072/25",
+    "data": {
+     "turnout": 0.9038461538461539,
+     "registered": 208
+    },
+    "m": "Сјеница",
+    "mc": "71072",
+    "no": "25",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "71072/32:high_turnout",
+    "code": "high_turnout",
+    "station": "71072/32",
+    "data": {
+     "turnout": 0.91,
+     "registered": 100
+    },
+    "m": "Сјеница",
+    "mc": "71072",
+    "no": "32",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "71072/51:high_turnout",
+    "code": "high_turnout",
+    "station": "71072/51",
+    "data": {
+     "turnout": 0.9036144578313253,
+     "registered": 83
+    },
+    "m": "Сјеница",
+    "mc": "71072",
+    "no": "51",
+    "name": "ЗГРАДА СЕОСКОГ ВОДОВОДА"
+   },
+   {
+    "id": "71161/16:near_unanimity",
+    "code": "near_unanimity",
+    "station": "71161/16",
+    "data": {
+     "turnout": 0.9298245614035088,
+     "contestant": 1,
+     "share": 0.9056603773584906,
+     "registered": 57
+    },
+    "m": "Трговиште",
+    "mc": "71161",
+    "no": "16",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "71161/19:near_unanimity",
+    "code": "near_unanimity",
+    "station": "71161/19",
+    "data": {
+     "turnout": 0.9128205128205128,
+     "contestant": 1,
+     "share": 0.9310344827586207,
+     "registered": 195
+    },
+    "m": "Трговиште",
+    "mc": "71161",
+    "no": "19",
+    "name": "ОШ \"ВУК КАРАЏИЋ\""
+   },
+   {
+    "id": "71161/21:near_unanimity",
+    "code": "near_unanimity",
+    "station": "71161/21",
+    "data": {
+     "turnout": 0.9365079365079365,
+     "contestant": 1,
+     "share": 0.9224137931034483,
+     "registered": 126
+    },
+    "m": "Трговиште",
+    "mc": "71161",
+    "no": "21",
+    "name": "ПУ \"ПОЛЕТАРАЦ\" - ИСТУРЕНО ОДЕЉЕЊЕ"
+   },
+   {
+    "id": "71161/23:near_unanimity",
+    "code": "near_unanimity",
+    "station": "71161/23",
+    "data": {
+     "turnout": 0.9690402476780186,
+     "contestant": 1,
+     "share": 0.9456869009584664,
+     "registered": 323
+    },
+    "m": "Трговиште",
+    "mc": "71161",
+    "no": "23",
+    "name": "ОШ \"ЖАРКО ЗРЕЊАНИН УЧА\""
+   },
+   {
+    "id": "71161/24:near_unanimity",
+    "code": "near_unanimity",
+    "station": "71161/24",
+    "data": {
+     "turnout": 0.9841269841269841,
+     "contestant": 1,
+     "share": 0.9838709677419355,
+     "registered": 63
+    },
+    "m": "Трговиште",
+    "mc": "71161",
+    "no": "24",
+    "name": "МЕСНА КАНЦЕЛАРИЈА"
+   },
+   {
+    "id": "71161/25:near_unanimity",
+    "code": "near_unanimity",
+    "station": "71161/25",
+    "data": {
+     "turnout": 0.9206349206349206,
+     "contestant": 1,
+     "share": 0.9137931034482759,
+     "registered": 63
+    },
+    "m": "Трговиште",
+    "mc": "71161",
+    "no": "25",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "71161/5:high_turnout",
+    "code": "high_turnout",
+    "station": "71161/5",
+    "data": {
+     "turnout": 0.9112903225806451,
+     "registered": 124
+    },
+    "m": "Трговиште",
+    "mc": "71161",
+    "no": "5",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "71188/43:invalid_spike",
+    "code": "invalid_spike",
+    "station": "71188/43",
+    "data": {
+     "invalid": 13,
+     "share": 0.04797047970479705,
+     "median": 0.006211180124223602,
+     "basis": "address"
+    },
+    "m": "Тутин",
+    "mc": "71188",
+    "no": "43",
+    "name": "ОСНОВНА ШКОЛА - УЧИОНИЦА БР. 1"
+   },
+   {
+    "id": "90328/3:invalid_spike",
+    "code": "invalid_spike",
+    "station": "90328/3",
+    "data": {
+     "invalid": 139,
+     "share": 0.1398390342052314,
+     "basis": "absolute"
+    },
+    "m": "Штрпце",
+    "mc": "90328",
+    "no": "3",
+    "name": "ПРОСТОР ФАБРИКЕ „ЈУМКО“"
+   }
+  ]
+ }
+]

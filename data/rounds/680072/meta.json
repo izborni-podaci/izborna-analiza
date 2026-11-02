@@ -1,0 +1,98 @@
+{
+ "contest": {},
+ "contestants": [
+  {
+   "minority": false,
+   "name": "Aleksandar Vučić – Ujedinjena Srbija",
+   "short": "Ujedinjena Srbija"
+  },
+  {
+   "minority": false,
+   "name": "Ivica Dačić – Faktor stabilnosti! (SPS, Jedinstvena Srbija, SDPS, Zeleni Srbije)",
+   "short": "Faktor stabilnosti (Dačić)"
+  },
+  {
+   "minority": false,
+   "name": "Studentska lista – Studenti pobeđuju",
+   "short": "Studentska lista"
+  },
+  {
+   "minority": true,
+   "name": "Rasim Ljajić – Ljudski (SDP – CDP)",
+   "short": "Ljudski (Ljajić)"
+  },
+  {
+   "minority": true,
+   "name": "Vajdasági Magyar Szövetség – dr. Pásztor Bálint – Savez vojvođanskih Mađara",
+   "short": "SVM"
+  },
+  {
+   "minority": true,
+   "name": "Usame Zukorlić (SPP) – Pokret za ujedinjenje",
+   "short": "SPP (Zukorlić)"
+  },
+  {
+   "minority": true,
+   "name": "Ruska stranka – Srbija u BRIKS-u – Slobodan Nikolić",
+   "short": "Ruska stranka"
+  },
+  {
+   "minority": false,
+   "name": "Autentična desnica – dr Miloš Jovanović (Novi DSS, Monarhisti, Srpska koalicija NADA …) – Odvažno srpski!",
+   "short": "Autentična desnica"
+  },
+  {
+   "minority": false,
+   "name": "Evropska Srbija – Marinika Tepić – Zdravko Ponoš (SSP, SRCE, Solidarnost …)",
+   "short": "Evropska Srbija"
+  },
+  {
+   "minority": true,
+   "name": "SDA Sandžaka – Čuvari Sandžaka",
+   "short": "SDA Sandžaka"
+  },
+  {
+   "minority": false,
+   "name": "Bogoljub Karić – Pokret snaga Srbije – BK",
+   "short": "Pokret snaga Srbije (Karić)"
+  },
+  {
+   "minority": false,
+   "name": "Liberalno zelena stranka – za slobodnu i čistiju Srbiju",
+   "short": "Liberalno zelena stranka"
+  },
+  {
+   "minority": true,
+   "name": "Biram pravdu – biram budućnost – koalicija Snaga – prof. dr Ferid Bulić – Vasilios Proveleggios",
+   "short": "Biram pravdu (Bulić)"
+  },
+  {
+   "minority": true,
+   "name": "Stranka rusko-srpskog jedinstva – Rusi i Srbi braća zauvek",
+   "short": "Rusko-srpsko jedinstvo"
+  },
+  {
+   "minority": false,
+   "name": "Ćale, ovo je za tebe – Petar Đurić – premijer Srbije",
+   "short": "Ćale, ovo je za tebe"
+  },
+  {
+   "minority": false,
+   "name": "Vladimir Gajić – Alternativa za Srbiju – Narodna stranka, Bunt – Prava Srbija",
+   "short": "Alternativa za Srbiju (Gajić)"
+  },
+  {
+   "minority": true,
+   "name": "Albanska koalicija – Koalicioni Shqiptar",
+   "short": "Albanska koalicija"
+  },
+  {
+   "minority": true,
+   "name": "Majka Srbija – Gruda",
+   "short": "Majka Srbija – Gruda"
+  }
+ ],
+ "kind": "parliamentary",
+ "rik_type": 2,
+ "title": "Избори за народне посланике Народне скупштине 2026."
+}
