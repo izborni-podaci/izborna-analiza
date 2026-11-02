@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
 {% block title %}{{ t('rounds_heading') }}{% endblock %}
 {% block main %}
+{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (t('nav_elections'), none)]) }}
 <h1 class="page-title">{{ t('rounds_heading') }}</h1>
 <p class="lede">{{ t('elections_lede') }}</p>
 {% if not rounds %}<p>{{ t('no_rounds') }}</p>{% else %}

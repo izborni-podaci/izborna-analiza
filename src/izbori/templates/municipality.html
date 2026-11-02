@@ -32,7 +32,7 @@
     {% set s = r.s %}
     <tr id="bm-{{ s.number }}"{% if r.flags %} class="flagged"{% endif %}>
       <td class="num">{{ s.number }}</td>
-      <td>{{ name(s.name) }}{% if ctrl_known %}{{ mx.controllers(ctrl.get(s.key), rnd.contestants|length) }}{% endif %}<div class="docs small">{{ mx.doc_links(s) }}</div></td>
+      <td>{% if st_path(s.key) %}<a href="{{ link(st_path(s.key)) }}">{{ name(s.name) or t('station_details') }}</a>{% else %}{{ name(s.name) }}{% endif %}{% if ctrl_known %}{{ mx.controllers(ctrl.get(s.key), rnd.contestants|length) }}{% endif %}<div class="docs small">{{ mx.doc_links(s) }}</div></td>
       {% if s.counted %}
       <td class="num">{{ i(s.registered) }}</td><td class="num">{{ i(s.voted) }}</td><td class="num">{{ pct(s.turnout, 1) }}</td>
       <td class="num">{{ i(s.ballots) }}</td><td class="num">{{ i(s.invalid) }}</td>

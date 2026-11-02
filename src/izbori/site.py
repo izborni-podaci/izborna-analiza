@@ -76,6 +76,38 @@ class Site:
         path.write_text(html, encoding="utf-8")
 
     # --- view models -------------------------------------------------------------------------
+    def st_path(self, key: str) -> str:
+        """The station's own page, for stations flagged in at least one election; "" for the others."""
+        return station_path(key) if key in self.station_keys else ""
+
+    def ctrl_of(self, rid: str) -> dict:
+        if rid not in self.ctrl_cache:
+            self.ctrl_cache[rid] = boards.coverage(boards.load_store(self.archive.dir(rid)))
+        return self.ctrl_cache[rid]
+
+    def station_pages(self, loc: str, oldest_first: list, rep_rows: list[dict], columns: list[dict], group_of: dict) -> None:
+        """One page per polling station flagged in at least one election: the latest numbers and flags with what to
+        check, documents, controllers, and the station in every election in the archive."""
+        cols = {c["id"]: c for c in columns}
+        for row in rep_rows:
+            key = row["key"]
+            history, latest = [], None
+            for a in reversed(oldest_first):
+                rid = a.round.id
+                s = self.station_index[rid].get(key)
+                if s is None:
+                    history.append({"short": cols[rid]["short"], "absent": True})
+                    continue
+                flags = a.by_station.get(key, [])
+                e = {"short": cols[rid]["short"], "title": cols[rid]["title"], "rid": rid, "s": s, "absent": False,
+                     "flags": self.flag_view(a, flags, loc), "codes": list(dict.fromkeys(f.code for f in flags)),
+                     "notes": a.notes.get(key, []), "ctrl": self.ctrl_of(rid).get(key), "ctrl_known": bool(self.ctrl_of(rid))}
+                history.append(e)
+                latest = latest or e
+            address = next((e["ctrl"]["address"] for e in history if not e["absent"] and e["ctrl"] and e["ctrl"].get("address")), "")
+            self.write(loc, station_path(key), "station.html", row=row, s=latest["s"], latest=latest, history=history,
+                       address=address, group_of=group_of)
+
     def write_search(self, loc: str, rounds_newest_first: list, rep_rows: list[dict]) -> None:
         """search.json for the search on the home page, kept small: municipalities [name, code, round], then polling
         stations [municipality, number, name, round, elections flagged, elections voted], flagged ones first. Each
@@ -203,6 +235,7 @@ class Site:
         shutil.copytree(HERE / "static", self.out / "static", dirs_exist_ok=True)
         (self.out / ".nojekyll").write_text("", encoding="utf-8")
         self.cache: dict = {}
+        self.ctrl_cache: dict = {}
         rids = self.archive.round_ids()
         for rid in rids:
             self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, self.cache)
@@ -221,6 +254,8 @@ class Site:
         overall = {"flagged": len(rep_rows), "total": len(places), "repeated": rep_n2,
                    "counts": {code: len(keys) for code, keys in by_code.items()}}
         group_of = {c.code: c.group for c in CHECKS}
+        self.station_index = {a.round.id: {s.key: s for s in a.round.stations} for a in oldest_first}
+        self.station_keys = {r["key"] for r in rep_rows}
         top = max(overall["counts"].values(), default=0) or 1
         appear = [{"code": c.code, "group": c.group, "n": overall["counts"][c.code],
                    "w": 100 * overall["counts"][c.code] / top}
@@ -246,7 +281,9 @@ class Site:
             self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html")
             self.write(loc, "about.html", "about.html", checks=CHECKS, groups=GROUPS)
             self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns,
-                       rounds=columns, same=rep_same, checks=CHECKS, group_of=group_of, example=example)
+                       rounds=columns, same=rep_same, checks=CHECKS, group_of=group_of, example=example,
+                       st_path=self.st_path)
+            self.station_pages(loc, oldest_first, rep_rows, columns, group_of)
             for a in rounds:
                 self.round_pages(a, loc)
         # GitHub Pages serves this file for a missing page at any depth, so its links are absolute.
@@ -288,11 +325,12 @@ class Site:
         for f in a.flags:
             counts[f.code] += 1
         group_counts = {g: len({f.station for f in a.flags if f.check.group == g}) for g in GROUPS}
-        ctrl = boards.coverage(boards.load_store(self.archive.dir(rid)))
+        ctrl = self.ctrl_of(rid)
         ctrl_table, ctrl_readable = ctrl_rows(a.round.contestants, ctrl.values())
         common = {"rebuilt": self.archive.meta(rid).get("source") == "results_app",
                   "ctrl_readable": ctrl_readable, "a": a, "rnd": a.round, "totals": totals, "base": base, "view": view,
                   "snapshots": a.snapshots, "label": label, "rtitle": self.round_title(a.round, loc),
+                  "rshort": self.short_title(a.round, loc), "st_path": self.st_path,
                   "ctrl": ctrl, "ctrl_known": bool(ctrl), "ctrl_table": ctrl_table}
         self.write(loc, base + "index.html", "round.html", municipalities=municipalities, stats=context_stats,
                    counts=counts, group_counts=group_counts, checks=CHECKS, groups=GROUPS, **common)
@@ -339,6 +377,11 @@ class Site:
             mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
                        mctrl=mctrl, mreadable=mreadable, **common)
+
+
+def station_path(key: str) -> str:
+    code, _, number = key.partition("/")
+    return f"s/{code}-{re.sub(r'[^0-9A-Za-z_-]', '_', number)}.html"
 
 
 def fmt_date(iso: str | None, loc: str) -> str:

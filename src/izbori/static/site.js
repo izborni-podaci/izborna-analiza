@@ -50,7 +50,10 @@
               const m = j.m[s[0]];
               const label = `${m[0]} · ${d.bm} ${s[1]}${s[2] ? ` · ${s[2]}` : ''}`;
               const sub = s[4] ? d.flagged.replace('{k}', s[4]).replace('{n}', s[5]) : d.clean;
-              return [fold(label), [label, `r/${j.rounds[s[3]]}/m/${m[1]}.html#bm-${s[1]}`, sub]];
+              const url = s[4]
+                ? `s/${m[1]}-${s[1].replace(/[^0-9A-Za-z_-]/g, '_')}.html`
+                : `r/${j.rounds[s[3]]}/m/${m[1]}.html#bm-${s[1]}`;
+              return [fold(label), [label, url, sub]];
             });
             items = mun.concat(st);
           })

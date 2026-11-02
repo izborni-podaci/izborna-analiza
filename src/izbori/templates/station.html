@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
+{% block title %}{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}{% endblock %}
+{% block main %}
+{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(s.municipality), link('r/' ~ latest.rid ~ '/m/' ~ s.municipality_code ~ '.html')), (t('station_no') ~ ' ' ~ s.number, none)]) }}
+<p class="kicker">{{ name(s.municipality) }}</p>
+<h1 class="station-title">{{ t('station_no') }} {{ s.number }}{% if s.name %} · {{ name(s.name) }}{% endif %}</h1>
+{% if address %}<p class="muted">{{ t('address') }}: {{ name(address) }}</p>{% endif %}
+<p class="station-summary"><strong>{{ t('home_example_k', k=row.k, n=row.n) }}</strong>{% if row.same %}<br>{{ t('repeat_same') }}: {% for code, m in row.same %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}, {{ t('repeat_times', n=m) }}</span>{% if not loop.last %}; {% endif %}{% endfor %}{% endif %}</p>
+<p class="principle">{{ t('principle') }}</p>
+
+<section class="station-latest">
+  <h2>{{ t('station_latest', title=latest.short) }}</h2>
+  {% set st = latest.s %}
+  {% if st.counted %}
+  <div class="tiles">
+    <div class="tile"><p class="tile-label">{{ t('registered') }}</p><p class="tile-value">{{ i(st.registered) }}</p></div>
+    <div class="tile"><p class="tile-label">{{ t('voted') }}</p><p class="tile-value">{{ i(st.voted) }}</p><p class="tile-sub">{{ t('turnout') }} {{ pct(st.turnout, 1) }}</p></div>
+    <div class="tile"><p class="tile-label">{{ t('ballots') }}</p><p class="tile-value">{{ i(st.ballots) }}</p></div>
+    <div class="tile"><p class="tile-label">{{ t('invalid') }}</p><p class="tile-value">{{ i(st.invalid) }}</p></div>
+  </div>
+  {% else %}<p class="muted">{{ t('not_counted') }}</p>{% endif %}
+  {% if latest.flags %}
+  {{ mx.chips(latest.flags) }}
+  <div class="hint"><strong>{{ t('what_to_check') }}</strong>
+    <ul>{% for code in latest.codes %}<li>{{ t('hint_' ~ code) }}</li>{% endfor %}</ul>
+  </div>
+  {% else %}<p class="muted">{{ t('repeat_no_flag') }}</p>{% endif %}
+  <p class="docs">{{ mx.doc_links(st) }}</p>
+  {% if latest.ctrl_known %}{{ mx.controllers(latest.ctrl, 0) }}{% endif %}
+  {{ mx.notes_list(latest.notes) }}
+</section>
+
+<section>
+  <h2>{{ t('station_history') }}</h2>
+  <ol class="timeline station-timeline">
+  {% for e in history %}
+    <li><span class="muted">{{ e.short }}</span>
+      <div>
+      {% if e.absent %}<span class="muted">{{ t('repeat_not_there') }}</span>
+      {% else %}
+        {% if e.flags %}{{ mx.chips(e.flags) }}{% else %}<p class="muted">{{ t('repeat_no_flag') }}</p>{% endif %}
+        <p class="small muted">{% if e.s.counted %}{{ t('turnout') }} {{ pct(e.s.turnout, 1) }} · {{ t('voted') }} {{ i(e.s.voted) }} · {{ t('invalid') }} {{ i(e.s.invalid) }} · {% endif %}<a href="{{ link('r/' ~ e.rid ~ '/m/' ~ e.s.municipality_code ~ '.html') }}#bm-{{ e.s.number }}">{{ t('station_in_round') }}</a> {{ mx.doc_links(e.s) }}</p>
+      {% endif %}
+      </div>
+    </li>
+  {% endfor %}
+  </ol>
+</section>
+{% endblock %}

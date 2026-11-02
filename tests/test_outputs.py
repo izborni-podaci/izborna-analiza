@@ -113,3 +113,14 @@ def test_site_shows_controllers(tmp_path, archive):
     assert "Kontrolora ukupno" in mun and "Kontrolora ukupno" in round_page
     order = [round_page.index(f'id="{x}"') for x in ("check", "results", "controllers", "municipalities", "stats")]
     assert order == sorted(order)
+
+
+def test_site_station_pages_and_breadcrumbs(archive, tmp_path):
+    from izbori.site import build
+    out = build(archive, tmp_path / "site", None, "https://example.org/x/")
+    pages = sorted((out / "s").glob("*.html"))
+    assert pages, "a page for every station flagged in at least one election"
+    text = pages[0].read_text(encoding="utf-8")
+    assert 'class="crumbs"' in text and "Kroz sve izbore" in text
+    assert 'class="crumbs"' in (out / "r/680072/check.html").read_text(encoding="utf-8")
+    assert (out / "elections.html").exists() and (out / "search.json").exists()

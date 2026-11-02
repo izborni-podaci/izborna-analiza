@@ -17,7 +17,20 @@
 {% elif code == 'high_turnout' %}<path d="M3.6 8.6 8 4.2l4.4 4.4M3.6 12.8 8 8.4l4.4 4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 {% else %}<circle cx="8" cy="8" r="4" fill="currentColor"/>{% endif %}</svg>{% endmacro %}
 
+{% macro crumbs(items) %}
+<nav class="crumbs" aria-label="{{ t('crumbs_label') }}"><ol>
+{% for label, href in items %}<li>{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}<span aria-current="page">{{ label }}</span>{% endif %}</li>{% endfor %}
+</ol></nav>
+{% endmacro %}
+
 {% macro round_nav(current) %}
+{% set trail = [(t('crumbs_home'), link('index.html')), (t('nav_elections'), link('elections.html'))] %}
+{% if current == 'index' %}{% set trail = trail + [(rshort, none)] %}
+{% elif current == 'check' %}{% set trail = trail + [(rshort, link(base + 'index.html')), (t('nav_check'), none)] %}
+{% elif current == 'changes' %}{% set trail = trail + [(rshort, link(base + 'index.html')), (t('nav_changes'), none)] %}
+{% elif m is defined %}{% set trail = trail + [(rshort, link(base + 'index.html')), (name(m.name), none)] %}
+{% else %}{% set trail = trail + [(rshort, link(base + 'index.html'))] %}{% endif %}
+{{ crumbs(trail) }}
 <nav class="round-nav" aria-label="{{ t('nav_round') }}">
   <a href="{{ link(base + 'index.html') }}"{% if current == 'index' %} aria-current="page"{% endif %}>{{ t('results_heading') }}</a>
   <a href="{{ link(base + 'check.html') }}"{% if current == 'check' %} aria-current="page"{% endif %}>{{ t('nav_check') }}</a>

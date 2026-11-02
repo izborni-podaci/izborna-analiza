@@ -241,7 +241,7 @@ select, input[type="search"] { font: inherit; font-size: 0.95rem; min-height: 40
 .example { margin: 20px 0 24px; border: 1px solid var(--ink); padding: 18px 20px; max-width: 760px; }
 .example-title { font-size: 1.3rem; margin: 4px 0 0; }
 .timeline { list-style: none; padding: 0; margin: 14px 0 10px; display: grid; gap: 8px; }
-.timeline li { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 12px; }
+.timeline > li { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 12px; }
 
 /* charts */
 .chart { display: block; width: 100%; height: auto; max-width: 720px; }
@@ -286,7 +286,7 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
   .main-nav { order: 3; width: 100%; gap: 0 18px; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
   .round-nav { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
   .band { margin: 0 -16px; padding: 28px 16px 32px; }
-  .timeline li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .timeline > li { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .round-nav a { display: inline-flex; align-items: center; min-height: 44px; }
   .langs a, .theme-toggle, .menu summary { min-height: 44px; }
   .key { columns: 1; }
@@ -305,3 +305,17 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 }
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .example .kicker { margin-top: 0; }
+
+/* breadcrumbs and station pages */
+.crumbs ol { list-style: none; display: flex; flex-wrap: wrap; gap: 2px 8px; padding: 0; margin: 18px 0 0; font-size: 0.875rem; color: var(--ink-2); }
+.crumbs li + li::before { content: "›"; margin-right: 8px; color: var(--ink-2); }
+.crumbs a { color: var(--ink-2); }
+.crumbs [aria-current] { color: var(--ink); }
+.crumbs + .page-title, .crumbs + .kicker { margin-top: 14px; }
+.crumbs + .round-nav { margin-top: 10px; }
+.station-title { margin: 4px 0 8px; }
+.station-summary { margin: 12px 0; line-height: 1.8; }
+.station-latest { margin-top: 8px; }
+.station-timeline { gap: 0; }
+.station-timeline > li { padding: 14px 0; border-top: 1px solid var(--grid); }
+.station-timeline .flags { margin: 0; }

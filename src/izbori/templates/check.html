@@ -39,7 +39,7 @@
   {% set s = it.s %}
   <article class="card" data-place="{% if s %}{{ name(s.municipality) }} {{ '%05d'|format(s.number|int) }}{% endif %}" data-mun="{{ it.mun }}" data-types="{{ it.types }}" data-text="{% if s %}{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}{% endif %}">
     <header>
-      <h2 class="card-title">{% if s %}<a href="{{ link(base + 'm/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a> <span class="muted">{{ name(s.name) }}</span>{% else %}{{ it.key }}{% endif %}</h2>
+      <h2 class="card-title">{% if s %}<a href="{% if st_path(it.key) %}{{ link(st_path(it.key)) }}{% else %}{{ link(base + 'm/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}{% endif %}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a> <span class="muted">{{ name(s.name) }}</span>{% else %}{{ it.key }}{% endif %}</h2>
       <p class="muted small">{{ t('first_flagged') }}: {{ time(it.seen) }}</p>
     </header>
     {{ mx.chips(it.flags) }}
