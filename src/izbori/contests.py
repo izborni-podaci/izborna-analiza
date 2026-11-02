@@ -126,7 +126,7 @@ def proportional(votes: list[int], voted: int, minority: list[bool], seats: int,
 @dataclass
 class Presidential:
     order: list[int]  # contestant indexes, most votes first
-    needed: int  # more than half of voters who voted
+    needed: int  # more than half of voters who voted (ballots in the box, as RIK counts them)
     leader_votes: int
     leader_share: float | None
     majority: bool
@@ -166,7 +166,7 @@ def evaluate(rnd: Round) -> tuple[Totals, Proportional | Presidential | None]:
     t = totals(rnd.stations, n)
     rules = contest_rules(rnd)
     if rnd.kind == "presidential":
-        return t, presidential(t.votes, t.voted)
+        return t, presidential(t.votes, t.ballots or t.voted)  # RIK counts "voters who voted" as ballots in the box
     if rnd.kind in ("parliamentary", "provincial", "local") and rules.get("seats"):
         seats = int(rules["seats"])
         return t, proportional(
