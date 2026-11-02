@@ -35,6 +35,8 @@ _TEXT = {
                                    "Invalid: {invalid} ({share}); municipality median {median}"),
     "turnout_jump": ("Излазност {before} → {now}; медијана промене у општини {base} поена",
                      "Turnout {before} → {now}; municipality's median change {base} points"),
+    "turnout_drop": ("Излазност {before} → {now}; медијана промене у општини {base} поена",
+                     "Turnout {before} → {now}; municipality's median change {base} points"),
     "near_unanimity": ("Излазност {turnout}; {contestant}: {share} важећих гласова",
                        "Turnout {turnout}; {contestant}: {share} of valid votes"),
     "high_turnout": ("Излазност {turnout}, уписано {registered}", "Turnout {turnout}, {registered} registered"),
@@ -82,7 +84,7 @@ def describe(flag: Flag, loc: str, contestant_label=lambda n: str(n), kind: str 
     elif flag.code == "invalid_spike":
         values = {"invalid": i(d["invalid"]), "share": p(d["share"]),
                   "median": p(d["median"]) if "median" in d else ""}
-    elif flag.code == "turnout_jump":
+    elif flag.code in ("turnout_jump", "turnout_drop"):
         n = 100 * d.get("base", d.get("national", 0))
         values = {"before": p(d["before"]), "now": p(d["now"]),
                   "base": ("+" if n > 0 else "−" if n < 0 else "") + fmt_num(abs(n), loc)}

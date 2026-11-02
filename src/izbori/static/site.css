@@ -68,6 +68,8 @@ header.top { background: var(--surface); border-bottom: 1px solid var(--border);
 .lede { font-size: 1.1rem; color: var(--ink-2); }
 .principle { border-left: 3px solid var(--accent); padding: 8px 12px; background: var(--surface); margin: 12px 0; }
 .callout { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-weight: 600; }
+.toc { position: sticky; top: 0; z-index: 5; background: var(--page); border-bottom: 1px solid var(--border); padding: 8px 0; margin: 12px 0 4px; font-size: 0.95rem; line-height: 1.8; }
+.toc a { white-space: nowrap; }
 .rule { color: var(--ink-2); font-size: 0.9rem; }
 .muted { color: var(--ink-2); }
 .small { font-size: 0.875rem; }

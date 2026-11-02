@@ -99,8 +99,9 @@ class Site:
         order = sorted(range(len(rnd.contestants)), key=lambda i: -totals.votes[i])
         seat_slots = {}
         if isinstance(a.contest, Proportional):
-            winners = [r.index for r in a.contest.lists if r.seats]
-            seat_slots = {idx: (k + 1 if k < SERIES else 0) for k, idx in enumerate(sorted(winners))}
+            order.sort(key=lambda i: -a.contest.lists[i].seats)  # most seats first, then most votes
+            winners = [i for i in order if a.contest.lists[i].seats]
+            seat_slots = {idx: (k + 1 if k < SERIES else 0) for k, idx in enumerate(winners)}
         top_share = max((totals.share_of_voted(i) or 0) for i in range(len(rnd.contestants))) if rnd.contestants else 0
         marker = None
         if isinstance(a.contest, Presidential):
@@ -123,9 +124,9 @@ class Site:
                 "marker": marker / scale if marker else None}
         if isinstance(a.contest, Proportional):
             p = a.contest
-            view["seat_bar"] = [{"slot": seat_slots[r.index], "seats": r.seats, "label": rnd.contestants[r.index].label,
-                                 "number": rnd.contestants[r.index].number}
-                                for r in sorted(p.lists, key=lambda r: r.index) if r.seats]
+            view["seat_bar"] = [{"slot": seat_slots[i], "seats": p.lists[i].seats, "label": rnd.contestants[i].label,
+                                 "number": rnd.contestants[i].number}
+                                for i in order if p.lists[i].seats]
             view["threshold_votes"] = p.threshold_votes
             view["seats"] = p.seats
             view["majority"] = p.majority
@@ -221,13 +222,7 @@ class Site:
             counts[f.code] += 1
         group_counts = {g: len({f.station for f in a.flags if f.check.group == g}) for g in GROUPS}
         ctrl = boards.coverage(boards.load_store(self.archive.dir(rid)))
-        ctrl_table = []
-        for c in a.round.contestants:
-            readable = [v for v in ctrl.values() if v["lists"] is not None]
-            with_member = sum(1 for v in readable if v["lists"].get(str(c.number), {}).get("member"))
-            ctrl_table.append({"number": c.number, "label": c.label, "with_member": with_member,
-                               "share": with_member / len(readable) if readable else None})
-        ctrl_readable = sum(1 for v in ctrl.values() if v["lists"] is not None)
+        ctrl_table, ctrl_readable = ctrl_rows(a.round.contestants, ctrl.values())
         common = {"rebuilt": self.archive.meta(rid).get("source") == "results_app",
                   "ctrl_readable": ctrl_readable, "a": a, "rnd": a.round, "totals": totals, "base": base, "view": view,
                   "snapshots": a.snapshots, "label": label, "rtitle": self.round_title(a.round, loc),
@@ -274,8 +269,26 @@ class Site:
             rows = [{"s": s, "flags": self.flag_view(a, by_station.get(s.key, []), loc),
                      "notes": a.notes.get(s.key, [])} for s in sts]
             votes = [sum((s.votes[i] or 0) for s in sts if s.counted) for i in range(len(a.round.contestants))]
+            mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
-                       **common)
+                       mctrl=mctrl, mreadable=mreadable, **common)
+
+
+def ctrl_rows(contestants, coverage) -> tuple[list[dict], int]:
+    """Per list: at how many stations it had a member and a deputy on the extended board, most first."""
+    readable = [v for v in coverage if v["lists"] is not None]
+    rows = []
+    for c in contestants:
+        got = [v["lists"].get(str(c.number), {}) for v in readable]
+        members = sum(1 for g in got if g.get("member"))
+        deputies = sum(1 for g in got if g.get("deputy"))
+        rows.append({"number": c.number, "label": c.label, "members": members, "deputies": deputies,
+                     "total": members + deputies})
+    rows.sort(key=lambda r: (-r["total"], -r["members"], r["number"]))
+    top = max((r["total"] for r in rows), default=0)
+    for r in rows:
+        r["bar"] = r["total"] / top if top else 0
+    return rows, len(readable)
 
 
 def build(archive: Archive, out: Path, notes_dir: Path | None, site_url: str = SITE_URL) -> Path:

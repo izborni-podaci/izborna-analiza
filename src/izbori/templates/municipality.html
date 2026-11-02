@@ -14,6 +14,11 @@
   <div class="tile"><p class="tile-label">{{ t('flagged') }}</p><p class="tile-value">{{ i(m.flagged) }}</p></div>
 </section>
 
+{% if ctrl_known and mreadable %}
+<h2>{{ t('ctrl_heading') }}</h2>
+{{ mx.ctrl_summary(mctrl, mreadable, m.stations) }}
+{% endif %}
+
 <h2>{{ t('stations_heading') }}</h2>
 <div class="table-wrap">
 <table class="stations">

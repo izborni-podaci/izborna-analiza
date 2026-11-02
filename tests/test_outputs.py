@@ -107,6 +107,9 @@ def test_site_shows_controllers(tmp_path, archive):
     round_page = (out / "r/680072/index.html").read_text(encoding="utf-8")
     assert "Kontrolori u biračkim odborima" in round_page
     mun = (out / f"r/680072/m/{s.municipality_code}.html").read_text(encoding="utf-8")
-    assert "Kontrolori: liste 1, 3 (2 od 18)" in mun and "OŠ PRIMER, GLAVNA 1" in mun
-    assert "Controllers: lists 1, 3 (2 of 18)" in (out / f"en/r/680072/m/{s.municipality_code}.html").read_text(
+    assert "Kontrolori: liste 1, 3" in mun and "od 18" not in mun and "OŠ PRIMER, GLAVNA 1" in mun
+    assert "Controllers: lists 1, 3" in (out / f"en/r/680072/m/{s.municipality_code}.html").read_text(
         encoding="utf-8")
+    assert "Kontrolora ukupno" in mun and "Kontrolora ukupno" in round_page
+    order = [round_page.index(f'id="{x}"') for x in ("check", "results", "controllers", "municipalities", "stats")]
+    assert order == sorted(order)

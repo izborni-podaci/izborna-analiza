@@ -14,6 +14,29 @@
 
 {% if rebuilt %}<p class="callout">{{ t('rebuilt_note') }}</p>{% endif %}
 
+<nav class="toc" aria-label="{{ t('on_this_page') }}">
+  <a href="#check">{{ t('check_heading') }}</a> · <a href="#results">{{ t('results_heading') }}</a>{% if ctrl_known %} · <a href="#controllers">{{ t('ctrl_heading') }}</a>{% endif %} · <a href="#municipalities">{{ t('municipalities_heading') }}</a> · <a href="#stats">{{ t('context_heading') }}</a>
+</nav>
+
+<section id="check">
+  <h2>{{ t('check_heading') }}</h2>
+  <p class="principle">{{ t('principle') }}</p>
+  <p><a class="button" href="{{ link(base + 'check.html') }}">{{ t('see_all_flags') }} ({{ i(a.by_station|length) }})</a></p>
+  <div class="groups">
+  {% for g in groups %}
+    <div class="group g-{{ g }}">
+      <h3><span class="dot" aria-hidden="true"></span>{{ t('group_' ~ g) }}</h3>
+      <p class="muted">{{ t('group_' ~ g ~ '_note') }}</p>
+      <ul class="plain">
+      {% for c in checks if c.group == g %}
+        <li>{% if counts[c.code] %}<a href="{{ link(base + 'check.html') }}#{{ c.code }}">{{ check_name(c.code) }}</a>{% else %}<span class="muted">{{ check_name(c.code) }}</span>{% endif %} <span class="count">{{ i(counts[c.code]) }}</span></li>
+      {% endfor %}
+      </ul>
+    </div>
+  {% endfor %}
+  </div>
+</section>
+
 <section class="tiles" aria-label="{{ t('results_heading') }}">
   <div class="tile"><p class="tile-label">{{ t('registered') }}</p><p class="tile-value">{{ i(totals.registered) }}</p></div>
   <div class="tile"><p class="tile-label">{{ t('voted') }}</p><p class="tile-value">{{ i(totals.voted) }}</p><p class="tile-sub">{{ t('turnout') }} {{ pct(totals.turnout, 2) }}</p></div>
@@ -96,42 +119,37 @@
   {% endif %}
 </section>
 
-<section id="check">
-  <h2>{{ t('check_heading') }}</h2>
-  <p class="principle">{{ t('principle') }}</p>
-  <p><a class="button" href="{{ link(base + 'check.html') }}">{{ t('see_all_flags') }} ({{ i(a.by_station|length) }})</a></p>
-  <div class="groups">
-  {% for g in groups %}
-    <div class="group g-{{ g }}">
-      <h3><span class="dot" aria-hidden="true"></span>{{ t('group_' ~ g) }}</h3>
-      <p class="muted">{{ t('group_' ~ g ~ '_note') }}</p>
-      <ul class="plain">
-      {% for c in checks if c.group == g %}
-        <li>{% if counts[c.code] %}<a href="{{ link(base + 'check.html') }}#{{ c.code }}">{{ check_name(c.code) }}</a>{% else %}<span class="muted">{{ check_name(c.code) }}</span>{% endif %} <span class="count">{{ i(counts[c.code]) }}</span></li>
-      {% endfor %}
-      </ul>
-    </div>
-  {% endfor %}
-  </div>
-</section>
-
 {% if ctrl_known %}
 <section id="controllers">
   <h2>{{ t('ctrl_heading') }}</h2>
-  <p class="rule">{{ t('ctrl_note') }}</p>
-  <p>{{ t('ctrl_read', n=i(ctrl_readable), total=i(totals.stations)) }}</p>
+  {{ mx.ctrl_summary(ctrl_table, ctrl_readable, totals.stations) }}
+</section>
+{% endif %}
+
+<section id="municipalities">
+  <h2>{{ t('municipalities_heading') }}</h2>
+  <label class="filter">{{ t('search_mun') }} <input type="search" data-filter="#mun-table" autocomplete="off"></label>
   <div class="table-wrap">
-  <table class="compact">
-    <thead><tr><th class="num">{{ t('no') }}</th><th>{{ t('candidate') if rnd.kind == 'presidential' else t('list') }}</th><th class="num">{{ t('ctrl_with_member') }}</th><th class="num">{{ t('ctrl_share') }}</th><th class="bar-col"><span class="visually-hidden">{{ t('ctrl_share') }}</span></th></tr></thead>
+  <table class="compact" id="mun-table">
+    <thead><tr>
+      <th>{{ t('municipality') }}</th><th>{{ t('district') }}</th><th class="num">{{ t('stations') }}</th>
+      <th class="num">{{ t('turnout') }}</th><th class="num">{{ t('invalid') }}</th><th class="num">{{ t('flagged') }}</th>
+    </tr></thead>
     <tbody>
-    {% for row in ctrl_table %}
-      <tr><td class="num">{{ row.number }}</td><td>{{ name(row.label) }}</td><td class="num">{{ i(row.with_member) }}</td><td class="num">{{ pct(row.share, 1) }}</td><td class="bar-col"><div class="barbox"><span class="hbar" style="width: {{ '%.2f'|format(100 * (row.share or 0)) }}%"></span></div></td></tr>
+    {% for m in municipalities %}
+      <tr data-text="{{ name(m.name) }} {{ name(m.district) }}">
+        <td><a href="{{ link(base + 'm/' ~ m.code ~ '.html') }}">{{ name(m.name) }}</a></td>
+        <td class="muted">{% if m.kind == 'domestic' %}{{ name(m.district) }}{% endif %}</td>
+        <td class="num">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</td>
+        <td class="num">{{ pct(m.turnout, 1) }}</td>
+        <td class="num">{{ pct(m.invalid, 1) }}</td>
+        <td class="num">{% if m.flagged %}<strong>{{ i(m.flagged) }}</strong>{% else %}0{% endif %}</td>
+      </tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
 </section>
-{% endif %}
 
 <section id="stats">
   <h2>{{ t('context_heading') }}</h2>
@@ -189,31 +207,6 @@
         </tbody>
       </table>
     </div>
-  </div>
-</section>
-
-<section id="municipalities">
-  <h2>{{ t('municipalities_heading') }}</h2>
-  <label class="filter">{{ t('search_mun') }} <input type="search" data-filter="#mun-table" autocomplete="off"></label>
-  <div class="table-wrap">
-  <table class="compact" id="mun-table">
-    <thead><tr>
-      <th>{{ t('municipality') }}</th><th>{{ t('district') }}</th><th class="num">{{ t('stations') }}</th>
-      <th class="num">{{ t('turnout') }}</th><th class="num">{{ t('invalid') }}</th><th class="num">{{ t('flagged') }}</th>
-    </tr></thead>
-    <tbody>
-    {% for m in municipalities %}
-      <tr data-text="{{ name(m.name) }} {{ name(m.district) }}">
-        <td><a href="{{ link(base + 'm/' ~ m.code ~ '.html') }}">{{ name(m.name) }}</a></td>
-        <td class="muted">{% if m.kind == 'domestic' %}{{ name(m.district) }}{% endif %}</td>
-        <td class="num">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</td>
-        <td class="num">{{ pct(m.turnout, 1) }}</td>
-        <td class="num">{{ pct(m.invalid, 1) }}</td>
-        <td class="num">{% if m.flagged %}<strong>{{ i(m.flagged) }}</strong>{% else %}0{% endif %}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
   </div>
 </section>
 {% endblock %}

@@ -38,6 +38,22 @@
 {% elif c.lists is none %}<p class="ctrl small muted">{{ t('ctrl_unreadable') }}</p>
 {% else %}
 {% set members = c.lists.items()|selectattr('1.member')|map(attribute='0')|map('int')|sort|list %}
-<p class="ctrl small">{% if members %}{{ t('ctrl_lists', lists=members|join(', '), n=members|length, total=n_lists) }}{% else %}{{ t('ctrl_none_named') }}{% endif %}{% if c.address %} · {{ t('address') }}: {{ name(c.address) }}{% endif %}</p>
+{% set deputies = c.lists.items()|rejectattr('1.member')|selectattr('1.deputy')|map(attribute='0')|map('int')|sort|list %}
+<p class="ctrl small">{% if members or deputies %}{{ t('ctrl_lists', lists=members|join(', ') or '—') }}{% if deputies %} · {{ t('ctrl_deputy_only', lists=deputies|join(', ')) }}{% endif %}{% else %}{{ t('ctrl_none_named') }}{% endif %}{% if c.address %} · {{ t('address') }}: {{ name(c.address) }}{% endif %}</p>
 {% endif %}
+{% endmacro %}
+
+{% macro ctrl_summary(rows, readable, total) %}
+<p class="rule">{{ t('ctrl_note') }}</p>
+<p>{{ t('ctrl_read', n=i(readable), total=i(total)) }}</p>
+<div class="table-wrap">
+<table class="compact">
+  <thead><tr><th class="num">{{ t('no') }}</th><th>{{ t('candidate') if rnd.kind == 'presidential' else t('list') }}</th><th class="num">{{ t('ctrl_members') }}</th><th class="num">{{ t('ctrl_deputies') }}</th><th class="num">{{ t('ctrl_total') }}</th><th class="bar-col"><span class="visually-hidden">{{ t('ctrl_total') }}</span></th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr><td class="num">{{ row.number }}</td><td>{{ name(row.label) }}</td><td class="num">{{ i(row.members) }}</td><td class="num">{{ i(row.deputies) }}</td><td class="num"><strong>{{ i(row.total) }}</strong></td><td class="bar-col"><div class="barbox"><span class="hbar" style="width: {{ '%.2f'|format(100 * row.bar) }}%"></span></div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
 {% endmacro %}

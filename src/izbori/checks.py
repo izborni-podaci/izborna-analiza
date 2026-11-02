@@ -36,6 +36,7 @@ CHECKS = [
     Check("correction_unapplied", "change", 3),
     Check("invalid_spike", "unusual", 2),
     Check("turnout_jump", "unusual", 2),
+    Check("turnout_drop", "unusual", 1),
     Check("near_unanimity", "unusual", 1),
     Check("high_turnout", "unusual", 1),
 ]
@@ -217,8 +218,8 @@ def history_flags(rnd: Round, previous: list[Round]) -> list[Flag]:
         base = median(local) if len(local) >= 5 else median(by_round[prev.id])
         shift = (s.turnout - p.turnout) - base
         if abs(shift) >= RULES["turnout_jump"]:
-            out.append(Flag(s.key, "turnout_jump", {"before": p.turnout, "now": s.turnout, "base": base,
-                                                    "round": prev.id}))
+            code = "turnout_jump" if shift > 0 else "turnout_drop"
+            out.append(Flag(s.key, code, {"before": p.turnout, "now": s.turnout, "base": base, "round": prev.id}))
     return out
 
 
