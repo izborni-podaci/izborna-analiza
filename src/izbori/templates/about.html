@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
 {% block title %}{{ t('nav_about') }}{% endblock %}
 {% block main %}
 <article class="prose">
@@ -43,7 +44,7 @@
   <thead><tr><th>{{ t('flags') }}</th><th>{{ t('about_rule') }}</th><th class="num">{{ t('about_weight') }}</th></tr></thead>
   <tbody>
   {% for c in checks if c.group == g %}
-    <tr id="{{ c.code }}"><td><strong>{{ check_name(c.code) }}</strong></td><td>{{ check_rule(c.code) }}</td><td class="num">{{ num(c.weight, 0) }}</td></tr>
+    <tr id="{{ c.code }}"><td><strong class="sym-line">{{ mx.sym(c.code, c.group) }}{{ check_name(c.code) }}</strong></td><td>{{ check_rule(c.code) }}</td><td class="num">{{ num(c.weight, 0) }}</td></tr>
   {% endfor %}
   </tbody>
 </table>

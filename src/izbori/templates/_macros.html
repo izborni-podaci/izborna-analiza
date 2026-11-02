@@ -1,3 +1,22 @@
+{# One symbol per check: the shape says which check, the colour which group. Always next to the check's name. #}
+{% macro sym(code, group) %}<svg class="sym g-{{ group }}" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+{% if code == 'signed_over_ballots' %}<rect x="3" y="3" width="10" height="10" fill="currentColor"/>
+{% elif code == 'ballots_over_signed' %}<rect x="2.5" y="2.5" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 5.2v5.6M5.2 8h5.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+{% elif code == 'sum_mismatch' %}<path d="M12 3H4.2l4.3 5-4.3 5H12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+{% elif code == 'ballot_mismatch' %}<path d="M3 6h10M3 10.5h10M10.6 2.6 5.4 13.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+{% elif code == 'signed_over_registered' %}<path d="M3 2.8h10M8 13.5V6M5 9l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+{% elif code == 'full_turnout_typo' %}<circle cx="8" cy="8" r="5.6" fill="currentColor"/>
+{% elif code == 'correction_still_odd' %}<path d="M3 13l.9-3.4 6.6-6.6 2.5 2.5-6.6 6.6z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+{% elif code == 'changed' %}<path d="M12.8 8a4.8 4.8 0 1 1-1.4-3.4M12.8 2.6v3.2H9.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+{% elif code == 'minutes_replaced' %}<path d="M4 1.8h5.2l3 3v9.4H4zM9 1.8v3.2h3.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+{% elif code == 'correction_unapplied' %}<path d="M3 13l.9-3.4 6.6-6.6 2.5 2.5-6.6 6.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+{% elif code == 'invalid_spike' %}<path d="M3.8 3.8l8.4 8.4M12.2 3.8l-8.4 8.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+{% elif code == 'turnout_jump' %}<path d="M8 2.6l6 10.4H2z" fill="currentColor"/>
+{% elif code == 'turnout_drop' %}<path d="M8 13.4L2 3h12z" fill="currentColor"/>
+{% elif code == 'near_unanimity' %}<path d="M5.6 4.6 8.8 2.6v10.8M5.6 13.4h6.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+{% elif code == 'high_turnout' %}<path d="M3.6 8.6 8 4.2l4.4 4.4M3.6 12.8 8 8.4l4.4 4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+{% else %}<circle cx="8" cy="8" r="4" fill="currentColor"/>{% endif %}</svg>{% endmacro %}
+
 {% macro round_nav(current) %}
 <nav class="round-nav" aria-label="{{ t('nav_round') }}">
   <a href="{{ link(base + 'index.html') }}"{% if current == 'index' %} aria-current="page"{% endif %}>{{ t('results_heading') }}</a>
@@ -10,7 +29,7 @@
 {% macro chips(flags) %}
 <ul class="flags">
   {% for f in flags %}
-  <li class="flag g-{{ f.group }}"><span class="dot" aria-hidden="true"></span><span><strong>{{ f.name }}.</strong> {{ f.text }}</span></li>
+  <li class="flag g-{{ f.group }}">{{ sym(f.code, f.group) }}<span><strong>{{ f.name }}.</strong> {{ f.text }}</span></li>
   {% endfor %}
 </ul>
 {% endmacro %}
@@ -61,9 +80,9 @@
 {% macro check_spotlight(n, total, counts, href, rest='check_big_rest', sub=none) %}
 <p class="big-number"><strong>{{ i(n) }}</strong> {{ t(rest, total=i(total), share=pct(n / total if total else none, 1)) }}</p>
 {% if sub %}<p>{{ sub }}</p>{% endif %}
-<div class="type-cards">
+<div class="chips">
 {% for g in groups %}{% for c in checks if c.group == g and counts.get(c.code) %}
-  <a class="type-card g-{{ g }}" href="{{ href }}#{{ c.code }}"><span class="dot" aria-hidden="true"></span><span class="tc-name">{{ check_name(c.code) }}</span><span class="tc-n">{{ i(counts[c.code]) }}</span></a>
+  <a class="chip g-{{ g }}" href="{{ href }}#{{ c.code }}">{{ sym(c.code, g) }}<span>{{ check_name(c.code) }}</span><strong>{{ i(counts[c.code]) }}</strong></a>
 {% endfor %}{% endfor %}
 </div>
 <p><a class="button" href="{{ href }}">{{ t('see_all_flags') }}</a></p>

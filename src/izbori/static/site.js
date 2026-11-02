@@ -11,6 +11,23 @@
     return out.replace(/đ/g, 'dj').normalize('NFD').replace(/[̀-ͯ]/g, '');
   };
   const lang = document.documentElement.lang || 'en';
+
+  // Light or dark, remembered on this device; until chosen, the system's setting decides.
+  const toggle = document.querySelector('[data-theme-toggle]');
+  if (toggle) {
+    const root = document.documentElement;
+    const isDark = () => (root.dataset.theme
+      ? root.dataset.theme === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const label = () => { toggle.textContent = isDark() ? toggle.dataset.light : toggle.dataset.dark; };
+    toggle.hidden = false;
+    label();
+    toggle.addEventListener('click', () => {
+      root.dataset.theme = isDark() ? 'light' : 'dark';
+      try { localStorage.setItem('theme', root.dataset.theme); } catch (e) { /* private window: this page only */ }
+      label();
+    });
+  }
   const fmt = new Intl.NumberFormat(lang.startsWith('sr') ? 'sr-Latn' : 'en');
 
   document.querySelectorAll('input[data-filter]').forEach((input) => {

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
 {% block title %}{{ t('repeat_title') }}{% endblock %}
 {% block main %}
 <h1>{{ t('repeat_title') }}</h1>
@@ -15,9 +16,9 @@
   {% if same %}
   <h2>{{ t('repeat_same_heading') }}</h2>
   <p class="small">{{ t('repeat_same_note') }}</p>
-  <div class="type-cards">
+  <div class="chips">
   {% for code, n in same %}
-    <a class="type-card g-{{ group_of[code] }}" href="#rep-table" data-set-same="{{ code }}"><span class="dot" aria-hidden="true"></span><span class="tc-name">{{ check_name(code) }}</span><span class="tc-n">{{ i(n) }}</span></a>
+    <a class="chip g-{{ group_of[code] }}" href="#rep-table" data-set-same="{{ code }}">{{ mx.sym(code, group_of[code]) }}<span>{{ check_name(code) }}</span><strong>{{ i(n) }}</strong></a>
   {% endfor %}
   </div>
   {% endif %}
@@ -53,11 +54,11 @@
         {% if s.name %}<div class="small muted">{{ name(s.name) }}</div>{% endif %}
       </td>
       <td class="num" data-v="{{ row.k }}"><strong>{{ row.k }}</strong>&nbsp;/&nbsp;{{ row.n }}</td>
-      <td class="small">{% for code, m in row.same %}<div class="g-{{ group_of[code] }}"><span class="dot" aria-hidden="true"></span>{{ check_name(code) }} · {{ t('repeat_times', n=m) }}</div>{% else %}<span class="muted">{{ t('repeat_none') }}</span>{% endfor %}</td>
+      <td class="small">{% for code, m in row.same %}<div class="sym-line">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }} · {{ t('repeat_times', n=m) }}</div>{% else %}<span class="muted">{{ t('repeat_none') }}</span>{% endfor %}</td>
       <td class="num" data-v="{{ '%.3f'|format(row.score) }}">{{ num(row.score, 1) }}</td>
       {% for r in rounds %}
       <td class="small">
-        {% if r.id in row.flags %}<a class="cell-flags" href="{{ link('r/' ~ r.id ~ '/m/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{% for code in row.flags[r.id] %}<span class="g-{{ group_of[code] }}"><span class="dot" aria-hidden="true"></span>{{ check_name(code) }}</span>{% endfor %}</a>
+        {% if r.id in row.flags %}<a class="cell-flags" href="{{ link('r/' ~ r.id ~ '/m/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{% for code in row.flags[r.id] %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}</span>{% endfor %}</a>
         {% elif r.id in row.took %}<span class="muted" title="{{ t('repeat_no_flag') }}">—</span>
         {% else %}<span class="muted" title="{{ t('repeat_not_there') }}">·</span>{% endif %}
         {% if r.id in row.renamed %}<span class="renamed" title="{{ t('repeat_renamed') }}">≠</span>{% endif %}

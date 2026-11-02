@@ -21,7 +21,7 @@ from izbori.describe import describe, field_label
 from izbori.history import Archive
 from izbori.links import safe_url
 from izbori.model import last_url
-from izbori.i18n import (LANG_ATTR, LOCALES, PREFIX, check_name, check_rule, fmt_int, fmt_num, fmt_pct,
+from izbori.i18n import (LANG_ATTR, LOCALES, MONTHS_EN, PREFIX, check_name, check_rule, fmt_int, fmt_num, fmt_pct,
                          fmt_time, keep, kind_name, latin_page, strip_keep, t)
 from izbori.report import Analysis, analyze
 from izbori.translit import latin
@@ -171,8 +171,7 @@ class Site:
         if self.out.exists():
             shutil.rmtree(self.out)
         (self.out / "static").mkdir(parents=True)
-        for f in (HERE / "static").iterdir():
-            shutil.copy(f, self.out / "static" / f.name)
+        shutil.copytree(HERE / "static", self.out / "static", dirs_exist_ok=True)
         (self.out / ".nojekyll").write_text("", encoding="utf-8")
         self.cache: dict = {}
         rids = self.archive.round_ids()
@@ -192,20 +191,32 @@ class Site:
                     by_code[f.code].add(key)
         overall = {"flagged": len(rep_rows), "total": len(places), "repeated": rep_n2,
                    "counts": {code: len(keys) for code, keys in by_code.items()}}
+        group_of = {c.code: c.group for c in CHECKS}
+        top = max(overall["counts"].values(), default=0) or 1
+        appear = [{"code": c.code, "group": c.group, "n": overall["counts"][c.code],
+                   "w": 100 * overall["counts"][c.code] / top}
+                  for c in sorted(CHECKS, key=lambda c: -overall["counts"].get(c.code, 0)) if overall["counts"].get(c.code)]
+        example = rep_rows[0] if rep_rows and rep_rows[0]["k"] >= 2 else None
+        share = {a.round.id: len(a.by_station) / a.totals.stations if a.totals.stations else 0.0 for a in rounds}
+        share_top = max(share.values(), default=0) or 1
         for loc in LOCALES:
-            summaries = [{"id": a.round.id, "title_display": self.round_title(a.round, loc), "kind": a.round.kind,
-                          "counted": a.totals.counted, "total": a.totals.stations, "counting": a.counting,
-                          "rik_time": a.round.rik_time, "fetched": a.round.fetched,
-                          "flagged": len(a.by_station), "counts": dict(Counter(f.code for f in a.flags))}
-                         for a in rounds]
-            self.write(loc, "index.html", "index.html", rounds=summaries, checks=CHECKS, groups=GROUPS,
-                       overall=overall)
-            self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html")
-            self.write(loc, "about.html", "about.html", checks=CHECKS, groups=GROUPS)
             columns = [{"id": a.round.id, "title": self.round_title(a.round, loc), "national": national[a.round.id],
                         "short": self.short_title(a.round, loc)} for a in oldest_first]
+            summaries = [{"id": a.round.id, "title_display": self.round_title(a.round, loc), "kind": a.round.kind,
+                          "short": self.short_title(a.round, loc),
+                          "date": fmt_date(self.archive.meta(a.round.id).get("date"), loc),
+                          "counted": a.totals.counted, "total": a.totals.stations, "counting": a.counting,
+                          "rik_time": a.round.rik_time, "fetched": a.round.fetched,
+                          "flagged": len(a.by_station), "counts": dict(Counter(f.code for f in a.flags)),
+                          "share": share[a.round.id], "bar": 100 * share[a.round.id] / share_top}
+                         for a in rounds]
+            self.write(loc, "index.html", "index.html", rounds=summaries, checks=CHECKS, groups=GROUPS,
+                       overall=overall, appear=appear, same=rep_same, example=example, columns=columns,
+                       group_of=group_of)
+            self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html")
+            self.write(loc, "about.html", "about.html", checks=CHECKS, groups=GROUPS)
             self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns,
-                       rounds=columns, same=rep_same, checks=CHECKS, group_of={c.code: c.group for c in CHECKS})
+                       rounds=columns, same=rep_same, checks=CHECKS, group_of=group_of)
             for a in rounds:
                 self.round_pages(a, loc)
         # GitHub Pages serves this file for a missing page at any depth, so its links are absolute.
@@ -298,6 +309,14 @@ class Site:
             mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
                        mctrl=mctrl, mreadable=mreadable, **common)
+
+
+def fmt_date(iso: str | None, loc: str) -> str:
+    """An election day (YYYY-MM-DD) as 25.10.2026. or 25 Oct 2026."""
+    if not iso:
+        return ""
+    y, m, d = (int(x) for x in iso[:10].split("-"))
+    return f"{d} {MONTHS_EN[m - 1]} {y}" if loc == "en" else f"{d}.{m}.{y}."
 
 
 def ctrl_rows(contestants, coverage) -> tuple[list[dict], int]:
