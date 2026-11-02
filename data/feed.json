@@ -2059,5 +2059,205 @@
     "name": "ПРОСТОР ФАБРИКЕ „ЈУМКО“"
    }
   ]
+ },
+ {
+  "t": "2026-11-01T22:26:59+00:00",
+  "round": "680072",
+  "title": "Избори за народне посланике Народне скупштине 2026.",
+  "kind": "parliamentary",
+  "counted": 8392,
+  "total": 8392,
+  "flags": [
+   {
+    "id": "70157/25:minutes_replaced",
+    "code": "minutes_replaced",
+    "station": "70157/25",
+    "data": {
+     "count": 1,
+     "last": "2026-11-01T22:26:59+00:00"
+    },
+    "m": "Градска општина Земун",
+    "mc": "70157",
+    "no": "25",
+    "name": "ОШ \"РАДЕ КОНЧАР\""
+   },
+   {
+    "id": "70785/28:changed",
+    "code": "changed",
+    "station": "70785/28",
+    "data": {
+     "fields": [
+      "glasali_biraci",
+      "lista_1",
+      "lista_10",
+      "lista_2",
+      "lista_3",
+      "listici_u_kutiji",
+      "nevazeci_listici",
+      "upisani_biraci",
+      "vazeci_glasovi"
+     ],
+     "first": {
+      "upisani_biraci": "0",
+      "glasali_biraci": "0",
+      "listici_u_kutiji": "0",
+      "vazeci_glasovi": "0",
+      "nevazeci_listici": "0",
+      "lista_1": "0",
+      "lista_2": "0",
+      "lista_3": "0",
+      "lista_10": "0"
+     },
+     "now": {
+      "upisani_biraci": "155",
+      "glasali_biraci": "77",
+      "listici_u_kutiji": "77",
+      "vazeci_glasovi": "76",
+      "nevazeci_listici": "1",
+      "lista_1": "45",
+      "lista_2": "3",
+      "lista_3": "27",
+      "lista_10": "1"
+     },
+     "times": [
+      "2026-11-01T22:26:59+00:00"
+     ]
+    },
+    "m": "Мајданпек",
+    "mc": "70785",
+    "no": "28",
+    "name": "СЕОСКА ЧИТАОНИЦА"
+   },
+   {
+    "id": "70785/28:minutes_replaced",
+    "code": "minutes_replaced",
+    "station": "70785/28",
+    "data": {
+     "count": 1,
+     "last": "2026-11-01T22:26:59+00:00"
+    },
+    "m": "Мајданпек",
+    "mc": "70785",
+    "no": "28",
+    "name": "СЕОСКА ЧИТАОНИЦА"
+   },
+   {
+    "id": "70785/29:changed",
+    "code": "changed",
+    "station": "70785/29",
+    "data": {
+     "fields": [
+      "glasali_biraci",
+      "lista_1",
+      "lista_2",
+      "lista_3",
+      "listici_u_kutiji",
+      "nevazeci_listici",
+      "upisani_biraci",
+      "vazeci_glasovi"
+     ],
+     "first": {
+      "upisani_biraci": "0",
+      "glasali_biraci": "0",
+      "listici_u_kutiji": "0",
+      "vazeci_glasovi": "0",
+      "nevazeci_listici": "0",
+      "lista_1": "0",
+      "lista_2": "0",
+      "lista_3": "0"
+     },
+     "now": {
+      "upisani_biraci": "406",
+      "glasali_biraci": "199",
+      "listici_u_kutiji": "199",
+      "vazeci_glasovi": "197",
+      "nevazeci_listici": "2",
+      "lista_1": "159",
+      "lista_2": "1",
+      "lista_3": "37"
+     },
+     "times": [
+      "2026-11-01T22:26:59+00:00"
+     ]
+    },
+    "m": "Мајданпек",
+    "mc": "70785",
+    "no": "29",
+    "name": "СЕОСКА ЧИТАОНИЦА"
+   },
+   {
+    "id": "70785/29:minutes_replaced",
+    "code": "minutes_replaced",
+    "station": "70785/29",
+    "data": {
+     "count": 1,
+     "last": "2026-11-01T22:26:59+00:00"
+    },
+    "m": "Мајданпек",
+    "mc": "70785",
+    "no": "29",
+    "name": "СЕОСКА ЧИТАОНИЦА"
+   },
+   {
+    "id": "70785/35:changed",
+    "code": "changed",
+    "station": "70785/35",
+    "data": {
+     "fields": [
+      "glasali_biraci",
+      "lista_1",
+      "lista_11",
+      "lista_15",
+      "lista_3",
+      "listici_u_kutiji",
+      "nevazeci_listici",
+      "upisani_biraci",
+      "vazeci_glasovi"
+     ],
+     "first": {
+      "upisani_biraci": "0",
+      "glasali_biraci": "0",
+      "listici_u_kutiji": "0",
+      "vazeci_glasovi": "0",
+      "nevazeci_listici": "0",
+      "lista_1": "0",
+      "lista_3": "0",
+      "lista_11": "0",
+      "lista_15": "0"
+     },
+     "now": {
+      "upisani_biraci": "299",
+      "glasali_biraci": "170",
+      "listici_u_kutiji": "170",
+      "vazeci_glasovi": "169",
+      "nevazeci_listici": "1",
+      "lista_1": "132",
+      "lista_3": "35",
+      "lista_11": "1",
+      "lista_15": "1"
+     },
+     "times": [
+      "2026-11-01T22:26:59+00:00"
+     ]
+    },
+    "m": "Мајданпек",
+    "mc": "70785",
+    "no": "35",
+    "name": "ЧИТАОНИЦА"
+   },
+   {
+    "id": "70785/35:minutes_replaced",
+    "code": "minutes_replaced",
+    "station": "70785/35",
+    "data": {
+     "count": 1,
+     "last": "2026-11-01T22:26:59+00:00"
+    },
+    "m": "Мајданпек",
+    "mc": "70785",
+    "no": "35",
+    "name": "ЧИТАОНИЦА"
+   }
+  ]
  }
 ]
