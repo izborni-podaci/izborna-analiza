@@ -152,6 +152,20 @@
     {% endfor %}
   </div>
   {% endif %}
+  {% if stats.register %}
+  <h3>{{ t('register_heading') }}</h3>
+  <p class="muted">{{ t('register_note', title=stats.register.title, national=pct(stats.register.national, 1)) }}</p>
+  <div class="table-wrap">
+  <table class="compact">
+    <thead><tr><th>{{ t('municipality') }}</th><th class="num">{{ t('before_reg') }}</th><th class="num">{{ t('now_reg') }}</th><th class="num">{{ t('change') }}</th><th class="num">{{ t('vs_national') }}</th></tr></thead>
+    <tbody>
+    {% for r in stats.register.rows %}
+      <tr><td><a href="{{ link(base + 'm/' ~ r.code ~ '.html') }}">{{ name(r.name) }}</a></td><td class="num">{{ i(r.before) }}</td><td class="num">{{ i(r.now) }}</td><td class="num">{{ pct(r.change, 1) }}</td><td class="num">{{ num(100 * (r.change - stats.register.national), 1) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
   <div class="two-col">
     <div>
       <h3>{{ t('round_heading') }}</h3>

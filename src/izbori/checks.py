@@ -35,7 +35,6 @@ CHECKS = [
     Check("minutes_replaced", "change", 2),
     Check("correction_unapplied", "change", 3),
     Check("invalid_spike", "unusual", 2),
-    Check("register_jump", "unusual", 2),
     Check("turnout_jump", "unusual", 2),
     Check("near_unanimity", "unusual", 1),
     Check("high_turnout", "unusual", 1),
@@ -56,9 +55,8 @@ RULES = {
     "invalid_rel_factor": 3.0,
     "invalid_rel_min": 10,
     "invalid_rel_share": 0.04,
-    "register_jump": 0.10,
-    "register_jump_min": 20,
-    "turnout_jump": 0.20,
+    "turnout_jump": 0.25,
+    "jump_min_registered": 100,
 }
 
 ARITHMETIC = {"sum_mismatch", "ballot_mismatch", "ballots_over_signed", "signed_over_ballots",
@@ -177,40 +175,50 @@ def change_flags(changes: list[dict], stations: dict[str, Station]) -> list[Flag
     return out
 
 
-def _turnout(stations: list[Station]) -> float | None:
-    reg = sum(s.registered for s in stations)
-    return sum(s.voted for s in stations) / reg if reg else None
+GENERIC = {"OSNOVNA", "SKOLA", "DOM", "KULTURE", "MESNA", "ZAJEDNICA", "SALA", "ZGRADA", "PROSTORIJE", "BROJ",
+           "UCIONICA", "HOL", "SREDNJA", "OPSTINE", "SKUPSTINA", "OBDANISTE", "VRTIC", "DECJI"}
+
+
+def same_place(a: Station, b: Station) -> bool:
+    """False when two stations with the same number clearly have different names (the network was renumbered)."""
+    from izbori.boards import tokens
+    ta, tb = tokens(a.name) - GENERIC, tokens(b.name) - GENERIC
+    return not (ta and tb and not ta & tb)
 
 
 def history_flags(rnd: Round, previous: list[Round]) -> list[Flag]:
-    """Compare each station with the most recent earlier round that has it. The baseline change is taken over
-    the stations both rounds share, so a local round can be compared with a national one."""
-    out = []
+    """Turnout at a station compared with the last earlier round that has the same station (same kind of
+    election first). The baseline is the median change at the municipality's other stations, so regional swings
+    and a different kind of election don't count. Registered voters are compared per municipality instead
+    (see stats.register_changes): station areas are redrawn between elections, which moves voters around."""
     now = {s.key: s for s in rnd.stations if s.counted and s.kind == "domestic"}
     earlier = []
     for prev in previous:
         before = {s.key: s for s in prev.stations if s.counted and s.kind == "domestic"}
-        shared = [k for k in now if k in before]
-        if not shared:
-            continue
-        base = (_turnout([now[k] for k in shared]) or 0) - (_turnout([before[k] for k in shared]) or 0)
-        earlier.append((prev, before, base))
+        if any(k in before for k in now):
+            earlier.append((prev, before))
+    pairs = []
     for key, s in now.items():
-        match = next(((prev, before[key], base) for prev, before, base in earlier if key in before), None)
-        if not match:
-            continue
-        prev, p, base = match
-        if not p.registered:
-            continue
-        diff = s.registered - p.registered
-        if abs(diff) >= RULES["register_jump_min"] and abs(diff) / p.registered >= RULES["register_jump"]:
-            out.append(Flag(key, "register_jump", {"before": p.registered, "now": s.registered,
-                                                   "change": diff / p.registered, "round": prev.id}))
-        if s.registered >= RULES["min_registered"] and p.registered >= RULES["min_registered"]:
-            shift = (s.turnout - p.turnout) - base
-            if abs(shift) >= RULES["turnout_jump"]:
-                out.append(Flag(key, "turnout_jump", {"before": p.turnout, "now": s.turnout, "national": base,
-                                                      "round": prev.id}))
+        for prev, before in earlier:
+            p = before.get(key)
+            if p is not None:
+                if s.registered >= RULES["jump_min_registered"] and p.registered >= RULES["jump_min_registered"] \
+                        and same_place(s, p):
+                    pairs.append((s, p, prev))
+                break
+    by_mun: dict[tuple, list[float]] = defaultdict(list)
+    by_round: dict[str, list[float]] = defaultdict(list)
+    for s, p, prev in pairs:
+        by_mun[(prev.id, s.municipality_code)].append(s.turnout - p.turnout)
+        by_round[prev.id].append(s.turnout - p.turnout)
+    out = []
+    for s, p, prev in pairs:
+        local = by_mun[(prev.id, s.municipality_code)]
+        base = median(local) if len(local) >= 5 else median(by_round[prev.id])
+        shift = (s.turnout - p.turnout) - base
+        if abs(shift) >= RULES["turnout_jump"]:
+            out.append(Flag(s.key, "turnout_jump", {"before": p.turnout, "now": s.turnout, "base": base,
+                                                    "round": prev.id}))
     return out
 
 

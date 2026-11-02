@@ -166,10 +166,10 @@ class Site:
         for f in (HERE / "static").iterdir():
             shutil.copy(f, self.out / "static" / f.name)
         (self.out / ".nojekyll").write_text("", encoding="utf-8")
-        cache: dict = {}
+        self.cache: dict = {}
         rids = self.archive.round_ids()
         for rid in rids:
-            self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, cache)
+            self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, self.cache)
         rounds = [self.analyses[r] for r in reversed(rids)]
         for loc in LOCALES:
             summaries = [{"id": a.round.id, "title_display": self.round_title(a.round, loc), "kind": a.round.kind,
@@ -208,6 +208,14 @@ class Site:
             "corr": [(label(i + 1), stats.correlation(a.round, i)) for i in top2],
             "labels": {str(i): label(i + 1) for i in top2},
         }
+        register = None
+        same_kind = [r for r in a.previous if self.archive.meta(r).get("kind") == a.round.kind]
+        if same_kind:
+            prev = self.cache.get(same_kind[0]) or self.archive.load(same_kind[0])
+            national, rows = stats.register_changes(a.round, prev)
+            if rows:
+                register = {"title": self.round_title(prev, loc), "national": national, "rows": rows[:20]}
+        context_stats["register"] = register
         counts = defaultdict(int)
         for f in a.flags:
             counts[f.code] += 1

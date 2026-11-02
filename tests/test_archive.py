@@ -72,6 +72,9 @@ def test_history_flags_compare_the_same_station(tmp_path):
     a.add_snapshot("2", make_csv(later), fetched="2026-12-20T20:00:00+00:00")
     rnd = a.load("2")
     flags = {(f.station, f.code) for f in station_flags(rnd, previous=[a.load("1")])}
-    assert ("70000/19", "register_jump") in flags
     assert ("70000/20", "turnout_jump") in flags
+    assert not any(code == "register_jump" for _, code in flags)  # registers are compared per municipality
     assert not any(s == "70000/5" for s, _ in flags)
+    from izbori.stats import register_changes
+    national, rows = register_changes(rnd, a.load("1"), min_registered=0)
+    assert rows[0].code == "70000" and rows[0].now == 10120 and rows[0].before == 10000

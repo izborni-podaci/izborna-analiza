@@ -233,6 +233,13 @@ S: dict[str, tuple[str, str]] = {
     "ctrl_unreadable": ("Контролори: решење није могло да се прочита аутоматски", "Controllers: the decision couldn't be read automatically"),
     "ctrl_unknown": ("Контролори: решење још није прочитано", "Controllers: no decision read yet"),
     "address": ("Адреса", "Address"),
+    "register_heading": ("Промена броја уписаних по општинама", "Change in registered voters by municipality"),
+    "register_note": ("У поређењу са претходним изборима исте врсте ({title}). У целој земљи: {national}. Приказане су општине са највећим одступањем; границе бирачких места се мењају, па се број уписаних пореди по општини, не по бирачком месту.",
+                      "Compared with the previous election of the same kind ({title}). Nationally: {national}. Shown are the municipalities that differ most; polling station areas get redrawn, so registered voters are compared by municipality, not by station."),
+    "before_reg": ("Тада", "Then"),
+    "now_reg": ("Сада", "Now"),
+    "change": ("Промена", "Change"),
+    "vs_national": ("Одступање", "Difference"),
     "rebuilt_note": ("Ови резултати су сложени бирачко место по бирачко место из РИК-ове апликације за резултате, јер РИК за ове изборе више не нуди преузимање датотеке. Листићи у кутији нису посебан податак, па се узима збир важећих и неважећих.",
                      "These results were put together station by station from RIK's results app, because RIK no longer offers the file for this election. Ballots in the box aren't reported separately, so valid plus invalid is used."),
     "minority_unchecked": ("Статус мањинских листа за ове изборе још није унет према одлукама РИК-а, па број мандата може да одступа.",
@@ -252,7 +259,6 @@ CHECK_NAMES: dict[str, tuple[str, str]] = {
     "minutes_replaced": ("Записник замењен или додат", "Minutes replaced or added"),
     "correction_unapplied": ("Исправка објављена, бројеви непромењени", "Correction published, numbers unchanged"),
     "invalid_spike": ("Много неважећих листића", "Invalid-ballot spike"),
-    "register_jump": ("Скок броја уписаних", "Register jump"),
     "turnout_jump": ("Скок излазности", "Turnout jump"),
     "near_unanimity": ("Скоро једногласно", "Near-unanimity"),
     "high_turnout": ("Веома висока излазност", "Very high turnout"),
@@ -280,10 +286,8 @@ CHECK_RULES: dict[str, tuple[str, str]] = {
                              "A correction ruling appeared after first publication, and no number has changed since."),
     "invalid_spike": ("Бар {invalid_abs_share_pct} неважећих уз бар {invalid_abs_min_voted} гласалих, или бар {invalid_rel_factor}× медијане на истој адреси односно у општини.",
                       "At least {invalid_abs_share_pct} invalid with at least {invalid_abs_min_voted} voters, or at least {invalid_rel_factor}× the median at the same address or in the municipality."),
-    "register_jump": ("Број уписаних се од претходних избора на истом бирачком месту променио за бар {register_jump_pct}.",
-                      "Registered voters changed by at least {register_jump_pct} since the previous election at the same station."),
-    "turnout_jump": ("Излазност се променила за бар {turnout_jump_pts} поена више него на нивоу целе земље.",
-                     "Turnout changed by at least {turnout_jump_pts} points more than the national change."),
+    "turnout_jump": ("Излазност на истом бирачком месту променила се од претходних избора за бар {turnout_jump_pts} поена више од медијане осталих бирачких места у општини, уз бар {jump_min_registered} уписаних оба пута. Места чији се назив очигледно променио се прескачу.",
+                     "Turnout at the same polling station changed since the previous election by at least {turnout_jump_pts} points more than the median at the municipality's other stations, with at least {jump_min_registered} registered both times. Stations whose name clearly changed are skipped."),
     "near_unanimity": ("Излазност бар {high_turnout_pct} и један кандидат или листа са бар {near_share_pct} важећих гласова, уз бар {min_registered} уписаних.",
                        "Turnout at least {high_turnout_pct} and one contestant with at least {near_share_pct} of valid votes, with at least {min_registered} registered."),
     "high_turnout": ("Излазност бар {high_turnout_pct}, уз бар {min_registered} уписаних.",
@@ -367,7 +371,7 @@ def fmt_time(value, loc: str) -> str:
 def rule_values(rules: dict, loc: str) -> dict:
     """The check thresholds, formatted for the rule texts."""
     out = dict(rules)
-    for k in ("typo_median_below", "high_turnout", "near_share", "invalid_abs_share", "register_jump"):
+    for k in ("typo_median_below", "high_turnout", "near_share", "invalid_abs_share"):
         out[f"{k}_pct"] = fmt_pct(rules[k], loc, 0)
     out["turnout_jump_pts"] = fmt_num(100 * rules["turnout_jump"], loc, 0)
     out["invalid_rel_factor"] = fmt_num(rules["invalid_rel_factor"], loc, 0)

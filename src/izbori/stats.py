@@ -119,3 +119,33 @@ def turnout_histogram(rnd: Round, min_registered: int = 100) -> list[int]:
         if s.counted and s.kind == "domestic" and s.registered >= min_registered:
             bins[min(100, int(100 * s.voted / s.registered))] += 1
     return bins
+
+
+@dataclass
+class RegisterChange:
+    code: str
+    name: str
+    before: int
+    now: int
+
+    @property
+    def change(self) -> float:
+        return self.now / self.before - 1 if self.before else 0.0
+
+
+def register_changes(rnd: Round, prev: Round, min_registered: int = 1000) -> tuple[float, list[RegisterChange]]:
+    """Registered voters per municipality now and at the previous election; national change first."""
+    def totals(r: Round) -> dict[str, list]:
+        out: dict[str, list] = {}
+        for s in r.stations:
+            if s.counted and s.kind == "domestic":
+                row = out.setdefault(s.municipality_code, [s.municipality, 0])
+                row[1] += s.registered
+        return out
+    a, b = totals(rnd), totals(prev)
+    rows = [RegisterChange(code, a[code][0], b[code][1], a[code][1]) for code in a if code in b
+            and max(a[code][1], b[code][1]) >= min_registered]
+    nat_before = sum(r.before for r in rows)
+    national = sum(r.now for r in rows) / nat_before - 1 if nat_before else 0.0
+    rows.sort(key=lambda r: -abs(r.change - national))
+    return national, rows

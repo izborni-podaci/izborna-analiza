@@ -33,9 +33,8 @@ _TEXT = {
                               "Invalid: {invalid} ({share}); median at the same address {median}"),
     "invalid_spike_municipality": ("Неважећих: {invalid} ({share}); медијана у општини {median}",
                                    "Invalid: {invalid} ({share}); municipality median {median}"),
-    "register_jump": ("Уписаних {before} → {now} ({change})", "Registered {before} → {now} ({change})"),
-    "turnout_jump": ("Излазност {before} → {now}; у целој земљи {national} поена",
-                     "Turnout {before} → {now}; nationally {national} points"),
+    "turnout_jump": ("Излазност {before} → {now}; медијана промене у општини {base} поена",
+                     "Turnout {before} → {now}; municipality's median change {base} points"),
     "near_unanimity": ("Излазност {turnout}; {contestant}: {share} важећих гласова",
                        "Turnout {turnout}; {contestant}: {share} of valid votes"),
     "high_turnout": ("Излазност {turnout}, уписано {registered}", "Turnout {turnout}, {registered} registered"),
@@ -83,12 +82,10 @@ def describe(flag: Flag, loc: str, contestant_label=lambda n: str(n), kind: str 
     elif flag.code == "invalid_spike":
         values = {"invalid": i(d["invalid"]), "share": p(d["share"]),
                   "median": p(d["median"]) if "median" in d else ""}
-    elif flag.code == "register_jump":
-        values = {"before": i(d["before"]), "now": i(d["now"]), "change": _signed_pct(d["change"], loc)}
     elif flag.code == "turnout_jump":
-        n = 100 * d["national"]
+        n = 100 * d.get("base", d.get("national", 0))
         values = {"before": p(d["before"]), "now": p(d["now"]),
-                  "national": ("+" if n > 0 else "−" if n < 0 else "") + fmt_num(abs(n), loc)}
+                  "base": ("+" if n > 0 else "−" if n < 0 else "") + fmt_num(abs(n), loc)}
     elif flag.code == "near_unanimity":
         values = {"turnout": p(d["turnout"]), "contestant": contestant_label(d["contestant"]), "share": p(d["share"])}
     return " ".join(text.format(**values).split())
