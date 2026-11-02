@@ -13,7 +13,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from izbori import boards, feed, stats, svg
+from izbori import boards, feed, repeat, stats, svg
 from izbori.checks import BY_CODE, CHECKS, GROUPS, RULES
 from izbori.config import REPO_URL, RIK_PUBLIC, SITE_URL
 from izbori.contests import Presidential, Proportional, contest_rules
@@ -75,6 +75,12 @@ class Site:
         path.write_text(html, encoding="utf-8")
 
     # --- view models -------------------------------------------------------------------------
+    def short_title(self, rnd, loc: str) -> str:
+        year = (self.archive.meta(rnd.id).get("date") or "")[:4]
+        if rnd.kind in ("presidential", "parliamentary", "provincial", "local") and year:
+            return f"{t('short_' + rnd.kind, loc)} {year}"
+        return self.round_title(rnd, loc)
+
     def round_title(self, rnd, loc: str) -> str:
         if loc == "en":
             return self.archive.meta(rnd.id).get("title_en") or latin(rnd.title)
@@ -173,15 +179,33 @@ class Site:
         for rid in rids:
             self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, self.cache)
         rounds = [self.analyses[r] for r in reversed(rids)]
+        oldest_first = [self.analyses[r] for r in rids]
+        rep_rows, rep_once = repeat.stations(oldest_first)
+        rep_muns, national = repeat.municipalities(oldest_first)
+        rep_same = repeat.same_counts(rep_rows)
+        rep_n2 = sum(1 for r in rep_rows if r["k"] >= 2)
+        places, by_code = set(), defaultdict(set)
+        for a in oldest_first:
+            places.update(s.key for s in a.round.stations)
+            for key, flags in a.by_station.items():
+                for f in flags:
+                    by_code[f.code].add(key)
+        overall = {"flagged": len(rep_rows), "total": len(places), "repeated": rep_n2,
+                   "counts": {code: len(keys) for code, keys in by_code.items()}}
         for loc in LOCALES:
             summaries = [{"id": a.round.id, "title_display": self.round_title(a.round, loc), "kind": a.round.kind,
                           "counted": a.totals.counted, "total": a.totals.stations, "counting": a.counting,
                           "rik_time": a.round.rik_time, "fetched": a.round.fetched,
                           "flagged": len(a.by_station), "counts": dict(Counter(f.code for f in a.flags))}
                          for a in rounds]
-            self.write(loc, "index.html", "index.html", rounds=summaries, checks=CHECKS, groups=GROUPS)
+            self.write(loc, "index.html", "index.html", rounds=summaries, checks=CHECKS, groups=GROUPS,
+                       overall=overall)
             self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html")
             self.write(loc, "about.html", "about.html", checks=CHECKS, groups=GROUPS)
+            columns = [{"id": a.round.id, "title": self.round_title(a.round, loc), "national": national[a.round.id],
+                        "short": self.short_title(a.round, loc)} for a in oldest_first]
+            self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns,
+                       rounds=columns, same=rep_same, checks=CHECKS, group_of={c.code: c.group for c in CHECKS})
             for a in rounds:
                 self.round_pages(a, loc)
         # GitHub Pages serves this file for a missing page at any depth, so its links are absolute.

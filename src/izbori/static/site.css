@@ -213,3 +213,10 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .hint { margin: 6px 0; color: var(--ink-2); }
 .hint ul { margin: 2px 0 0; padding-left: 18px; }
 .hint li { margin: 2px 0; }
+
+.repeat td { vertical-align: top; }
+.cell-flags { display: flex; flex-direction: column; gap: 2px; color: inherit; text-decoration: none; }
+.cell-flags:hover { text-decoration: underline; }
+.cell-flags .dot { width: 8px; height: 8px; margin-right: 5px; }
+.renamed { font-weight: 700; margin-left: 4px; }
+.filters label.inline { display: flex; flex-direction: row; align-items: center; gap: 6px; }

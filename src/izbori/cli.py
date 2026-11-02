@@ -382,7 +382,7 @@ def cmd_targets(args) -> int:
     if args.html:
         targets.write_html(rows, Path(args.html), args.lang)
     print(f"{len(rows)} stations ranked → {args.out}" + (f" and {args.html}" if args.html else ""))
-    print("This list is private: don't commit it or post it.")
+    print("Keep the group's own plans (who goes where) out of the repository.")
     return 0
 
 
@@ -468,7 +468,7 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--out", default="_site")
     s.set_defaults(fn=cmd_site)
 
-    t = sub.add_parser("targets", help="private ranked list of stations to watch (never commit it)")
+    t = sub.add_parser("targets", help="ranked list of stations to watch, as a file for observer groups")
     t.add_argument("--out", default="targets.csv")
     t.add_argument("--html")
     t.add_argument("--lang", default="lat", choices=["lat", "cyr", "en"])

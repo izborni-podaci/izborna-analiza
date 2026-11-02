@@ -80,3 +80,19 @@ def test_history_flags_compare_the_same_station(tmp_path):
     from izbori.stats import register_changes
     national, rows = register_changes(rnd, a.load("1"), min_registered=0)
     assert rows[0].code == "70000" and rows[0].now == 10120 and rows[0].before == 10000
+
+
+def test_repeats_across_elections(tmp_path):
+    from izbori import repeat
+    from izbori.report import analyze
+    a = new_archive(tmp_path)
+    a.add_snapshot("1", make_csv([station(str(i)) for i in range(1, 11)] + [station("11", invalid=50)]),
+                   fetched="2026-10-25T20:00:00+00:00")
+    a.save_meta("2", {"kind": "presidential", "title": "Later", "contestants": [{"name": "А"}, {"name": "Б"}]})
+    a.add_snapshot("2", make_csv([station(str(i)) for i in range(1, 11)] + [station("11", invalid=50)]),
+                   fetched="2026-12-20T20:00:00+00:00")
+    analyses = [analyze(a, rid, None, {}) for rid in a.round_ids()]
+    rows, once = repeat.stations(analyses)
+    assert [r["key"] for r in rows] == ["70000/11"] and once == 0
+    assert rows[0]["k"] == 2 and rows[0]["n"] == 2 and "ballot_mismatch" in rows[0]["same"]
+    assert repeat.same_counts(rows)[0][1] == 1

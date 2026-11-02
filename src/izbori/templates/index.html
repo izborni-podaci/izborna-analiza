@@ -7,11 +7,11 @@
   <p class="lede">{{ t('tagline') }}.</p>
 </section>
 
-{% if rounds %}{% set top = rounds[0] %}
+{% if rounds %}
 <section class="spotlight">
-  <p class="kicker">{{ top.title_display }}</p>
+  <p class="kicker">{{ t('all_rounds_kicker', n=rounds|length) }}</p>
   <h2>{{ t('check_heading') }}</h2>
-  {{ mx.check_spotlight(top.flagged, top.total, top.counts, link('r/' ~ top.id ~ '/check.html')) }}
+  {{ mx.check_spotlight(overall.flagged, overall.total, overall.counts, link('repeat.html'), 'check_big_all', t('repeat_home_line', n=i(overall.repeated))) }}
   <p class="principle">{{ t('principle') }}</p>
 </section>
 {% endif %}

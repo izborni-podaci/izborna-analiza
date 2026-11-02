@@ -64,6 +64,39 @@
     apply();
   });
 
+  // The table of stations across elections: minimum elections flagged, kind of flag, same check again, search.
+  document.querySelectorAll('form[data-filter-rows]').forEach((form) => {
+    const table = document.querySelector(form.dataset.filterRows);
+    if (!table) return;
+    const rows = [...table.tBodies[0].rows];
+    const texts = rows.map((r) => fold(r.dataset.text || ''));
+    const f = (n) => form.querySelector(`[data-f="${n}"]`);
+    const out = form.querySelector('output');
+    const apply = () => {
+      const min = Number(f('min').value || 2);
+      const ty = f('type').value;
+      const same = f('same').checked;
+      const q = fold(f('q').value.trim());
+      let shown = 0;
+      rows.forEach((r, i) => {
+        const codes = ((same ? r.dataset.same : r.dataset.types) || '').split(' ').filter(Boolean);
+        const ok = Number(r.dataset.k) >= min && (!same || codes.length > 0)
+          && (!ty || codes.includes(ty)) && (!q || texts[i].includes(q));
+        r.hidden = !ok;
+        if (ok) shown += 1;
+      });
+      if (out) out.textContent = out.dataset.shown.replace('{n}', fmt.format(shown));
+    };
+    const wanted = decodeURIComponent(location.hash.slice(1));
+    if (wanted && [...f('type').options].some((o) => o.value === wanted)) {
+      f('type').value = wanted;
+      f('min').value = '1';
+    }
+    ['min', 'type', 'same'].forEach((n) => f(n).addEventListener('change', apply));
+    f('q').addEventListener('input', apply);
+    apply();
+  });
+
   // Click a column header marked data-sort: largest first, click again for smallest first.
   document.querySelectorAll('table').forEach((table) => {
     const heads = [...table.querySelectorAll('thead th')];

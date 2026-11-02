@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ t('repeat_title') }}{% endblock %}
+{% block main %}
+<h1>{{ t('repeat_title') }}</h1>
+<p class="lede">{{ t('repeat_lede') }}</p>
+<p class="principle">{{ t('principle') }}</p>
+<ul class="small muted">
+  <li>{{ t('repeat_caveat_scope') }}</li>
+  <li>{{ t('repeat_caveat_areas') }}</li>
+  <li>{{ t('repeat_caveat_score') }} <a href="{{ link('about.html') }}#checks">{{ t('rules_link') }}</a></li>
+</ul>
+
+<section class="spotlight">
+  <p class="big-number"><strong>{{ i(n2) }}</strong> {{ t('repeat_big', once=i(once)) }}</p>
+  {% if same %}
+  <h2>{{ t('repeat_same_heading') }}</h2>
+  <div class="type-cards">
+  {% for code, n in same %}
+    <div class="type-card g-{{ group_of[code] }}"><span class="dot" aria-hidden="true"></span><span class="tc-name">{{ check_name(code) }}</span><span class="tc-n">{{ i(n) }}</span></div>
+  {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+<h2>{{ t('repeat_stations_heading') }}</h2>
+<form class="filters" data-filter-rows="#rep-table" onsubmit="return false">
+  <label>{{ t('repeat_min') }}
+    <select data-f="min"><option value="1">1+</option><option value="2" selected>2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select>
+  </label>
+  <label>{{ t('filter_type') }}
+    <select data-f="type">
+      <option value="">{{ t('filter_all') }}</option>
+      {% for c in checks %}<option value="{{ c.code }}">{{ check_name(c.code) }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="inline"><input type="checkbox" data-f="same"> {{ t('repeat_same_only') }}</label>
+  <label>{{ t('filter_search') }} <input type="search" data-f="q" autocomplete="off"></label>
+  <output data-shown="{{ t('filter_shown', n='{n}') }}">{{ t('filter_shown', n=i(n2)) }}</output>
+</form>
+
+<div class="table-wrap">
+<table class="compact repeat" id="rep-table">
+  <thead><tr>
+    <th>{{ t('station') }}</th><th class="num" data-sort>{{ t('repeat_k') }}</th><th class="num" data-sort>{{ t('repeat_score') }}</th>
+    {% for r in rounds %}<th title="{{ r.title }}">{{ r.short }}</th>{% endfor %}
+  </tr></thead>
+  <tbody>
+  {% for row in rows %}{% set s = row.station %}
+    <tr data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same|join(' ') }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}"{% if row.k < 2 %} hidden{% endif %}>
+      <td><a href="{{ link('r/' ~ row.rid ~ '/m/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>
+        {% if s.name %}<div class="small muted">{{ name(s.name) }}</div>{% endif %}
+        {% if row.same %}<div class="small"><strong>{{ t('repeat_same') }}:</strong> {% for c in row.same %}{{ check_name(c) }}{% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+      </td>
+      <td class="num" data-v="{{ row.k }}"><strong>{{ row.k }}</strong>&nbsp;/&nbsp;{{ row.n }}</td>
+      <td class="num" data-v="{{ '%.3f'|format(row.score) }}">{{ num(row.score, 1) }}</td>
+      {% for r in rounds %}
+      <td class="small">
+        {% if r.id in row.flags %}<a class="cell-flags" href="{{ link('r/' ~ r.id ~ '/m/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{% for code in row.flags[r.id] %}<span class="g-{{ group_of[code] }}"><span class="dot" aria-hidden="true"></span>{{ check_name(code) }}</span>{% endfor %}</a>
+        {% elif r.id in row.took %}<span class="muted" title="{{ t('repeat_no_flag') }}">—</span>
+        {% else %}<span class="muted" title="{{ t('repeat_not_there') }}">·</span>{% endif %}
+        {% if r.id in row.renamed %}<span class="renamed" title="{{ t('repeat_renamed') }}">≠</span>{% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="small muted">{{ t('repeat_legend') }}</p>
+
+<h2>{{ t('repeat_mun_heading') }}</h2>
+<p>{{ t('repeat_mun_note') }}</p>
+{% if not muns %}<p class="muted">{{ t('repeat_mun_none') }}</p>{% else %}
+<div class="table-wrap">
+<table class="compact" id="rep-mun">
+  <thead><tr>
+    <th>{{ t('municipality') }}</th><th class="num" data-sort>{{ t('repeat_above') }}</th>
+    {% for r in rounds %}<th class="num" data-sort title="{{ r.title }}">{{ r.short }}<div class="small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</div></th>{% endfor %}
+  </tr></thead>
+  <tbody>
+  {% for m in muns %}
+    <tr>
+      <td>{{ name(m.name) }}</td>
+      <td class="num" data-v="{{ m.above }}"><strong>{{ m.above }}</strong>&nbsp;/&nbsp;{{ m.n }}</td>
+      {% for r in rounds %}{% set c = m.cells.get(r.id) %}
+      <td class="num" data-v="{{ '%.4f'|format(c.share) if c else '' }}">{% if c %}{% if c.above %}<strong>{{ pct(c.share, 1) }}</strong>{% else %}{{ pct(c.share, 1) }}{% endif %}<div class="small muted">{{ i(c.flagged) }}/{{ i(c.stations) }}</div>{% else %}<span class="muted">·</span>{% endif %}</td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,7 +1,7 @@
-"""Private observer target list: polling stations ranked as places to watch at the next election.
+"""Observer target list: polling stations ranked as places to watch at the next election.
 
-Written to a local file only. Never committed, never built in GitHub Actions (anyone with a GitHub
-account can download build outputs from a public repository)."""
+The ranking comes from public data and is also on the site (Across elections). This command writes it as a
+file for observer groups to plan with; their plans (who goes where) stay out of the repository."""
 
 from __future__ import annotations
 
