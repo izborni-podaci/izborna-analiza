@@ -49,7 +49,10 @@ def analyze(archive: Archive, rid: str, notes_dir: Path | None = None, cache: di
         return cache[r]
 
     rnd = load(rid)
+    # compare with earlier rounds of the same kind first (parliamentary with parliamentary), newest first
     previous_ids = earlier_rounds(archive, rid)
+    kind = archive.meta(rid).get("kind")
+    previous_ids.sort(key=lambda r: archive.meta(r).get("kind") != kind)
     previous = [load(r) for r in previous_ids]
     changes = archive.changes(rid)
     flags = station_flags(rnd, changes, previous)

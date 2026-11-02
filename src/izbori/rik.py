@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from html import unescape
 import time
 import urllib.error
 import urllib.parse
@@ -148,6 +149,29 @@ class Client:
             "region": 0, "municipality": 0, "election_station": 0,
         })
         return parse_summary(rik_type, rid, data or {})
+
+    # --- RIK's results app, one level at a time (for rounds whose CSV can no longer be downloaded) ----
+    def regions(self, rik_type: int, rid: str) -> dict[str, str]:
+        data = self._json("/get-regions/", {"election_type": rik_type, "election_round": rid}) or {}
+        return {str(k): str(v) for k, v in (data.get("regions") or {}).items()}
+
+    def municipalities(self, rik_type: int, rid: str, region: str) -> list[tuple[str, str]]:
+        body, _ = self._request("/get-municipalities/", {"election_type": rik_type, "election_round": rid,
+                                                         "election_region": region})
+        html = body.decode("utf-8-sig")
+        return [(m.group(1), unescape(m.group(2)).strip())
+                for m in re.finditer(r'value="?(\d+)"?[^>]*>([^<]+)<', html) if m.group(1) != "0"]
+
+    def stations(self, rik_type: int, rid: str, region: str, municipality: str) -> dict[str, str]:
+        data = self._json("/get-election-stations/", {"election_type": rik_type, "election_round": rid,
+                                                      "election_region": region,
+                                                      "election_municipality": municipality}) or {}
+        return {str(k): str(v) for k, v in (data.get("election_stations") or {}).items()}
+
+    def station_results(self, rik_type: int, rid: str, region: str, municipality: str, station: str) -> dict:
+        return self._json("/get_results/", {"should_update_pies": 1, "type": rik_type, "election_round": rid,
+                                            "region": region, "municipality": municipality,
+                                            "election_station": station}) or {}
 
     def get_json(self, path: str):
         body, _ = self._request(path)

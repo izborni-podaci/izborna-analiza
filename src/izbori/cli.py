@@ -44,11 +44,11 @@ def ensure_meta(archive: Archive, rid: str, info: dict, summ: Summary | None) ->
     return meta
 
 
-def after_change(archive: Archive, rid: str, when: str, notes_dir: Path, notify: bool) -> int:
+def after_change(archive: Archive, rid: str, when: str, notes_dir: Path, notify: bool, announce: bool = True) -> int:
     """Record new flags, add a feed entry and queue an email. Returns the number of new flags."""
     a = analyze(archive, rid, notes_dir)
     new = record_new_flags(archive, a, when)
-    if new:
+    if new and announce:
         entry = feed.make_entry(a, new, when)
         feed.add_entry(archive.root, entry)
         if notify:
@@ -295,6 +295,42 @@ def cmd_boards(args) -> int:
     return 0
 
 
+def cmd_import_app(args) -> int:
+    """Rebuild a finished round's results from RIK's results app, station by station, and archive it."""
+    from izbori import appdata, boards
+    archive = Archive(args.data)
+    client = Client()
+    known = archive.known_rounds() or client.all_rounds()
+    info = known.get(args.round) or {"type": args.type, "kind": guess_kind(args.type or 0, ""), "name": ""}
+    rik_type = int(args.type or info["type"])
+    ids = [r for r in archive.round_ids() if r != args.round]
+    codes = {}
+    if ids:
+        codes = {boards.municipality_key(s.municipality): s.municipality_code for s in archive.load(ids[-1]).stations}
+    raw, summary = appdata.rebuild(client, rik_type, args.round, codes, threads=args.threads, log=log)
+    meta = archive.meta(args.round)
+    meta.setdefault("kind", info.get("kind", "unknown"))
+    meta.setdefault("rik_type", rik_type)
+    meta.setdefault("contest", {})
+    meta["title"] = meta.get("title") or summary["title"] or info.get("name") or args.round
+    if not meta.get("contestants"):
+        meta["contestants"] = summary["contestants"]
+    meta["source"] = "results_app"
+    archive.save_meta(args.round, meta)
+    when = now_iso()
+    result = archive.add_snapshot(args.round, raw, fetched=when, rik_time=summary["rik_time"],
+                                  total=summary["stations"], filename="rebuilt-from-results-app.csv")
+    if result is None:
+        log(f"{args.round}: same as the archived version")
+        return 0
+    n = after_change(archive, args.round, when, args.notes, notify=False, announce=False)
+    log(f"{args.round}: archived {summary['stations']} stations, {n} flags")
+    if args.commit and commit([str(args.data), str(args.notes)], f"Data: {args.round} rebuilt from RIK's results app"):
+        if args.push and push() and args.dispatch_pages:
+            dispatch_pages()
+    return 0
+
+
 def cmd_site(args) -> int:
     from izbori.site import build
     out = build(Archive(args.data), Path(args.out), args.notes, args.site_url)
@@ -372,6 +408,15 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--push", action="store_true")
     b.add_argument("--dispatch-pages", action="store_true")
     b.set_defaults(fn=cmd_boards)
+
+    a = sub.add_parser("import-app", help="rebuild a finished round from RIK's results app, station by station")
+    a.add_argument("--round", required=True)
+    a.add_argument("--type", type=int, help="RIK's election type, if the round isn't known yet")
+    a.add_argument("--threads", type=int, default=4)
+    a.add_argument("--commit", action="store_true")
+    a.add_argument("--push", action="store_true")
+    a.add_argument("--dispatch-pages", action="store_true")
+    a.set_defaults(fn=cmd_import_app)
 
     s = sub.add_parser("site", help="build the static site")
     s.add_argument("--out", default="_site")

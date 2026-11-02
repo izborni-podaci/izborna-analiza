@@ -12,6 +12,8 @@
   <p class="muted">{{ t('rik_time') }}: {{ time(rnd.rik_time) }} · {{ t('fetched') }}: {{ time(rnd.fetched) }} · {{ t('snapshots') }}: <a href="{{ link(base + 'changes.html') }}">{{ i(snapshots|length) }}</a> · <a href="{{ rik_url }}" rel="noopener noreferrer">{{ t('rik_source') }}</a></p>
 </div>
 
+{% if rebuilt %}<p class="callout">{{ t('rebuilt_note') }}</p>{% endif %}
+
 <section class="tiles" aria-label="{{ t('results_heading') }}">
   <div class="tile"><p class="tile-label">{{ t('registered') }}</p><p class="tile-value">{{ i(totals.registered) }}</p></div>
   <div class="tile"><p class="tile-label">{{ t('voted') }}</p><p class="tile-value">{{ i(totals.voted) }}</p><p class="tile-sub">{{ t('turnout') }} {{ pct(totals.turnout, 2) }}</p></div>

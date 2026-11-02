@@ -233,6 +233,8 @@ S: dict[str, tuple[str, str]] = {
     "ctrl_unreadable": ("Контролори: решење није могло да се прочита аутоматски", "Controllers: the decision couldn't be read automatically"),
     "ctrl_unknown": ("Контролори: решење још није прочитано", "Controllers: no decision read yet"),
     "address": ("Адреса", "Address"),
+    "rebuilt_note": ("Ови резултати су сложени бирачко место по бирачко место из РИК-ове апликације за резултате, јер РИК за ове изборе више не нуди преузимање датотеке. Листићи у кутији нису посебан податак, па се узима збир важећих и неважећих.",
+                     "These results were put together station by station from RIK's results app, because RIK no longer offers the file for this election. Ballots in the box aren't reported separately, so valid plus invalid is used."),
     "minority_unchecked": ("Статус мањинских листа за ове изборе још није унет према одлукама РИК-а, па број мандата може да одступа.",
                            "The minority status of lists in this election hasn't been entered from RIK's decisions yet, so seat numbers may be off."),
 }
