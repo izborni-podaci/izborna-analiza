@@ -29,6 +29,26 @@
   <p class="docs">{{ mx.doc_links(st) }}</p>
   {% if latest.ctrl_known %}{{ mx.controllers(latest.ctrl, 0) }}{% endif %}
   {{ mx.notes_list(latest.notes) }}
+  {% if latest.votes %}
+  <h3>{{ t('station_votes') }}</h3>
+  <p class="rule">{{ t('station_votes_note') }}</p>
+<ul class="vote-list">
+{% for r in latest.votes if not r.minor %}
+    <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
+      <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
+      <span class="vl-ref small muted">{{ t('municipality_share', share=pct(r.mshare, 1)) }}</span></li>
+{% endfor %}
+</ul>
+{% set minor = latest.votes|selectattr('minor')|list %}
+{% if minor %}<details class="minor-votes"><summary>{{ t('minor_candidates' if latest.presidential else 'minor_lists', n=minor|length) }}</summary>
+<ul class="vote-list">
+{% for r in minor %}
+    <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
+      <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
+      <span class="vl-ref small muted">{{ t('municipality_share', share=pct(r.mshare, 1)) }}</span></li>
+{% endfor %}
+</ul></details>{% endif %}
+  {% endif %}
 </section>
 
 <section>

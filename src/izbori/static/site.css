@@ -319,3 +319,47 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .station-timeline { gap: 0; }
 .station-timeline > li { padding: 14px 0; border-top: 1px solid var(--grid); }
 .station-timeline .flags { margin: 0; }
+
+/* votes made readable */
+.vote-list { list-style: none; padding: 0; margin: 10px 0 20px; max-width: 820px; }
+.vote-list li { display: grid; grid-template-columns: minmax(10rem, 16rem) minmax(0, 1fr) 4.5em 4.2em 7.5em; grid-template-areas: "name bar n pct ref"; gap: 2px 14px; align-items: center; padding: 7px 0; border-top: 1px solid var(--grid); }
+.vote-list .vl-n { text-align: right; }
+.minor-votes { margin: -12px 0 20px; max-width: 820px; }
+.minor-votes summary { cursor: pointer; color: var(--ink-2); min-height: 36px; display: flex; align-items: center; list-style: none; }
+.minor-votes summary::-webkit-details-marker { display: none; }
+.minor-votes summary::before { content: "▸"; margin-right: 8px; }
+.minor-votes[open] summary::before { content: "▾"; }
+@media (max-width: 700px) {
+  .vote-list li { grid-template-columns: minmax(0, 1fr) auto 4.2em; grid-template-areas: "name n pct" "bar bar ref"; }
+}
+.vl-name { grid-area: name; }
+.vl-n { grid-area: n; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.vl-pct { grid-area: pct; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.vl-bar { grid-area: bar; height: 6px; background: var(--grid); }
+.vl-bar span { display: block; height: 6px; background: var(--accent); }
+.vl-ref { grid-area: ref; text-align: right; white-space: nowrap; }
+table.shares td.heat { background: color-mix(in srgb, var(--accent) calc(var(--h) * 0.55), transparent); }
+.all-votes { margin: 16px 0; }
+.all-votes summary, .data-notes summary { cursor: pointer; color: var(--ink-2); min-height: 32px; }
+.qa { margin: 12px 0 8px; display: grid; gap: 12px; max-width: 760px; }
+.qa div { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 4px 16px; }
+.qa dt { font-weight: 600; }
+.qa dd { margin: 0; }
+@media (max-width: 600px) { .qa div { grid-template-columns: minmax(0, 1fr); } }
+
+/* Station history: groups by the number of elections flagged */
+.strip-key { margin-top: -4px; }
+.kgroup { border-top: 1px solid var(--border); }
+.kgroup > summary { list-style: none; display: flex; align-items: baseline; gap: 12px; padding: 14px 0; cursor: pointer; }
+.kgroup > summary::-webkit-details-marker { display: none; }
+.kgroup > summary::before { content: "▸"; color: var(--ink-2); }
+.kgroup[open] > summary::before { content: "▾"; }
+.kgroup > summary h3 { display: inline; margin: 0; font-family: var(--serif); font-size: 1.3rem; }
+.st-list { list-style: none; margin: 0 0 18px; padding: 0; }
+.st-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 18px; padding: 10px 0; border-top: 1px solid var(--grid); }
+.st-main { flex: 1 1 320px; min-width: 0; }
+.st-same { display: block; color: var(--ink-2); margin-top: 2px; }
+.strip { display: inline-flex; gap: 8px; font-size: 1rem; }
+.slot { display: inline-flex; align-items: center; justify-content: center; width: 1.25em; height: 1.25em; }
+.slot-clean { width: 0.7em; height: 0.7em; border: 1.5px solid var(--ink-2); border-radius: 50%; }
+.slot-absent { width: 0.7em; height: 2px; background: var(--axis); }

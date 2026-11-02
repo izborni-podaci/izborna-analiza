@@ -161,39 +161,41 @@
 
   // The table of stations across elections: minimum elections flagged, kind of flag, same check again, search.
   document.querySelectorAll('form[data-filter-rows]').forEach((form) => {
-    const table = document.querySelector(form.dataset.filterRows);
-    if (!table) return;
-    const rows = [...table.tBodies[0].rows];
+    const box = document.querySelector(form.dataset.filterRows);
+    if (!box) return;
+    const rows = [...box.querySelectorAll('[data-k]')];
     const texts = rows.map((r) => fold(r.dataset.text || ''));
+    const groups = [...box.querySelectorAll('[data-group]')];
     const f = (n) => form.querySelector(`[data-f="${n}"]`);
     const out = form.querySelector('output');
     const apply = () => {
-      const min = Number(f('min').value || 2);
       const ty = f('type').value;
       const same = f('same').checked;
       const q = fold(f('q').value.trim());
       let shown = 0;
       rows.forEach((r, i) => {
         const codes = ((same ? r.dataset.same : r.dataset.types) || '').split(' ').filter(Boolean);
-        const ok = Number(r.dataset.k) >= min && (!same || codes.length > 0)
-          && (!ty || codes.includes(ty)) && (!q || texts[i].includes(q));
+        const ok = (!same || codes.length > 0) && (!ty || codes.includes(ty)) && (!q || texts[i].includes(q));
         r.hidden = !ok;
         if (ok) shown += 1;
+      });
+      groups.forEach((g) => {
+        const visible = g.querySelectorAll('[data-k]:not([hidden])').length;
+        g.hidden = visible === 0;
+        const c = g.querySelector('[data-count]');
+        if (c) c.textContent = c.textContent.replace(/[\d.,]+/, fmt.format(visible));
+        if (ty || same || q) g.open = visible > 0 && visible <= 400;
       });
       if (out) out.textContent = out.dataset.shown.replace('{n}', fmt.format(shown));
     };
     const wanted = decodeURIComponent(location.hash.slice(1));
-    if (wanted && [...f('type').options].some((o) => o.value === wanted)) {
-      f('type').value = wanted;
-      f('min').value = '1';
-    }
+    if (wanted && [...f('type').options].some((o) => o.value === wanted)) f('type').value = wanted;
     document.querySelectorAll('[data-set-same]').forEach((a) => a.addEventListener('click', () => {
       f('type').value = a.dataset.setSame;
       f('same').checked = true;
-      f('min').value = '2';
       apply();
     }));
-    ['min', 'type', 'same'].forEach((n) => f(n).addEventListener('change', apply));
+    ['type', 'same'].forEach((n) => f(n).addEventListener('change', apply));
     f('q').addEventListener('input', apply);
     apply();
   });

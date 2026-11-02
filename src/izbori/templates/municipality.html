@@ -46,22 +46,68 @@
 </table>
 </div>
 
-<h2>{{ t('votes_by_candidate') if rnd.kind == 'presidential' else t('votes_by_list') }}</h2>
+<h2>{{ t('mun_result_heading') }}</h2>
+<p class="rule">{{ t('mun_result_note') }}</p>
+<ul class="vote-list">
+{% for r in mres if not r.minor %}
+  <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
+    <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
+    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
+{% endfor %}
+</ul>
+{% set minor = mres|selectattr('minor')|list %}
+{% if minor %}<details class="minor-votes"><summary>{{ t('minor_candidates' if rnd.kind == 'presidential' else 'minor_lists', n=minor|length) }}</summary>
+<ul class="vote-list">
+{% for r in minor %}
+  <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
+    <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
+    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
+{% endfor %}
+</ul></details>{% endif %}
+
+{% if mtop %}
+<h2>{{ t('by_station_heading') }}</h2>
+<p class="rule">{{ t('by_station_note_pres') if rnd.kind == 'presidential' else t('by_station_note') }}</p>
 <div class="table-wrap">
-<table class="compact votes">
+<table class="compact shares">
   <thead><tr>
-    <th class="num">{{ t('station_no') }}</th>
-    {% for c in rnd.contestants %}<th class="num" title="{{ name(c.name) }}">{{ c.number }}</th>{% endfor %}
+    <th class="num">{{ t('station_no') }}</th><th>{{ t('station') }}</th>
+    {% for r in mtop %}<th class="num">{{ r.number }}. {{ name(r.label) }}</th>{% endfor %}
+    <th class="num">{{ t('others_col') }}</th><th class="num">{{ t('valid') }}</th>
   </tr></thead>
   <tbody>
-  {% for r in rows if r.s.counted %}
-    <tr><td class="num">{{ r.s.number }}</td>{% for v in r.s.votes %}<td class="num">{{ i(v) }}</td>{% endfor %}</tr>
+  {% for b in mby %}
+    <tr>
+      <td class="num">{{ b.s.number }}</td>
+      <td>{% if st_path(b.s.key) %}<a href="{{ link(st_path(b.s.key)) }}">{{ name(b.s.name) or t('station_details') }}</a>{% else %}{{ name(b.s.name) }}{% endif %}</td>
+      {% for share, n in b.cells %}<td class="num heat" style="--h: {{ '%.0f'|format(100 * (share or 0)) }}%" title="{{ i(n) }}">{{ pct(share, 1) }}</td>{% endfor %}
+      <td class="num muted" title="{{ i(b.rest[1]) }}">{{ pct(b.rest[0], 1) }}</td>
+      <td class="num">{{ i(b.valid) }}</td>
+    </tr>
   {% endfor %}
-  <tr class="total"><td>{{ t('total') }}</td>{% for v in mvotes %}<td class="num">{{ i(v) }}</td>{% endfor %}</tr>
   </tbody>
 </table>
 </div>
-<ol class="key small">
-  {% for c in rnd.contestants %}<li value="{{ c.number }}">{{ name(c.name) }}</li>{% endfor %}
-</ol>
+{% endif %}
+
+<details class="all-votes">
+  <summary>{{ t('all_votes_details') }}</summary>
+  <ol class="key small">
+    {% for c in rnd.contestants %}<li value="{{ c.number }}">{{ name(c.name) }}</li>{% endfor %}
+  </ol>
+  <div class="table-wrap">
+  <table class="compact votes">
+    <thead><tr>
+      <th class="num">{{ t('station_no') }}</th>
+      {% for c in rnd.contestants %}<th class="num" title="{{ name(c.name) }}">{{ c.number }}</th>{% endfor %}
+    </tr></thead>
+    <tbody>
+    {% for r in rows if r.s.counted %}
+      <tr><td class="num">{{ r.s.number }}</td>{% for v in r.s.votes %}<td class="num">{{ i(v) }}</td>{% endfor %}</tr>
+    {% endfor %}
+    <tr class="total"><td>{{ t('total') }}</td>{% for v in mvotes %}<td class="num">{{ i(v) }}</td>{% endfor %}</tr>
+    </tbody>
+  </table>
+  </div>
+</details>
 {% endblock %}

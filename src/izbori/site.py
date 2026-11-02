@@ -103,6 +103,21 @@ class Site:
                      "flags": self.flag_view(a, flags, loc), "codes": list(dict.fromkeys(f.code for f in flags)),
                      "notes": a.notes.get(key, []), "ctrl": self.ctrl_of(rid).get(key), "ctrl_known": bool(self.ctrl_of(rid))}
                 history.append(e)
+                if latest is None:
+                    mun = [x for x in a.round.stations if x.municipality_code == s.municipality_code and x.counted]
+                    mvotes = [sum(x.votes[i] or 0 for x in mun) for i in range(len(a.round.contestants))]
+                    mvalid = sum(mvotes) or 0
+                    sv = sum(v or 0 for v in s.votes) if s.counted else 0
+                    rows = [{"number": c.number, "label": c.label, "votes": s.votes[i] or 0,
+                             "share": (s.votes[i] or 0) / sv if sv else 0, "mshare": mvotes[i] / mvalid if mvalid else None}
+                            for i, c in enumerate(a.round.contestants) if s.counted and (s.votes[i] or mvotes[i])]
+                    rows.sort(key=lambda r: (-r["votes"], -(r["mshare"] or 0)))
+                    top_share = rows[0]["share"] if rows and rows[0]["share"] else 1
+                    for n, r in enumerate(rows):
+                        r["w"] = 100 * r["share"] / top_share
+                        r["minor"] = n >= 3 and r["share"] < 0.01
+                    e["votes"] = rows
+                    e["presidential"] = a.round.kind == "presidential"
                 latest = latest or e
             address = next((e["ctrl"]["address"] for e in history if not e["absent"] and e["ctrl"] and e["ctrl"].get("address")), "")
             self.write(loc, station_path(key), "station.html", row=row, s=latest["s"], latest=latest, history=history,
@@ -280,7 +295,8 @@ class Site:
             self.write_search(loc, rounds, rep_rows)
             self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html")
             self.write(loc, "about.html", "about.html", checks=CHECKS, groups=GROUPS)
-            self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns,
+            groups = [(k, [r for r in rep_rows if r["k"] == k]) for k in sorted({r["k"] for r in rep_rows}, reverse=True)]
+            self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns, groups=groups,
                        rounds=columns, same=rep_same, checks=CHECKS, group_of=group_of, example=example,
                        st_path=self.st_path)
             self.station_pages(loc, oldest_first, rep_rows, columns, group_of)
@@ -375,8 +391,34 @@ class Site:
                      "notes": a.notes.get(s.key, [])} for s in sts]
             votes = [sum((s.votes[i] or 0) for s in sts if s.counted) for i in range(len(a.round.contestants))]
             mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
+            mres, top, by_st = vote_view(a.round.contestants, votes, a.totals, [s for s in sts if s.counted])
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
-                       mctrl=mctrl, mreadable=mreadable, **common)
+                       mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st, **common)
+
+
+def vote_view(contestants, votes: list[int], totals, stations: list) -> tuple[list[dict], list[dict], list[dict]]:
+    """A municipality's votes made readable: every contestant with votes, most first, with its share of valid votes
+    and the national share; the three with most votes; and each station's shares for those three and the rest."""
+    valid = sum(votes) or 0
+    rows = []
+    for i, c in enumerate(contestants):
+        if votes[i]:
+            share = votes[i] / valid if valid else 0
+            rows.append({"index": i, "number": c.number, "label": c.label, "votes": votes[i], "share": share,
+                         "national": totals.share_of_valid(i)})
+    rows.sort(key=lambda r: -r["votes"])
+    top_share = rows[0]["share"] if rows else 1
+    for n, r in enumerate(rows):
+        r["w"] = 100 * r["share"] / top_share if top_share else 0
+        r["minor"] = n >= 3 and r["share"] < 0.01  # lists under 1% fold away, the top three always show
+    top = rows[:3]
+    by_station = []
+    for s in stations:
+        sv = sum(v or 0 for v in s.votes)
+        cells = [((s.votes[r["index"]] or 0) / sv if sv else None, s.votes[r["index"]] or 0) for r in top]
+        rest = sv - sum(v for _, v in cells)
+        by_station.append({"s": s, "valid": sv, "cells": cells, "rest": (rest / sv if sv else None, rest)})
+    return rows, top, by_station
 
 
 def station_path(key: str) -> str:

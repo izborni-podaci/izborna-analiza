@@ -4,7 +4,11 @@
 {% block main %}
 {{ mx.crumbs([(t('crumbs_home'), link('index.html')), (t('repeat_title'), none)]) }}
 <h1 class="page-title">{{ t('repeat_title') }}</h1>
-<p class="lede">{{ t('repeat_lede') }}</p>
+<dl class="qa">
+  <div><dt>{{ t('repeat_what_q') }}</dt><dd>{{ t('repeat_what_a', n=rounds|length) }}</dd></div>
+  <div><dt>{{ t('repeat_why_q') }}</dt><dd>{{ t('repeat_why_a') }}</dd></div>
+  <div><dt>{{ t('repeat_how_q') }}</dt><dd>{{ t('repeat_how_a') }}</dd></div>
+</dl>
 <p class="principle">{{ t('principle') }}</p>
 
 {% if example %}{% set s = example.station %}
@@ -20,11 +24,14 @@
 </section>
 {% endif %}
 
-<ul class="small muted">
-  <li>{{ t('repeat_caveat_scope') }}</li>
-  <li>{{ t('repeat_caveat_areas') }}</li>
-  <li>{{ t('repeat_caveat_score') }} <a href="{{ link('about.html') }}#checks">{{ t('rules_link') }}</a></li>
-</ul>
+<details class="data-notes">
+  <summary>{{ t('repeat_notes_summary') }}</summary>
+  <ul class="small muted">
+    <li>{{ t('repeat_caveat_scope') }}</li>
+    <li>{{ t('repeat_caveat_areas') }}</li>
+    <li>{{ t('repeat_caveat_score') }} <a href="{{ link('about.html') }}#checks">{{ t('rules_link') }}</a></li>
+  </ul>
+</details>
 
 <section class="spotlight">
   <p class="big-number"><strong>{{ i(n2) }}</strong> {{ t('repeat_big', once=i(once)) }}</p>
@@ -33,18 +40,16 @@
   <p class="small">{{ t('repeat_same_note') }}</p>
   <div class="chips">
   {% for code, n in same %}
-    <a class="chip g-{{ group_of[code] }}" href="#rep-table" data-set-same="{{ code }}">{{ mx.sym(code, group_of[code]) }}<span>{{ check_name(code) }}</span><strong>{{ i(n) }}</strong></a>
+    <a class="chip g-{{ group_of[code] }}" href="#mesta" data-set-same="{{ code }}">{{ mx.sym(code, group_of[code]) }}<span>{{ check_name(code) }}</span><strong>{{ i(n) }}</strong></a>
   {% endfor %}
   </div>
   {% endif %}
 </section>
 
-<h2>{{ t('repeat_stations_heading') }}</h2>
-<p class="small">{{ t('repeat_columns_note') }}</p>
-<form class="filters" data-filter-rows="#rep-table" onsubmit="return false">
-  <label>{{ t('repeat_min') }}
-    <select data-f="min"><option value="1">1+</option><option value="2" selected>2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select>
-  </label>
+<h2 id="mesta">{{ t('repeat_stations_heading') }}</h2>
+<p>{{ t('repeat_groups_note') }}</p>
+<p class="small muted strip-key">{{ t('repeat_strip_key') }} {% for r in rounds %}<span class="nowrap">{{ loop.index }}. {{ r.short }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+<form class="filters" data-filter-rows="#rep-groups" onsubmit="return false">
   <label>{{ t('filter_type') }}
     <select data-f="type">
       <option value="">{{ t('filter_all') }}</option>
@@ -53,38 +58,29 @@
   </label>
   <label class="inline"><input type="checkbox" data-f="same"> {{ t('repeat_same_only') }}</label>
   <label>{{ t('filter_search') }} <input type="search" data-f="q" autocomplete="off"></label>
-  <output data-shown="{{ t('filter_shown', n='{n}') }}">{{ t('filter_shown', n=i(n2)) }}</output>
+  <output data-shown="{{ t('filter_shown', n='{n}') }}">{{ t('filter_shown', n=i(rows|length)) }}</output>
 </form>
 
-<div class="table-wrap">
-<table class="compact repeat" id="rep-table">
-  <thead><tr>
-    <th>{{ t('station') }}</th><th class="num" data-sort>{{ t('repeat_k') }}</th><th>{{ t('repeat_same') }}</th><th class="num" data-sort>{{ t('repeat_score') }}</th>
-    {% for r in rounds %}<th title="{{ r.title }}">{{ r.short }}</th>{% endfor %}
-  </tr></thead>
-  <tbody>
-  {% for row in rows %}{% set s = row.station %}
-    <tr data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same_codes }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}"{% if row.k < 2 %} hidden{% endif %}>
-      <td><a href="{{ link(st_path(row.key)) }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>
-        {% if s.name %}<div class="small muted">{{ name(s.name) }}</div>{% endif %}
-      </td>
-      <td class="num" data-v="{{ row.k }}"><strong>{{ row.k }}</strong>&nbsp;/&nbsp;{{ row.n }}</td>
-      <td class="small">{% for code, m in row.same %}<div class="sym-line">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }} · {{ t('repeat_times', n=m) }}</div>{% else %}<span class="muted">{{ t('repeat_none') }}</span>{% endfor %}</td>
-      <td class="num" data-v="{{ '%.3f'|format(row.score) }}">{{ num(row.score, 1) }}</td>
-      {% for r in rounds %}
-      <td class="small">
-        {% if r.id in row.flags %}<a class="cell-flags" href="{{ link('r/' ~ r.id ~ '/m/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{% for code in row.flags[r.id] %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}</span>{% endfor %}</a>
-        {% elif r.id in row.took %}<span class="muted" title="{{ t('repeat_no_flag') }}">—</span>
-        {% else %}<span class="muted" title="{{ t('repeat_not_there') }}">·</span>{% endif %}
-        {% if r.id in row.renamed %}<span class="renamed" title="{{ t('repeat_renamed') }}">≠</span>{% endif %}
-      </td>
-      {% endfor %}
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
+<div id="rep-groups">
+{% for k, group in groups %}
+  <details class="kgroup" data-group{% if k >= 2 %} open{% endif %}>
+    {% set n = group|length %}{% set one = (n == 1) if loc == 'en' else (n % 10 == 1 and n % 100 != 11) %}
+    <summary><h3>{{ t('repeat_group_title_one') if k == 1 else t('repeat_group_title', k=k) }}</h3> <span class="muted" data-count>{{ t('repeat_group_count_one' if one else 'repeat_group_count', n=i(n)) }}</span></summary>
+    <ul class="st-list">
+    {% for row in group %}{% set s = row.station %}
+      <li data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same_codes }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}">
+        <span class="st-main"><a href="{{ link(st_path(row.key)) }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %} <span class="muted">{{ name(s.name) }}</span>{% endif %}
+          {% if row.same %}<span class="st-same small">{{ t('repeat_same') }}: {% for code, m in row.same %}{{ check_name(code) }} ({{ t('repeat_times', n=m) }}){% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}</span>
+        <span class="strip" role="img" aria-label="{% for r in rounds %}{{ r.short }}: {% if r.id in row.flags %}{% for code in row.flags[r.id] %}{{ check_name(code) }}{% if not loop.last %}, {% endif %}{% endfor %}{% elif r.id in row.took %}{{ t('repeat_no_flag') }}{% else %}{{ t('repeat_not_there') }}{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}">
+          {% for r in rounds %}<span class="slot" title="{{ r.short }}">{% if r.id in row.flags %}{{ mx.sym(row.flags[r.id][0], group_of[row.flags[r.id][0]]) }}{% elif r.id in row.took %}<span class="slot-clean"></span>{% else %}<span class="slot-absent"></span>{% endif %}</span>{% endfor %}
+        </span>
+      </li>
+    {% endfor %}
+    </ul>
+  </details>
+{% endfor %}
 </div>
-<p class="small muted">{{ t('repeat_legend') }}</p>
+<p class="small muted">{{ t('repeat_strip_legend') }}</p>
 
 <h2>{{ t('repeat_mun_heading') }}</h2>
 <p>{{ t('repeat_mun_note') }}</p>
