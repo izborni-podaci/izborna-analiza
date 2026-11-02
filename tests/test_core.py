@@ -124,3 +124,9 @@ def test_several_minutes_links(round2026):
     assert len(s.minutes_links) == 3
     assert all(url.startswith("https://") and "\n" not in url for _, url in s.minutes_links)
     assert s.minutes_url == s.minutes_links[-1][1]
+
+
+def test_latin_handles_other_cyrillic_letters():
+    from izbori.translit import has_cyrillic, latin
+    assert latin("БУЛЕВАР КРАЉА ПЕТРА І") == "BULEVAR KRALJA PETRA I"
+    assert not has_cyrillic(latin("Київ, Їжак, Ёлка, Объект"))

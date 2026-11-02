@@ -1,10 +1,15 @@
-"""Serbian Cyrillic to Latin, letter by letter. Anything that isn't Serbian Cyrillic passes through."""
+"""Serbian Cyrillic to Latin, letter by letter, plus the few other Cyrillic letters that turn up in RIK's data.
+Anything else passes through."""
 
 _MAP = {
     "А": "A", "Б": "B", "В": "V", "Г": "G", "Д": "D", "Ђ": "Đ", "Е": "E", "Ж": "Ž", "З": "Z",
     "И": "I", "Ј": "J", "К": "K", "Л": "L", "Љ": "Lj", "М": "M", "Н": "N", "Њ": "Nj", "О": "O",
     "П": "P", "Р": "R", "С": "S", "Т": "T", "Ћ": "Ć", "У": "U", "Ф": "F", "Х": "H", "Ц": "C",
     "Ч": "Č", "Џ": "Dž", "Ш": "Š",
+    # Not Serbian, but they turn up in scanned documents read by OCR (Roman numerals read as І) and in
+    # foreign place names abroad; without them a Latin page would show Cyrillic letters.
+    "І": "I", "Ї": "I", "Є": "E", "Ґ": "G", "Й": "J", "Ы": "Y", "Э": "E", "Ё": "E", "Ў": "U",
+    "Ю": "Ju", "Я": "Ja", "Щ": "Šč", "Ъ": "", "Ь": "",
 }
 
 
