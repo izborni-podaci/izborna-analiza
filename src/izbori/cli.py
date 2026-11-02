@@ -276,11 +276,15 @@ def cmd_boards(args) -> int:
 
     result = boards.run(archive.dir(rid), rid, int(info["type"]), contestants, stations, client,
                         workers=args.workers or os.cpu_count() or 2, budget_seconds=args.budget_minutes * 60,
-                        limit=args.limit, log=log, checkpoint=checkpoint)
+                        limit=args.limit, log=log, checkpoint=checkpoint, diagnose=args.diagnose,
+                        retry_unparsed=args.retry_unparsed)
     if args.show:
         cov = boards.coverage(boards.load_store(archive.dir(rid)))
         for key in sorted(cov)[: args.show]:
             c = cov[key]
+            if c["lists"] is None:
+                log(f"{key}: decision not readable")
+                continue
             members = sorted(int(n) for n, v in c["lists"].items() if v["member"])
             log(f"{key}: lists with a member {members} of {len(contestants)}; unmatched {c['unmatched']}; "
                 f"address: {latin(c['address'])}")
@@ -362,6 +366,8 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--budget-minutes", type=float, default=320, help="stop starting new documents after this")
     b.add_argument("--limit", type=int, help="read at most this many decisions (for trials)")
     b.add_argument("--show", type=int, default=0, help="print this many station summaries (no names)")
+    b.add_argument("--diagnose", type=int, default=0, help="log the masked layout of this many unreadable decisions")
+    b.add_argument("--retry-unparsed", action="store_true", help="read unreadable decisions again")
     b.add_argument("--commit", action="store_true")
     b.add_argument("--push", action="store_true")
     b.add_argument("--dispatch-pages", action="store_true")

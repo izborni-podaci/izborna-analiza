@@ -247,9 +247,27 @@ def save_store(round_dir: Path, store: dict) -> None:
                                      encoding="utf-8")
 
 
-def read_doc(doc: BoardDoc, pdf: bytes, contestants: list[dict], station_key: str | None) -> dict:
+KEEP_WORDS = {"члан", "члана", "заменик", "на", "предлог", "подносиоца", "изборне", "листе", "посланичке", "групе",
+              "бирачко", "место", "број", "бм", "и", "решење", "проширеном", "саставу", "сталном", "clan", "član",
+              "zamenik", "predlog", "podnosioca", "izborne", "liste", "biračko", "mesto", "broj", "rešenje"}
+
+
+def shape(text: str, limit: int = 1500) -> str:
+    """The layout of a decision with every word that isn't a known keyword masked, so no name is shown."""
+    def mask(m: re.Match) -> str:
+        w = m.group(0)
+        return w if w.lower() in KEEP_WORDS else "x" * min(len(w), 3)
+    return LETTERS_WORD.sub(mask, text)[:limit]
+
+
+LETTERS_WORD = re.compile(r"[A-Za-zА-Яа-яЂђЈјЉљЊњЋћЏџČčĆćŠšŽžĐđ]+")
+
+
+def read_doc(doc: BoardDoc, pdf: bytes, contestants: list[dict], station_key: str | None,
+             diagnose: bool = False) -> dict:
     """What the store keeps about one decision: no names, only lists, yes/no and the address."""
-    decision = parse_decision(pdf_text(pdf))
+    text = pdf_text(pdf)
+    decision = parse_decision(text)
     slots = []
     unmatched = 0
     for s in decision.slots:
@@ -257,9 +275,12 @@ def read_doc(doc: BoardDoc, pdf: bytes, contestants: list[dict], station_key: st
         if number is None:
             unmatched += 1
         slots.append([number, s.member, s.deputy])
-    return {"s": station_key, "k": doc.kind, "r": doc.repeat, "t": doc.published, "slots": slots,
-            "unmatched": unmatched, "addr": decision.address,
-            "station_ok": decision.station is None or decision.station == doc.station}
+    result = {"s": station_key, "k": doc.kind, "r": doc.repeat, "t": doc.published, "slots": slots,
+              "unmatched": unmatched, "addr": decision.address, "unparsed": not slots,
+              "station_ok": decision.station is None or decision.station == doc.station}
+    if diagnose and not slots:
+        result["_shape"] = shape(text)
+    return result
 
 
 def coverage(store: dict) -> dict[str, dict]:
@@ -267,9 +288,14 @@ def coverage(store: dict) -> dict[str, dict]:
 
     Appointments and supplements add up. If the station voted again and got new boards, only those count."""
     by_station: dict[str, list[dict]] = {}
+    unread: dict[str, int] = {}
     for d in store.get("docs", {}).values():
-        if d.get("s") and d.get("k") == "extended" and d.get("slots") is not None:
-            by_station.setdefault(d["s"], []).append(d)
+        if not d.get("s") or d.get("k") != "extended" or d.get("slots") is None:
+            continue
+        if d.get("unparsed") or not d["slots"]:
+            unread[d["s"]] = unread.get(d["s"], 0) + 1
+            continue
+        by_station.setdefault(d["s"], []).append(d)
     out = {}
     for key, docs in by_station.items():
         if any(d.get("r") for d in docs):
@@ -284,7 +310,10 @@ def coverage(store: dict) -> dict[str, dict]:
                 cur["deputy"] = cur["deputy"] or bool(deputy)
         address = next((d["addr"] for d in reversed(docs) if d.get("addr")), "")
         unmatched = sum(d.get("unmatched", 0) for d in docs)
-        out[key] = {"lists": lists, "address": address, "unmatched": unmatched, "docs": len(docs)}
+        out[key] = {"lists": lists, "address": address, "unmatched": unmatched, "docs": len(docs),
+                    "unread": unread.get(key, 0)}
+    for key, n in unread.items():
+        out.setdefault(key, {"lists": None, "address": "", "unmatched": 0, "docs": 0, "unread": n})
     return out
 
 
@@ -301,10 +330,10 @@ def municipality_key(name: str) -> str:
 def _work(args: tuple) -> tuple[str, dict | None, str | None]:
     """Download and read one decision. Runs in a worker process; returns no names."""
     from izbori.rik import Client
-    doc, contestants, station_key, base = args
+    doc, contestants, station_key, base, diagnose = args
     try:
         pdf = Client(base=base).get_bytes(doc["url"])
-        return doc["id"], read_doc(BoardDoc(**doc), pdf, contestants, station_key), None
+        return doc["id"], read_doc(BoardDoc(**doc), pdf, contestants, station_key, diagnose), None
     except Exception as e:  # noqa: BLE001 - one bad document must not stop the rest
         return doc["id"], None, type(e).__name__
 
@@ -343,7 +372,7 @@ def fetch_index(client, round_id: str, rik_type: int, known: frozenset = frozens
 
 def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], stations: dict[str, str], client,
         workers: int = 4, budget_seconds: float = 5 * 3600, limit: int | None = None, log=print,
-        save_every: int = 200, checkpoint=None) -> dict:
+        save_every: int = 200, checkpoint=None, diagnose: int = 0, retry_unparsed: bool = False) -> dict:
     """Index the round's board decisions and read the ones not yet read.
 
     `stations` maps a municipality key (see municipality_key) to its code in the results file."""
@@ -353,7 +382,9 @@ def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], 
     started = time.monotonic()
     store = load_store(round_dir)
     known = store.setdefault("docs", {})
-    docs = fetch_index(client, round_id, rik_type, frozenset(known), log)
+    # Page through the whole register unless the last run read everything; otherwise older unread decisions
+    # deep in the register would be missed.
+    docs = fetch_index(client, round_id, rik_type, frozenset(known) if store.get("complete") else frozenset(), log)
     store["indexed"] = len(set(known) | {d.id for d in docs})
     todo = []
     for d in docs:
@@ -363,13 +394,14 @@ def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], 
             if d.id not in known:
                 known[d.id] = {"s": key, "k": d.kind, "r": d.repeat, "t": d.published}
             continue
-        if d.id in known and known[d.id].get("slots") is not None:
+        if d.id in known and known[d.id].get("slots") is not None and not (
+                retry_unparsed and known[d.id].get("unparsed")):
             continue
-        todo.append((d.__dict__, contestants, key, client.base))
+        todo.append((d.__dict__, contestants, key, client.base, diagnose > 0))
     if limit is not None:
         todo = todo[:limit]
     log(f"{len(docs)} decisions indexed, {len(todo)} to read")
-    done = failed = 0
+    done = failed = unparsed = shown = 0
     with ProcessPoolExecutor(max_workers=workers) as pool:
         pending = set()
         queue = iter(todo)
@@ -385,6 +417,12 @@ def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], 
             for f in finished:
                 did, result, error = f.result()
                 if result is not None:
+                    layout = result.pop("_shape", None)
+                    if result.get("unparsed"):
+                        unparsed += 1
+                        if layout and shown < diagnose:
+                            shown += 1
+                            log(f"unreadable decision {did} ({result.get('s')}), layout with names masked:\n{layout}")
                     known[did] = result
                     done += 1
                 else:
@@ -395,6 +433,8 @@ def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], 
                     log(f"read {done}, failed {failed}")
                     if checkpoint:
                         checkpoint()
+    store["complete"] = limit is None and done + failed == len(todo) and failed == 0
     save_store(round_dir, store)
-    log(f"read {done}, failed {failed}, left {len(todo) - done - failed}")
-    return {"indexed": len(docs), "read": done, "failed": failed, "left": len(todo) - done - failed}
+    log(f"read {done} (unreadable {unparsed}), failed {failed}, left {len(todo) - done - failed}")
+    return {"indexed": len(docs), "read": done, "failed": failed, "unparsed": unparsed,
+            "left": len(todo) - done - failed}

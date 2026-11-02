@@ -20,6 +20,10 @@ on:
         description: "Commit the results"
         type: boolean
         default: true
+      retry:
+        description: "Read again the decisions that couldn't be read"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -51,11 +55,13 @@ jobs:
           MINUTES: ${{ inputs.minutes || '320' }}
           LIMIT: ${{ inputs.limit }}
           COMMIT: ${{ github.event_name == 'schedule' || inputs.commit }}
+          RETRY: ${{ inputs.retry }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          args=(--budget-minutes "$MINUTES" --show 15)
+          args=(--budget-minutes "$MINUTES" --show 15 --diagnose 15)
           [ -n "$ROUND" ] && args+=(--round "$ROUND")
           [ -n "$LIMIT" ] && args+=(--limit "$LIMIT")
           [ "$COMMIT" = "true" ] && args+=(--commit --push --dispatch-pages)
+          [ "$RETRY" = "true" ] && args+=(--retry-unparsed)
           uv run izbori boards "${args[@]}"

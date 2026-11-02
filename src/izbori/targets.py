@@ -41,6 +41,8 @@ def rank(archive: Archive, notes_dir: Path | None = None, rids: list[str] | None
         n_lists = len(archive.meta(latest).get("contestants") or [])
         for key, row in rows.items():
             c = ctrl.get(key)
+            if c is not None and c["lists"] is None:
+                c = None
             row["ctrl"] = None if c is None else sorted(int(n) for n, v in c["lists"].items() if v["member"])
             row["ctrl_missing"] = None if c is None else [n for n in range(1, n_lists + 1) if n not in row["ctrl"]]
             row["address"] = c["address"] if c else ""

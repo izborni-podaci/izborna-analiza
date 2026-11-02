@@ -103,3 +103,16 @@ def test_coverage_combines_and_prefers_repeat_votes():
     assert cov["1/1"]["lists"] == {"1": {"member": True, "deputy": True}, "3": {"member": True, "deputy": False}}
     assert cov["1/1"]["address"] == "X"
     assert cov["1/2"]["lists"] == {"2": {"member": True, "deputy": False}}
+
+
+def test_unreadable_decision_is_unknown_not_empty():
+    store = {"docs": {"a": {"s": "1/1", "k": "extended", "r": False, "t": "1", "slots": [], "unparsed": True}}}
+    assert coverage(store)["1/1"]["lists"] is None
+
+
+def test_shape_masks_names():
+    from izbori.boards import shape
+    text = (FIX / "board_decision.txt").read_text(encoding="utf-8")
+    masked = shape(text)
+    assert "Петар" not in masked and "Петровић" not in masked and "Марковић" not in masked
+    assert "члан" in masked and "предлог" in masked

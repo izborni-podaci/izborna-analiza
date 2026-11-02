@@ -35,6 +35,7 @@
 
 {% macro controllers(c, n_lists) %}
 {% if c is none %}<p class="ctrl small muted">{{ t('ctrl_unknown') }}</p>
+{% elif c.lists is none %}<p class="ctrl small muted">{{ t('ctrl_unreadable') }}</p>
 {% else %}
 {% set members = c.lists.items()|selectattr('1.member')|map(attribute='0')|map('int')|sort|list %}
 <p class="ctrl small">{% if members %}{{ t('ctrl_lists', lists=members|join(', '), n=members|length, total=n_lists) }}{% else %}{{ t('ctrl_none_named') }}{% endif %}{% if c.address %} · {{ t('address') }}: {{ name(c.address) }}{% endif %}</p>

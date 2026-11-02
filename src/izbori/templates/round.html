@@ -117,7 +117,7 @@
 <section id="controllers">
   <h2>{{ t('ctrl_heading') }}</h2>
   <p class="rule">{{ t('ctrl_note') }}</p>
-  <p>{{ t('ctrl_read', n=i(ctrl|length), total=i(totals.stations)) }}</p>
+  <p>{{ t('ctrl_read', n=i(ctrl_readable), total=i(totals.stations)) }}</p>
   <div class="table-wrap">
   <table class="compact">
     <thead><tr><th class="num">{{ t('no') }}</th><th>{{ t('candidate') if rnd.kind == 'presidential' else t('list') }}</th><th class="num">{{ t('ctrl_with_member') }}</th><th class="num">{{ t('ctrl_share') }}</th><th class="bar-col"><span class="visually-hidden">{{ t('ctrl_share') }}</span></th></tr></thead>

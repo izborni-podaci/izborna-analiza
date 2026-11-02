@@ -230,6 +230,7 @@ S: dict[str, tuple[str, str]] = {
     "ctrl_share": ("% прочитаних", "% of those read"),
     "ctrl_lists": ("Контролори: листе {lists} ({n} од {total})", "Controllers: lists {lists} ({n} of {total})"),
     "ctrl_none_named": ("Контролори: ниједна листа", "Controllers: no list"),
+    "ctrl_unreadable": ("Контролори: решење није могло да се прочита аутоматски", "Controllers: the decision couldn't be read automatically"),
     "ctrl_unknown": ("Контролори: решење још није прочитано", "Controllers: no decision read yet"),
     "address": ("Адреса", "Address"),
     "minority_unchecked": ("Статус мањинских листа за ове изборе још није унет према одлукама РИК-а, па број мандата може да одступа.",
