@@ -117,3 +117,10 @@ def test_checks_ignore_who_leads(round2026):
     before = {(f.station, f.code) for f in station_flags(round2026)}
     after = {(f.station, f.code) for f in station_flags(swapped)}
     assert before == after
+
+
+def test_several_minutes_links(round2026):
+    s = next(x for x in round2026.stations if x.key == "70157/25")
+    assert len(s.minutes_links) == 3
+    assert all(url.startswith("https://") and "\n" not in url for _, url in s.minutes_links)
+    assert s.minutes_url == s.minutes_links[-1][1]

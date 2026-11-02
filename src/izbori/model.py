@@ -59,12 +59,22 @@ class Station:
         return self.invalid / base
 
     @property
+    def minutes_links(self) -> list[tuple[str, str]]:
+        """Every minutes document, oldest first (a repeat vote adds its own)."""
+        return links(self.minutes)
+
+    @property
+    def correction_links(self) -> list[tuple[str, str]]:
+        return links(self.correction)
+
+    @property
     def minutes_url(self) -> str:
-        return _url(self.minutes)
+        """The latest minutes."""
+        return last_url(self.minutes)
 
     @property
     def correction_url(self) -> str:
-        return _url(self.correction)
+        return last_url(self.correction)
 
     @property
     def minutes_uploaded(self) -> datetime | None:
@@ -75,8 +85,8 @@ class Station:
 
     @property
     def correction_form(self) -> str:
-        m = _FORM.search(self.correction or "")
-        return m.group(0).replace("РГ", "RG") if m else ""
+        m = _FORM.findall(self.correction or "")
+        return m[-1].replace("РГ", "RG") if m else ""
 
     @property
     def region(self) -> str:
@@ -87,10 +97,22 @@ class Station:
         return self.district.split("/")[-1]
 
 
-def _url(raw: str) -> str:
-    if not raw:
-        return ""
-    return raw.split("|", 1)[1].strip() if "|" in raw else raw.strip()
+def links(raw: str) -> list[tuple[str, str]]:
+    """RIK's link fields hold one or more "label|url" entries, one per line."""
+    out = []
+    for part in (raw or "").split("\n"):
+        part = part.strip()
+        if not part:
+            continue
+        label, _, url = part.rpartition("|") if "|" in part else ("", "", part)
+        if url.strip().startswith("http"):
+            out.append((label.strip(), url.strip()))
+    return out
+
+
+def last_url(raw: str) -> str:
+    found = links(raw)
+    return found[-1][1] if found else ""
 
 
 @dataclass

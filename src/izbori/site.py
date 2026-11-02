@@ -5,6 +5,7 @@ transliterator. Links to RIK documents are percent-encoded first, so translitera
 
 from __future__ import annotations
 
+import re
 import shutil
 from collections import defaultdict
 from pathlib import Path
@@ -19,6 +20,7 @@ from izbori.contests import Presidential, Proportional, contest_rules
 from izbori.describe import describe, field_label
 from izbori.history import Archive
 from izbori.links import safe_url
+from izbori.model import last_url
 from izbori.i18n import (LANG_ATTR, LOCALES, PREFIX, check_name, check_rule, fmt_int, fmt_num, fmt_pct,
                          fmt_time, keep, kind_name, latin_page, strip_keep, t)
 from izbori.report import Analysis, analyze
@@ -38,6 +40,7 @@ class Site:
         self.env = Environment(loader=FileSystemLoader(HERE / "templates"), autoescape=select_autoescape(),
                                trim_blocks=True, lstrip_blocks=True)
         self.env.filters["url"] = safe_url
+        self.env.filters["form"] = lambda label: ((re.search(r"РГ-7-\d+", label or "") or [""])[0]).replace("РГ", "RG")
         self.analyses: dict[str, Analysis] = {}
 
     # --- helpers handed to templates ---------------------------------------------------------
@@ -248,8 +251,8 @@ class Site:
             is_link = e["f"] in ("zapisnik_link", "korekcija_dokument_link")
             changes.append({"t": e["t"], "s": s, "key": e["s"], "field": field_label(e["f"], loc, a.round.kind),
                             "before": "" if is_link else value(e["o"]), "now": "" if is_link else value(e["n"]),
-                            "before_url": safe_url(e["o"].split("|", 1)[-1]) if is_link and e["o"] else "",
-                            "now_url": safe_url(e["n"].split("|", 1)[-1]) if is_link and e["n"] else ""})
+                            "before_url": safe_url(last_url(e["o"])) if is_link and e["o"] else "",
+                            "now_url": safe_url(last_url(e["n"])) if is_link and e["n"] else ""})
         self.write(loc, base + "changes.html", "changes.html", changes=changes, **common)
 
         by_code: dict[str, list] = defaultdict(list)

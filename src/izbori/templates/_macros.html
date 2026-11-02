@@ -23,8 +23,10 @@
 {% endmacro %}
 
 {% macro doc_links(s) %}
-{% if s and s.minutes_url %}<a class="doc" href="{{ s.minutes_url|url }}" rel="noopener noreferrer" target="_blank">{{ t('minutes') }}</a>{% endif %}
-{% if s and s.correction_url %} <a class="doc" href="{{ s.correction_url|url }}" rel="noopener noreferrer" target="_blank">{{ t('correction') }}{% if s.correction_form %} {{ s.correction_form }}{% endif %}</a>{% endif %}
+{% if s %}
+{% for label, url in s.minutes_links %}<a class="doc" href="{{ url|url }}" rel="noopener noreferrer" target="_blank" title="{{ name(label) }}">{{ t('minutes') }}{% if s.minutes_links|length > 1 %} {{ loop.index }}{% endif %}</a> {% endfor %}
+{% for label, url in s.correction_links %}<a class="doc" href="{{ url|url }}" rel="noopener noreferrer" target="_blank" title="{{ name(label) }}">{{ t('correction') }}{% set f = label|form %}{% if f %} {{ f }}{% endif %}</a> {% endfor %}
+{% endif %}
 {% endmacro %}
 
 {% macro data_note() %}
