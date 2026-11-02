@@ -94,5 +94,5 @@ def test_repeats_across_elections(tmp_path):
     analyses = [analyze(a, rid, None, {}) for rid in a.round_ids()]
     rows, once = repeat.stations(analyses)
     assert [r["key"] for r in rows] == ["70000/11"] and once == 0
-    assert rows[0]["k"] == 2 and rows[0]["n"] == 2 and "ballot_mismatch" in rows[0]["same"]
+    assert rows[0]["k"] == 2 and rows[0]["n"] == 2 and ("ballot_mismatch", 2) in rows[0]["same"]
     assert repeat.same_counts(rows)[0][1] == 1

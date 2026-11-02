@@ -42,8 +42,9 @@ def stations(analyses: list) -> tuple[list[dict], int]:
             continue
         once += k == 1
         seen = Counter(c for codes in row["flags"].values() for c in codes)
-        row.update({"k": k, "n": len(row["took"]), "types": " ".join(sorted(seen)),
-                    "same": sorted((c for c, m in seen.items() if m >= 2), key=lambda c: -BY_CODE[c].weight)})
+        same = sorted(((c, m) for c, m in seen.items() if m >= 2), key=lambda x: (-x[1], -BY_CODE[x[0]].weight))
+        row.update({"k": k, "n": len(row["took"]), "types": " ".join(sorted(seen)), "same": same,
+                    "same_codes": " ".join(c for c, _ in same)})
         out.append(row)
     out.sort(key=lambda r: (-r["k"], -r["score"], r["key"]))
     return out, once
@@ -51,7 +52,7 @@ def stations(analyses: list) -> tuple[list[dict], int]:
 
 def same_counts(rows: list[dict]) -> list[tuple[str, int]]:
     """For each check: at how many stations it came up in two or more elections."""
-    c = Counter(code for r in rows for code in r["same"])
+    c = Counter(code for r in rows for code, _ in r["same"])
     return sorted(c.items(), key=lambda x: (-x[1], x[0]))
 
 

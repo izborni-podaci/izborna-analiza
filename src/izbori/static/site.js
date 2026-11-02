@@ -92,6 +92,12 @@
       f('type').value = wanted;
       f('min').value = '1';
     }
+    document.querySelectorAll('[data-set-same]').forEach((a) => a.addEventListener('click', () => {
+      f('type').value = a.dataset.setSame;
+      f('same').checked = true;
+      f('min').value = '2';
+      apply();
+    }));
     ['min', 'type', 'same'].forEach((n) => f(n).addEventListener('change', apply));
     f('q').addEventListener('input', apply);
     apply();

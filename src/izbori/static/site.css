@@ -220,3 +220,7 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .cell-flags .dot { width: 8px; height: 8px; margin-right: 5px; }
 .renamed { font-weight: 700; margin-left: 4px; }
 .filters label.inline { display: flex; flex-direction: row; align-items: center; gap: 6px; }
+.repeat th, .repeat td { min-width: 9.5rem; }
+.repeat td:first-child, .repeat th:first-child { min-width: 12rem; }
+.repeat td:nth-child(3), .repeat th:nth-child(3) { min-width: 13rem; }
+.repeat td:nth-child(2), .repeat th:nth-child(2), .repeat td:nth-child(4), .repeat th:nth-child(4) { min-width: 0; white-space: nowrap; }

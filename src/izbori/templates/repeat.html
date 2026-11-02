@@ -14,15 +14,17 @@
   <p class="big-number"><strong>{{ i(n2) }}</strong> {{ t('repeat_big', once=i(once)) }}</p>
   {% if same %}
   <h2>{{ t('repeat_same_heading') }}</h2>
+  <p class="small">{{ t('repeat_same_note') }}</p>
   <div class="type-cards">
   {% for code, n in same %}
-    <div class="type-card g-{{ group_of[code] }}"><span class="dot" aria-hidden="true"></span><span class="tc-name">{{ check_name(code) }}</span><span class="tc-n">{{ i(n) }}</span></div>
+    <a class="type-card g-{{ group_of[code] }}" href="#rep-table" data-set-same="{{ code }}"><span class="dot" aria-hidden="true"></span><span class="tc-name">{{ check_name(code) }}</span><span class="tc-n">{{ i(n) }}</span></a>
   {% endfor %}
   </div>
   {% endif %}
 </section>
 
 <h2>{{ t('repeat_stations_heading') }}</h2>
+<p class="small">{{ t('repeat_columns_note') }}</p>
 <form class="filters" data-filter-rows="#rep-table" onsubmit="return false">
   <label>{{ t('repeat_min') }}
     <select data-f="min"><option value="1">1+</option><option value="2" selected>2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select>
@@ -41,17 +43,17 @@
 <div class="table-wrap">
 <table class="compact repeat" id="rep-table">
   <thead><tr>
-    <th>{{ t('station') }}</th><th class="num" data-sort>{{ t('repeat_k') }}</th><th class="num" data-sort>{{ t('repeat_score') }}</th>
+    <th>{{ t('station') }}</th><th class="num" data-sort>{{ t('repeat_k') }}</th><th>{{ t('repeat_same') }}</th><th class="num" data-sort>{{ t('repeat_score') }}</th>
     {% for r in rounds %}<th title="{{ r.title }}">{{ r.short }}</th>{% endfor %}
   </tr></thead>
   <tbody>
   {% for row in rows %}{% set s = row.station %}
-    <tr data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same|join(' ') }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}"{% if row.k < 2 %} hidden{% endif %}>
+    <tr data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same_codes }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}"{% if row.k < 2 %} hidden{% endif %}>
       <td><a href="{{ link('r/' ~ row.rid ~ '/m/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>
         {% if s.name %}<div class="small muted">{{ name(s.name) }}</div>{% endif %}
-        {% if row.same %}<div class="small"><strong>{{ t('repeat_same') }}:</strong> {% for c in row.same %}{{ check_name(c) }}{% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}
       </td>
       <td class="num" data-v="{{ row.k }}"><strong>{{ row.k }}</strong>&nbsp;/&nbsp;{{ row.n }}</td>
+      <td class="small">{% for code, m in row.same %}<div class="g-{{ group_of[code] }}"><span class="dot" aria-hidden="true"></span>{{ check_name(code) }} · {{ t('repeat_times', n=m) }}</div>{% else %}<span class="muted">{{ t('repeat_none') }}</span>{% endfor %}</td>
       <td class="num" data-v="{{ '%.3f'|format(row.score) }}">{{ num(row.score, 1) }}</td>
       {% for r in rounds %}
       <td class="small">

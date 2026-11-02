@@ -123,13 +123,17 @@ S: dict[str, tuple[str, str]] = {
     "repeat_caveat_areas": ("Бирачко место се препознаје по општини и броју. Подручја и адресе се између избора мењају: ≠ значи да се назив места тада очигледно разликовао од најновијег. Избори 2022. немају називе места у табели РИК-а.", "A station is recognised by municipality and number. Areas and addresses change between elections: ≠ means the station's name then clearly differed from its newest one. RIK's 2022 table has no station names."),
     "repeat_caveat_score": ("Скор сабира тежине ознака, а сваки старији избори вреде 70% новијих. Исти скор групе посматрача користе да одлуче где да оду.", "The score adds up the flags' weights, each older election counting 70% of the next one. Observer groups use the same score to decide where to go."),
     "repeat_big": ("бирачких места има ознаку на бар двоје избора; још {once} само на једним", "polling stations are flagged in at least two elections; {once} more in only one"),
-    "repeat_same_heading": ("Иста провера на истом месту", "The same check at the same place"),
+    "repeat_same_heading": ("Шта се најчешће понавља", "What recurs most often"),
+    "repeat_same_note": ("Број бирачких места на којима се иста ознака појавила на бар двоје избора. Клик приказује та места.", "Number of polling stations where the same flag came up in at least two elections. Click to list them."),
+    "repeat_columns_note": ("Избора са ознаком: на колико од избора на којима је место гласало је имало бар једну ознаку. Понавља се: иста ознака на истом месту на двоје или више избора. Колоне десно: ознаке на сваким изборима.", "Elections flagged: in how many of the elections the station took part in it had at least one flag. Recurs: the same flag at the same station in two or more elections. Columns on the right: the flags in each election."),
+    "repeat_times": ("на {n} избора", "in {n} elections"),
+    "repeat_none": ("различите ознаке", "different flags"),
     "repeat_stations_heading": ("Бирачка места", "Polling stations"),
     "repeat_min": ("Избора са ознаком", "Elections flagged"),
-    "repeat_same_only": ("Само где се иста провера поновила", "Only where the same check came up again"),
+    "repeat_same_only": ("Само где се иста ознака понавља", "Only where the same flag recurs"),
     "repeat_k": ("Избора са ознаком", "Elections flagged"),
     "repeat_score": ("Скор", "Score"),
-    "repeat_same": ("Поново", "Again"),
+    "repeat_same": ("Понавља се", "Recurs"),
     "repeat_no_flag": ("Гласало, без ознаке", "Voted, not flagged"),
     "repeat_not_there": ("Није гласало на тим изборима", "Not part of that election"),
     "repeat_renamed": ("Назив места се разликује од најновијег", "The station's name differs from its newest one"),
@@ -423,7 +427,7 @@ def fmt_time(value, loc: str) -> str:
     d = d.astimezone(BELGRADE)
     if loc == "en":
         return f"{d.day} {MONTHS_EN[d.month - 1]} {d.year}, {d:%H:%M}"
-    return f"{d.day}. {d.month}. {d.year}. {d:%H:%M}"
+    return f"{d.day}.{d.month}.{d.year}. {d:%H:%M}"
 
 
 def rule_values(rules: dict, loc: str) -> dict:
