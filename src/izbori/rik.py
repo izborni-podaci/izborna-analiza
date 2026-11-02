@@ -22,14 +22,15 @@ class RikError(RuntimeError):
 
 def guess_kind(rik_type: int, name: str) -> str:
     n = (name or "").lower()
-    if "председник" in n or "predsednik" in n:
-        return "presidential"
-    if any(w in n for w in ("покрајин", "pokrajin", "војводин", "vojvodin", "аутономн", "autonomn")):
-        return "provincial"
-    if "одборник" in n or "odbornik" in n:
-        return "local"
-    if "посланик" in n or "poslanik" in n:
-        return "parliamentary"
+    words = {  # stems: RIK names rounds briefly, e.g. "Парламентарни 2026", "Локални 2024 - Београд"
+        "presidential": ("председни", "predsedni"),
+        "provincial": ("покрајин", "pokrajin", "војводин", "vojvodin", "аутономн", "autonomn"),
+        "local": ("одборни", "odborni", "локалн", "lokaln"),
+        "parliamentary": ("посланик", "poslanik", "парламент", "parlament"),
+    }
+    for kind, stems in words.items():
+        if any(w in n for w in stems):
+            return kind
     return KIND_BY_TYPE.get(rik_type, "unknown")
 
 

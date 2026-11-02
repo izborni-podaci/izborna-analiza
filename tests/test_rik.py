@@ -77,3 +77,8 @@ def test_guess_kind():
     assert guess_kind(9, "Избори за одборнике Скупштине града Београда") == "local"
     assert guess_kind(7, "Избори за посланике у Скупштину АП Војводине") == "provincial"
     assert guess_kind(5, "") == "unknown"
+    # the short names RIK actually uses
+    assert guess_kind(1, "Председнички 2026") == "presidential"
+    assert guess_kind(9, "Локални 2024 - Београд") == "local"
+    assert guess_kind(9, "Парламентарни 2026") == "parliamentary"
+    assert guess_kind(9, "Покрајински 2023") == "provincial"

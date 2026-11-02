@@ -16,7 +16,12 @@ A public site in Serbian (Latin and Cyrillic) and English. It saves every result
   - Atom feeds and the email digest
   - the scheduled jobs
   - tests on the 2026 parliamentary files
-- **Still to confirm:** that GitHub's servers can reach RIK (see Setup).
+- **RIK is reachable from GitHub's servers.** The probe on 2 November 2026 listed RIK's rounds:
+  - parliamentary 2023 and 2026
+  - Belgrade local 2024
+  - provincial 2023
+
+  This is re-checked before each election.
 
 A Serbian version of this file (`README.sr.md`) will follow.
 
@@ -274,7 +279,7 @@ The tests use the archived 2026 files and small made-up files. They check that t
 
 ## Open items
 
-- **Can GitHub's servers reach RIK?** RIK may block requests from abroad, so this is the first thing to test. If it does, run `update --watch` from a computer in Serbia on election night. Nothing else changes.
+- **RIK blocking requests on election night.** GitHub's servers reached RIK on 2 November 2026, but RIK could start blocking traffic from abroad under load. If it does, run `update --watch --commit --push` from a computer in Serbia. Nothing else changes.
 - **Presidential format.** The round's type number and columns are known only once RIK lists the election. Check as soon as it appears.
 - **Local elections, likely on the same day as the presidential one.**
   - RIK's system carried Belgrade's 2024 city vote. Other towns publish through their own commissions.
