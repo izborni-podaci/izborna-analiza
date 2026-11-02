@@ -113,6 +113,24 @@
   </div>
 </section>
 
+{% if ctrl_known %}
+<section id="controllers">
+  <h2>{{ t('ctrl_heading') }}</h2>
+  <p class="rule">{{ t('ctrl_note') }}</p>
+  <p>{{ t('ctrl_read', n=i(ctrl|length), total=i(totals.stations)) }}</p>
+  <div class="table-wrap">
+  <table class="compact">
+    <thead><tr><th class="num">{{ t('no') }}</th><th>{{ t('candidate') if rnd.kind == 'presidential' else t('list') }}</th><th class="num">{{ t('ctrl_with_member') }}</th><th class="num">{{ t('ctrl_share') }}</th><th class="bar-col"><span class="visually-hidden">{{ t('ctrl_share') }}</span></th></tr></thead>
+    <tbody>
+    {% for row in ctrl_table %}
+      <tr><td class="num">{{ row.number }}</td><td>{{ name(row.label) }}</td><td class="num">{{ i(row.with_member) }}</td><td class="num">{{ pct(row.share, 1) }}</td><td class="bar-col"><div class="barbox"><span class="hbar" style="width: {{ '%.2f'|format(100 * (row.share or 0)) }}%"></span></div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endif %}
+
 <section id="stats">
   <h2>{{ t('context_heading') }}</h2>
   <p class="rule">{{ t('context_note') }}</p>

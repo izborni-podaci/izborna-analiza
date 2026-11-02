@@ -89,3 +89,24 @@ def test_targets(tmp_path, archive):
     text = (tmp_path / "targets.csv").read_text(encoding="utf-8")
     assert "Bosilegrad" in text and not CYRILLIC.search(text)
     assert not CYRILLIC.search((tmp_path / "targets.html").read_text(encoding="utf-8"))
+
+
+def test_site_shows_controllers(tmp_path, archive):
+    import json
+    import shutil
+
+    from izbori.history import Archive
+    data = tmp_path / "data"
+    shutil.copytree(archive.root, data)
+    rnd = archive.load("680072")
+    s = next(x for x in rnd.stations if x.municipality == "Дољевац" and x.number == "23")
+    store = {"docs": {"x": {"s": s.key, "k": "extended", "r": False, "t": "1", "unmatched": 0,
+                            "addr": "ОШ ПРИМЕР, ГЛАВНА 1", "slots": [[1, True, True], [3, True, False], [2, False, False]]}}}
+    (data / "rounds/680072/boards.json").write_text(json.dumps(store, ensure_ascii=False), encoding="utf-8")
+    out = build(Archive(data), tmp_path / "site", None, "https://example.org/x/")
+    round_page = (out / "r/680072/index.html").read_text(encoding="utf-8")
+    assert "Kontrolori u biračkim odborima" in round_page
+    mun = (out / f"r/680072/m/{s.municipality_code}.html").read_text(encoding="utf-8")
+    assert "Kontrolori: liste 1, 3 (2 od 18)" in mun and "OŠ PRIMER, GLAVNA 1" in mun
+    assert "Controllers: lists 1, 3 (2 of 18)" in (out / f"en/r/680072/m/{s.municipality_code}.html").read_text(
+        encoding="utf-8")

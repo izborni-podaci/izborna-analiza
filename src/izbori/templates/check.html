@@ -41,6 +41,7 @@
     </header>
     {{ mx.chips(it.flags) }}
     {% if s and s.counted %}<p class="numbers small">{{ t('registered') }} {{ i(s.registered) }} · {{ t('voted') }} {{ i(s.voted) }} ({{ pct(s.turnout, 1) }}) · {{ t('ballots') }} {{ i(s.ballots) }} · {{ t('valid') }} {{ i(s.valid) }} · {{ t('invalid') }} {{ i(s.invalid) }}</p>{% endif %}
+    {% if ctrl_known %}{{ mx.controllers(ctrl.get(it.key), rnd.contestants|length) }}{% endif %}
     <p class="docs">{{ mx.doc_links(s) }}</p>
     {{ mx.notes_list(it.notes) }}
   </article>

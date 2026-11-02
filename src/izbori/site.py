@@ -12,7 +12,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from izbori import feed, stats, svg
+from izbori import boards, feed, stats, svg
 from izbori.checks import BY_CODE, CHECKS, GROUPS, RULES
 from izbori.config import REPO_URL, RIK_PUBLIC, SITE_URL
 from izbori.contests import Presidential, Proportional, contest_rules
@@ -209,8 +209,15 @@ class Site:
         for f in a.flags:
             counts[f.code] += 1
         group_counts = {g: len({f.station for f in a.flags if f.check.group == g}) for g in GROUPS}
+        ctrl = boards.coverage(boards.load_store(self.archive.dir(rid)))
+        ctrl_table = []
+        for c in a.round.contestants:
+            with_member = sum(1 for v in ctrl.values() if v["lists"].get(str(c.number), {}).get("member"))
+            ctrl_table.append({"number": c.number, "label": c.label, "with_member": with_member,
+                               "share": with_member / len(ctrl) if ctrl else None})
         common = {"a": a, "rnd": a.round, "totals": totals, "base": base, "view": view,
-                  "snapshots": a.snapshots, "label": label, "rtitle": self.round_title(a.round, loc)}
+                  "snapshots": a.snapshots, "label": label, "rtitle": self.round_title(a.round, loc),
+                  "ctrl": ctrl, "ctrl_known": bool(ctrl), "ctrl_table": ctrl_table}
         self.write(loc, base + "index.html", "round.html", municipalities=municipalities, stats=context_stats,
                    counts=counts, group_counts=group_counts, checks=CHECKS, groups=GROUPS, **common)
 

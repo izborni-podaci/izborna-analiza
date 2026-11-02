@@ -9,6 +9,7 @@ import csv
 import html
 from pathlib import Path
 
+from izbori import boards
 from izbori.describe import describe
 from izbori.history import Archive
 from izbori.i18n import check_name, fmt_num, latin_page, t
@@ -34,6 +35,15 @@ def rank(archive: Archive, notes_dir: Path | None = None, rids: list[str] | None
             row["score"] += weight * sum(f.check.weight for f in flags)
             row["reasons"].extend((a.round, f) for f in flags)
             row["notes"].extend(a.notes.get(key, []))
+    if ids:
+        latest = ids[-1]
+        ctrl = boards.coverage(boards.load_store(archive.dir(latest)))
+        n_lists = len(archive.meta(latest).get("contestants") or [])
+        for key, row in rows.items():
+            c = ctrl.get(key)
+            row["ctrl"] = None if c is None else sorted(int(n) for n, v in c["lists"].items() if v["member"])
+            row["ctrl_missing"] = None if c is None else [n for n in range(1, n_lists + 1) if n not in row["ctrl"]]
+            row["address"] = c["address"] if c else ""
     return sorted(rows.values(), key=lambda r: (-r["score"], r["key"]))
 
 
@@ -52,8 +62,8 @@ def _contestant(rnd, loc):
 def write_csv(rows: list[dict], path: Path, loc: str = "lat") -> None:
     with Path(path).open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["score", "municipality", "municipality_code", "station_no", "station", "flags", "details",
-                     "minutes", "news_notes"])
+        w.writerow(["score", "municipality", "municipality_code", "station_no", "station", "address", "flags",
+                     "details", "lists_with_member", "lists_without_member", "minutes", "news_notes"])
         for r in rows:
             s = r["station"]
             names = sorted({_text(check_name(f.code, loc), loc) for _, f in r["reasons"]})
@@ -65,8 +75,11 @@ def write_csv(rows: list[dict], path: Path, loc: str = "lat") -> None:
                 s.municipality_code if s else r["key"].split("/")[0],
                 s.number if s else r["key"].split("/")[1],
                 _text(s.name, loc) if s else "",
+                _text(r.get("address") or "", loc),
                 "; ".join(names),
                 " | ".join(details),
+                "" if r.get("ctrl") is None else " ".join(map(str, r["ctrl"])),
+                "" if r.get("ctrl_missing") is None else " ".join(map(str, r["ctrl_missing"])),
                 safe_url(s.minutes_url) if s else "",
                 " ".join(safe_url(n.url) for n in r["notes"]),
             ])

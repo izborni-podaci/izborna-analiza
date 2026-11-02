@@ -109,6 +109,30 @@ The two turnout checks skip stations flagged as a likely typing error.
 - correlation between turnout and share
 - turnout histogram
 
+## Controllers on polling boards
+
+Each list may appoint a member and a deputy to every polling board's extended composition; people call them
+controllers. For each polling station the local commission publishes a decision listing every list's slot, with
+the names or left blank. RIK publishes them in its register of decisions on polling boards.
+
+`izbori boards` (and the daily **boards** workflow):
+1. reads RIK's register of decisions for the round;
+2. reads the decisions on the extended composition with OCR, since most are scans;
+3. keeps, for each polling station, the address and, for each list, whether it appointed a member and a deputy;
+4. never stores or logs names.
+
+The site then shows, for each list, at how many stations it has a member, and on each station's row which
+lists do. The private target list gets the lists with and without a member.
+
+Limits:
+- This is who was appointed before election day, not who turned up. Attendance is only in the minutes.
+- Later changes and dismissals are not yet applied; only appointments and supplements are. If a station voted
+  again, only the boards appointed for the repeat vote count.
+- A few decisions may be misread or filed under the wrong type by the commission; each station shows whether a
+  decision was read at all.
+
+Results are in `data/rounds/<id>/boards.json`.
+
 ## Notes from news reports
 
 A maintainer can attach a news report about a specific polling station as a note. Notes appear next to the station's flags, labelled "media report, not confirmed".
@@ -175,6 +199,7 @@ data/rounds/<id>/changes.jsonl    one line per value that changed at a station a
 data/rounds/<id>/first_seen.json  when each station first had results in the archive
 data/rounds/<id>/flags_seen.json  when each flag first appeared
 data/rounds/<id>/state.json       RIK's progress at the last download
+data/rounds/<id>/boards.json      controllers: per decision, station, address, and each list's member yes/no
 ```
 
 A parliamentary file has 8,392 stations and is 4.3 MB. Consecutive versions differ by a few rows, so git stores them as small deltas.
@@ -204,6 +229,7 @@ uv run izbori fetch 680072                # download one round now; archive if c
 uv run izbori import FILE.csv --round 680072 --kind parliamentary --contestants lists.json
 uv run izbori update --watch              # what the hourly job runs
 uv run izbori check 680072                # flag counts for one round
+uv run izbori boards --round 680072       # controllers: read decisions on extended polling boards (needs tesseract)
 uv run izbori site --out _site            # build the site
 uv run izbori targets --out targets.csv --html targets.html   # private: never commit or post
 uv run pytest

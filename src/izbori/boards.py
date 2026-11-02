@@ -309,15 +309,30 @@ def _work(args: tuple) -> tuple[str, dict | None, str | None]:
         return doc["id"], None, type(e).__name__
 
 
-def fetch_index(client, round_id: str, rik_type: int, log=print) -> list[BoardDoc]:
-    first = client.get_json(index_query(1, round_id, rik_type))
+def fetch_index(client, round_id: str, rik_type: int, known: frozenset = frozenset(), log=print,
+                threads: int = 4) -> list[BoardDoc]:
+    """All decisions on polling boards for the round, newest first.
+
+    RIK lists them newest first, so once decisions are known, paging stops at the first page with nothing new."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    def page_docs(page: int) -> list[BoardDoc]:
+        return parse_index_records((client.get_json(index_query(page, round_id, rik_type)) or {}).get("records") or [])
+
+    first = client.get_json(index_query(1, round_id, rik_type)) or {}
     pages = last_page(first.get("pagination", ""))
     docs = parse_index_records(first.get("records") or [])
-    for page in range(2, pages + 1):
-        data = client.get_json(index_query(page, round_id, rik_type))
-        docs.extend(parse_index_records(data.get("records") or []))
-        if page % 250 == 0:
-            log(f"index: page {page}/{pages}")
+    if known:
+        page = 1
+        while page < pages and not all(d.id in known for d in docs[-10:]):
+            page += 1
+            docs.extend(page_docs(page))
+    else:
+        with ThreadPoolExecutor(max_workers=threads) as ex:
+            for k, batch in enumerate(ex.map(page_docs, range(2, pages + 1)), start=2):
+                docs.extend(batch)
+                if k % 500 == 0:
+                    log(f"index: page {k}/{pages}")
     seen, unique = set(), []
     for d in docs:
         if d.id not in seen:
@@ -337,9 +352,9 @@ def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], 
 
     started = time.monotonic()
     store = load_store(round_dir)
-    docs = fetch_index(client, round_id, rik_type, log)
-    store["indexed"] = len(docs)
     known = store.setdefault("docs", {})
+    docs = fetch_index(client, round_id, rik_type, frozenset(known), log)
+    store["indexed"] = len(set(known) | {d.id for d in docs})
     todo = []
     for d in docs:
         code = stations.get(municipality_key(d.municipality))
