@@ -6,91 +6,109 @@
   {
    "minority": false,
    "name": "Aleksandar Vučić – Ujedinjena Srbija",
+   "rik_name": "АЛЕКСАНДАР ВУЧИЋ – УЈЕДИЊЕНА СРБИЈА",
    "short": "Ujedinjena Srbija"
   },
   {
    "minority": false,
    "name": "Ivica Dačić – Faktor stabilnosti! (SPS, Jedinstvena Srbija, SDPS, Zeleni Srbije)",
+   "rik_name": "ИВИЦА ДАЧИЋ - ФАКТОР СТАБИЛНОСТИ! (СОЦИЈАЛИСТИЧКА ПАРТИЈА СРБИЈЕ, „ЈЕДИНСТВЕНА СРБИЈА”, СОЦИЈАЛДЕМОКРАТСКА ПАРТИЈА СРБИЈЕ, „ЗЕЛЕНИ СРБИЈЕ”)",
    "short": "Faktor stabilnosti (Dačić)"
   },
   {
    "minority": false,
    "name": "Studentska lista – Studenti pobeđuju",
+   "rik_name": "„СТУДЕНТСКА ЛИСТА - СТУДЕНТИ ПОБЕЂУЈУ”",
    "short": "Studentska lista"
   },
   {
    "minority": true,
    "name": "Rasim Ljajić – Ljudski (SDP – CDP)",
+   "rik_name": "РАСИМ ЉАЈИЋ – ЉУДСКИ (СДП – ЦДП)",
    "short": "Ljudski (Ljajić)"
   },
   {
    "minority": true,
    "name": "Vajdasági Magyar Szövetség – dr. Pásztor Bálint – Savez vojvođanskih Mađara",
+   "rik_name": "VAJDASÁGI MAGYAR SZÖVETSÉG – DR. PÁSZTOR BÁLINT – САВЕЗ ВОЈВОЂАНСКИХ МАЂАРА – ДР БАЛИНТ ПАСТОР",
    "short": "SVM"
   },
   {
    "minority": true,
    "name": "Usame Zukorlić (SPP) – Pokret za ujedinjenje",
+   "rik_name": "USAME ZUKORLIĆ (SPP) POKRET ZA UJEDINJENJE / УСАМЕ ЗУКОРЛИЋ (СПП) ПОКРЕТ ЗА УЈЕДИЊЕЊЕ",
    "short": "SPP (Zukorlić)"
   },
   {
    "minority": true,
    "name": "Ruska stranka – Srbija u BRIKS-u – Slobodan Nikolić",
+   "rik_name": "РУСКА СТРАНКА – СРБИЈА У БРИКСУ – СЛОБОДАН НИКОЛИЋ",
    "short": "Ruska stranka"
   },
   {
    "minority": false,
    "name": "Autentična desnica – dr Miloš Jovanović (Novi DSS, Monarhisti, Srpska koalicija NADA …) – Odvažno srpski!",
+   "rik_name": "АУТЕНТИЧНА ДЕСНИЦА – ДР МИЛОШ ЈОВАНОВИЋ (НОВИ ДСС – МОНАРХИСТИ – СРПСКА КОАЛИЦИЈА НАДА – НАЦИОНАЛНО ДЕМОКРАТСКА АЛТЕРНАТИВА – НОВА ДЕМОКРАТСКА СТРАНКА СРБИЈЕ – ПОКРЕТ ЗА КРАЉЕВИНУ СРБИЈУ) – ОДВАЖНО СРПСКИ!",
    "short": "Autentična desnica"
   },
   {
    "minority": false,
    "name": "Evropska Srbija – Marinika Tepić – Zdravko Ponoš (SSP, SRCE, Solidarnost …)",
+   "rik_name": "ЕВРОПСКА СРБИЈА – МАРИНИКА ТЕПИЋ – ЗДРАВКО ПОНОШ (СТРАНКА СЛОБОДЕ И ПРАВДЕ, СРБИЈА ЦЕНТАР – СРЦЕ, СОЛИДАРНОСТ – САМООДБРАНА – ОСЛОБОЂЕЊЕ)",
    "short": "Evropska Srbija"
   },
   {
    "minority": true,
    "name": "SDA Sandžaka – Čuvari Sandžaka",
+   "rik_name": "СДА САНЏАКА – ЧУВАРИ САНЏАКА SDA SANDŽAKA – ČUVARI SANDŽAKA",
    "short": "SDA Sandžaka"
   },
   {
    "minority": false,
    "name": "Bogoljub Karić – Pokret snaga Srbije – BK",
+   "rik_name": "БОГОЉУБ КАРИЋ – ПОКРЕТ СНАГА СРБИЈЕ - БК",
    "short": "Pokret snaga Srbije (Karić)"
   },
   {
    "minority": false,
    "name": "Liberalno zelena stranka – za slobodnu i čistiju Srbiju",
+   "rik_name": "ЛИБЕРАЛНО ЗЕЛЕНА СТРАНКА-ЗА СЛОБОДНУ И ЧИСТИЈУ СРБИЈУ",
    "short": "Liberalno zelena stranka"
   },
   {
    "minority": true,
    "name": "Biram pravdu – biram budućnost – koalicija Snaga – prof. dr Ferid Bulić – Vasilios Proveleggios",
+   "rik_name": "БИРАМ ПРАВДУ - БИРАМ БУДУЋНОСТ - КОАЛИЦИЈА СНАГА - ПРОФ. ДР ФЕРИД БУЛИЋ - ВАСИЛИОС ПРОВЕЛЕГГИОС – СТРАНКА БУДУЋНОСТИ И РАЗВОЈА/STRANKA BUDUĆNOSTI I RAZVOJA-ГРАЂАНСКА СТРАНКА ГРКА СРБИЈЕ",
    "short": "Biram pravdu (Bulić)"
   },
   {
    "minority": true,
    "name": "Stranka rusko-srpskog jedinstva – Rusi i Srbi braća zauvek",
+   "rik_name": "СТРАНКА РУСКО-СРПСКОГ ЈЕДИНСТВА- РУСИ И СРБИ БРАЋА ЗАУВЕК",
    "short": "Rusko-srpsko jedinstvo"
   },
   {
    "minority": false,
    "name": "Ćale, ovo je za tebe – Petar Đurić – premijer Srbije",
+   "rik_name": "ЋАЛЕ ОВО ЈЕ ЗА ТЕБЕ–ПЕТАР ЂУРИЋ-ПРЕМИЈЕР СРБИЈЕ",
    "short": "Ćale, ovo je za tebe"
   },
   {
    "minority": false,
    "name": "Vladimir Gajić – Alternativa za Srbiju – Narodna stranka, Bunt – Prava Srbija",
+   "rik_name": "ВЛАДИМИР ГАЈИЋ – АЛТЕРНАТИВА ЗА СРБИЈУ - НАРОДНА СТРАНКА, БУНТ-ПРАВА СРБИЈА - БУНТ-НАСТОЯЩАЯ СЕРБИЯ",
    "short": "Alternativa za Srbiju (Gajić)"
   },
   {
    "minority": true,
    "name": "Albanska koalicija – Koalicioni Shqiptar",
+   "rik_name": "„АЛБАНСКА КОАЛИЦИЈА“ - “KOALICIONI SHQIPTAR”",
    "short": "Albanska koalicija"
   },
   {
    "minority": true,
    "name": "Majka Srbija – Gruda",
+   "rik_name": "МАЈКА СРБИЈА – ГРУДА",
    "short": "Majka Srbija – Gruda"
   }
  ],

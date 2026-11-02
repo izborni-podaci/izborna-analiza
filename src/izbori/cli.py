@@ -238,6 +238,59 @@ def cmd_update(args) -> int:
     return 0
 
 
+def cmd_boards(args) -> int:
+    """Read which lists appointed members to the extended polling boards (controllers)."""
+    import os
+    from izbori import boards
+    archive = Archive(args.data)
+    client = Client()
+    known = archive.known_rounds()
+    if not known:
+        known = client.all_rounds()
+        archive.save_known_rounds(known)
+    rid = args.round or max(known, key=lambda r: int(r) if r.isdigit() else 0)
+    info = known.get(rid) or {"type": args.type or 2, "name": "", "kind": "unknown"}
+    meta = archive.meta(rid)
+    if not meta.get("contestants"):
+        try:
+            meta = ensure_meta(archive, rid, info, client.summary(info["type"], rid))
+        except RikError as e:
+            log(f"{rid}: no contestants yet ({e})")
+    contestants = meta.get("contestants") or []
+    if not contestants:
+        log(f"{rid}: contestants unknown, nothing to match against")
+        return 1
+    source = rid if archive.latest_raw(rid) is not None else (archive.round_ids() or [None])[-1]
+    if source is None:
+        log("no archived results to map municipalities from")
+        return 1
+    stations = {boards.municipality_key(s.municipality): s.municipality_code for s in archive.load(source).stations}
+    archive.dir(rid).mkdir(parents=True, exist_ok=True)
+    last_commit = [time.monotonic()]
+
+    def checkpoint():
+        if args.commit and time.monotonic() - last_commit[0] > 1800:
+            if commit([str(args.data)], f"Boards: {rid} ({now_iso()})") and args.push:
+                push()
+            last_commit[0] = time.monotonic()
+
+    result = boards.run(archive.dir(rid), rid, int(info["type"]), contestants, stations, client,
+                        workers=args.workers or os.cpu_count() or 2, budget_seconds=args.budget_minutes * 60,
+                        limit=args.limit, log=log, checkpoint=checkpoint)
+    if args.show:
+        cov = boards.coverage(boards.load_store(archive.dir(rid)))
+        for key in sorted(cov)[: args.show]:
+            c = cov[key]
+            members = sorted(int(n) for n, v in c["lists"].items() if v["member"])
+            log(f"{key}: lists with a member {members} of {len(contestants)}; unmatched {c['unmatched']}; "
+                f"address: {latin(c['address'])}")
+        log(f"stations with a decision read: {len(cov)}")
+    if args.commit and commit([str(args.data)], f"Boards: {rid}, {result['read']} decisions read ({now_iso()})"):
+        if args.push and push() and args.dispatch_pages:
+            dispatch_pages()
+    return 0
+
+
 def cmd_site(args) -> int:
     from izbori.site import build
     out = build(Archive(args.data), Path(args.out), args.notes, args.site_url)
@@ -301,6 +354,18 @@ def main(argv: list[str] | None = None) -> int:
     u.add_argument("--dispatch-pages", action="store_true", help="start the pages workflow after a push")
     u.add_argument("--notify", action="store_true", help="send the email digest if SMTP settings are present")
     u.set_defaults(fn=cmd_update)
+
+    b = sub.add_parser("boards", help="read which lists appointed members to extended polling boards")
+    b.add_argument("--round", help="round id (default: the newest round RIK lists)")
+    b.add_argument("--type", type=int, help="RIK's election type, if the round isn't known yet")
+    b.add_argument("--workers", type=int, help="parallel OCR processes (default: number of CPUs)")
+    b.add_argument("--budget-minutes", type=float, default=320, help="stop starting new documents after this")
+    b.add_argument("--limit", type=int, help="read at most this many decisions (for trials)")
+    b.add_argument("--show", type=int, default=0, help="print this many station summaries (no names)")
+    b.add_argument("--commit", action="store_true")
+    b.add_argument("--push", action="store_true")
+    b.add_argument("--dispatch-pages", action="store_true")
+    b.set_defaults(fn=cmd_boards)
 
     s = sub.add_parser("site", help="build the static site")
     s.add_argument("--out", default="_site")

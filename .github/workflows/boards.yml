@@ -1,0 +1,61 @@
+# Controllers: read RIK's decisions on extended polling boards with OCR and keep, per polling station, which
+# lists appointed a member. Daily, only new decisions are read. Names in the decisions are never stored or logged.
+name: boards
+
+on:
+  schedule:
+    - cron: "41 2 * * *"
+  workflow_dispatch:
+    inputs:
+      round:
+        description: "Round id (empty: the newest round RIK lists)"
+        default: ""
+      minutes:
+        description: "Stop starting new decisions after this many minutes"
+        default: "320"
+      limit:
+        description: "Read at most this many decisions (empty: all)"
+        default: ""
+      commit:
+        description: "Commit the results"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: boards
+  cancel-in-progress: false
+
+jobs:
+  boards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install OCR
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - name: Read board decisions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ROUND: ${{ inputs.round }}
+          MINUTES: ${{ inputs.minutes || '320' }}
+          LIMIT: ${{ inputs.limit }}
+          COMMIT: ${{ github.event_name == 'schedule' || inputs.commit }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          args=(--budget-minutes "$MINUTES" --show 15)
+          [ -n "$ROUND" ] && args+=(--round "$ROUND")
+          [ -n "$LIMIT" ] && args+=(--limit "$LIMIT")
+          [ "$COMMIT" = "true" ] && args+=(--commit --push --dispatch-pages)
+          uv run izbori boards "${args[@]}"

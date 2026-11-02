@@ -149,6 +149,17 @@ class Client:
         })
         return parse_summary(rik_type, rid, data or {})
 
+    def get_json(self, path: str):
+        body, _ = self._request(path)
+        return json.loads(body.decode("utf-8-sig") or "null")
+
+    def get_bytes(self, path_or_url: str) -> bytes:
+        """A document from RIK's site; Cyrillic in the path is percent-encoded first."""
+        path = path_or_url.split("parlament.gov.rs", 1)[-1] if path_or_url.startswith("http") else path_or_url
+        path = urllib.parse.quote(path, safe="/:?&=%@+,;~!$'()*")
+        body, _ = self._request(path)
+        return body
+
     def export(self, rid: str) -> tuple[bytes, str | None]:
         body, headers = self._request(f"/export-results/{rid}/2")
         if not body.lstrip(b"\xef\xbb\xbf").startswith(b"bm_uid"):
