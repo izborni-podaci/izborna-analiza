@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
+{% block title %}{{ t('nav_changes') }} · {{ rtitle }}{% endblock %}
+{% block main %}
+{{ mx.round_nav('changes') }}
+<p class="kicker">{{ rtitle }}</p>
+<h1>{{ t('changes_heading') }}</h1>
+<p>{{ t('changes_note') }}</p>
+
+<h2>{{ t('snapshots_heading') }}</h2>
+<div class="table-wrap">
+<table class="compact">
+  <thead><tr><th>{{ t('fetched') }}</th><th>{{ t('rik_time') }}</th><th class="num">{{ t('stations') }}</th><th>SHA-256</th></tr></thead>
+  <tbody>
+  {% for s in snapshots|reverse %}
+    <tr><td>{{ time(s.fetched) }}</td><td>{{ s.rik_time or '—' }}</td><td class="num">{{ i(s.counted) }} / {{ i(s.total) }}</td><td><code title="{{ s.sha256 }}">{{ s.sha256[:12] }}</code></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p><a href="{{ repo_url }}/commits/main/data/rounds/{{ rnd.id }}/results.csv">{{ t('file_history') }}</a></p>
+
+<h2>{{ t('nav_changes') }}</h2>
+{% if not changes %}<p>{{ t('no_changes') }}</p>{% else %}
+<div class="table-wrap">
+<table class="compact">
+  <thead><tr><th>{{ t('time') }}</th><th>{{ t('station') }}</th><th>{{ t('field') }}</th><th class="num">{{ t('before') }}</th><th class="num">{{ t('now') }}</th></tr></thead>
+  <tbody>
+  {% for c in changes %}
+    <tr>
+      <td>{{ time(c.t) }}</td>
+      <td>{% if c.s %}<a href="{{ link(base + 'm/' ~ c.s.municipality_code ~ '.html') }}#bm-{{ c.s.number }}">{{ name(c.s.municipality) }} · {{ c.s.number }}</a>{% else %}{{ c.key }}{% endif %}</td>
+      <td>{{ c.field }}</td>
+      <td class="num">{% if c.before_url %}<a href="{{ c.before_url }}" rel="noopener noreferrer" target="_blank">{{ t('minutes_old') }}</a>{% else %}{{ c.before or '—' }}{% endif %}</td>
+      <td class="num">{% if c.now_url %}<a href="{{ c.now_url }}" rel="noopener noreferrer" target="_blank">{{ t('minutes_new') }}</a>{% else %}{{ c.now or '—' }}{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

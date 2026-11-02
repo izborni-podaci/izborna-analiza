@@ -17,7 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from izbori.load import HEAD, NUMBERS, TAIL, parse, read_rows
@@ -87,10 +87,12 @@ class Archive:
         self._write_json(self.root / "rounds.json", rounds)
 
     def round_ids(self) -> list[str]:
+        """Archived rounds, oldest election first."""
         if not self.rounds_dir.exists():
             return []
         ids = [p.name for p in self.rounds_dir.iterdir() if (p / "results.csv").exists()]
-        return sorted(ids, key=lambda rid: self.first_fetch(rid) or "")
+        return sorted(ids, key=lambda rid: (self.meta(rid).get("date") or (self.first_fetch(rid) or "")[:10],
+                                            self.first_fetch(rid) or ""))
 
     def meta(self, rid: str) -> dict:
         return self._read_json(self.dir(rid) / "meta.json", {})
@@ -192,8 +194,26 @@ class Archive:
         }])
         self._append_lines(d / "changes.jsonl", events)
         self._write_json(d / "first_seen.json", seen)
+        meta = self.meta(rid)
+        if meta and not meta.get("date"):
+            meta["date"] = election_date(raw) or fetched[:10]
+            self.save_meta(rid, meta)
         result.changes = events
         return result
+
+
+def election_date(raw: bytes) -> str | None:
+    """Election day, from the earliest minutes upload (RIK rewrites entry times in bulk, uploads keep theirs)."""
+    stations, _ = parse(raw)
+    stamps = [s.minutes_uploaded for s in stations if s.minutes_uploaded]
+    if stamps:
+        from zoneinfo import ZoneInfo
+        first = min(stamps).astimezone(ZoneInfo("Europe/Belgrade"))
+        # minutes go up from the evening of election day; anything before 06:00 belongs to the day before
+        day = first if first.hour >= 6 else first.replace(hour=12) - timedelta(days=1)
+        return day.date().isoformat()
+    entered = sorted(s.entered[:10] for s in stations if s.entered)
+    return entered[0] if entered else None
 
 
 def _key(row: dict) -> str:

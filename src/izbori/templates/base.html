@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ t('site_name') }}{% endblock %} · {{ t('site_name') }}</title>
+<meta name="description" content="{{ t('tagline') }}">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="{{ root }}static/site.css">
+<link rel="alternate" type="application/atom+xml" href="{{ feed_href }}" title="{{ t('footer_feed') }}">
+{% for l in langs %}<link rel="alternate" hreflang="{{ l.lang }}" href="{{ l.href }}">
+{% endfor %}
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="{{ link('index.html') }}">{{ t('site_name') }}</a>
+    <nav class="langs" aria-label="Language">
+      {% for l in langs %}<a href="{{ l.href }}" lang="{{ l.lang }}" hreflang="{{ l.lang }}"{% if l.current %} aria-current="page"{% endif %}>{{ l.label }}</a>{% endfor %}
+    </nav>
+  </div>
+  <nav class="wrap main-nav">
+    <a href="{{ link('index.html') }}"{% if page == 'index.html' %} aria-current="page"{% endif %}>{{ t('nav_overview') }}</a>
+    <a href="{{ link('guide.html') }}"{% if page == 'guide.html' %} aria-current="page"{% endif %}>{{ t('nav_guide') }}</a>
+    <a href="{{ link('about.html') }}"{% if page == 'about.html' %} aria-current="page"{% endif %}>{{ t('nav_about') }}</a>
+  </nav>
+</header>
+<main class="wrap">
+{% block main %}{% endblock %}
+</main>
+<footer class="wrap foot">
+  <p>{{ t('footer_data') }}</p>
+  <p><a href="{{ repo_url }}">{{ t('footer_code') }}</a> · <a href="{{ feed_href }}">{{ t('footer_feed') }}</a></p>
+</footer>
+<script src="{{ root }}static/site.js" defer></script>
+</body>
+</html>

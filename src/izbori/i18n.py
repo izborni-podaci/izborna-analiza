@@ -69,7 +69,7 @@ S: dict[str, tuple[str, str]] = {
     "complete": ("Сва бирачка места обрађена", "All polling stations counted"),
     "last_change": ("Последња измена", "Last change"),
     # round
-    "counted_of": ("Обрађено {counted} од {total} бирачких места", "{counted} of {total} polling stations counted"),
+    "counted_of": ("Обрађено бирачких места: {counted} од {total}", "Polling stations counted: {counted} of {total}"),
     "rik_time": ("Време у РИК-овој датотеци", "Time in RIK's file"),
     "fetched": ("Преузето", "Fetched"),
     "snapshots": ("Сачуваних верзија", "Versions archived"),
@@ -112,7 +112,7 @@ S: dict[str, tuple[str, str]] = {
     "pres_runoff_round": ("Други круг: бира се кандидат са више гласова.", "Runoff: the candidate with more votes wins."),
     "majority_mark": ("50% гласалих", "50% of voters"),
     "check_heading": ("За проверу", "To check"),
-    "check_count": ("{n} бирачких места са бар једном ознаком", "{n} polling stations with at least one flag"),
+    "check_count": ("Бирачких места са бар једном ознаком: {n}", "Polling stations with at least one flag: {n}"),
     "see_all_flags": ("Сва бирачка места за проверу", "All polling stations to check"),
     "group_paper": ("Бројеви у записнику се не слажу", "The minutes' numbers don't add up"),
     "group_change": ("Измене после објаве", "Changes after publication"),
@@ -188,13 +188,42 @@ S: dict[str, tuple[str, str]] = {
     "note_archive": ("архивирана копија", "archived copy"),
     # feed and mail
     "feed_title": ("Изборни подаци: нове ознаке за проверу", "Election data: new flags to check"),
-    "feed_entry": ("{title}: {n} нових ознака", "{title}: {n} new flags"),
+    "feed_entry": ("{title}: нове ознаке ({n})", "{title}: new flags ({n})"),
     "feed_more": ("и још {n}", "and {n} more"),
-    "mail_subject": ("{n} нових ознака за проверу", "{n} new flags to check"),
+    "mail_subject": ("Нове ознаке за проверу: {n}", "New flags to check: {n}"),
     "mail_final": ("Бројање завршено: {title}", "Count complete: {title}"),
     "mail_intro": ("Нове ознаке од последње поруке:", "New flags since the last message:"),
     "mail_footer": ("Ознака је питање, не закључак. Проверите записник пре објављивања.",
                     "A flag is a question, not a verdict. Check the minutes before publishing."),
+    # pages
+    "nav_round": ("Изборни круг", "Election round"),
+    "rounds_flagged": ("Бирачких места за проверу: {n}", "Polling stations to check: {n}"),
+    "how_heading": ("Како ради", "How it works"),
+    "how_1": ("Сваког сата, а док бројање траје свака 3 минута, сајт преузима датотеку са резултатима са сајта РИК-а.",
+              "Every hour, and every 3 minutes while a count is open, the site downloads the results file from RIK's website."),
+    "how_2": ("Свака нова верзија се чува, па се види шта је РИК објавио и када, и шта се касније променило.",
+              "Every new version is saved, so you can see what RIK published and when, and what changed later."),
+    "how_3": ("Свако бирачко место пролази исте провере, ко год да су учесници: да ли се бројеви у записнику слажу, шта се мењало после објаве и шта је необично.",
+              "Every polling station goes through the same checks, whoever the contestants are: whether the numbers in the minutes add up, what changed after publication, and what is unusual."),
+    "how_4": ("Свака ознака води до записника који је објавио РИК, да бисте сами проверили.",
+              "Every flag links to the minutes RIK published, so you can check for yourself."),
+    "search_mun": ("Пронађи општину", "Find a municipality"),
+    "marker_note_threshold": ("Танка линија у колони означава цензус.", "The thin line in the bar column marks the threshold."),
+    "marker_note_half": ("Танка линија у колони означава половину гласалих.", "The thin line in the bar column marks half of those who voted."),
+    "check_explain": ("Бирачка места са најјачим сигналима су прва.", "Polling stations with the strongest signals come first."),
+    "rules_link": ("Како раде провере", "How the checks work"),
+    "stations_heading": ("Бирачка места", "Polling stations"),
+    "total": ("Укупно", "Total"),
+    "file_history": ("Историја датотеке у репозиторијуму", "History of the file in the repository"),
+    "minutes_old": ("ранији", "earlier"),
+    "minutes_new": ("нови", "new"),
+    "not_found": ("Ова страница не постоји.", "This page doesn't exist."),
+    "go_home": ("Почетна страница", "Home page"),
+    "about_checks": ("Провере", "The checks"),
+    "about_rule": ("Правило", "Rule"),
+    "about_weight": ("Тежина", "Weight"),
+    "minority_unchecked": ("Статус мањинских листа за ове изборе још није унет према одлукама РИК-а, па број мандата може да одступа.",
+                           "The minority status of lists in this election hasn't been entered from RIK's decisions yet, so seat numbers may be off."),
 }
 
 # Check names and how each flag's numbers read.
@@ -276,6 +305,8 @@ def fmt_int(n: int | None, loc: str) -> str:
 def fmt_num(x: float | None, loc: str, digits: int = 1) -> str:
     if x is None:
         return "—"
+    if round(x, digits) == 0:
+        x = 0.0  # no "-0.00"
     s = f"{x:,.{digits}f}"
     if loc == "en":
         return s

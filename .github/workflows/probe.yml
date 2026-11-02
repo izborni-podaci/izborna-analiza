@@ -1,0 +1,22 @@
+# Run by hand: can GitHub's servers reach RIK? Lists the rounds RIK offers and changes nothing.
+name: probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: List RIK's rounds
+        run: |
+          pip install uv && uv sync --frozen
+          uv run izbori rounds

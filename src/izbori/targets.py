@@ -12,6 +12,7 @@ from pathlib import Path
 from izbori.describe import describe
 from izbori.history import Archive
 from izbori.i18n import check_name, fmt_num, latin_page, t
+from izbori.links import safe_url
 from izbori.report import analyze
 from izbori.translit import latin
 
@@ -66,8 +67,8 @@ def write_csv(rows: list[dict], path: Path, loc: str = "lat") -> None:
                 _text(s.name, loc) if s else "",
                 "; ".join(names),
                 " | ".join(details),
-                s.minutes_url if s else "",
-                " ".join(n.url for n in r["notes"]),
+                safe_url(s.minutes_url) if s else "",
+                " ".join(safe_url(n.url) for n in r["notes"]),
             ])
 
 
@@ -94,7 +95,7 @@ def write_html(rows: list[dict], path: Path, loc: str = "lat") -> None:
                 f"<li>{html.escape(_text(check_name(f.code, loc), loc))}: "
                 f"{html.escape(_text(describe(f, loc, _contestant(rnd, loc), rnd.kind), loc))}</li>"
                 for rnd, f in r["reasons"])
-            link = f" · <a href='{html.escape(s.minutes_url)}'>{'minutes' if loc == 'en' else 'zapisnik'}</a>" \
+            link = f" · <a href='{html.escape(safe_url(s.minutes_url))}'>{'minutes' if loc == 'en' else 'zapisnik'}</a>" \
                 if s and s.minutes_url else ""
             name = html.escape(_text(s.name, loc)) if s else ""
             parts.append(f"<tr><td class='s'>{html.escape(r['key'].split('/')[1])}</td>"

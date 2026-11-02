@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_about') }}{% endblock %}
+{% block main %}
+<article class="prose">
+{% if loc == 'en' %}
+<h1>About</h1>
+<p class="lede">An independent archive of the election results Serbia's Republic Electoral Commission (RIK) publishes, with the same checks on every polling station, whoever the contestants are.</p>
+
+<h2>Principles</h2>
+<ol>
+  <li><strong>Same rules for every contestant.</strong> No party or candidate is treated differently. Contestants appear in RIK's ballot order.</li>
+  <li><strong>A flag is a question, not a verdict.</strong> It means the numbers are unusual and the minutes are worth a look. It is never an accusation.</li>
+  <li><strong>Flags come from primary sources only:</strong> RIK's files and documents. A news report about a specific polling station can appear next to it as a note, marked as unconfirmed; a note never creates a flag.</li>
+  <li><strong>No personal data.</strong> The minutes carry board members' names and signatures, so this site links to RIK's copies and never re-hosts or transcribes them.</li>
+  <li><strong>Nothing from third parties.</strong> No analytics, cookies, fonts or scripts from other servers.</li>
+</ol>
+
+<h2>How the data is collected</h2>
+<p>Every hour the site asks RIK which elections exist and how many polling stations each has counted. It downloads the results file when that number changes and saves it only if the content changed. While a count is open it checks every 3 minutes. Every saved version stays in the <a href="{{ repo_url }}">repository's history</a>, so anyone can see what RIK published and when.</p>
+{% else %}
+<h1>О пројекту</h1>
+<p class="lede">Независна архива изборних резултата које објављује Републичка изборна комисија (РИК), са истим проверама за свако бирачко место, ко год да су учесници.</p>
+
+<h2>Начела</h2>
+<ol>
+  <li><strong>Иста правила за сваког учесника.</strong> Ниједна странка ни кандидат нису третирани другачије. Учесници су наведени редом са гласачког листића.</li>
+  <li><strong>Ознака је питање, не закључак.</strong> Значи да су бројеви необични и да вреди погледати записник. Никада није оптужба.</li>
+  <li><strong>Ознаке потичу само из примарних извора:</strong> РИК-ових датотека и докумената. Новински извештај о одређеном бирачком месту може да стоји поред њега као белешка, означена као непотврђена; белешка никада не ствара ознаку.</li>
+  <li><strong>Без личних података.</strong> Записници садрже имена и потписе чланова одбора, па сајт води до РИК-ових примерака и никада их не преузима нити преписује.</li>
+  <li><strong>Ништа од трећих страна.</strong> Без аналитике, колачића, фонтова и скрипти са других сервера.</li>
+</ol>
+
+<h2>Како се подаци прикупљају</h2>
+<p>Сваког сата сајт пита РИК које изборе има и колико је бирачких места обрађено. Датотеку са резултатима преузима када се тај број промени, а чува је само ако се садржај променио. Док бројање траје, проверава свака 3 минута. Свака сачувана верзија остаје у <a href="{{ repo_url }}">историји репозиторијума</a>, па свако може да види шта је РИК објавио и када.</p>
+{% endif %}
+
+<h2 id="checks">{{ t('about_checks') }}</h2>
+{% for g in groups %}
+<h3 class="group g-{{ g }}"><span class="dot" aria-hidden="true"></span>{{ t('group_' ~ g) }}</h3>
+<p class="muted">{{ t('group_' ~ g ~ '_note') }}</p>
+<div class="table-wrap">
+<table class="compact checks">
+  <thead><tr><th>{{ t('flags') }}</th><th>{{ t('about_rule') }}</th><th class="num">{{ t('about_weight') }}</th></tr></thead>
+  <tbody>
+  {% for c in checks if c.group == g %}
+    <tr id="{{ c.code }}"><td><strong>{{ check_name(c.code) }}</strong></td><td>{{ check_rule(c.code) }}</td><td class="num">{{ num(c.weight, 0) }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endfor %}
+
+{% if loc == 'en' %}
+<p>The checks on "unusual results" cover polling stations in Serbia only; turnout means little abroad and in prisons. The weights are used only for the private list that observer groups use to decide where to go; they are not shown as scores on this site.</p>
+
+<h2>Statistics for the whole round</h2>
+<p>Each round's page also shows tests that look across thousands of polling stations: how evenly the last digits of vote counts are spread, how often results land on round percentages, and how turnout relates to vote share. These are weak signals. Unusual values can have ordinary causes and never point to a particular station.</p>
+
+<h2>Limits</h2>
+<ul>
+  <li>The site sees only what RIK publishes. It doesn't see the polling station.</li>
+  <li>RIK's numbers can lag or be corrected later. The changes page shows when that happened.</li>
+  <li>Stations are matched across elections by municipality code and station number. If the polling station network changes, some comparisons are lost.</li>
+</ul>
+
+<h2>Corrections</h2>
+<p>To report a mistake on this site, open an issue in the <a href="{{ repo_url }}/issues">repository</a>. Issues are public: don't post personal information or anything that could identify a source.</p>
+{% else %}
+<p>Провере „необичних резултата“ односе се само на бирачка места у Србији; излазност мало значи у иностранству и у заводима. Тежине се користе само за поверљиву листу на основу које посматрачке групе одлучују где да иду; на овом сајту се не приказују као оцене.</p>
+
+<h2>Статистика за цео изборни круг</h2>
+<p>Страница сваког изборног круга приказује и тестове на хиљадама бирачких места: колико су равномерно распоређене последње цифре бројева гласова, колико често резултати падају на округле проценте и како се излазност односи према уделу гласова. То су слаби сигнали. Необичне вредности могу имати обичне узроке и никада не упућују на одређено бирачко место.</p>
+
+<h2>Ограничења</h2>
+<ul>
+  <li>Сајт види само оно што РИК објави. Не види бирачко место.</li>
+  <li>РИК-ови бројеви могу да касне или да буду накнадно исправљени. Страница измена показује када се то десило.</li>
+  <li>Бирачка места се упарују између избора по шифри општине и броју бирачког места. Ако се мрежа бирачких места промени, део поређења се губи.</li>
+</ul>
+
+<h2>Исправке</h2>
+<p>Да бисте пријавили грешку на сајту, отворите питање (issue) у <a href="{{ repo_url }}/issues">репозиторијуму</a>. Питања су јавна: не објављујте личне податке нити било шта што може да открије извор.</p>
+{% endif %}
+</article>
+{% endblock %}

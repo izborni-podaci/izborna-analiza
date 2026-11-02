@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
+{% block title %}{{ rtitle }}{% endblock %}
+{% block main %}
+{{ mx.round_nav('index') }}
+<p class="kicker">{{ kind_name(rnd.kind) }}</p>
+<h1>{{ rtitle }}</h1>
+
+<div class="progress">
+  <div class="meter" role="img" aria-label="{{ t('counted_of', counted=i(totals.counted), total=i(totals.stations)) }}"><span style="width: {{ '%.1f'|format(100 * totals.counted / totals.stations if totals.stations else 0) }}%"></span></div>
+  <p><strong>{{ t('counted_of', counted=i(totals.counted), total=i(totals.stations)) }}</strong></p>
+  <p class="muted">{{ t('rik_time') }}: {{ time(rnd.rik_time) }} · {{ t('fetched') }}: {{ time(rnd.fetched) }} · {{ t('snapshots') }}: <a href="{{ link(base + 'changes.html') }}">{{ i(snapshots|length) }}</a> · <a href="{{ rik_url }}" rel="noopener noreferrer">{{ t('rik_source') }}</a></p>
+</div>
+
+<section class="tiles" aria-label="{{ t('results_heading') }}">
+  <div class="tile"><p class="tile-label">{{ t('registered') }}</p><p class="tile-value">{{ i(totals.registered) }}</p></div>
+  <div class="tile"><p class="tile-label">{{ t('voted') }}</p><p class="tile-value">{{ i(totals.voted) }}</p><p class="tile-sub">{{ t('turnout') }} {{ pct(totals.turnout, 2) }}</p></div>
+  <div class="tile"><p class="tile-label">{{ t('valid') }}</p><p class="tile-value">{{ i(totals.valid) }}</p></div>
+  <div class="tile"><p class="tile-label">{{ t('invalid') }}</p><p class="tile-value">{{ i(totals.invalid) }}</p><p class="tile-sub">{{ pct(totals.invalid_share, 2) }}</p></div>
+</section>
+
+<section id="results">
+  <h2>{{ t('results_heading') }}</h2>
+  {% if view.pres %}
+  <p class="rule">{{ t('pres_rule') }}</p>
+  {% if view.pres.runoff %}
+  <p class="callout">{{ t('pres_runoff_round') }}</p>
+  {% elif view.pres.majority %}
+  <p class="callout">{{ t('pres_majority', name=name(view.leader.label)) }}</p>
+  {% else %}
+  <p class="callout">{{ t('pres_short', n=i(view.pres.short_by), needed=i(view.pres.needed)) }}
+    {% if view.runner_up %}{{ t('pres_runoff', a=name(view.leader.label), b=name(view.runner_up.label)) }}{% endif %}</p>
+  {% endif %}
+  {% endif %}
+
+  {% if view.seat_bar %}
+  <h3>{{ t('seats_heading') }}</h3>
+  <div class="seatbar-wrap">
+    <div class="seatbar" role="img" aria-label="{{ t('seats_heading') }}">
+      {% for s in view.seat_bar %}<span class="seg s{{ s.slot }}" style="flex-grow: {{ s.seats }}" title="{{ s.number }}. {{ name(s.label) }}: {{ s.seats }}"></span>{% endfor %}
+    </div>
+    {% if view.majority %}<span class="seatmark" style="left: {{ '%.3f'|format(100 * view.majority / view.seats) }}%"><span>{{ t('majority_line', n=view.majority) }}</span></span>{% endif %}
+    {% if view.two_thirds %}<span class="seatmark up" style="left: {{ '%.3f'|format(100 * view.two_thirds / view.seats) }}%"><span>{{ t('two_thirds_line', n=view.two_thirds) }}</span></span>{% endif %}
+  </div>
+  <ul class="legend">
+    {% for s in view.seat_bar %}<li><span class="swatch s{{ s.slot }}" aria-hidden="true"></span>{{ s.number }}. {{ name(s.label) }} <strong>{{ s.seats }}</strong></li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  <div class="table-wrap">
+  <table class="results">
+    <thead><tr>
+      <th class="num">{{ t('no') }}</th>
+      <th>{{ t('candidate') if rnd.kind == 'presidential' else t('list') }}</th>
+      <th class="num">{{ t('votes') }}</th>
+      <th class="num">{{ t('of_voted') }}</th>
+      <th class="bar-col"><span class="visually-hidden">{{ t('of_voted') }}</span></th>
+      {% if view.seat_bar is defined %}<th class="num">{{ t('seats') }}</th><th>{{ t('status') }}</th>{% endif %}
+    </tr></thead>
+    <tbody>
+    {% for r in view.rows %}
+      <tr{% if view.seat_bar is defined and not r.takes_part %} class="dim"{% endif %}>
+        <td class="num">{{ r.number }}</td>
+        <td>{{ name(r.name) }}</td>
+        <td class="num">{{ i(r.votes) }}</td>
+        <td class="num">{{ pct(r.of_voted, 2) }}</td>
+        <td class="bar-col"><div class="barbox"><span class="hbar" style="width: {{ '%.2f'|format(100 * r.bar) }}%"></span>{% if view.marker %}<span class="hmark" style="left: {{ '%.2f'|format(100 * view.marker) }}%"></span>{% endif %}</div></td>
+        {% if view.seat_bar is defined %}<td class="num">{% if r.seats %}<strong>{{ r.seats }}</strong>{% else %}0{% endif %}</td><td class="muted nowrap">{{ t(r.status) }}</td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if view.seat_bar is defined %}
+  <p class="rule">{{ t('threshold_line', n=i(view.threshold_votes)) }} {{ t('minority_rule') }} {{ t('marker_note_threshold') }}</p>
+  {% if not view.rules.minority_checked %}<p class="callout">{{ t('minority_unchecked') }}</p>{% endif %}
+  {% elif view.pres %}
+  <p class="rule">{{ t('marker_note_half') }}</p>
+  {% endif %}
+
+  {% if view.seat_bar %}
+  <h3>{{ t('margins_heading') }}</h3>
+  <p class="rule">{{ t('margins_note') }}</p>
+  <div class="table-wrap">
+  <table class="compact">
+    <thead><tr><th class="num">{{ t('no') }}</th><th>{{ t('list') }}</th><th class="num">{{ t('seats') }}</th><th class="num">{{ t('gain') }}</th><th class="num">{{ t('keep') }}</th></tr></thead>
+    <tbody>
+    {% for r in view.rows if r.takes_part %}
+      <tr><td class="num">{{ r.number }}</td><td>{{ name(r.label) }}</td><td class="num">{{ r.seats }}</td><td class="num">{{ i(r.gain) }}</td><td class="num">{{ i(r.keep) if r.keep is not none else '—' }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</section>
+
+<section id="check">
+  <h2>{{ t('check_heading') }}</h2>
+  <p class="principle">{{ t('principle') }}</p>
+  <p><a class="button" href="{{ link(base + 'check.html') }}">{{ t('see_all_flags') }} ({{ i(a.by_station|length) }})</a></p>
+  <div class="groups">
+  {% for g in groups %}
+    <div class="group g-{{ g }}">
+      <h3><span class="dot" aria-hidden="true"></span>{{ t('group_' ~ g) }}</h3>
+      <p class="muted">{{ t('group_' ~ g ~ '_note') }}</p>
+      <ul class="plain">
+      {% for c in checks if c.group == g %}
+        <li>{% if counts[c.code] %}<a href="{{ link(base + 'check.html') }}#{{ c.code }}">{{ check_name(c.code) }}</a>{% else %}<span class="muted">{{ check_name(c.code) }}</span>{% endif %} <span class="count">{{ i(counts[c.code]) }}</span></li>
+      {% endfor %}
+      </ul>
+    </div>
+  {% endfor %}
+  </div>
+</section>
+
+<section id="stats">
+  <h2>{{ t('context_heading') }}</h2>
+  <p class="rule">{{ t('context_note') }}</p>
+  <h3>{{ t('hist_heading') }}</h3>
+  <p class="muted">{{ t('hist_note') }}</p>
+  {{ stats.hist }}
+  {% if stats.digits %}
+  <h3>{{ t('digits_heading') }}</h3>
+  <p class="muted">{{ t('digits_note') }}</p>
+  <div class="multiples">
+    {% for lbl, d, chart in stats.digits %}
+    <figure>
+      <figcaption>{{ name(lbl) }}</figcaption>
+      {{ chart }}
+      <p class="muted small">{{ t('counts') }}: {{ i(d.n) }} · χ² {{ num(d.chi2, 1) }} · p {{ num(d.p, 3) }}</p>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="two-col">
+    <div>
+      <h3>{{ t('round_heading') }}</h3>
+      <p class="muted">{{ t('round_note') }}</p>
+      <table class="compact">
+        <thead><tr><th>{{ t('measure') }}</th><th class="num">{{ t('stations') }}</th><th class="num">%</th></tr></thead>
+        <tbody>
+        {% for r in stats.round %}
+          <tr><td>{% if r.measure == 'turnout' %}{{ t('turnout') }}{% else %}{{ t('share_of', name=name(stats.labels[r.measure])) }}{% endif %}</td><td class="num">{{ i(r.hits) }} / {{ i(r.stations) }}</td><td class="num">{{ pct(r.share, 1) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>{{ t('corr_heading') }}</h3>
+      <p class="muted">{{ t('corr_note') }}</p>
+      <table class="compact">
+        <thead><tr><th>{{ t('candidate') if rnd.kind == 'presidential' else t('list') }}</th><th class="num">{{ t('correlation') }}</th></tr></thead>
+        <tbody>
+        {% for lbl, c in stats.corr %}<tr><td>{{ name(lbl) }}</td><td class="num">{{ num(c, 2) if c is not none else '—' }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="municipalities">
+  <h2>{{ t('municipalities_heading') }}</h2>
+  <label class="filter">{{ t('search_mun') }} <input type="search" data-filter="#mun-table" autocomplete="off"></label>
+  <div class="table-wrap">
+  <table class="compact" id="mun-table">
+    <thead><tr>
+      <th>{{ t('municipality') }}</th><th>{{ t('district') }}</th><th class="num">{{ t('stations') }}</th>
+      <th class="num">{{ t('turnout') }}</th><th class="num">{{ t('invalid') }}</th><th class="num">{{ t('flagged') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for m in municipalities %}
+      <tr data-text="{{ name(m.name) }} {{ name(m.district) }}">
+        <td><a href="{{ link(base + 'm/' ~ m.code ~ '.html') }}">{{ name(m.name) }}</a></td>
+        <td class="muted">{% if m.kind == 'domestic' %}{{ name(m.district) }}{% endif %}</td>
+        <td class="num">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</td>
+        <td class="num">{{ pct(m.turnout, 1) }}</td>
+        <td class="num">{{ pct(m.invalid, 1) }}</td>
+        <td class="num">{% if m.flagged %}<strong>{{ i(m.flagged) }}</strong>{% else %}0{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

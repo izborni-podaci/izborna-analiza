@@ -1,0 +1,32 @@
+{% macro round_nav(current) %}
+<nav class="round-nav" aria-label="{{ t('nav_round') }}">
+  <a href="{{ link(base + 'index.html') }}"{% if current == 'index' %} aria-current="page"{% endif %}>{{ t('results_heading') }}</a>
+  <a href="{{ link(base + 'check.html') }}"{% if current == 'check' %} aria-current="page"{% endif %}>{{ t('nav_check') }}</a>
+  <a href="{{ link(base + 'index.html') }}#municipalities">{{ t('nav_municipalities') }}</a>
+  <a href="{{ link(base + 'changes.html') }}"{% if current == 'changes' %} aria-current="page"{% endif %}>{{ t('nav_changes') }}</a>
+</nav>
+{% endmacro %}
+
+{% macro chips(flags) %}
+<ul class="flags">
+  {% for f in flags %}
+  <li class="flag g-{{ f.group }}"><span class="dot" aria-hidden="true"></span><span><strong>{{ f.name }}.</strong> {{ f.text }}</span></li>
+  {% endfor %}
+</ul>
+{% endmacro %}
+
+{% macro notes_list(notes) %}
+{% for n in notes %}
+<p class="note"><span class="note-label">{{ t('note_label') }}</span>
+  <a href="{{ n.url|url }}" rel="nofollow noopener noreferrer" target="_blank">{{ n.outlet }}</a>{% if n.date %}, {{ n.date }}{% endif %}{% if n.archive_url %} (<a href="{{ n.archive_url|url }}" rel="nofollow noopener noreferrer" target="_blank">{{ t('note_archive') }}</a>){% endif %}: {{ n.summary(loc) }}</p>
+{% endfor %}
+{% endmacro %}
+
+{% macro doc_links(s) %}
+{% if s and s.minutes_url %}<a class="doc" href="{{ s.minutes_url|url }}" rel="noopener noreferrer" target="_blank">{{ t('minutes') }}</a>{% endif %}
+{% if s and s.correction_url %} <a class="doc" href="{{ s.correction_url|url }}" rel="noopener noreferrer" target="_blank">{{ t('correction') }}{% if s.correction_form %} {{ s.correction_form }}{% endif %}</a>{% endif %}
+{% endmacro %}
+
+{% macro data_note() %}
+<p class="data-note">{{ t('rik_time') }}: {{ time(rnd.rik_time) }} · {{ t('fetched') }}: {{ time(rnd.fetched) }}</p>
+{% endmacro %}

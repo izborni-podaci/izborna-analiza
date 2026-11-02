@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_overview') }}{% endblock %}
+{% block main %}
+<section class="intro">
+  <h1>{{ t('site_name') }}</h1>
+  <p class="lede">{{ t('tagline') }}.</p>
+  <p class="principle">{{ t('principle') }}</p>
+</section>
+
+<section>
+  <h2>{{ t('rounds_heading') }}</h2>
+  {% if not rounds %}
+  <p>{{ t('no_rounds') }}</p>
+  {% endif %}
+  <ul class="rounds">
+    {% for r in rounds %}
+    <li class="round-card">
+      <p class="kicker">{{ kind_name(r.kind) }}</p>
+      <h3><a href="{{ link('r/' ~ r.id ~ '/index.html') }}">{{ r.title_display }}</a></h3>
+      <div class="meter" aria-hidden="true"><span style="width: {{ '%.1f'|format(100 * r.counted / r.total if r.total else 0) }}%"></span></div>
+      <p>{{ t('counted_of', counted=i(r.counted), total=i(r.total)) }} · {{ t('counting') if r.counting else t('complete') }}</p>
+      <p class="muted">{{ t('last_change') }}: {{ time(r.fetched) }} · <a href="{{ link('r/' ~ r.id ~ '/check.html') }}">{{ t('rounds_flagged', n=i(r.flagged)) }}</a></p>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="how">
+  <h2>{{ t('how_heading') }}</h2>
+  <ol>
+    <li>{{ t('how_1') }}</li>
+    <li>{{ t('how_2') }}</li>
+    <li>{{ t('how_3') }}</li>
+    <li>{{ t('how_4') }}</li>
+  </ol>
+</section>
+{% endblock %}

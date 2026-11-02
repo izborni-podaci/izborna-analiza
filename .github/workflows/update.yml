@@ -1,0 +1,46 @@
+# Every hour: check RIK, archive what changed, publish. While a count is open the same run keeps watching
+# (every 3 minutes, up to 5¾ hours); the next hourly run takes over after that. Only one runs at a time.
+name: update
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Keep watching for up to this many minutes while a count is open"
+        default: "345"
+
+permissions:
+  contents: write  # commit the archive
+  actions: write   # start the pages workflow
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - name: Check RIK, archive, publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          MINUTES: ${{ inputs.minutes || '345' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          uv run izbori update --watch --max-minutes "$MINUTES" --commit --push --dispatch-pages --notify

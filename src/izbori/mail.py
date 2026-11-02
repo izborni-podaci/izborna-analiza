@@ -15,7 +15,7 @@ from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 from pathlib import Path
 
-from izbori.feed import flag_lines
+from izbori.feed import entry_title, flag_lines
 from izbori.history import Archive
 from izbori.i18n import PREFIX, fmt_int, latin_page, parse_time, t
 
@@ -67,17 +67,17 @@ def compose(state: dict, archive: Archive, site_url: str) -> EmailMessage:
     finals = state["final_pending"]
     parts_sr, parts_en = [], []
     for rid in finals:
-        title = archive.meta(rid).get("title", rid)
-        parts_sr.append(t("mail_final", "cyr", title=title))
-        parts_en.append(t("mail_final", "en", title=title))
+        meta = archive.meta(rid)
+        parts_sr.append(t("mail_final", "cyr", title=meta.get("title", rid)))
+        parts_en.append(t("mail_final", "en", title=meta.get("title_en") or latin_page(meta.get("title", rid))))
     if state["pending"]:
         parts_sr.append(t("mail_intro", "cyr"))
         parts_en.append(t("mail_intro", "en"))
     for e in state["pending"]:
         for loc, parts in (("cyr", parts_sr), ("en", parts_en)):
             parts.append("")
-            parts.append(f"{e['title']} — " + t("counted_of", loc, counted=fmt_int(e["counted"], loc),
-                                                   total=fmt_int(e["total"], loc)))
+            parts.append(f"{entry_title(e, loc, archive)} — " + t("counted_of", loc, counted=fmt_int(e["counted"], loc),
+                                                                  total=fmt_int(e["total"], loc)))
             parts.extend(f"- {line}" for line in flag_lines(e, loc, archive, limit=None))
             parts.append(f"{site_url}{PREFIX[loc]}r/{e['round']}/check.html")
     parts_sr += ["", t("mail_footer", "cyr")]

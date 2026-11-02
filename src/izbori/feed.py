@@ -61,6 +61,12 @@ def contestant_labeller(archive: Archive, rid: str, loc: str):
     return label
 
 
+def entry_title(entry: dict, loc: str, archive: Archive) -> str:
+    if loc == "en":
+        return archive.meta(entry["round"]).get("title_en") or latin(entry["title"])
+    return entry["title"]
+
+
 def flag_lines(entry: dict, loc: str, archive: Archive, limit: int | None = SHOW) -> list[str]:
     label = contestant_labeller(archive, entry["round"], loc)
     lines = []
@@ -88,7 +94,7 @@ def build(data_root: Path, archive: Archive, loc: str, site_url: str) -> str:
            f"<updated>{escape(updated)}</updated>",
            f"<author><name>{escape(t('site_name', loc))}</name></author>"]
     for e in entries:
-        title = t("feed_entry", loc, title=f"{kind_name(e.get('kind', ''), loc)} · {e['title']}",
+        title = t("feed_entry", loc, title=f"{kind_name(e.get('kind', ''), loc)} · {entry_title(e, loc, archive)}",
                   n=fmt_int(len(e["flags"]), loc))
         link = f"{site_url}{PREFIX[loc]}r/{e['round']}/check.html"
         progress = t("counted_of", loc, counted=fmt_int(e["counted"], loc), total=fmt_int(e["total"], loc))

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
+{% block title %}{{ t('nav_check') }} · {{ rtitle }}{% endblock %}
+{% block main %}
+{{ mx.round_nav('check') }}
+<p class="kicker">{{ rtitle }}</p>
+<h1>{{ t('check_heading') }}</h1>
+<p class="principle">{{ t('principle') }}</p>
+<p>{{ t('check_count', n=i(items|length)) }}. {{ t('check_explain') }} <a href="{{ link('about.html') }}#checks">{{ t('rules_link') }}</a></p>
+{{ mx.data_note() }}
+
+<form class="filters" data-filter-cards="#cards" onsubmit="return false">
+  <label>{{ t('filter_municipality') }}
+    <select data-f="mun">
+      <option value="">{{ t('filter_all') }}</option>
+      {% for code, mname in mun_options %}<option value="{{ code }}">{{ name(mname) }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>{{ t('filter_type') }}
+    <select data-f="type">
+      <option value="">{{ t('filter_all') }}</option>
+      {% for g in groups %}
+      <optgroup label="{{ t('group_' ~ g) }}">
+        {% for c in checks if c.group == g and counts[c.code] %}<option value="{{ c.code }}">{{ check_name(c.code) }} ({{ i(counts[c.code]) }})</option>{% endfor %}
+      </optgroup>
+      {% endfor %}
+    </select>
+  </label>
+  <label>{{ t('filter_search') }} <input type="search" data-f="q" autocomplete="off"></label>
+  <output data-shown="{{ t('filter_shown', n='{n}') }}">{{ t('filter_shown', n=i(items|length)) }}</output>
+</form>
+
+{% if not items %}<p>{{ t('no_flags') }}</p>{% endif %}
+<div id="cards" class="cards">
+{% for it in items %}
+  {% set s = it.s %}
+  <article class="card" data-mun="{{ it.mun }}" data-types="{{ it.types }}" data-text="{% if s %}{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}{% endif %}">
+    <header>
+      <h2 class="card-title">{% if s %}<a href="{{ link(base + 'm/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a> <span class="muted">{{ name(s.name) }}</span>{% else %}{{ it.key }}{% endif %}</h2>
+      <p class="muted small">{{ t('first_flagged') }}: {{ time(it.seen) }}</p>
+    </header>
+    {{ mx.chips(it.flags) }}
+    {% if s and s.counted %}<p class="numbers small">{{ t('registered') }} {{ i(s.registered) }} · {{ t('voted') }} {{ i(s.voted) }} ({{ pct(s.turnout, 1) }}) · {{ t('ballots') }} {{ i(s.ballots) }} · {{ t('valid') }} {{ i(s.valid) }} · {{ t('invalid') }} {{ i(s.invalid) }}</p>{% endif %}
+    <p class="docs">{{ mx.doc_links(s) }}</p>
+    {{ mx.notes_list(it.notes) }}
+  </article>
+{% endfor %}
+</div>
+{% endblock %}

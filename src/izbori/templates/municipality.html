@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
+{% block title %}{{ name(m.name) }} · {{ rtitle }}{% endblock %}
+{% block main %}
+{{ mx.round_nav('') }}
+<p class="kicker">{{ rtitle }}{% if m.kind == 'domestic' %} · {{ name(m.district) }}{% endif %}</p>
+<h1>{{ name(m.name) }}</h1>
+{{ mx.data_note() }}
+
+<section class="tiles">
+  <div class="tile"><p class="tile-label">{{ t('stations') }}</p><p class="tile-value">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</p></div>
+  <div class="tile"><p class="tile-label">{{ t('voted') }}</p><p class="tile-value">{{ i(m.voted) }}</p><p class="tile-sub">{{ t('turnout') }} {{ pct(m.turnout, 1) }}</p></div>
+  <div class="tile"><p class="tile-label">{{ t('invalid') }}</p><p class="tile-value">{{ pct(m.invalid, 1) }}</p></div>
+  <div class="tile"><p class="tile-label">{{ t('flagged') }}</p><p class="tile-value">{{ i(m.flagged) }}</p></div>
+</section>
+
+<h2>{{ t('stations_heading') }}</h2>
+<div class="table-wrap">
+<table class="stations">
+  <thead><tr>
+    <th class="num">{{ t('station_no') }}</th><th>{{ t('station') }}</th>
+    <th class="num">{{ t('registered') }}</th><th class="num">{{ t('voted') }}</th><th class="num">{{ t('turnout') }}</th>
+    <th class="num">{{ t('ballots') }}</th><th class="num">{{ t('invalid') }}</th><th>{{ t('flags') }}</th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+    {% set s = r.s %}
+    <tr id="bm-{{ s.number }}"{% if r.flags %} class="flagged"{% endif %}>
+      <td class="num">{{ s.number }}</td>
+      <td>{{ name(s.name) }}<div class="docs small">{{ mx.doc_links(s) }}</div></td>
+      {% if s.counted %}
+      <td class="num">{{ i(s.registered) }}</td><td class="num">{{ i(s.voted) }}</td><td class="num">{{ pct(s.turnout, 1) }}</td>
+      <td class="num">{{ i(s.ballots) }}</td><td class="num">{{ i(s.invalid) }}</td>
+      {% else %}
+      <td class="num">{{ i(s.registered) }}</td><td colspan="4" class="muted">{{ t('not_counted') }}</td>
+      {% endif %}
+      <td>{% if r.flags %}{{ mx.chips(r.flags) }}{% endif %}{{ mx.notes_list(r.notes) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>{{ t('votes_by_candidate') if rnd.kind == 'presidential' else t('votes_by_list') }}</h2>
+<div class="table-wrap">
+<table class="compact votes">
+  <thead><tr>
+    <th class="num">{{ t('station_no') }}</th>
+    {% for c in rnd.contestants %}<th class="num" title="{{ name(c.name) }}">{{ c.number }}</th>{% endfor %}
+  </tr></thead>
+  <tbody>
+  {% for r in rows if r.s.counted %}
+    <tr><td class="num">{{ r.s.number }}</td>{% for v in r.s.votes %}<td class="num">{{ i(v) }}</td>{% endfor %}</tr>
+  {% endfor %}
+  <tr class="total"><td>{{ t('total') }}</td>{% for v in mvotes %}<td class="num">{{ i(v) }}</td>{% endfor %}</tr>
+  </tbody>
+</table>
+</div>
+<ol class="key small">
+  {% for c in rnd.contestants %}<li value="{{ c.number }}">{{ name(c.name) }}</li>{% endfor %}
+</ol>
+{% endblock %}

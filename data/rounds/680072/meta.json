@@ -1,5 +1,7 @@
 {
- "contest": {},
+ "contest": {
+  "minority_checked": true
+ },
  "contestants": [
   {
    "minority": false,
@@ -92,7 +94,9 @@
    "short": "Majka Srbija – Gruda"
   }
  ],
+ "date": "2026-10-25",
  "kind": "parliamentary",
  "rik_type": 2,
- "title": "Избори за народне посланике Народне скупштине 2026."
+ "title": "Избори за народне посланике Народне скупштине 2026.",
+ "title_en": "2026 parliamentary election"
 }

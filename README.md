@@ -4,7 +4,7 @@ A public site in Serbian (Latin and Cyrillic) and English. It saves every result
 
 **Site:** https://izborni-podaci.github.io/izborna-analiza/
 
-**Status:** first version, in progress.
+**Status:** first version, being tested.
 - **Working:**
   - the RIK client
   - the archive and its change log
@@ -12,8 +12,11 @@ A public site in Serbian (Latin and Cyrillic) and English. It saves every result
   - station checks
   - news notes
   - the private target list
+  - the site in three languages
+  - Atom feeds and the email digest
+  - the scheduled jobs
   - tests on the 2026 parliamentary files
-- **Next:** the site, feeds, email and scheduled jobs.
+- **Still to confirm:** that GitHub's servers can reach RIK (see Setup).
 
 A Serbian version of this file (`README.sr.md`) will follow.
 
@@ -159,7 +162,8 @@ Every page says which RIK timestamp the data comes from and when it was fetched.
 data/rounds.json                  every round RIK lists
 data/feed.json                    feed entries
 data/mail.json                    email state: pending flags, time of the last message
-data/rounds/<id>/meta.json        type, title, contestants (name, short name, minority status), seat rules
+data/rounds/<id>/meta.json        type, title, English title, election day, contestants (name, short
+                                  name, minority status), seat rules
 data/rounds/<id>/results.csv      latest file exactly as downloaded; git history keeps every version
 data/rounds/<id>/snapshots.jsonl  one line per distinct file: fetch time, RIK time, progress, SHA-256
 data/rounds/<id>/changes.jsonl    one line per value that changed at a station after it had results
@@ -244,13 +248,20 @@ All from `https://www.rik.parlament.gov.rs`:
 
 ## Setup
 
-1. Turn on Pages with "GitHub Actions" as the source.
-2. For email, get a neutral sender mailbox with SMTP and add these repository secrets:
+1. **Pages:** in Settings → Pages, choose "GitHub Actions" as the source. Then run the **pages** workflow once (Actions → pages → Run workflow).
+2. **Reaching RIK:** run the **probe** workflow by hand. It lists the rounds RIK offers and changes nothing.
+   - If it fails to connect, RIK is blocking GitHub's servers.
+   - Then run `uv run izbori update --watch --commit --push` on election night from a computer in Serbia.
+3. **Email:** get a neutral sender mailbox with SMTP and add these repository secrets:
    - `SMTP_HOST`, `SMTP_PORT`
    - `SMTP_USER`, `SMTP_PASSWORD`
    - `MAIL_FROM`
    - `MAIL_TO` (comma-separated)
-3. Scheduled commits come from GitHub's bot identity. People who commit by hand should use their GitHub no-reply address.
+4. **New rounds:** the hourly job archives new rounds by itself. Then a person checks the round's `data/rounds/<id>/meta.json`:
+   - `kind`, `title_en` and `date` (election day, filled in automatically from the first minutes)
+   - for list elections, each list's `minority` status, taken from RIK's decisions, and then `"minority_checked": true` under `contest`. Until that is set, the site warns that seat numbers may be off.
+   - for local elections, `contest.seats`, the size of the assembly
+5. **Commits:** scheduled commits come from GitHub's bot identity. People who commit by hand should use their GitHub no-reply address.
 
 ## Tests
 
