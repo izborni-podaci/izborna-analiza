@@ -48,7 +48,6 @@
 
 <h2 id="mesta">{{ t('repeat_stations_heading') }}</h2>
 <p>{{ t('repeat_groups_note') }}</p>
-<p class="small muted strip-key">{{ t('repeat_strip_key') }} {% for r in rounds %}<span class="nowrap">{{ loop.index }}. {{ r.short }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</p>
 <form class="filters" data-filter-rows="#rep-groups" onsubmit="return false">
   <label>{{ t('filter_type') }}
     <select data-f="type">
@@ -66,21 +65,23 @@
   <details class="kgroup" data-group{% if k >= 2 %} open{% endif %}>
     {% set n = group|length %}{% set one = (n == 1) if loc == 'en' else (n % 10 == 1 and n % 100 != 11) %}
     <summary><h3>{{ t('repeat_group_title_one') if k == 1 else t('repeat_group_title', k=k) }}</h3> <span class="muted" data-count>{{ t('repeat_group_count_one' if one else 'repeat_group_count', n=i(n)) }}</span></summary>
-    <ul class="st-list">
-    {% for row in group %}{% set s = row.station %}
-      <li data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same_codes }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}">
-        <span class="st-main"><a href="{{ link(st_path(row.key)) }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %} <span class="muted">{{ name(s.name) }}</span>{% endif %}
-          {% if row.same %}<span class="st-same small">{{ t('repeat_same') }}: {% for code, m in row.same %}{{ check_name(code) }} ({{ t('repeat_times', n=m) }}){% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}</span>
-        <span class="strip" role="img" aria-label="{% for r in rounds %}{{ r.short }}: {% if r.id in row.flags %}{% for code in row.flags[r.id] %}{{ check_name(code) }}{% if not loop.last %}, {% endif %}{% endfor %}{% elif r.id in row.took %}{{ t('repeat_no_flag') }}{% else %}{{ t('repeat_not_there') }}{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}">
-          {% for r in rounds %}<span class="slot" title="{{ r.short }}">{% if r.id in row.flags %}{{ mx.sym(row.flags[r.id][0], group_of[row.flags[r.id][0]]) }}{% elif r.id in row.took %}<span class="slot-clean"></span>{% else %}<span class="slot-absent"></span>{% endif %}</span>{% endfor %}
-        </span>
-      </li>
-    {% endfor %}
-    </ul>
+    <div class="table-wrap">
+    <table class="compact repeat">
+      <thead><tr><th>{{ t('station') }}</th>{% for r in rounds %}<th title="{{ r.title }}">{{ r.short }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for row in group %}{% set s = row.station %}
+        <tr data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same_codes }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}">
+          <td><a href="{{ link(st_path(row.key)) }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %}<div class="small muted">{{ name(s.name) }}</div>{% endif %}{% if row.same %}<div class="small st-same"><strong>{{ t('repeat_same') }}:</strong> {% for code, m in row.same %}{{ check_name(code) }} ({{ t('repeat_times', n=m) }}){% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}</td>
+          {% for r in rounds %}<td class="small">{% if r.id in row.flags %}{% for code in row.flags[r.id] %}<span class="sym-line cell-flag">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}</span>{% endfor %}{% elif r.id in row.took %}<span class="muted">{{ t('repeat_no_flag_short') }}</span>{% else %}<span class="muted">{{ t('repeat_not_there_short') }}</span>{% endif %}{% if r.id in row.renamed %} <span class="renamed" title="{{ t('repeat_renamed') }}">≠</span>{% endif %}</td>{% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
   </details>
 {% endfor %}
 </div>
-<p class="small muted">{{ t('repeat_strip_legend') }}</p>
+<p class="small muted">{{ t('repeat_table_legend') }}</p>
 
 <h2>{{ t('repeat_mun_heading') }}</h2>
 <p>{{ t('repeat_mun_note') }}</p>
