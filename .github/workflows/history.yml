@@ -1,6 +1,8 @@
 # Run by hand: rebuild a finished round from RIK's results app, one polling station at a time, and archive it.
 # Used for rounds whose CSV RIK no longer offers (parliamentary 2023: 341140 type 2, provincial 2023: 341143
-# type 7, Belgrade 2024: 567956 type 3).
+# type 7, Belgrade 2024: 567956 type 3). Rounds before the results app (2022 and earlier) come from RIK's
+# station table instead: give its path as "table" and write data/rounds/<id>/meta.json first (presidential
+# 2022: 42732, /extfile/sr/files/additionalDocuments/317/350/Tabela_3_po_birackim_mestima_predsednik_17_04_2022_01h16.XLS).
 name: history
 
 on:
@@ -11,7 +13,10 @@ on:
         required: true
       type:
         description: "RIK election type (2 parliamentary, 3 local, 7 provincial)"
-        required: true
+        required: false
+      table:
+        description: "Path of RIK's station table (Excel), for rounds before the results app"
+        required: false
 
 permissions:
   contents: write
@@ -37,7 +42,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ROUND: ${{ inputs.round }}
           TYPE: ${{ inputs.type }}
+          TABLE: ${{ inputs.table }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          uv run izbori import-app --round "$ROUND" --type "$TYPE" --commit --push --dispatch-pages
+          if [ -n "$TABLE" ]; then
+            uv run izbori import-table --round "$ROUND" --url "$TABLE" --commit --push --dispatch-pages
+          else
+            uv run izbori import-app --round "$ROUND" --type "$TYPE" --commit --push --dispatch-pages
+          fi

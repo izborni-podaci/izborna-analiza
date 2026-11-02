@@ -331,6 +331,43 @@ def cmd_import_app(args) -> int:
     return 0
 
 
+def cmd_import_table(args) -> int:
+    """Archive a round from RIK's station table (Excel), for rounds before RIK's results app.
+
+    The round's meta.json (kind, type, date, titles) is written by hand first."""
+    from izbori import tables
+    archive = Archive(args.data)
+    ids = [r for r in archive.round_ids() if r != args.round]
+    known: dict[str, tuple[str, str]] = {}
+    if ids:
+        for s in archive.load(ids[-1]).stations:
+            known.setdefault(s.municipality_code, (s.district, s.district_code))
+    raw, info = tables.table_rows(tables.read_xls(Client().get_bytes(args.url)), known)
+    if info["stations"] < args.min_stations:
+        log(f"{args.round}: only {info['stations']} stations in the table, not archived")
+        return 1
+    meta = archive.meta(args.round)
+    meta.setdefault("contest", {})
+    if not meta.get("contestants"):
+        meta["contestants"] = info["contestants"]
+    meta["source"] = "rik_table"
+    meta["table"] = args.url
+    archive.save_meta(args.round, meta)
+    when = now_iso()
+    name = args.url.rsplit("/", 1)[-1].rsplit(".", 1)[0] + ".csv"
+    result = archive.add_snapshot(args.round, raw, fetched=when, rik_time=tables.rik_time(args.url),
+                                  total=info["stations"], filename=name)
+    if result is None:
+        log(f"{args.round}: same as the archived version")
+        return 0
+    n = after_change(archive, args.round, when, args.notes, notify=False, announce=False)
+    log(f"{args.round}: archived {info['stations']} stations, {len(info['contestants'])} contestants, {n} flags")
+    if args.commit and commit([str(args.data), str(args.notes)], f"Data: {args.round} from RIK's station table"):
+        if args.push and push() and args.dispatch_pages:
+            dispatch_pages()
+    return 0
+
+
 def cmd_site(args) -> int:
     from izbori.site import build
     out = build(Archive(args.data), Path(args.out), args.notes, args.site_url)
@@ -417,6 +454,15 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--push", action="store_true")
     a.add_argument("--dispatch-pages", action="store_true")
     a.set_defaults(fn=cmd_import_app)
+
+    t = sub.add_parser("import-table", help="archive a round from RIK's station table (Excel), before the results app")
+    t.add_argument("--round", required=True)
+    t.add_argument("--url", required=True, help="the table's path or address on RIK's site")
+    t.add_argument("--min-stations", type=int, default=1000)
+    t.add_argument("--commit", action="store_true")
+    t.add_argument("--push", action="store_true")
+    t.add_argument("--dispatch-pages", action="store_true")
+    t.set_defaults(fn=cmd_import_table)
 
     s = sub.add_parser("site", help="build the static site")
     s.add_argument("--out", default="_site")
