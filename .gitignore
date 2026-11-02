@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+_site/
+# the observer target list is private: never commit it
+targets*.csv
+targets*.html
