@@ -1,11 +1,20 @@
 {% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
 {% block title %}{{ t('nav_overview') }}{% endblock %}
 {% block main %}
 <section class="intro">
   <h1>{{ t('site_name') }}</h1>
   <p class="lede">{{ t('tagline') }}.</p>
+</section>
+
+{% if rounds %}{% set top = rounds[0] %}
+<section class="spotlight">
+  <p class="kicker">{{ top.title_display }}</p>
+  <h2>{{ t('check_heading') }}</h2>
+  {{ mx.check_spotlight(top.flagged, top.total, top.counts, link('r/' ~ top.id ~ '/check.html')) }}
   <p class="principle">{{ t('principle') }}</p>
 </section>
+{% endif %}
 
 <section>
   <h2>{{ t('rounds_heading') }}</h2>

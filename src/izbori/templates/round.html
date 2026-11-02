@@ -18,10 +18,11 @@
   <a href="#check">{{ t('check_heading') }}</a> · <a href="#results">{{ t('results_heading') }}</a>{% if ctrl_known %} · <a href="#controllers">{{ t('ctrl_heading') }}</a>{% endif %} · <a href="#municipalities">{{ t('municipalities_heading') }}</a> · <a href="#stats">{{ t('context_heading') }}</a>
 </nav>
 
-<section id="check">
+<section id="check" class="spotlight">
   <h2>{{ t('check_heading') }}</h2>
+  {{ mx.check_spotlight(a.by_station|length, totals.stations, counts, link(base + 'check.html')) }}
   <p class="principle">{{ t('principle') }}</p>
-  <p><a class="button" href="{{ link(base + 'check.html') }}">{{ t('see_all_flags') }} ({{ i(a.by_station|length) }})</a></p>
+  <details class="groups-more"><summary>{{ t('groups_explained') }}</summary>
   <div class="groups">
   {% for g in groups %}
     <div class="group g-{{ g }}">
@@ -35,6 +36,7 @@
     </div>
   {% endfor %}
   </div>
+  </details>
 </section>
 
 <section class="tiles" aria-label="{{ t('results_heading') }}">

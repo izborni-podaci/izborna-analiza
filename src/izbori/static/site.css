@@ -199,3 +199,17 @@ button.sort { font: inherit; font-weight: 600; color: inherit; background: none;
 button.sort::after { content: " ↕"; color: var(--ink-2); font-weight: 400; }
 th[aria-sort="descending"] button.sort::after { content: " ↓"; color: inherit; }
 th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; }
+
+.spotlight { border: 2px solid var(--accent); border-radius: 14px; padding: 4px 18px 12px; margin: 18px 0; background: var(--surface); }
+.spotlight h2 { margin-top: 10px; }
+.big-number { font-size: 1.1rem; margin: 4px 0 12px; }
+.big-number strong { font-size: 2.4rem; line-height: 1; margin-right: 6px; }
+.type-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin: 10px 0 14px; }
+.type-card { display: flex; align-items: center; gap: 4px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; text-decoration: none; color: inherit; background: var(--page); }
+.type-card:hover, .type-card:focus-visible { border-color: var(--accent); }
+.tc-name { flex: 1; }
+.tc-n { font-weight: 700; font-variant-numeric: tabular-nums; }
+.groups-more summary { cursor: pointer; color: var(--ink-2); margin: 8px 0; }
+.hint { margin: 6px 0; color: var(--ink-2); }
+.hint ul { margin: 2px 0 0; padding-left: 18px; }
+.hint li { margin: 2px 0; }

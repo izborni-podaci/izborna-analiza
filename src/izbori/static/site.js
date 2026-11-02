@@ -47,6 +47,15 @@
       });
       if (out) out.textContent = out.dataset.shown.replace('{n}', fmt.format(shown));
     };
+    const order = form.querySelector('[data-f="order"]');
+    if (order) {
+      order.addEventListener('change', () => {
+        const sorted = [...cards].sort((a, b) => (order.value === 'place'
+          ? (a.dataset.place || '').localeCompare(b.dataset.place || '', lang)
+          : cards.indexOf(a) - cards.indexOf(b)));
+        box.append(...sorted);
+      });
+    }
     mun.addEventListener('change', apply);
     type.addEventListener('change', apply);
     query.addEventListener('input', apply);

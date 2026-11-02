@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 import shutil
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -177,8 +177,9 @@ class Site:
             summaries = [{"id": a.round.id, "title_display": self.round_title(a.round, loc), "kind": a.round.kind,
                           "counted": a.totals.counted, "total": a.totals.stations, "counting": a.counting,
                           "rik_time": a.round.rik_time, "fetched": a.round.fetched,
-                          "flagged": len(a.by_station)} for a in rounds]
-            self.write(loc, "index.html", "index.html", rounds=summaries)
+                          "flagged": len(a.by_station), "counts": dict(Counter(f.code for f in a.flags))}
+                         for a in rounds]
+            self.write(loc, "index.html", "index.html", rounds=summaries, checks=CHECKS, groups=GROUPS)
             self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html")
             self.write(loc, "about.html", "about.html", checks=CHECKS, groups=GROUPS)
             for a in rounds:

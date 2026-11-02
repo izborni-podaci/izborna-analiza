@@ -57,3 +57,13 @@
 </table>
 </div>
 {% endmacro %}
+
+{% macro check_spotlight(n, total, counts, href) %}
+<p class="big-number"><strong>{{ i(n) }}</strong> {{ t('check_big_rest', total=i(total), share=pct(n / total if total else none, 1)) }}</p>
+<div class="type-cards">
+{% for g in groups %}{% for c in checks if c.group == g and counts.get(c.code) %}
+  <a class="type-card g-{{ g }}" href="{{ href }}#{{ c.code }}"><span class="dot" aria-hidden="true"></span><span class="tc-name">{{ check_name(c.code) }}</span><span class="tc-n">{{ i(counts[c.code]) }}</span></a>
+{% endfor %}{% endfor %}
+</div>
+<p><a class="button" href="{{ href }}">{{ t('see_all_flags') }}</a></p>
+{% endmacro %}

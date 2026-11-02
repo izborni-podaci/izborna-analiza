@@ -27,6 +27,9 @@
     </select>
   </label>
   <label>{{ t('filter_search') }} <input type="search" data-f="q" autocomplete="off"></label>
+  <label>{{ t('sort_by') }}
+    <select data-f="order"><option value="">{{ t('sort_strength') }}</option><option value="place">{{ t('sort_place') }}</option></select>
+  </label>
   <output data-shown="{{ t('filter_shown', n='{n}') }}">{{ t('filter_shown', n=i(items|length)) }}</output>
 </form>
 
@@ -34,12 +37,15 @@
 <div id="cards" class="cards">
 {% for it in items %}
   {% set s = it.s %}
-  <article class="card" data-mun="{{ it.mun }}" data-types="{{ it.types }}" data-text="{% if s %}{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}{% endif %}">
+  <article class="card" data-place="{% if s %}{{ name(s.municipality) }} {{ '%05d'|format(s.number|int) }}{% endif %}" data-mun="{{ it.mun }}" data-types="{{ it.types }}" data-text="{% if s %}{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}{% endif %}">
     <header>
       <h2 class="card-title">{% if s %}<a href="{{ link(base + 'm/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a> <span class="muted">{{ name(s.name) }}</span>{% else %}{{ it.key }}{% endif %}</h2>
       <p class="muted small">{{ t('first_flagged') }}: {{ time(it.seen) }}</p>
     </header>
     {{ mx.chips(it.flags) }}
+    <div class="hint small"><strong>{{ t('what_to_check') }}</strong>
+      <ul>{% for code in it.flags|map(attribute='code')|unique %}<li>{{ t('hint_' ~ code) }}</li>{% endfor %}</ul>
+    </div>
     {% if s and s.counted %}<p class="numbers small">{{ t('registered') }} {{ i(s.registered) }} · {{ t('voted') }} {{ i(s.voted) }} ({{ pct(s.turnout, 1) }}) · {{ t('ballots') }} {{ i(s.ballots) }} · {{ t('valid') }} {{ i(s.valid) }} · {{ t('invalid') }} {{ i(s.invalid) }}</p>{% endif %}
     {% if ctrl_known %}{{ mx.controllers(ctrl.get(it.key), rnd.contestants|length) }}{% endif %}
     <p class="docs">{{ mx.doc_links(s) }}</p>
