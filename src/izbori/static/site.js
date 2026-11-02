@@ -54,4 +54,35 @@
     if (wanted && [...type.options].some((o) => o.value === wanted)) type.value = wanted;
     apply();
   });
+
+  // Click a column header marked data-sort: largest first, click again for smallest first.
+  document.querySelectorAll('table').forEach((table) => {
+    const heads = [...table.querySelectorAll('thead th')];
+    heads.forEach((th, col) => {
+      if (!th.hasAttribute('data-sort')) return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'sort';
+      button.append(...th.childNodes);
+      th.append(button);
+      button.addEventListener('click', () => {
+        const desc = th.getAttribute('aria-sort') !== 'descending';
+        heads.forEach((h) => h.removeAttribute('aria-sort'));
+        th.setAttribute('aria-sort', desc ? 'descending' : 'ascending');
+        const body = table.tBodies[0];
+        const value = (r) => {
+          const v = parseFloat(r.cells[col]?.dataset.v);
+          return Number.isNaN(v) ? null : v;
+        };
+        const rows = [...body.rows];
+        rows.sort((a, b) => {
+          const x = value(a);
+          const y = value(b);
+          if (x === null || y === null) return (x === null) - (y === null);  // empty values last
+          return desc ? y - x : x - y;
+        });
+        body.append(...rows);
+      });
+    });
+  });
 })();

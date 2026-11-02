@@ -155,6 +155,7 @@ class Site:
                         "counted": len(counted), "registered": reg, "voted": voted,
                         "turnout": voted / reg if reg else None, "invalid": invalid / ballots if ballots else None,
                         "flagged": sum(1 for s in sts if s.key in flagged)})
+            out[-1]["flagged_share"] = out[-1]["flagged"] / len(sts) if sts else None
         kind_order = {"domestic": 0, "abroad": 1, "prison": 2}
         out.sort(key=lambda m: (kind_order[m["kind"]], m["district_code"], latin(m["name"])))
         return out

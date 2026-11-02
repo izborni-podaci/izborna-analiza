@@ -194,3 +194,8 @@ figcaption { font-weight: 600; font-size: 0.9rem; }
   header.top, .filters, .round-nav, .foot { display: none; }
   body { background: #fff; }
 }
+
+button.sort { font: inherit; font-weight: 600; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
+button.sort::after { content: " ↕"; color: var(--ink-2); font-weight: 400; }
+th[aria-sort="descending"] button.sort::after { content: " ↓"; color: inherit; }
+th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; }

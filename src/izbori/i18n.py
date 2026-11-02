@@ -113,6 +113,7 @@ S: dict[str, tuple[str, str]] = {
     "majority_mark": ("50% гласалих", "50% of voters"),
     "check_heading": ("За проверу", "To check"),
     "on_this_page": ("На овој страни", "On this page"),
+    "flagged_share": ("% места за проверу", "% of stations to check"),
     "check_count": ("Бирачких места са бар једном ознаком: {n}", "Polling stations with at least one flag: {n}"),
     "see_all_flags": ("Сва бирачка места за проверу", "All polling stations to check"),
     "group_paper": ("Бројеви у записнику се не слажу", "The minutes' numbers don't add up"),
@@ -198,7 +199,7 @@ S: dict[str, tuple[str, str]] = {
                     "A flag is a question, not a verdict. Check the minutes before publishing."),
     # pages
     "nav_round": ("Изборни круг", "Election round"),
-    "rounds_flagged": ("Бирачких места за проверу: {n}", "Polling stations to check: {n}"),
+    "rounds_flagged": ("Бирачких места за проверу: {n} од {total} ({share})", "Polling stations to check: {n} of {total} ({share})"),
     "how_heading": ("Како ради", "How it works"),
     "how_1": ("Сваког сата, а док бројање траје свака 3 минута, сајт преузима датотеку са резултатима са сајта РИК-а.",
               "Every hour, and every 3 minutes while a count is open, the site downloads the results file from RIK's website."),

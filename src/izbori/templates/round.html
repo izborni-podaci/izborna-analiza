@@ -133,7 +133,8 @@
   <table class="compact" id="mun-table">
     <thead><tr>
       <th>{{ t('municipality') }}</th><th>{{ t('district') }}</th><th class="num">{{ t('stations') }}</th>
-      <th class="num">{{ t('turnout') }}</th><th class="num">{{ t('invalid') }}</th><th class="num">{{ t('flagged') }}</th>
+      <th class="num" data-sort>{{ t('turnout') }}</th><th class="num" data-sort>{{ t('invalid') }}</th>
+      <th class="num" data-sort>{{ t('flagged') }}</th><th class="num" data-sort>{{ t('flagged_share') }}</th>
     </tr></thead>
     <tbody>
     {% for m in municipalities %}
@@ -141,9 +142,10 @@
         <td><a href="{{ link(base + 'm/' ~ m.code ~ '.html') }}">{{ name(m.name) }}</a></td>
         <td class="muted">{% if m.kind == 'domestic' %}{{ name(m.district) }}{% endif %}</td>
         <td class="num">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</td>
-        <td class="num">{{ pct(m.turnout, 1) }}</td>
-        <td class="num">{{ pct(m.invalid, 1) }}</td>
-        <td class="num">{% if m.flagged %}<strong>{{ i(m.flagged) }}</strong>{% else %}0{% endif %}</td>
+        <td class="num" data-v="{{ m.turnout if m.turnout is not none else '' }}">{{ pct(m.turnout, 1) }}</td>
+        <td class="num" data-v="{{ m.invalid if m.invalid is not none else '' }}">{{ pct(m.invalid, 1) }}</td>
+        <td class="num" data-v="{{ m.flagged }}">{% if m.flagged %}<strong>{{ i(m.flagged) }}</strong>{% else %}0{% endif %}</td>
+        <td class="num" data-v="{{ m.flagged_share if m.flagged_share is not none else '' }}">{{ pct(m.flagged_share, 1) }}</td>
       </tr>
     {% endfor %}
     </tbody>
