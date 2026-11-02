@@ -6,6 +6,7 @@ transliterator. Links to RIK documents are percent-encoded first, so translitera
 from __future__ import annotations
 
 import re
+import json
 import shutil
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -75,6 +76,34 @@ class Site:
         path.write_text(html, encoding="utf-8")
 
     # --- view models -------------------------------------------------------------------------
+    def write_search(self, loc: str, rounds_newest_first: list, rep_rows: list[dict]) -> None:
+        """search.json for the search on the home page, kept small: municipalities [name, code, round], then polling
+        stations [municipality, number, name, round, elections flagged, elections voted], flagged ones first. Each
+        points at its row in the newest election that has it; the page builds the labels and links."""
+        conv = (lambda text: text) if loc == "cyr" else latin
+        flagged = {r["key"]: (r["k"], r["n"]) for r in rep_rows}
+        rids = [a.round.id for a in rounds_newest_first]
+        muns: dict[str, tuple] = {}
+        stations: dict[str, tuple] = {}
+        took: dict[str, int] = defaultdict(int)
+        for ri, a in enumerate(rounds_newest_first):
+            for st in a.round.stations:
+                took[st.key] += 1
+                muns.setdefault(st.municipality_code, (conv(st.municipality), ri))
+                stations.setdefault(st.key, (st, ri))
+        order = sorted(muns, key=lambda code: latin(muns[code][0]))
+        at = {code: i for i, code in enumerate(order)}
+        rows = []
+        for key, (st, ri) in stations.items():
+            k, n = flagged.get(key, (0, took[key]))
+            rows.append((-k, latin(st.municipality), int(st.number) if st.number.isdigit() else 0,
+                         [at[st.municipality_code], st.number, conv(st.name), ri, k, n]))
+        rows.sort(key=lambda r: r[:3])
+        data = {"rounds": rids, "m": [[muns[c][0], c, muns[c][1]] for c in order], "s": [r[3] for r in rows]}
+        path = self.out / (PREFIX[loc] + "search.json")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
     def short_title(self, rnd, loc: str) -> str:
         year = (self.archive.meta(rnd.id).get("date") or "")[:4]
         if rnd.kind in ("presidential", "parliamentary", "provincial", "local") and year:
@@ -210,13 +239,14 @@ class Site:
                           "flagged": len(a.by_station), "counts": dict(Counter(f.code for f in a.flags)),
                           "share": share[a.round.id], "bar": 100 * share[a.round.id] / share_top}
                          for a in rounds]
-            self.write(loc, "index.html", "index.html", rounds=summaries, checks=CHECKS, groups=GROUPS,
-                       overall=overall, appear=appear, same=rep_same, example=example, columns=columns,
-                       group_of=group_of)
+            self.write(loc, "index.html", "index.html", latest=summaries[0] if summaries else None, overall=overall,
+                       checks=CHECKS, groups=GROUPS)
+            self.write(loc, "elections.html", "elections.html", rounds=summaries)
+            self.write_search(loc, rounds, rep_rows)
             self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html")
             self.write(loc, "about.html", "about.html", checks=CHECKS, groups=GROUPS)
             self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns,
-                       rounds=columns, same=rep_same, checks=CHECKS, group_of=group_of)
+                       rounds=columns, same=rep_same, checks=CHECKS, group_of=group_of, example=example)
             for a in rounds:
                 self.round_pages(a, loc)
         # GitHub Pages serves this file for a missing page at any depth, so its links are absolute.

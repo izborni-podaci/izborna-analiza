@@ -30,6 +30,81 @@
   }
   const fmt = new Intl.NumberFormat(lang.startsWith('sr') ? 'sr-Latn' : 'en');
 
+  // Search on the home page: municipalities and polling stations from search.json, loaded on first use.
+  const search = document.querySelector('form[data-search]');
+  if (search) {
+    const input = search.querySelector('input');
+    const out = search.querySelector('[data-search-results]');
+    const base = search.dataset.base || '';
+    let items = null;
+    let loading = null;
+    let hits = [];
+    const load = () => {
+      if (!loading) {
+        loading = fetch(search.dataset.index)
+          .then((r) => r.json())
+          .then((j) => {
+            const d = search.dataset;
+            const mun = j.m.map((m) => [fold(m[0]), [m[0], `r/${j.rounds[m[2]]}/m/${m[1]}.html`, d.mun]]);
+            const st = j.s.map((s) => {
+              const m = j.m[s[0]];
+              const label = `${m[0]} · ${d.bm} ${s[1]}${s[2] ? ` · ${s[2]}` : ''}`;
+              const sub = s[4] ? d.flagged.replace('{k}', s[4]).replace('{n}', s[5]) : d.clean;
+              return [fold(label), [label, `r/${j.rounds[s[3]]}/m/${m[1]}.html#bm-${s[1]}`, sub]];
+            });
+            items = mun.concat(st);
+          })
+          .catch(() => { items = []; });
+      }
+      return loading;
+    };
+    const render = () => {
+      out.textContent = '';
+      const q = fold(input.value.trim());
+      if (!q || !items) return;
+      const words = q.split(/\s+/);
+      const numbers = words.filter((w) => /^\d+$/.test(w));
+      hits = items.filter(([f]) => words.every((w) => f.includes(w)));
+      if (numbers.length) {  // "zemun 25": station 25 before 125 and 250
+        const exact = (f) => numbers.every((n) => new RegExp(`(^|\\D)${n}(\\D|$)`).test(f));
+        hits = hits.filter(([f]) => exact(f)).concat(hits.filter(([f]) => !exact(f)));
+      }
+      hits = hits.slice(0, 12);
+      if (!hits.length) {
+        const p = document.createElement('p');
+        p.textContent = out.dataset.none;
+        out.append(p);
+        return;
+      }
+      const ul = document.createElement('ul');
+      hits.forEach(([, it]) => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = base + it[1];
+        a.textContent = it[0];
+        li.append(a);
+        if (it[2]) {
+          const s = document.createElement('span');
+          s.className = 'small muted';
+          s.textContent = it[2];
+          li.append(s);
+        }
+        ul.append(li);
+      });
+      out.append(ul);
+    };
+    input.addEventListener('focus', load, { once: true });
+    input.addEventListener('input', () => { load().then(render); });
+    search.addEventListener('submit', (e) => {
+      e.preventDefault();
+      load().then(() => {
+        render();
+        if (hits.length) location.href = base + hits[0][1][1];
+      });
+    });
+    if (location.hash === '#pretraga') input.focus();
+  }
+
   document.querySelectorAll('input[data-filter]').forEach((input) => {
     const table = document.querySelector(input.dataset.filter);
     if (!table) return;

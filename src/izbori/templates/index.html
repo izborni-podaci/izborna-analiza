@@ -2,86 +2,66 @@
 {% import "_macros.html" as mx with context %}
 {% block title %}{{ t('nav_overview') }}{% endblock %}
 {% block main %}
-{% if not rounds %}
 <section class="hero">
-  <h1>{{ t('site_name') }}</h1>
-  <p class="deck">{{ t('tagline') }}.</p>
-  <p>{{ t('no_rounds') }}</p>
-</section>
-{% else %}
-<section class="hero">
-  <p class="kicker">{{ t('all_rounds_kicker', n=rounds|length) }}</p>
-  <h1><span class="accent">{{ i(overall.flagged) }}</span> {{ t('home_h1_rest') }}</h1>
-  <p class="deck">{{ t('home_deck', share=pct(overall.flagged / overall.total if overall.total else none, 1), total=i(overall.total), repeated=i(overall.repeated)) }}</p>
-  <p class="principle">{{ t('principle') }}</p>
-  <div class="buttons">
-    <a class="button" href="{{ link('repeat.html') }}">{{ t('home_repeat_button', n=i(overall.repeated)) }}</a>
-    <a class="button secondary" href="{{ link('r/' ~ rounds[0].id ~ '/check.html') }}">{{ t('home_latest_button', title=rounds[0].short) }}</a>
-  </div>
+  <h1>{{ t('home_title') }}</h1>
+  <p class="deck">{{ t('home_lede') }}</p>
+  <form class="search" role="search" data-search data-index="{{ link('search.json') }}" data-base="{{ link('') }}" action="{{ link('elections.html') }}" data-bm="{{ t('station_no') }}" data-mun="{{ t('municipality') }}" data-flagged="{{ t('search_flagged', k='{k}', n='{n}') }}" data-clean="{{ t('search_clean') }}">
+    <label for="pretraga">{{ t('search_field') }}</label>
+    <div class="search-row">
+      <input id="pretraga" type="search" autocomplete="off" placeholder="{{ t('search_placeholder') }}">
+      <button type="submit" class="button">{{ t('search_button') }}</button>
+    </div>
+    <div class="search-out" data-search-results data-none="{{ t('search_none') }}" aria-live="polite"></div>
+    <p class="small muted">{{ t('search_or') }} <a href="{{ link('elections.html') }}">{{ t('search_or_link') }}</a>.</p>
+  </form>
 </section>
 
-<section class="cols">
-  <div>
-    <h2>{{ t('home_appears') }}</h2>
-    <p class="muted small">{{ t('home_appears_note') }}</p>
-    <ul class="bar-list">
-    {% for c in appear %}
-      <li><a href="{{ link('repeat.html') }}#{{ c.code }}"><span class="name">{{ mx.sym(c.code, c.group) }}{{ check_name(c.code) }}</span><span class="n">{{ i(c.n) }}</span><span class="track" aria-hidden="true"><span style="width: {{ '%.1f'|format(c.w) }}%"></span></span></a></li>
-    {% endfor %}
-    </ul>
+{% if latest %}
+<section class="band">
+  <h2>{{ t('intents_heading') }}</h2>
+  <div class="intents">
+    <a class="intent" href="{{ link('r/' ~ latest.id ~ '/check.html') }}">
+      <span class="kicker">{{ t('intent1_kicker', title=latest.short) }}</span>
+      <span class="intent-title">{{ t('intent1_title') }}</span>
+      <span class="intent-body">{{ t('intent1_body', n=i(latest.flagged), total=i(latest.total)) }}</span>
+      <span class="intent-cta">{{ t('intent1_cta') }}</span>
+    </a>
+    <a class="intent" href="{{ link('repeat.html') }}">
+      <span class="kicker">{{ t('intent2_kicker') }}</span>
+      <span class="intent-title">{{ t('intent2_title') }}</span>
+      <span class="intent-body">{{ t('intent2_body', n=i(overall.repeated)) }}</span>
+      <span class="intent-cta">{{ t('nav_repeat') }}</span>
+    </a>
+    <a class="intent" href="{{ link('guide.html') }}">
+      <span class="kicker">{{ t('intent3_kicker') }}</span>
+      <span class="intent-title">{{ t('intent3_title') }}</span>
+      <span class="intent-body">{{ t('intent3_body') }}</span>
+      <span class="intent-cta">{{ t('intent3_cta') }}</span>
+    </a>
   </div>
-  <div>
-    <h2>{{ t('repeat_same_heading') }}</h2>
-    <p class="muted small">{{ t('repeat_same_note_short') }}</p>
-    <ul class="bar-list">
-    {% for code, n in same %}
-      <li><a href="{{ link('repeat.html') }}#{{ code }}"><span class="name">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}</span><span class="n">{{ i(n) }}</span></a></li>
-    {% endfor %}
-    </ul>
-    {% if example %}{% set s = example.station %}
-    <article class="example">
-      <p class="kicker">{{ t('home_example') }}</p>
-      <h3><a href="{{ link('r/' ~ example.rid ~ '/m/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %} <span class="muted">{{ name(s.name) }}</span>{% endif %}</h3>
-      <p class="small">{{ t('home_example_k', k=example.k, n=example.n) }}</p>
-      <ol>
-      {% for r in columns %}
-        <li><span class="muted">{{ r.short }}</span><span>{% if r.id in example.flags %}{% for code in example.flags[r.id] %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}<strong>{{ check_name(code) }}</strong></span>{% if not loop.last %}<br>{% endif %}{% endfor %}{% elif r.id in example.took %}<span class="muted">{{ t('repeat_no_flag') }}</span>{% else %}<span class="muted">{{ t('repeat_not_there') }}</span>{% endif %}</span></li>
-      {% endfor %}
-      </ol>
-    </article>
-    {% endif %}
-  </div>
-</section>
-
-<section class="rounds-section">
-  <h2>{{ t('rounds_heading') }}</h2>
-  <div class="table-scroll">
-  <table class="ledger">
-    <thead><tr><th>{{ t('home_col_election') }}</th><th>{{ t('home_col_date') }}</th><th class="num">{{ t('stations') }}</th><th class="num">{{ t('flagged') }}</th><th>{{ t('home_col_share') }}</th></tr></thead>
-    <tbody>
-    {% for r in rounds %}
-      <tr>
-        <td><a href="{{ link('r/' ~ r.id ~ '/index.html') }}"><strong>{{ r.title_display }}</strong></a>{% if r.counting %}<div class="small muted">{{ t('counted_of', counted=i(r.counted), total=i(r.total)) }}</div>{% endif %}</td>
-        <td class="nowrap muted">{{ r.date }}</td>
-        <td class="num">{{ i(r.total) }}</td>
-        <td class="num"><a href="{{ link('r/' ~ r.id ~ '/check.html') }}"><strong>{{ i(r.flagged) }}</strong></a></td>
-        <td><span class="share"><span class="track" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.bar) }}%"></span></span><span class="val">{{ pct(r.share, 1) }}</span></span></td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-  <p class="small muted">{{ t('last_change') }}: {{ time(rounds[0].fetched) }}</p>
 </section>
 {% endif %}
 
-<section class="how">
-  <h2>{{ t('how_heading') }}</h2>
-  <ol>
-    <li>{{ t('how_1') }}</li>
-    <li>{{ t('how_2') }}</li>
-    <li>{{ t('how_3') }}</li>
-    <li>{{ t('how_4') }}</li>
+<section class="read">
+  <h2>{{ t('read_heading') }}</h2>
+  <p class="muted">{{ t('read_note') }}</p>
+  <ol class="steps">
+    <li><span class="step-n" aria-hidden="true">1</span><span><strong>{{ t('read1_title') }}</strong><span class="step-body">{{ t('read1_body') }}</span></span></li>
+    <li><span class="step-n" aria-hidden="true">2</span><span><strong>{{ t('read2_title') }}</strong>
+      <span class="step-body">
+        <span class="sym-line">{{ mx.sym('signed_over_ballots', 'paper') }}{{ check_name('signed_over_ballots') }}</span><br>
+        <span class="sym-line">{{ mx.sym('invalid_spike', 'unusual') }}{{ check_name('invalid_spike') }}</span><br>
+        <span class="sym-line">{{ mx.sym('turnout_drop', 'unusual') }}{{ check_name('turnout_drop') }}</span><br>
+        <a href="{{ link('about.html') }}#checks">{{ t('read2_link') }}</a>
+      </span></span></li>
+    <li><span class="step-n" aria-hidden="true">3</span><span><strong>{{ t('read3_title') }}</strong><span class="step-body">{{ t('read3_body') }}</span></span></li>
   </ol>
 </section>
+
+<ul class="trust">
+  <li>{{ t('trust_source') }}</li>
+  <li>{{ t('trust_same') }}</li>
+  <li><a href="{{ repo_url }}">{{ t('trust_code') }}</a></li>
+  <li>{{ t('trust_private') }}</li>
+</ul>
 {% endblock %}

@@ -2,9 +2,23 @@
 {% import "_macros.html" as mx with context %}
 {% block title %}{{ t('repeat_title') }}{% endblock %}
 {% block main %}
-<h1>{{ t('repeat_title') }}</h1>
+<h1 class="page-title">{{ t('repeat_title') }}</h1>
 <p class="lede">{{ t('repeat_lede') }}</p>
 <p class="principle">{{ t('principle') }}</p>
+
+{% if example %}{% set s = example.station %}
+<section class="example">
+  <p class="kicker">{{ t('repeat_example_heading') }}</p>
+  <h2 class="example-title"><a href="{{ link('r/' ~ example.rid ~ '/m/' ~ s.municipality_code ~ '.html') }}#bm-{{ s.number }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %} <span class="muted">{{ name(s.name) }}</span>{% endif %}</h2>
+  <ol class="timeline">
+  {% for r in rounds %}
+    <li><span class="muted">{{ r.short }}</span><span>{% if r.id in example.flags %}{% for code in example.flags[r.id] %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}<strong>{{ check_name(code) }}</strong></span>{% if not loop.last %}<br>{% endif %}{% endfor %}{% elif r.id in example.took %}<span class="muted">{{ t('repeat_no_flag') }}</span>{% else %}<span class="muted">{{ t('repeat_not_there') }}</span>{% endif %}</span></li>
+  {% endfor %}
+  </ol>
+  <p class="small">{{ t('repeat_example_note', k=example.k, n=example.n) }}</p>
+</section>
+{% endif %}
+
 <ul class="small muted">
   <li>{{ t('repeat_caveat_scope') }}</li>
   <li>{{ t('repeat_caveat_areas') }}</li>

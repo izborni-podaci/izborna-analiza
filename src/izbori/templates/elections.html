@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ t('rounds_heading') }}{% endblock %}
+{% block main %}
+<h1 class="page-title">{{ t('rounds_heading') }}</h1>
+<p class="lede">{{ t('elections_lede') }}</p>
+{% if not rounds %}<p>{{ t('no_rounds') }}</p>{% else %}
+<div class="table-scroll">
+<table class="ledger">
+  <thead><tr><th>{{ t('home_col_election') }}</th><th>{{ t('home_col_date') }}</th><th class="num">{{ t('stations') }}</th><th class="num">{{ t('flagged') }}</th><th>{{ t('home_col_share') }}</th></tr></thead>
+  <tbody>
+  {% for r in rounds %}
+    <tr>
+      <td><a href="{{ link('r/' ~ r.id ~ '/index.html') }}"><strong>{{ r.title_display }}</strong></a>{% if r.counting %}<div class="small muted">{{ t('counted_of', counted=i(r.counted), total=i(r.total)) }}</div>{% endif %}</td>
+      <td class="nowrap muted">{{ r.date }}</td>
+      <td class="num">{{ i(r.total) }}</td>
+      <td class="num"><a href="{{ link('r/' ~ r.id ~ '/check.html') }}"><strong>{{ i(r.flagged) }}</strong></a></td>
+      <td><span class="share"><span class="track" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.bar) }}%"></span></span><span class="val">{{ pct(r.share, 1) }}</span></span></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="small muted">{{ t('last_change') }}: {{ time(rounds[0].fetched) }}</p>
+{% endif %}
+{% endblock %}
