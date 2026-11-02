@@ -1,8 +1,36 @@
 {
-  "kind": "presidential",
-  "rik_type": 1,
-  "date": "2022-04-03",
-  "title": "Председнички 2022",
-  "title_en": "2022 presidential election",
-  "contest": {}
+ "contest": {},
+ "contestants": [
+  {
+   "name": "Миша Вацић"
+  },
+  {
+   "name": "Биљана Стојковић"
+  },
+  {
+   "name": "Бранка Стаменковић"
+  },
+  {
+   "name": "Здравко Понош"
+  },
+  {
+   "name": "Милица Ђурђевић Стаменковски"
+  },
+  {
+   "name": "Александар Вучић"
+  },
+  {
+   "name": "Др Милош Јовановић"
+  },
+  {
+   "name": "Бошко Обрадовић"
+  }
+ ],
+ "date": "2022-04-03",
+ "kind": "presidential",
+ "rik_type": 1,
+ "source": "rik_table",
+ "table": "/extfile/sr/files/additionalDocuments/317/350/Tabela_3_po_birackim_mestima_predsednik_17_04_2022_01h16.XLS",
+ "title": "Председнички 2022",
+ "title_en": "2022 presidential election"
 }
