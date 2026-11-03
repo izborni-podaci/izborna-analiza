@@ -264,3 +264,27 @@ def test_reading_split_across_jobs_ends_like_one_run(tmp_path, monkeypatch):
                                  "unparsed": 0}), encoding="utf-8")
     assert cli.main(["--data", str(data), "boards", "--merge", str(plan), str(part0), str(part1)]) == 0
     assert load_store(rnd)["complete"]
+
+
+def test_retrying_unreadable_decisions_reaches_past_the_newest_page(tmp_path):
+    """With every link kept, a plan reads only the register's newest page; decisions that couldn't be read are
+    still listed to read again, by the link kept for them."""
+    import json
+
+    from izbori.boards import plan
+    (tmp_path / "boards.json").write_text(json.dumps({"complete": True, "docs": {
+        "819600": {"s": "70017/12", "k": "extended", "r": False, "t": "1", "u": "/extfile/sr/files/a/600.pdf",
+                   "slots": [], "unparsed": True},
+        "819601": {"s": "70017/13", "k": "extended", "r": False, "t": "1", "u": "/extfile/sr/files/a/601.pdf",
+                   "slots": [[1, True, False]], "unparsed": False}}}), encoding="utf-8")
+
+    class Client:
+        base = "https://rik.test"
+
+        def get_json(self, path):
+            return index_page([])
+
+    planned = plan(tmp_path, "680072", 2, {}, Client(), log=lambda m: None, retry_unparsed=True)
+    assert [(d["id"], d["station"], d["url"]) for d in planned["todo"]] == [
+        ("819600", "12", "https://www.rik.parlament.gov.rs/extfile/sr/files/a/600.pdf")]
+    assert plan(tmp_path, "680072", 2, {}, Client(), log=lambda m: None)["todo"] == []

@@ -465,6 +465,13 @@ def plan(round_dir: Path, round_id: str, rik_type: int, stations: dict[str, str]
                                      or (retry_unparsed and entry.get("unparsed"))):
             todo.append({"id": d.id, "s": key, "station": d.station, "kind": d.kind, "repeat": d.repeat,
                          "published": d.published, "url": d.url})
+    if retry_unparsed:  # unreadable decisions deeper in the register than this pass went, read again by their link
+        listed = {d["id"] for d in todo}
+        for i, entry in sorted(known.items()):
+            if i not in listed and entry.get("k") == "extended" and entry.get("unparsed") and entry.get("u"):
+                todo.append({"id": i, "s": entry.get("s"), "station": (entry.get("s") or "/").split("/")[1],
+                             "kind": "extended", "repeat": bool(entry.get("r")), "published": entry.get("t") or "",
+                             "url": RIK_PUBLIC.rstrip("/") + entry["u"]})
     log(f"{len(docs)} decisions indexed, {len(todo)} to read")
     return {"round": round_id, "whole": whole, "index": index, "todo": todo}
 
