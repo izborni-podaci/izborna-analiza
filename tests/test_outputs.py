@@ -298,6 +298,20 @@ def test_incremental_build_matches_a_full_build(tmp_path, archive):
     run(tmp_path / "c" / "site", False)
     assert same(tmp_path / "c" / "site", tmp_path / "b" / "site")
 
+    # a decision on a polling board gets its link, and the station's commission publishes a document
+    import json
+    b = data / "rounds/567956/boards.json"
+    store = json.loads(b.read_text(encoding="utf-8"))
+    entry = next(v for v in store["docs"].values() if v.get("s"))
+    entry["u"] = "/extfile/sr/files/additionalDocuments/1/2/Решење.pdf"
+    b.write_text(json.dumps(store, ensure_ascii=False), encoding="utf-8")
+    cdocs = {"complete": True, "docs": {"9": {"m": entry["s"].split("/")[0], "c": "session", "t": "1793700000",
+                                              "u": "/extfile/sr/files/additionalDocuments/1/3/З.pdf"}}}
+    (data / "rounds/567956/commission.json").write_text(json.dumps(cdocs, ensure_ascii=False), encoding="utf-8")
+    run(tmp_path / "b" / "site", True)
+    run(tmp_path / "e" / "site", False)
+    assert same(tmp_path / "e" / "site", tmp_path / "b" / "site")
+
     # a round leaves the archive: its pages and its places' pages go
     shutil.rmtree(data / "rounds/341143")
     run(tmp_path / "b" / "site", True)

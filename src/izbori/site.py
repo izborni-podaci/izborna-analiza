@@ -195,7 +195,8 @@ class Site:
                           self.ctrl_of(rid).get(s.key), self.mun_rows[rid][s.municipality_code],
                           self.mun_votes[rid][s.municipality_code],
                           self.peers[rid]["st"].get(s.municipality_code, {}).get("digest"),
-                          self.analyses[rid].documents.get(s.key), self.analyses[rid].reviews.get(s.key)))
+                          self.analyses[rid].documents.get(s.key), self.analyses[rid].reviews.get(s.key),
+                          self.board_docs_of(rid).get(s.key)))
         return repr(parts)
 
     def round_key(self, rid: str) -> str:
