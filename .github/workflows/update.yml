@@ -1,12 +1,14 @@
-# Every hour: check RIK, archive what changed, publish. While a count is open the same run keeps watching
-# (every 3 minutes, up to 5¾ hours); the next hourly run takes over after that. Only one runs at a time.
-# With no election under way it asks RIK only every 6 hours (hourly on Sundays, when elections are held), and
-# rounds more than 30 days past their election day are looked at once a week.
+# Every hour: check RIK, archive what changed, publish. How often RIK is actually asked follows the election
+# calendar (src/izbori/schedule.py, data/elections.csv): once a day with no election under way, every hour on
+# election night and every 3 hours for two weeks after. While a count is open the same run keeps watching (every 3
+# minutes, up to 5¾ hours) and then starts the next run itself. Only one runs at a time. GitHub skips many
+# scheduled runs, so election evenings (Sundays) get extra ones; they ask RIK only on an election day.
 name: update
 
 on:
   schedule:
     - cron: "17 * * * *"
+    - cron: "4,34,49 17-21 * * 0"
   workflow_dispatch:
     inputs:
       minutes:
@@ -45,7 +47,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          args=(--watch --max-minutes "$MINUTES" --commit --push --dispatch-pages --notify)
+          args=(--watch --max-minutes "$MINUTES" --commit --push --dispatch-pages --notify --rerun)
           # a run started by hand always asks RIK; scheduled runs ask less when no election is under way
           [ "${{ github.event_name }}" = "workflow_dispatch" ] && args+=(--always)
           uv run izbori update "${args[@]}"

@@ -12,7 +12,7 @@ from collections import Counter
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from izbori import feed, mail
+from izbori import feed, mail, schedule
 from izbori.config import SITE_URL
 from izbori.history import Archive, now_iso
 from izbori.i18n import BELGRADE, check_name, parse_time
@@ -21,13 +21,11 @@ from izbori.report import analyze, record_new_flags
 from izbori.rik import Client, RikError, Summary, guess_kind
 from izbori.translit import latin
 
-REFRESH_HOUR_UTC = 3  # once a day, re-download every round even if RIK's progress looks unchanged
 WATCH_REFRESH = timedelta(minutes=15)  # while watching, re-download at least this often
-# With no election under way, RIK is asked far less: a round this long after its election day, and not counting,
-# no longer changes, so it is checked once a week; and when every round is like that, RIK's list of rounds is read
-# every QUIET_EVERY_HOURS hours, except on Sundays, when Serbian elections are held, which keep the hourly look.
+# How often RIK is asked follows the election calendar (schedule.py). A round this long after its election day,
+# and not counting, no longer changes, so it is looked at once a week; every other round is re-downloaded once a
+# day even if RIK's progress looks unchanged.
 SETTLED_AFTER = timedelta(days=30)
-QUIET_EVERY_HOURS = 6
 
 
 def log(msg: str) -> None:
@@ -197,29 +195,33 @@ def settled(archive: Archive, rid: str, now: datetime) -> bool:
     return now.date() - datetime.fromisoformat(date[:10]).date() > SETTLED_AFTER
 
 
-def quiet_now(archive: Archive, now: datetime) -> bool:
-    """No election under way: every round RIK lists or the archive holds is settled."""
-    rids = set(archive.known_rounds()) | set(archive.round_ids())
-    return bool(rids) and all(settled(archive, rid, now) for rid in rids)
+def hours(d: timedelta | None) -> str:
+    return "never" if d is None else f"{d.total_seconds() / 3600:.1f} h"
 
 
-def look_now(now: datetime) -> bool:
-    """With no election under way: every hour on Sundays (Belgrade time), otherwise every QUIET_EVERY_HOURS."""
-    local = now.astimezone(BELGRADE)
-    return local.weekday() == 6 or local.hour % QUIET_EVERY_HOURS == 0
+def dispatch_update() -> None:
+    """Start the update workflow again (it waits for this run to end): GitHub's hourly schedule skips many runs,
+    so a count still open isn't left to it."""
+    r = subprocess.run(["gh", "workflow", "run", "update.yml"], capture_output=True, text=True)
+    if r.returncode != 0:
+        log(f"could not start the update workflow again: {r.stderr.strip()}")
 
 
 def cmd_update(args) -> int:
     archive = Archive(args.data)
     now = datetime.now(UTC)
-    if not args.always and quiet_now(archive, now) and not look_now(now):
-        log("no election under way; RIK is asked again at the next quiet hour")
+    period, why = schedule.every(archive, now)
+    if not args.always and not schedule.due(archive.root, "rik", now, period):
+        log(f"RIK is asked every {hours(period)} now ({why}); last asked {hours(schedule.since(archive.root, 'rik', now))}"
+            " ago")
         if args.commit:
             heartbeat(Path(args.data))
             if commit([str(args.data)], f"Heartbeat ({now_iso()})") and args.push:
                 push()
         return 0
-    weekly = now.weekday() == 0 and now.hour == REFRESH_HOUR_UTC  # Mondays: one look at settled rounds
+    log(f"asking RIK ({why})")
+    weekly = schedule.due(archive.root, "settled", now, timedelta(days=7))  # one look a week at settled rounds
+    refresh = schedule.due(archive.root, "refresh", now, timedelta(days=1))  # one re-download a day
     client = Client()
     deadline = time.monotonic() + args.max_minutes * 60
     last_download: dict = {}
@@ -237,7 +239,7 @@ def cmd_update(args) -> int:
             merged = {**known, **found}
             if merged != known:
                 archive.save_known_rounds(merged)
-        force = first and datetime.now(UTC).hour == REFRESH_HOUR_UTC
+        force = first and refresh
         for rid, info in sorted(found.items()):
             old = settled(archive, rid, now)
             if old and not (first and weekly):
@@ -257,6 +259,8 @@ def cmd_update(args) -> int:
             recent = when is None or datetime.now(UTC) - when < timedelta(days=7)
             if summ and summ.counting and recent and summ.allowed:
                 counting = True
+        if first and found:  # RIK answered: the next look is a whole period away
+            schedule.record(archive.root, now, "rik", *(["settled"] if weekly else []), *(["refresh"] if refresh else []))
         if args.notify:
             mail.maybe_send(archive.root, archive, args.site_url, datetime.now(UTC))
         if args.commit:
@@ -270,7 +274,9 @@ def cmd_update(args) -> int:
         if not args.watch or not counting:
             break
         if time.monotonic() + args.every > deadline:
-            log("watch time is up; the next scheduled run continues")
+            log("watch time is up; a new run continues")
+            if args.rerun:
+                dispatch_update()
             break
         time.sleep(args.every)
     return 0
@@ -584,7 +590,9 @@ def main(argv: list[str] | None = None) -> int:
     u.add_argument("--push", action="store_true")
     u.add_argument("--dispatch-pages", action="store_true", help="start the pages workflow after a push")
     u.add_argument("--notify", action="store_true", help="send the email digest if SMTP settings are present")
-    u.add_argument("--always", action="store_true", help="ask RIK even when no election is under way")
+    u.add_argument("--always", action="store_true", help="ask RIK now, whatever the election calendar says")
+    u.add_argument("--rerun", action="store_true",
+                   help="when the watch time is up and a count is still open, start the update workflow again")
     u.set_defaults(fn=cmd_update)
 
     b = sub.add_parser("boards", help="read which lists appointed members to extended polling boards")

@@ -246,6 +246,8 @@ Every page says which RIK timestamp the data comes from and when it was fetched.
 data/rounds.json                  every round RIK lists
 data/feed.json                    feed entries
 data/places.csv                   manual corrections to how stations are followed across elections
+data/elections.csv                election days entered by hand once an election is called
+data/looks.json                   when RIK was last asked (results, settled rounds, daily re-download)
 data/mail.json                    email state: pending flags, time of the last message
 data/rounds/<id>/meta.json        type, title, English title, election day, contestants (name, short
                                   name, minority status), seat rules
@@ -268,15 +270,20 @@ The archive starts with the three files from 1 November 2026 at 22:19, 23:26 and
 ## Schedule
 
 - **Every day.** The **documents** workflow reads RIK's register of minutes: daily for two weeks after election day, then on Mondays until 60 days after it, and each time only if a quick count (one or two requests per kind of document) shows something new. The **boards** workflow reads new decisions on polling boards until 14 days after election day. The **observers** workflow scores new observers' records of the newest round, once each, until 60 days after election day.
-- **Every hour.** A short run lists every round and checks its progress. It downloads a file only when the number of counted stations changed. Once a day it re-downloads every recent round, to catch silent corrections.
-- **With no election under way.** When every round is more than 30 days past its election day and not counting, the hourly run asks RIK only every 6 hours (every hour on Sundays, when elections are held), and those rounds are checked once a week, on Mondays. A run started by hand always asks.
+- **By the election calendar.** The **update** workflow starts every hour, but asks RIK only as often as the nearest election calls for (`src/izbori/schedule.py`):
+  - no election under way: once a day, which also finds a newly called election in RIK's list of rounds;
+  - election day: every 6 hours until two hours before the polls close, then every hour until two days after;
+  - until 14 days after: every 3 hours, for late results, corrections and repeated votes;
+  - a round RIK lists without a known election day: every hour on Sundays, when elections are held.
+
+  Election days come from the archived results and from `data/elections.csv`, where a maintainer enters an election once it is called (`date`, `round` if RIK lists it yet, `kind`, `note`). Each look downloads a file only when the number of counted stations changed, and re-downloads every recent round once a day to catch silent corrections; rounds more than 30 days past their election day are looked at once a week. The time of the last look is kept in `data/looks.json`, so a run GitHub skipped (its schedule drops many hourly runs) doesn't delay the next look. A run started by hand always asks.
 - **While a count is open.** The same run turns into a watch loop:
   - it checks RIK every 3 minutes;
   - it downloads when progress changes, and at least every 15 minutes in any case;
   - it commits, publishes and emails whenever there is something new;
   - it runs for up to 5¾ hours.
 
-  The next hourly run takes over. Only one runs at a time.
+  It then starts the next run itself, rather than wait for GitHub's schedule, and Sunday evenings get extra scheduled runs. Only one runs at a time.
 - **Keepalive.** GitHub turns off schedules in repositories with no activity for 60 days. The hourly run commits a small heartbeat file if nothing else has been committed for 30 days.
 
 Requests to RIK stay small and identify the project in the User-Agent.
@@ -323,6 +330,7 @@ src/izbori/
   places.py     the same polling place across elections: address, then name, then number
   documents.py  RIK's register of minutes: observers' records, remarks, rulings per station
   observers.py  observers' records: reviews by a person, and the OCR score that orders them
+  schedule.py   when to ask RIK, by the election calendar
   narrative.py  the sentences at the top of the pages across elections
   notes.py      news notes
   targets.py    private ranking
