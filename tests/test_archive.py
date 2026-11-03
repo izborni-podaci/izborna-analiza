@@ -96,3 +96,20 @@ def test_repeats_across_elections(tmp_path):
     assert [r["key"] for r in rows] == ["70000/11"] and once == 0
     assert rows[0]["k"] == 2 and rows[0]["n"] == 2 and ("ballot_mismatch", 2) in rows[0]["same"]
     assert repeat.same_counts(rows)[0][1] == 1
+
+
+def test_election_date_ignores_a_stray_early_upload():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from izbori.history import election_date
+
+    def minutes(day: int, hour: int) -> str:
+        stamp = int(datetime(2023, 12, day, hour, tzinfo=ZoneInfo("Europe/Belgrade")).timestamp())
+        return f"Записник|https://rik.parlament.gov.rs/extfile/sr/election_results/1/2/{stamp:08x}00000/@ПО1_x.pdf"
+
+    # one station's minutes went up two days early (as in the 2023 parliamentary file); the rest on the night
+    rows = [station("1", minutes=minutes(15, 12))] + [station(str(n), minutes=minutes(17, 21)) for n in range(2, 6)]
+    assert election_date(make_csv(rows)) == "2023-12-17"
+    # uploads after midnight still belong to election day
+    assert election_date(make_csv([station(str(n), minutes=minutes(18, 1)) for n in range(1, 4)])) == "2023-12-17"

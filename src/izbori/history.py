@@ -203,12 +203,15 @@ class Archive:
 
 
 def election_date(raw: bytes) -> str | None:
-    """Election day, from the earliest minutes upload (RIK rewrites entry times in bulk, uploads keep theirs)."""
+    """Election day, from the earliest minutes uploads (RIK rewrites entry times in bulk, uploads keep theirs).
+
+    A stray upload days before the vote happens (one in the 2023 parliamentary file came two days early), so the
+    day is read from the first percent of uploads, and never from a single earliest one."""
     stations, _ = parse(raw)
-    stamps = [s.minutes_uploaded for s in stations if s.minutes_uploaded]
+    stamps = sorted(s.minutes_uploaded for s in stations if s.minutes_uploaded)
     if stamps:
         from zoneinfo import ZoneInfo
-        first = min(stamps).astimezone(ZoneInfo("Europe/Belgrade"))
+        first = stamps[max(len(stamps) // 100, 1 if len(stamps) >= 3 else 0)].astimezone(ZoneInfo("Europe/Belgrade"))
         # minutes go up from the evening of election day; anything before 06:00 belongs to the day before
         day = first if first.hour >= 6 else first.replace(hour=12) - timedelta(days=1)
         return day.date().isoformat()
