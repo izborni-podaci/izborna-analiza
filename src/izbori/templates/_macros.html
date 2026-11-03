@@ -61,6 +61,18 @@
 {% endif %}
 {% endmacro %}
 
+{# The sentences at the top of the pages across elections (narrative.py), one paragraph per topic. #}
+{% macro analysis(paragraphs) %}
+{% if paragraphs %}
+<section class="analysis" aria-labelledby="analysis-heading">
+  <h2 id="analysis-heading">{{ t('an_heading') }}</h2>
+  {% for p in paragraphs %}<p>{{ p }}</p>
+  {% endfor %}
+  <p class="an-note">{{ t('an_note') }}</p>
+</section>
+{% endif %}
+{% endmacro %}
+
 {# Tables across elections: the election, linking to this place in it, and the three contestants with most votes. #}
 {% macro history_election(e, href) %}
 <th scope="row" class="election"><a href="{{ href }}">{{ e.short }}</a>{% if e.date %}<span class="small muted">{{ e.date }}</span>{% endif %}</th>

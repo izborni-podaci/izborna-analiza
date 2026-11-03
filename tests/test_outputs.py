@@ -161,6 +161,8 @@ def test_municipality_across_elections(site):
     rows = re.findall(r'<th scope="row" class="election"><a href="\.\./r/(\d+)/m/89010\.html">', page)
     assert rows == ["680072", "341143", "341140", "42732"]  # newest first, one row each
     assert "Opština nije glasala na: Lokalni 2024." in page
+    assert "Biračkih mesta za proveru (Parlamentarni 2026): 7 od 221" in page
+    assert "Biračkih mesta: 207 (Predsednički 2022) → 221 (Parlamentarni 2026); novih:" in page
     assert 'href="../r/680072/check.html#m-89010"' in page
     assert 'href="../s/89010-140.html"' in page and "Biračka mesta kroz izbore" in page
     # round pages link to it, and their stations to their own pages
@@ -173,8 +175,16 @@ def test_place_across_elections(site):
     page = (site / "s/70157-14.html").read_text(encoding="utf-8")
     rows = re.findall(r'<a href="\.\./r/(\d+)/m/70157\.html#bm-(\d+)">', page)
     assert rows == [("680072", "14"), ("567956", "14"), ("341140", "10"), ("42732", "10")]
-    assert "isto mesto po nazivu" in page and "Ranije: BM 10" in page
-    assert "Nije glasalo na: Pokrajinski 2023." in page
+    assert "isto mesto po nazivu" in page
+    # the analysis on top: flags and invalid ballots, turnout, most votes, then how the place changed
+    analysis = re.search(r'<section class="analysis".*?</section>', page, re.S).group(0)
+    order = [analysis.index(x) for x in ("Nijedna provera nije dala oznaku", "Udeo nevažećih listića", "Izlaznost: 70,4%",
+                                         "Najviše glasova (Parlamentarni 2026): Studentska lista, 71,8%",
+                                         "Broj mesta ranije je bio 10 (Parlamentarni 2023, Predsednički 2022).")]
+    assert order == sorted(order)
+    assert "Pokrajinski 2023" not in analysis  # not held in Belgrade, so not a gap in this station's history
+    en = (site / "en/s/70157-14.html").read_text(encoding="utf-8")
+    assert "Its number used to be 10 (Parliamentary 2023, Presidential 2022)." in en
     # a school that held stations 134 and 140 in 2023 kept only 140 in 2026; station 134 of 2026 is another place
     # with another name, so the number alone doesn't join it to the school's old 134
     def stations(path):
