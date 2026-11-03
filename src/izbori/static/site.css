@@ -320,6 +320,12 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .station-timeline > li { padding: 14px 0; border-top: 1px solid var(--grid); }
 .station-timeline .flags { margin: 0; }
 
+/* the sentences at the top of the pages across elections */
+.analysis { max-width: 68ch; margin: 16px 0 20px; padding: 4px 0 4px 16px; border-left: 3px solid var(--accent); }
+.analysis h2 { font-family: var(--sans); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); margin: 0 0 6px; }
+.analysis p { margin: 0 0 10px; font-size: 1.05rem; line-height: 1.6; }
+.analysis .an-note { font-size: 0.85rem; color: var(--ink-2); margin: 0; }
+
 /* places and municipalities across elections: one row per election, every row alike */
 .across-link { margin: 0 0 6px; }
 table.history th.election { color: var(--ink); font-size: 0.925rem; white-space: normal; min-width: 8.5rem; }

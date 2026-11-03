@@ -173,6 +173,7 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 - **Municipality:** every station, with its numbers, flags, minutes and notes.
 - **Municipality across elections** (`m/<code>.html`): one row per election it took part in, every election alike: stations, registered voters, turnout, invalid ballots, the top three contestants and the number of stations to check, each linking to that election. Then its polling stations, each linking to its own page.
 - **Polling station across elections** (`s/<place>.html`, one for every station): one row per election with that election's number and name, the numbers, the top three, flags, notes and minutes.
+- **In short:** both pages across elections open with a few sentences written from the numbers (`narrative.py`), in this order: flags and invalid ballots, turnout and how it compares, who had most votes, and how the place changed. A station is compared with its municipality, a municipality with the whole election. The same sentences and rules apply to every place and contestant; the text states numbers and never judges them.
 - **Search** on the home page finds a municipality or a polling station, by its current or a former number, and opens its page across elections.
 - **Changes:** what changed after first publication, and each archived version of the file.
 - **Observer guide:** what's allowed at a polling station on election day, with article references.
@@ -259,6 +260,7 @@ src/izbori/
   describe.py   one line per flag with its numbers, in each language
   stats.py      statistics for the whole round
   places.py     the same polling place across elections: address, then name, then number
+  narrative.py  the sentences at the top of the pages across elections
   notes.py      news notes
   targets.py    private ranking
   feed.py       Atom feeds

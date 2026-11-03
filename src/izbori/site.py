@@ -24,6 +24,7 @@ from izbori.links import safe_url
 from izbori.model import last_url
 from izbori.i18n import (LANG_ATTR, LOCALES, MONTHS_EN, PREFIX, check_name, check_rule, fmt_int, fmt_num, fmt_pct,
                          fmt_time, keep, kind_name, latin_page, strip_keep, t)
+from izbori import narrative
 from izbori.places import Place, follow
 from izbori.report import Analysis, analyze
 from izbori.translit import latin
@@ -103,17 +104,15 @@ class Site:
                  "share": (votes[i] or 0) / total} for i in order if votes[i]]
 
     def place_pages(self, loc: str, cols: dict) -> None:
-        """One page for every polling place: one row per election it took part in, newest first, every election
-        alike, each linking to the station's row in that election."""
-        newest_first = list(reversed(self.rids))
+        """One page for every polling place: a few sentences about it, then one row per election it took part in,
+        newest first, every election alike, each linking to the station's row in that election."""
         group_of = {c.code: c.group for c in CHECKS}
         for p in self.places.places:
-            rows, codes = [], {}
+            rows, codes, story = [], set(), []
             for rid in p.rounds:
                 a, s = self.analyses[rid], p.stations[rid]
                 flags = self.flagged[rid].get(s.key, [])
-                for f in flags:
-                    codes.setdefault(f.code, set()).add(rid)
+                codes.update(f.code for f in flags)
                 ctrl = self.ctrl_of(rid)
                 rows.append({"rid": rid, "short": cols[rid]["short"], "date": fmt_date(self.dates[rid], loc), "s": s,
                              "how": p.how[rid] if s.number != p.newest.number else "",
@@ -121,12 +120,43 @@ class Site:
                              "notes": a.notes.get(s.key, []), "ctrl": ctrl.get(s.key), "ctrl_known": bool(ctrl),
                              "n_lists": len(a.round.contestants),
                              "top": self.top_three(rid, s.votes) if s.counted else []})
-            same = sorted(((c, len(r)) for c, r in codes.items() if len(r) >= 2), key=lambda x: (-x[1], -BY_CODE[x[0]].weight))
-            hints = sorted(codes, key=lambda c: (GROUPS.index(BY_CODE[c].group), -BY_CODE[c].weight))
+                story.append(self.place_election(rid, s, flags, cols[rid]["short"]))
+            hints = sorted(codes, key=strength)
             self.write(loc, f"s/{p.id}.html", "station.html", p=p, s=p.newest, rows=rows, address=p.address,
-                       k=len({r for rs in codes.values() for r in rs}), n=len(p.rounds), same=same, hints=hints,
-                       former=p.former_numbers, group_of=group_of,
-                       absent=[cols[r]["short"] for r in newest_first if r not in p.stations])
+                       hints=hints, group_of=group_of,
+                       analysis=narrative.place(story, [cols[r]["short"] for r in self.mun_rounds[p.code]
+                                                        if r not in p.stations], loc))
+
+    def place_election(self, rid: str, s, flags: list, short: str) -> narrative.Election:
+        """One election at a polling place, next to its municipality in the same election."""
+        m, mv = self.mun_rows[rid][s.municipality_code], self.mun_votes[rid][s.municipality_code]
+        e = narrative.Election(short=short, number=s.number, name=s.name,
+                               flags=sorted(dict.fromkeys(f.code for f in flags), key=strength),
+                               ref_turnout=m["turnout"], ref_invalid=m["invalid"])
+        if s.counted:
+            e.registered, e.turnout, e.invalid = s.registered, s.turnout, s.invalid_share
+            here, there = leading(s.votes), leading(mv)
+            if here is not None:
+                e.leader = self.labels[rid][here]
+                e.leader_share = (s.votes[here] or 0) / sum(v or 0 for v in s.votes)
+                e.ref_leader_share = mv[here] / sum(mv) if sum(mv) else None
+                e.same_leader = here == there if there is not None else None
+        return e
+
+    def municipality_election(self, rid: str, code: str, short: str) -> narrative.Election:
+        """One election in a municipality, next to the whole election."""
+        totals, m, mv = self.analyses[rid].totals, self.mun_rows[rid][code], self.mun_votes[rid][code]
+        e = narrative.Election(short=short, registered=m["registered"], turnout=m["turnout"], invalid=m["invalid"],
+                               ref_turnout=totals.turnout, ref_invalid=totals.invalid_share, stations=m["stations"],
+                               flagged=m["flagged"],
+                               ref_flagged=len(self.flagged[rid]) / totals.stations if totals.stations else None)
+        here, there = leading(mv), leading(totals.votes)
+        if here is not None:
+            e.leader = self.labels[rid][here]
+            e.leader_share = mv[here] / sum(mv)
+            e.ref_leader_share = totals.share_of_valid(here)
+            e.same_leader = here == there if there is not None else None
+        return e
 
     def municipality_history_pages(self, loc: str, cols: dict) -> None:
         """One page per municipality: one row per election it took part in, newest first, each linking to the
@@ -149,9 +179,17 @@ class Site:
                                "order": (p.rounds[0] != rids[0], int(s.number) if s.number.isdigit() else 10 ** 9,
                                          s.number, newest_first.index(p.rounds[0]))})
             places.sort(key=lambda x: x["order"])
+            mine = by_code[code]
+            repeat = (sum(1 for x in places if x["k"] >= 1), sum(1 for x in places if x["k"] >= 2))
+            network = (sum(1 for p in mine if p.rounds == [rids[0]]),
+                       sum(1 for p in mine if rids[0] not in p.stations),
+                       sum(1 for p in mine if rids[0] in p.stations and p.former_numbers))
+            analysis = narrative.municipality([self.municipality_election(rid, code, cols[rid]["short"]) for rid in rids],
+                                              [cols[r]["short"] for r in newest_first if r not in rids], repeat, network,
+                                              loc)
             self.write(loc, f"m/{code}.html", "municipality_history.html", code=code, mname=newest["name"],
                        district=newest["district"] if newest["kind"] == "domestic" else "", rows=rows, places=places,
-                       absent=[cols[r]["short"] for r in newest_first if r not in rids])
+                       analysis=analysis)
 
     def write_search(self, loc: str) -> None:
         """search.json for the search on the home page, kept small. Municipalities: [name, code, elections]. Polling
@@ -462,6 +500,18 @@ def vote_view(contestants, votes: list[int], totals, stations: list) -> tuple[li
 def station_path(key: str) -> str:
     code, _, number = key.partition("/")
     return f"s/{code}-{re.sub(r'[^0-9A-Za-z_-]', '_', number)}.html"
+
+
+def strength(code: str) -> tuple[int, int]:
+    """Flags in the order the site lists them: paperwork first, then the heavier ones."""
+    return GROUPS.index(BY_CODE[code].group), -BY_CODE[code].weight
+
+
+def leading(votes: list) -> int | None:
+    """Ballot index of the contestant with most votes (the first on the ballot when tied); None with no votes."""
+    if not any(votes):
+        return None
+    return max(range(len(votes)), key=lambda i: votes[i] or 0)
 
 
 def municipality_votes(rnd) -> dict[str, list[int]]:

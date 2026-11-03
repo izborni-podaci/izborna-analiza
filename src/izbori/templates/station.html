@@ -6,9 +6,8 @@
 <p class="kicker">{{ name(s.municipality) }} · {{ t('station_history') }}</p>
 <h1 class="station-title">{{ t('station_no') }} {{ s.number }}{% if s.name %} · {{ name(s.name) }}{% endif %}</h1>
 {% if address %}<p class="muted">{{ t('address') }}: {{ name(address) }}</p>{% endif %}
-<p class="station-summary"><strong>{% if k %}{{ t('home_example_k', k=k, n=n) }}{% else %}{{ t('place_clean', n=n) }}{% endif %}</strong>{% if same %}<br>{{ t('repeat_same') }}: {% for code, m in same %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}, {{ t('repeat_times', n=m) }}</span>{% if not loop.last %}; {% endif %}{% endfor %}{% endif %}</p>
-{% if former %}<p class="small muted">{{ t('place_former', numbers=former|join(', ')) }}</p>{% endif %}
-<p class="deck">{{ t('place_lede') }}</p>
+{{ mx.analysis(analysis) }}
+<p class="rule">{{ t('place_lede') }}</p>
 
 <div class="table-wrap history-wrap">
 <table class="history">
@@ -40,7 +39,6 @@
   </tbody>
 </table>
 </div>
-{% if absent %}<p class="small muted">{{ t('place_absent', list=absent|join(', ')) }}</p>{% endif %}
 <p class="rule">{{ t('place_rule') }}</p>
 
 {% if hints %}
