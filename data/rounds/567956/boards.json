@@ -1,0 +1,865 @@
+{
+ "complete": true,
+ "docs": {
+  "611654": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402280"
+  },
+  "611660": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402408"
+  },
+  "611669": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402443"
+  },
+  "611681": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402469"
+  },
+  "611690": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402500"
+  },
+  "611699": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402524"
+  },
+  "611708": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402546"
+  },
+  "611717": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402568"
+  },
+  "611729": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402602"
+  },
+  "611738": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402625"
+  },
+  "611744": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402648"
+  },
+  "611753": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402667"
+  },
+  "611759": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402688"
+  },
+  "611768": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402718"
+  },
+  "611774": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402742"
+  },
+  "611777": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402765"
+  },
+  "611783": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1716402787"
+  },
+  "611855": {
+   "addr": "МК \"АРНАЈЕВО\", АРНАЈЕВО, БРАТСТВА И ЈЕДИНСТВА БР. 1",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403305",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611861": {
+   "addr": "\"ЕПСТУРС\", ВОЈВОДЕ СТЕПЕ БР. 4124",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403324",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611867": {
+   "addr": "МУЗИЧКА ШКОЛА \"МОКРАЊАЦ\", КРУНСКА БР. 8",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403343",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611876": {
+   "addr": "ЛОВАЧКИ ДОМ , БЕГАЉИЦА, БОРИСА КИДРИЧА ББ",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403370",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611885": {
+   "addr": "БЕОГРАДСКА ПОСЛОВНА ШКОЛА-1], КРАЉИЦЕ МАРИЈЕ БР. 73",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403401",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611900": {
+   "addr": "ОШ \"СВЕТОЗАР МИЛЕТИЋ\", НЕМАЊИНА БР. 25",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403427",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611909": {
+   "addr": "ОШ \"ДУЛЕ КАРАКЛАЈИЋ\", ЛАЗАРЕВАЦ, ДУЛА КАРАКЛАЈИЋА БР. 35А",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403447",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611912": {
+   "addr": "СВЕЧАНА САЛА ГО МЛАДЕНОВАЦ, МЛАДЕНОВАЦ, КРАЉА ПЕТРА ПРВОГ БР.",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403469",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611918": {
+   "addr": "ЈВП СРБИЈА ВОДЕ ВПЦ \"САВА-ДУНАВ\", БРОДАРСКА БР. 3",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403488",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611924": {
+   "addr": "ОШ \"ЈОВАН ЈОВАНОВИЋ - ЗМАЈ\", ОБРЕНОВАЦ, ЦАРА ЛАЗАРА БР. 2",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403506",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611933": {
+   "addr": "ПЕТА БЕОГРАДСКА ГИМНАЗИЈА, ИЛИЈЕ ГАРАШАНИНА БР.24",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403525",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611942": {
+   "addr": "ПЕТА ЕКОНОМСКА ШКОЛА, УЛ. ХАСАНАГИНИЦЕ 8",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403550",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611948": {
+   "addr": "УГОСТИТЕЉСКА ШКОЛА, ЈУГ-БОГДАНОВА БР. 28",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403573",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611957": {
+   "addr": "МЕСНА ЗАЈЕДНИЦА, БАБЕ, СЕЛИМИРА ПЕШИЋА БР. 4",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403592",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611969": {
+   "addr": "\"25. МАЈ - МИЛАН ГАЛЕ МУШКАТИРОВИЋ\", ТАДЕУША КОШЋУШКА БРОЈ 63",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403631",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611978": {
+   "addr": "JB \"СВЕТИ САВА\", ПОЖЕШКА БР. 28",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403656",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "611990": {
+   "addr": "ОШ \"СТЕВАН СРЕМАЦ\", ДОБАНОВЦИ МАРШАЛА ТИТА БР. 6",
+   "k": "extended",
+   "r": false,
+   "s": null,
+   "slots": [],
+   "station_ok": true,
+   "t": "1716403675",
+   "unmatched": 0,
+   "unparsed": true
+  },
+  "638603": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101114"
+  },
+  "638609": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101137"
+  },
+  "638612": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101158"
+  },
+  "638615": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101182"
+  },
+  "638618": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101213"
+  },
+  "638624": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101232"
+  },
+  "638627": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101282"
+  },
+  "638633": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101309"
+  },
+  "638636": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101335"
+  },
+  "638639": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101362"
+  },
+  "638642": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101400"
+  },
+  "638645": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101424"
+  },
+  "638651": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101462"
+  },
+  "638654": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101491"
+  },
+  "638660": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101525"
+  },
+  "638663": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101562"
+  },
+  "638666": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717101585"
+  },
+  "642509": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717135821"
+  },
+  "642512": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717135843"
+  },
+  "642515": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717135861"
+  },
+  "642518": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717135881"
+  },
+  "642548": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137495"
+  },
+  "642551": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137521"
+  },
+  "642554": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137552"
+  },
+  "642557": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137578"
+  },
+  "642560": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137602"
+  },
+  "642563": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137629"
+  },
+  "642566": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137652"
+  },
+  "642569": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137691"
+  },
+  "642572": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137714"
+  },
+  "642575": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137734"
+  },
+  "642581": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137756"
+  },
+  "642584": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717137780"
+  },
+  "642593": {
+   "k": "extended_change",
+   "r": false,
+   "s": null,
+   "t": "1717138646"
+  },
+  "647930": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717172401"
+  },
+  "647939": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717172542"
+  },
+  "647945": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717172640"
+  },
+  "647951": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717172696"
+  },
+  "647954": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717172740"
+  },
+  "647957": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717172824"
+  },
+  "647960": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717172867"
+  },
+  "647963": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717172915"
+  },
+  "647966": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717172952"
+  },
+  "647969": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173031"
+  },
+  "647972": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173082"
+  },
+  "647975": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173189"
+  },
+  "647978": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173236"
+  },
+  "647981": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173286"
+  },
+  "647984": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173359"
+  },
+  "647987": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173395"
+  },
+  "647990": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173424"
+  },
+  "647996": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173461"
+  },
+  "648002": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173492"
+  },
+  "648005": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173528"
+  },
+  "648008": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173584"
+  },
+  "648011": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173663"
+  },
+  "648014": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173700"
+  },
+  "648017": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173731"
+  },
+  "648020": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173760"
+  },
+  "648023": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173818"
+  },
+  "648026": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173869"
+  },
+  "648029": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173923"
+  },
+  "648032": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717173959"
+  },
+  "648392": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234049"
+  },
+  "648395": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234086"
+  },
+  "648398": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234118"
+  },
+  "648401": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234152"
+  },
+  "648404": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234193"
+  },
+  "648407": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234224"
+  },
+  "648410": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234302"
+  },
+  "648413": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234363"
+  },
+  "648416": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234481"
+  },
+  "648419": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234517"
+  },
+  "648422": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717234548"
+  },
+  "648491": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717253981"
+  },
+  "648494": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717254020"
+  },
+  "648497": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717254078"
+  },
+  "648503": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717254127"
+  },
+  "648506": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717254204"
+  },
+  "648509": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717254563"
+  },
+  "648515": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717255072"
+  },
+  "648518": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717255112"
+  },
+  "648521": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717255150"
+  },
+  "648722": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717266187"
+  },
+  "648878": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717278384"
+  },
+  "648881": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717278447"
+  },
+  "648884": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717278491"
+  },
+  "648887": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717278526"
+  },
+  "648890": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717278560"
+  },
+  "648893": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717278599"
+  },
+  "648896": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717278636"
+  },
+  "648899": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717278673"
+  },
+  "649007": {
+   "k": "standing",
+   "r": false,
+   "s": null,
+   "t": "1717304665"
+  },
+  "739242": {
+   "k": "standing",
+   "r": false,
+   "s": "70203/59",
+   "t": "1791998151"
+  },
+  "756642": {
+   "k": "standing",
+   "r": false,
+   "s": "70181/44",
+   "t": "1792056416"
+  }
+ },
+ "indexed": 129
+}
