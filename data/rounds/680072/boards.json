@@ -1,5 +1,5 @@
 {
- "complete": false,
+ "complete": true,
  "docs": {
   "271137": {
    "k": "extended_change",
@@ -295,6 +295,28 @@
    "s": "80420/8",
    "t": "1791892753"
   },
+  "721269": {
+   "addr": "ОШ \"23. ОКТОБАР\", ГОЛУБИНЦИ, ПУТИНАЧКА БР.1",
+   "k": "extended",
+   "r": false,
+   "s": "80420/9",
+   "slots": [
+    [
+     1,
+     true,
+     false
+    ],
+    [
+     1,
+     true,
+     false
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791892809",
+   "unmatched": 0,
+   "unparsed": false
+  },
   "721272": {
    "k": "standing",
    "r": false,
@@ -463,11 +485,706 @@
    "s": "80420/37",
    "t": "1791894444"
   },
+  "721380": {
+   "addr": "СКУПШТИНА ОПШТИНЕ-МАЛА САЛА, Алибунар, Трг слободе бр.15",
+   "k": "extended",
+   "r": false,
+   "s": "80039/1",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     false
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     false
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     false
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894591",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721383": {
+   "addr": "ЛОВАЧКИ ДОМ, Алибунар, ул. Жарка Зрењанина бр.21а",
+   "k": "extended",
+   "r": false,
+   "s": "80039/2",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894615",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721386": {
+   "addr": "ОСНОВНА ШКОЛА, Алибунар, ул. Вука Караџића бр.4",
+   "k": "extended",
+   "r": false,
+   "s": "80039/3",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     false
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     false
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     false
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894635",
+   "unmatched": 0,
+   "unparsed": false
+  },
   "721389": {
    "k": "standing",
    "r": false,
    "s": "80420/38",
    "t": "1791894639"
+  },
+  "721392": {
+   "addr": "ЕКОНОМСКА ШКОЛА, Алибунар, ул. Вука Караџића бр.2",
+   "k": "extended",
+   "r": false,
+   "s": "80039/4",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     false
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894652",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721395": {
+   "addr": "ОСНОВНА ШКОЛА, Банатски Карловац, ул. Жарка Зрењанина бр.46",
+   "k": "extended",
+   "r": false,
+   "s": "80039/5",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     false
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894667",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721398": {
+   "addr": "ОСНОВНА ШКОЛА, Банатски Карловац, ул. Жарка Зрењанина бр.46",
+   "k": "extended",
+   "r": false,
+   "s": "80039/6",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     false
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894683",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721401": {
+   "addr": "МЕСНА ЗАЈЕДНИЦА, Банатски Карловац, ул. Књаза Милоша бр.48",
+   "k": "extended",
+   "r": false,
+   "s": "80039/7",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     false
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894699",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721404": {
+   "addr": "ОСНОВНА ШКОЛА, Банатски Карловац, ул. Жарка Зрењанина бр.46",
+   "k": "extended",
+   "r": false,
+   "s": "80039/8",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894717",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721407": {
+   "addr": "ДОМ КУЛТУРЕ, Банатски Карловац, ул. Немањина бр.67",
+   "k": "extended",
+   "r": false,
+   "s": "80039/9",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     false
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894731",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721410": {
+   "addr": "МЕСНА ЗАЈЕДНИ Владимировац, ул. Цара Лазара бр.72",
+   "k": "extended",
+   "r": false,
+   "s": "80039/10",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894745",
+   "unmatched": 0,
+   "unparsed": false
   },
   "721413": {
    "k": "standing",
@@ -475,11 +1192,351 @@
    "s": "80420/39",
    "t": "1791894756"
   },
+  "721416": {
+   "addr": "ОСНОВНА ШКОЛА, Владимировац, ул. Цара Лазара бр.48",
+   "k": "extended",
+   "r": false,
+   "s": "80039/11",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     false
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894763",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721419": {
+   "addr": "ОСНОВНА ШКОЛА, Владимировац, ул. Цара Лазара бр.48",
+   "k": "extended",
+   "r": false,
+   "s": "80039/12",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     false
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894777",
+   "unmatched": 0,
+   "unparsed": false
+  },
   "721422": {
    "k": "standing",
    "r": false,
    "s": "80420/40",
    "t": "1791894784"
+  },
+  "721425": {
+   "addr": "ОСНОВНА ШКОЛА, Владимировац, ул. Цара Лазара бр.48",
+   "k": "extended",
+   "r": false,
+   "s": "80039/13",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     false
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     false
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894792",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721428": {
+   "addr": "ОСНОВНА ШКОЛА-КОЛОНИЈА, Владимировац, ул. Паје Маргановића бр.12",
+   "k": "extended",
+   "r": false,
+   "s": "80039/14",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894807",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721431": {
+   "addr": "ОСНОВНА ШКОЛА, Добрица, ул. Светог Саве бр.62",
+   "k": "extended",
+   "r": false,
+   "s": "80039/15",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894825",
+   "unmatched": 0,
+   "unparsed": false
   },
   "721434": {
    "k": "standing",
@@ -487,11 +1544,336 @@
    "s": "80420/41",
    "t": "1791894837"
   },
+  "721437": {
+   "addr": "МЕСНА ЗАЈЕДНИЦА, Иланџа, ул. Светог Саве бр.2",
+   "k": "extended",
+   "r": false,
+   "s": "80039/16",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894839",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721440": {
+   "addr": "ОСНОВНА ШКОЛА, Иланџа, ул. Милоша Црњанског бр.28",
+   "k": "extended",
+   "r": false,
+   "s": "80039/17",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894853",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721443": {
+   "addr": "ОСНОВНА ШКОЛА, Јаношик, ул. Едварда Кардеља бр.59",
+   "k": "extended",
+   "r": false,
+   "s": "80039/18",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     false
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     false
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     false
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894867",
+   "unmatched": 0,
+   "unparsed": false
+  },
   "721446": {
    "k": "standing",
    "r": false,
    "s": "80420/42",
    "t": "1791894868"
+  },
+  "721449": {
+   "addr": "ОСНОВНА ШКОЛА, Локве, ул. Лењинова бр.91",
+   "k": "extended",
+   "r": false,
+   "s": "80039/19",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     false
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894881",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721452": {
+   "addr": "МЕСНА ЗАЈЕДНИЦА, Локве, Трг ослобођења бр.5",
+   "k": "extended",
+   "r": false,
+   "s": "80039/20",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     false
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     false
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894895",
+   "unmatched": 0,
+   "unparsed": false
   },
   "721455": {
    "k": "standing",
@@ -499,11 +1881,264 @@
    "s": "80420/43",
    "t": "1791894901"
   },
+  "721458": {
+   "addr": "ОСНОВНА ШКОЛА, Николинци, ул. Главна бр.42",
+   "k": "extended",
+   "r": false,
+   "s": "80039/21",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894910",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721461": {
+   "addr": "МЕСНА ЗАЈЕДНИЦА, Нови Козјак, ул. Светог Саве бр.49",
+   "k": "extended",
+   "r": false,
+   "s": "80039/22",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     false
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     false
+    ],
+    [
+     15,
+     true,
+     false
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894924",
+   "unmatched": 0,
+   "unparsed": false
+  },
   "721464": {
    "k": "standing",
    "r": false,
    "s": "80420/44",
    "t": "1791894931"
+  },
+  "721467": {
+   "addr": "ОСНОВНА ШКОЛА, Селеуш, ул. Школска 66",
+   "k": "extended",
+   "r": false,
+   "s": "80039/23",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894937",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721473": {
+   "addr": "ОСНОВНА ШКОЛА-ДЕВОЈАЧКИ БУНАР, Девојачки Бунар",
+   "k": "extended",
+   "r": false,
+   "s": "80039/24",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     false
+    ],
+    [
+     13,
+     true,
+     false
+    ],
+    [
+     14,
+     true,
+     false
+    ],
+    [
+     15,
+     true,
+     false
+    ],
+    [
+     16,
+     true,
+     false
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791894952",
+   "unmatched": 0,
+   "unparsed": false
   },
   "721476": {
    "k": "standing",
@@ -852,6 +2487,1771 @@
    "r": false,
    "s": "80292/25",
    "t": "1791898600"
+  },
+  "721662": {
+   "addr": "ОСНОВНА ШКОЛА БАРАНДА, ТРГ МАРШАЛА ТИТА БР. 4",
+   "k": "extended",
+   "r": false,
+   "s": "80292/1",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     6,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898673",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721665": {
+   "addr": "ОСНОВНА ШКОЛА БАРАНДА, ТРГ МАРШАЛА ТИТА БР. 4",
+   "k": "extended",
+   "r": false,
+   "s": "80292/2",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898693",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721668": {
+   "addr": "ОСНОВНА ШКОЛА БАРАНДА, ТРГ МАРШАЛА ТИТА БР. 4",
+   "k": "extended",
+   "r": false,
+   "s": "80292/3",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     false
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898713",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721671": {
+   "addr": "ОСНОВНА ШКОЛА БАРАНДА, ТРГ МАРШАЛА ТИТА БР. 4",
+   "k": "extended",
+   "r": false,
+   "s": "80292/4",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     6,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898734",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721674": {
+   "addr": "ОСНОВНА ШКОЛА ОПОВО, БРАТСТВА ЈЕДИНСТВА БР. 12",
+   "k": "extended",
+   "r": false,
+   "s": "80292/5",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898754",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721677": {
+   "addr": "ОСНОВНА ШКОЛА ОПОВО, БРАТСТВА ЈЕДИНСТВА БР. 12",
+   "k": "extended",
+   "r": false,
+   "s": "80292/6",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     false
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898774",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721680": {
+   "addr": "ОСНОВНА ШКОЛА ОПОВО, БРАТСТВА ЈЕДИНСТВА БР. 12",
+   "k": "extended",
+   "r": false,
+   "s": "80292/7",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898795",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721683": {
+   "addr": "ОСНОВНА ШКОЛА ОПОВО, БРАТСТВА ЈЕДИНСТВА БР. 12",
+   "k": "extended",
+   "r": false,
+   "s": "80292/8",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898817",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721686": {
+   "addr": "ОСНОВНА ШКОЛА ОПОВО - ФИСКУЛТУРНА САЛА, БРАТСТВА ЈЕДИНСТВА БР. 12",
+   "k": "extended",
+   "r": false,
+   "s": "80292/9",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898856",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721689": {
+   "addr": "АУТОБУСКА СТАНИЦА ОПОВО, ИВЕ ЛОЛЕ РИБАРА БР. 1Ј",
+   "k": "extended",
+   "r": false,
+   "s": "80292/10",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898875",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721692": {
+   "addr": "ОСНОВНА ШКОЛА ОПОВО, БРАТСТВА ЈЕДИНСТВА БР. 12",
+   "k": "extended",
+   "r": false,
+   "s": "80292/11",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898899",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721695": {
+   "addr": "ОСНОВНА ШКОЛА ОПОВО, БРАТСТВА ЈЕДИНСТВА БР. 12",
+   "k": "extended",
+   "r": false,
+   "s": "80292/12",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     false
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898919",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721698": {
+   "addr": "АД \"АГРОС\" САЛА ОПОВО, БРАТСТВА ЈЕДИНСТВА ББ",
+   "k": "extended",
+   "r": false,
+   "s": "80292/13",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     false
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898940",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721701": {
+   "addr": "ГАЛЕРИЈА \"ЈОВАН ПОПОВИЋ\" ОПОВО, ЈНА БР. 2",
+   "k": "extended",
+   "r": false,
+   "s": "80292/14",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     false
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898961",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721704": {
+   "addr": "ДОМ ЗДРАВЉА САКУЛЕ, ТРГ МАРШАЛА ТИТА БР. 1",
+   "k": "extended",
+   "r": false,
+   "s": "80292/15",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     false
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791898983",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721707": {
+   "addr": "ПОСЛОВНИ ПРОСТОР (ПЕНЗИОНЕРСКИ КЛУБ) САКУЛЕ, ТРГ МАРШАЛА ТИТА БР. 1",
+   "k": "extended",
+   "r": false,
+   "s": "80292/16",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     false
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899007",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721710": {
+   "addr": "ПОСЛОВНИ ПРОСТОР (УДРУЖЕЊЕ ЖЕНА) САКУЛЕ, ТРГ МАРШАЛА ТИТА БР. 1",
+   "k": "extended",
+   "r": false,
+   "s": "80292/17",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899028",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721713": {
+   "addr": "ПОСЛОВНИ ПРОСТОР (УДРУЖЕЊЕ СТОЧАРА) САКУЛЕ, ТРГ МАРШАЛА ТИТА БР. 1",
+   "k": "extended",
+   "r": false,
+   "s": "80292/18",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     false
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899049",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721716": {
+   "addr": "ЗГРАДА ЛОВА (ЛОВАЧКИ ДОМ) САКУЛЕ, СВЕТОЗАРА МИЛЕТИЋА БР. 4",
+   "k": "extended",
+   "r": false,
+   "s": "80292/19",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     false
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899067",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721719": {
+   "addr": "ОСНОВНА ШКОЛА СЕФКЕРИН, ПАРКОВСКА БР. 2",
+   "k": "extended",
+   "r": false,
+   "s": "80292/20",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899088",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721722": {
+   "addr": "ОСНОВНА ШКОЛА СЕФКЕРИН, ПАРКОВСКА БР. 2",
+   "k": "extended",
+   "r": false,
+   "s": "80292/21",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899113",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721725": {
+   "addr": "ОСНОВНА ШКОЛА СЕФКЕРИН, ПАРКОВСКА БР. 2",
+   "k": "extended",
+   "r": false,
+   "s": "80292/22",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899136",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721728": {
+   "addr": "ОСНОВНА ШКОЛА СЕФКЕРИН, ПАРКОВСКА БР. 2",
+   "k": "extended",
+   "r": false,
+   "s": "80292/23",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899156",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721731": {
+   "addr": "ОСНОВНА ШКОЛА СЕФКЕРИН, ПАРКОВСКА БР. 2",
+   "k": "extended",
+   "r": false,
+   "s": "80292/24",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899176",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "721734": {
+   "addr": "ОСНОВНА ШКОЛА СЕФКЕРИН, ПАРКОВСКА БР. 2",
+   "k": "extended",
+   "r": false,
+   "s": "80292/25",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     5,
+     true,
+     true
+    ],
+    [
+     7,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     12,
+     true,
+     true
+    ],
+    [
+     13,
+     true,
+     true
+    ],
+    [
+     14,
+     true,
+     true
+    ],
+    [
+     15,
+     true,
+     true
+    ],
+    [
+     16,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791899194",
+   "unmatched": 0,
+   "unparsed": false
   },
   "721797": {
    "k": "standing",
@@ -1440,6 +4840,367 @@
    "r": false,
    "s": "80357/43",
    "t": "1791907981"
+  },
+  "722163": {
+   "addr": "ОПШТИНА ИВАЊИЦА, ИВАЊИЦА, ВЕНИЈАМИНА МАРИНКОВИЋА БР. 1",
+   "k": "extended",
+   "r": false,
+   "s": "70564/1",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     18,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791908044",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "722169": {
+   "addr": "ДОМ КУЛТУРЕ, ИВАЊИЦА, ВЕНИЈАМИНА МАРИНКОВИЋА ББ",
+   "k": "extended",
+   "r": false,
+   "s": "70564/2",
+   "slots": [
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     18,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791908067",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "722172": {
+   "addr": "ОСНОВНИ СУД У ИВАЊИЦИ, ИВАЊИЦА, БОШКА ПЕТРОВИЋА БР. 9",
+   "k": "extended",
+   "r": false,
+   "s": "70564/3",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     18,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791908087",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "722181": {
+   "addr": "ТЕХНИЧКА ШКОЛА, ИВАЊИЦА, МИЋЕ МАТОВИЋА БР. 2",
+   "k": "extended",
+   "r": false,
+   "s": "70564/4",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     18,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791908106",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "722184": {
+   "addr": "ОШ \"МИЛИНКО КУШИЋ\", ИВАЊИЦА, 13. СЕПТЕМБРА БР. 54",
+   "k": "extended",
+   "r": false,
+   "s": "70564/5",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     18,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791908122",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "722190": {
+   "addr": "ГИМНАЗИЈА, ИВАЊИЦА, 13. СЕПТЕМБРА БР. 58",
+   "k": "extended",
+   "r": false,
+   "s": "70564/6",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     18,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791908142",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "722196": {
+   "addr": "ОШТКИРИЛО САВИЋ\", ИВАЊИЦА, КИРИЛА САВИЋА ББ",
+   "k": "extended",
+   "r": false,
+   "s": "70564/7",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     true
+    ],
+    [
+     18,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791908168",
+   "unmatched": 0,
+   "unparsed": false
+  },
+  "722202": {
+   "addr": "ОШ \"КИРИЛО САВИЋ\", ИВАЊИЦА, КИРИЛА САВИЋА ББ",
+   "k": "extended",
+   "r": false,
+   "s": "70564/8",
+   "slots": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     true,
+     true
+    ],
+    [
+     3,
+     true,
+     true
+    ],
+    [
+     8,
+     true,
+     true
+    ],
+    [
+     9,
+     true,
+     true
+    ],
+    [
+     11,
+     true,
+     false
+    ],
+    [
+     18,
+     true,
+     true
+    ]
+   ],
+   "station_ok": true,
+   "t": "1791908186",
+   "unmatched": 0,
+   "unparsed": false
   },
   "722205": {
    "addr": "ПОСЛОВНА ЗГРАДА ШУМСКЕ УПРАВЕ ГОЛИЈА, ИВАЊИЦА, ВЕНИЈАМИНА МАРИНКОВИЋА БР.",
