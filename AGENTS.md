@@ -153,7 +153,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 ### Tests
 
 - The tests use the real archive in `data/`, plus small made-up files. The full site is built once per module and
-  shared.
+  shared; a test that needs changed data builds from a copy of only the rounds it needs.
 - When new real data breaks a test on the real archive, find the cause in the code first. The test broken by the
   2023 addresses led to the rule on addresses that contradict the results. Change the expectation only when the new
   data is right and the old expectation was wrong.
@@ -164,6 +164,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   provincial, 2026) were a member's line with a name. They are emptied in the current files, but remain in the
   repository's history. Rewriting the history is the maintainer's decision.
 - **Custom domain and hosting:** waiting for the maintainer's choice of domain.
+- **Belgrade 2024 decisions on polling boards (round 567956):** 127 of 129 are listed under "Београд" with a station
+  number, while the results number stations within each city municipality, so they can't be placed. All 17
+  decisions on the extended composition are unreadable by the current parser. The round is small and in the past.
 
 ## Decisions log
 

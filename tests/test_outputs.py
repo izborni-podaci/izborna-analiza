@@ -114,7 +114,8 @@ def test_site_shows_controllers(tmp_path, archive):
 
     from izbori.history import Archive
     data = tmp_path / "data"
-    shutil.copytree(archive.root, data)
+    for rid in ("680072", "567956"):  # the round under test and a small one, to keep the build quick
+        shutil.copytree(archive.dir(rid), data / "rounds" / rid)
     rnd = archive.load("680072")
     s = next(x for x in rnd.stations if x.municipality == "Дољевац" and x.number == "23")
     store = {"docs": {"x": {"s": s.key, "k": "extended", "r": False, "t": "1792900000", "unmatched": 0,
