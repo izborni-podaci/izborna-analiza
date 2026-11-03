@@ -222,7 +222,42 @@ def score_pages(pages: list[tuple[int, int, bytes, list[Word]]]) -> dict:
             "detail": [[b["ink"], b["rows"], b["words"], int(b["none"])] for b in found]}
 
 
-def read_pdf(pdf: bytes, max_pages: int = 4, dpi: int = 200, lang: str = "srp+srp_latn") -> dict:
+FORM_WORDS = {"на", "су", "у", "је", "а", "и", "са", "при", "о", "и/или", "место", "места", "месту", "раду", "одбора",
+              "бирачког", "бирачко", "бирачком", "примедбе", "примедби", "ије", "није", "имао", "шире", "текст",
+              "свим", "или", "неким", "посебном", "прилогу", "потпис", "име", "презиме", "назив", "организације",
+              "часова", "дошао", "напустио", "следеће", "следећи", "присутни", "записник", "посматрачима"}
+
+
+def _form_word(text: str) -> str:
+    """The word as OCR read it if it is printed on the form; otherwise masked, so no name is shown."""
+    bare = text.lower().strip("()[],.:;-–_\"'„”")
+    if bare in FORM_WORDS or bare.startswith(PRINTED) or START.search(bare) or END.search(bare) or TOPIC.search(bare):
+        return text
+    return "x" * min(len(text), 3)
+
+
+def shape(pages: list[tuple[int, int, bytes, list[Word]]]) -> str:
+    """The layout OCR found, line by line (left column first), every word not printed on the form masked; and the
+    remark areas found with their numbers. For tuning the score on real records without showing what is written."""
+    out = []
+    for n, (w, h, img, words) in enumerate(pages, start=1):
+        out.append(f"page {n}: {w}x{h}")
+        lines: dict[tuple, list[Word]] = {}
+        for x in words:
+            lines.setdefault(x.line, []).append(x)
+        for ws in sorted(lines.values(), key=lambda ws: (min(x.left for x in ws) > w // 2, min(x.top for x in ws))):
+            ws.sort(key=lambda x: x.left)
+            out.append(f"  {'R' if ws[0].left > w // 2 else 'L'} y {min(x.top for x in ws)}-{max(x.bottom for x in ws)}"
+                       f" x {ws[0].left}-{max(x.right for x in ws)}: "
+                       + " ".join(f"{_form_word(x.text)}/{int(x.conf)}" for x in ws))
+        for x0, x1, y0, y1, inside in blocks(words, w, h):
+            density, rows = ink(img, w, x0, x1, y0, y1)
+            out.append(f"  area x {x0}-{x1} y {y0}-{y1}: ink {100 * density:.2f}%, rows {rows}, words "
+                       + " ".join(f"{_form_word(x.text)}/{int(x.conf)}" for x in inside))
+    return "\n".join(out)
+
+
+def read_pdf(pdf: bytes, max_pages: int = 4, dpi: int = 200, lang: str = "srp+srp_latn", layout: bool = False) -> dict:
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "doc.pdf"
         path.write_bytes(pdf)
@@ -239,7 +274,7 @@ def read_pdf(pdf: bytes, max_pages: int = 4, dpi: int = 200, lang: str = "srp+sr
                                  text=True, env={**os.environ, "OMP_THREAD_LIMIT": "1"})
             pages.append((w, h, img, parse_tsv(ocr.stdout)))
             images[0].unlink()
-        return score_pages(pages)
+        return {**score_pages(pages), **({"_shape": shape(pages)} if layout else {})}
 
 
 # --- the per-round store and the run -------------------------------------------------------------
@@ -257,23 +292,24 @@ def save_scores(round_dir: Path, store: dict) -> None:
 
 def _work(args: tuple) -> tuple[str, dict | None, str | None]:
     from izbori.rik import Client
-    key, url, base = args
+    key, url, base, layout = args
     try:
-        return path_of(url), {"s": key, **read_pdf(Client(base=base).get_bytes(url))}, None
+        return path_of(url), {"s": key, **read_pdf(Client(base=base).get_bytes(url), layout=layout)}, None
     except Exception as e:  # noqa: BLE001 - one bad document must not stop the rest
         return path_of(url), None, type(e).__name__
 
 
 def run(round_dir: Path, records: list[tuple[str, str]], client, workers: int = 4, budget_seconds: float = 5 * 3600,
-        limit: int | None = None, log=print, diagnose: int = 0, save_every: int = 100) -> dict:
-    """Score the observers' records not scored yet. records: (station key, document url)."""
+        limit: int | None = None, log=print, diagnose: int = 0, save_every: int = 100, layout: bool = False) -> dict:
+    """Score the observers' records not scored yet. records: (station key, document url). With layout, the
+    diagnosed records' layout is logged too, every word not printed on the form masked."""
     import time
     from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 
     started = time.monotonic()
     store = load_scores(round_dir)
     known = store.setdefault("docs", {})
-    todo = [(key, url, client.base) for key, url in records if path_of(url) not in known]
+    todo = [(key, url, client.base, layout) for key, url in records if path_of(url) not in known]
     if limit is not None:
         todo = todo[:limit]
     log(f"{len(records)} observers' records, {len(todo)} to read")
@@ -295,12 +331,14 @@ def run(round_dir: Path, records: list[tuple[str, str]], client, workers: int = 
                     failed += 1
                     log(f"could not read {doc}: {error}")
                     continue
+                drawn = result.pop("_shape", None)
                 known[doc] = result
                 done += 1
                 if shown < diagnose:
                     shown += 1
                     log(f"{result['s']}: pages {result['pages']}, remark areas {result['blocks']}, score "
-                        f"{result['score']}, per area [ink %, rows with ink, words, 'нема'] {result.get('detail')}")
+                        f"{result['score']}, per area [ink %, rows with ink, words, 'нема'] {result.get('detail')}"
+                        + (f"\n{drawn}" if drawn else ""))
                 if (done + failed) % save_every == 0:
                     save_scores(round_dir, store)
                     log(f"read {done}, failed {failed}")

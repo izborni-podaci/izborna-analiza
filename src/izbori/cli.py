@@ -431,9 +431,11 @@ def cmd_observers(args) -> int:
         log(f"{rid}: election day {date} is long past; pass --round to read its observers' records")
         return 0
     docs = station_documents(archive, archive.load(rid))
-    records = [(key, d.url) for key, ds in sorted(docs.items()) for d in ds if d.kind == "observers"]
+    records = [(key, d.url) for key, ds in sorted(docs.items()) for d in ds if d.kind == "observers"
+               and (not args.station or key in args.station)]
     result = observers.run(archive.dir(rid), records, Client(), workers=args.workers or os.cpu_count() or 2,
-                           budget_seconds=args.budget_minutes * 60, limit=args.limit, log=log, diagnose=args.diagnose)
+                           budget_seconds=args.budget_minutes * 60, limit=args.limit, log=log, diagnose=args.diagnose,
+                           layout=args.layout)
     if args.commit and commit([str(args.data)], f"Observers: {rid}, {result['read']} records scored ({now_iso()})"):
         if args.push:
             push()
@@ -613,6 +615,9 @@ def main(argv: list[str] | None = None) -> int:
     o.add_argument("--budget-minutes", type=float, default=320, help="stop starting new records after this")
     o.add_argument("--limit", type=int, help="read at most this many records (for trials)")
     o.add_argument("--diagnose", type=int, default=0, help="log the numbers behind this many scores")
+    o.add_argument("--layout", action="store_true",
+                   help="with --diagnose, also log each record's layout, every word not printed on the form masked")
+    o.add_argument("--station", action="append", help="only this station (municipality code/number); repeatable")
     o.add_argument("--commit", action="store_true")
     o.add_argument("--push", action="store_true")
     o.set_defaults(fn=cmd_observers)

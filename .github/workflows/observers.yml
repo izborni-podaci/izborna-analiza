@@ -20,6 +20,13 @@ on:
       diagnose:
         description: "Log the numbers behind this many scores"
         default: "0"
+      stations:
+        description: "Only these stations, space-separated (municipality code/number)"
+        default: ""
+      layout:
+        description: "Log each diagnosed record's layout, every word not printed on the form masked"
+        type: boolean
+        default: false
       commit:
         description: "Commit the scores"
         type: boolean
@@ -53,6 +60,8 @@ jobs:
           MINUTES: ${{ inputs.minutes || '320' }}
           LIMIT: ${{ inputs.limit }}
           DIAGNOSE: ${{ inputs.diagnose || '0' }}
+          STATIONS: ${{ inputs.stations }}
+          LAYOUT: ${{ inputs.layout }}
           COMMIT: ${{ github.event_name == 'schedule' || inputs.commit }}
         run: |
           git config user.name "github-actions[bot]"
@@ -60,5 +69,7 @@ jobs:
           args=(--budget-minutes "$MINUTES" --diagnose "$DIAGNOSE")
           [ -n "$ROUND" ] && args+=(--round "$ROUND")
           [ -n "$LIMIT" ] && args+=(--limit "$LIMIT")
+          for s in $STATIONS; do args+=(--station "$s"); done
+          [ "$LAYOUT" = "true" ] && args+=(--layout)
           [ "$COMMIT" = "true" ] && args+=(--commit --push)
           uv run izbori observers "${args[@]}"
