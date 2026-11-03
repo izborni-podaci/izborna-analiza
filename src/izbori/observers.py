@@ -78,6 +78,10 @@ def write_template(round_dir: Path) -> Path:
 # --- the OCR score -------------------------------------------------------------------------------
 
 START = re.compile(r"следе|slede[ćc]", re.I)  # "су следеће:" (OCR often misreads the ћ)
+START_WORD = re.compile(r"^(следе|slede)\S{0,2}[еe][:;.,]?$", re.I)  # "следеће:", not the header's "следећи"
+TOPIC = re.compile(r"примедб|primedb", re.I)  # … on the line that begins "ПРИМЕДБЕ на поступак", not the header's
+#                                               "присутни су следећи представници"
+RULE_RUN = 30  # a dark run this long along a row is a printed rule, even on a crooked scan; pen strokes are shorter
 END = re.compile(r"упису|upisu", re.I)  # "(примедбе уписује …" (the ј is often misread too)
 WORD = re.compile(r"[A-Za-zА-Яа-яЂђЈјЉљЊњЋћЏџČčĆćŠšŽžĐđ]{2,}")
 NONE = re.compile(r"^(нема|nema|без|bez|нема\.|nema\.)$", re.I)
@@ -135,16 +139,16 @@ def parse_tsv(text: str) -> list[Word]:
 
 
 def ink(img: bytes, w: int, x0: int, x1: int, y0: int, y1: int) -> tuple[float, int]:
-    """Share of dark pixels in a box, leaving out printed rules (rows mostly dark) and their edges; and how many
-    rows hold some ink."""
+    """Share of dark pixels in a box that belong to short strokes, leaving out the long runs of printed rules
+    (which on a crooked scan run across several rows in pieces); and how many rows hold some such ink."""
     width = max(1, x1 - x0)
-    counts = [img[y * w + x0:y * w + x1].translate(DARK).count(1) for y in range(y0, y1)]
-    rules = {y for y, n in enumerate(counts) if n > 0.4 * width}
-    skip = {y + d for y in rules for d in (-2, -1, 0, 1, 2)}
-    kept = [n for y, n in enumerate(counts) if y not in skip]
-    if not kept:
+    counts = []
+    for y in range(y0, y1):
+        runs = img[y * w + x0:y * w + x1].translate(DARK).split(b"\x00")
+        counts.append(sum(len(r) for r in runs if len(r) < RULE_RUN))
+    if not counts:
         return 0.0, 0
-    return sum(kept) / (len(kept) * width), sum(1 for n in kept if n > 0.01 * width)
+    return sum(counts) / (len(counts) * width), sum(1 for n in counts if n > 0.01 * width)
 
 
 def blocks(words: list[Word], w: int, h: int) -> list[tuple[int, int, int, int, list[Word]]]:
@@ -152,9 +156,16 @@ def blocks(words: list[Word], w: int, h: int) -> list[tuple[int, int, int, int, 
     lines: dict[tuple, list[Word]] = {}
     for word in words:
         lines.setdefault(word.line, []).append(word)
-    starts = [lines[x.line] for x in words if START.search(x.text)]
+    starts = []
+    for x in words:
+        if not START.search(x.text):
+            continue
+        # the word reads "следеће:", or "ПРИМЕДБЕ" opens its printed line (which OCR may cut in two when crooked)
+        topic = [y for y in words if TOPIC.search(y.text) and y.left < x.left and abs(y.top - x.top) < 2 * x.height]
+        if START_WORD.match(x.text) or topic:
+            starts.append(list({id(z): z for z in lines[x.line] + (lines[topic[0].line] if topic else [])}.values()))
     ends = [lines[x.line] for x in words if END.search(x.text)]
-    out = []
+    found = []
     for start in starts:
         s_left, s_right = min(x.left for x in start), max(x.right for x in start)
         s_bottom = max(x.bottom for x in start)
@@ -166,11 +177,14 @@ def blocks(words: list[Word], w: int, h: int) -> list[tuple[int, int, int, int, 
         x0 = max(0, min(s_left, min(x.left for x in end)) - int(0.01 * w))
         x1 = min(w, max(s_right, max(x.right for x in end)))
         y0, y1 = s_bottom + 4, min(x.top for x in end) - 4
-        if y1 - y0 < 10:
-            continue
-        inside = [x for x in words if x0 <= x.left + x.width / 2 <= x1 and y0 <= x.top + x.height / 2 <= y1]
-        out.append((x0, x1, y0, y1, inside))
-    return out
+        if y1 - y0 >= 10:
+            found.append([x0, x1, y0, y1])
+    if found:  # when OCR missed an end line, the area would run into the next observer's: cut it to the usual height
+        usual = sorted(b[3] - b[2] for b in found)[len(found) // 2]
+        for b in found:
+            b[3] = min(b[3], b[2] + int(1.4 * usual))
+    return [(x0, x1, y0, y1, [x for x in words if x0 <= x.left + x.width / 2 <= x1 and y0 <= x.top + x.height / 2 <= y1])
+            for x0, x1, y0, y1 in found]
 
 
 def score_pages(pages: list[tuple[int, int, bytes, list[Word]]]) -> dict:
