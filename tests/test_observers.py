@@ -68,3 +68,15 @@ def test_read_pdf_without_remark_lines_is_not_scored():
     buf = io.BytesIO()
     Image.new("L", (800, 600), 255).save(buf, format="PDF", resolution=100)
     assert observers.read_pdf(buf.getvalue(), lang="eng")["ok"] is False
+
+
+def test_header_read_as_a_remark_line_opens_no_area():
+    """OCR may read the header's "следећи представници" as "следеће"; the end line closes the nearest start above."""
+    w, h = 400, 600
+    line = lambda n: ("1", "1", str(n), "1")  # noqa: E731
+    words = [Word("следеће", 90, 200, 20, 80, 15, line(1)),                       # the header, misread
+             Word("испред", 90, 20, 60, 60, 15, line(2)), Word("часова.", 90, 100, 60, 60, 15, line(2)),
+             Word("ПРИМЕДБЕ", 90, 20, 100, 120, 15, line(3)), Word("следеће:", 90, 300, 100, 80, 15, line(3)),
+             Word("(примедбе", 90, 20, 200, 100, 15, line(4)), Word("уписује", 90, 130, 200, 80, 15, line(4))]
+    found = blocks(words, w, h)
+    assert len(found) == 1 and found[0][2] > 110 and found[0][3] < 200

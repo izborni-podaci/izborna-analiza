@@ -151,32 +151,51 @@ def ink(img: bytes, w: int, x0: int, x1: int, y0: int, y1: int) -> tuple[float, 
     return sum(counts) / (len(counts) * width), sum(1 for n in counts if n > 0.01 * width)
 
 
+PRINTED = ("представ", "посматра", "имао", "поступ", "спровођ", "спровоб", "гласањ", "гласан", "бирачк", "месту",
+           "часова", "дошао", "напусти", "испред", "организ", "уписуј", "predstav", "posmatra", "postup", "glasanj",
+           "biračk", "birack", "časova", "casova", "ispred")  # words of the printed form, not of a remark
+
+
 def blocks(words: list[Word], w: int, h: int) -> list[tuple[int, int, int, int, list[Word]]]:
-    """The remark areas: from each "… су следеће:" line down to the "(примедбе уписује …)" line below it."""
+    """The remark areas: from each "… су следеће:" line down to the "(примедбе уписује …)" line below it.
+
+    Each "(примедбе уписује" line closes the area of the nearest "следеће:" line above it, so the header's
+    "следећи представници" (which OCR may read as "следеће") opens no area of its own; and an area starts below any
+    printed words of the form that fall in it (the observer's name, times, organisation)."""
     lines: dict[tuple, list[Word]] = {}
     for word in words:
         lines.setdefault(word.line, []).append(word)
-    starts = []
+    starts: dict[tuple, list[Word]] = {}
     for x in words:
         if not START.search(x.text):
             continue
         # the word reads "следеће:", or "ПРИМЕДБЕ" opens its printed line (which OCR may cut in two when crooked)
         topic = [y for y in words if TOPIC.search(y.text) and y.left < x.left and abs(y.top - x.top) < 2 * x.height]
         if START_WORD.match(x.text) or topic:
-            starts.append(list({id(z): z for z in lines[x.line] + (lines[topic[0].line] if topic else [])}.values()))
-    ends = [lines[x.line] for x in words if END.search(x.text)]
-    found = []
-    for start in starts:
-        s_left, s_right = min(x.left for x in start), max(x.right for x in start)
-        s_bottom = max(x.bottom for x in start)
-        below = [e for e in ends if min(x.top for x in e) > s_bottom and min(x.top for x in e) - s_bottom < 0.3 * h
-                 and min(x.left for x in e) < s_right and max(x.right for x in e) > s_left]
-        if not below:
+            starts[x.line] = list({id(z): z for z in lines[x.line] + (lines[topic[0].line] if topic else [])}.values())
+    ends = {x.line: lines[x.line] for x in words if END.search(x.text)}
+    closing: dict[tuple, tuple[int, list[Word]]] = {}  # start line → (top of its end line, end line)
+    for end in ends.values():
+        e_top, e_left, e_right = min(x.top for x in end), min(x.left for x in end), max(x.right for x in end)
+        above = [(k, st) for k, st in starts.items() if max(x.bottom for x in st) < e_top
+                 and e_top - max(x.bottom for x in st) < 0.3 * h
+                 and min(x.left for x in st) < e_right and max(x.right for x in st) > e_left]
+        if not above:
             continue
-        end = min(below, key=lambda e: min(x.top for x in e))
+        k, st = max(above, key=lambda item: max(x.bottom for x in item[1]))  # the nearest one above
+        if k not in closing or e_top < closing[k][0]:
+            closing[k] = (e_top, end)
+    found = []
+    for k, (e_top, end) in closing.items():
+        start = starts[k]
+        s_left, s_right = min(x.left for x in start), max(x.right for x in start)
         x0 = max(0, min(s_left, min(x.left for x in end)) - int(0.01 * w))
         x1 = min(w, max(s_right, max(x.right for x in end)))
-        y0, y1 = s_bottom + 4, min(x.top for x in end) - 4
+        y0, y1 = max(x.bottom for x in start) + 4, e_top - 4
+        printed = [x for x in words if x0 <= x.left + x.width / 2 <= x1 and y0 <= x.top + x.height / 2 <= y1
+                   and x.conf >= 70 and x.text.lower().strip("(),.:;").startswith(PRINTED)]
+        if printed:
+            y0 = max(x.bottom for x in printed) + 4
         if y1 - y0 >= 10:
             found.append([x0, x1, y0, y1])
     if found:  # when OCR missed an end line, the area would run into the next observer's: cut it to the usual height
@@ -184,7 +203,7 @@ def blocks(words: list[Word], w: int, h: int) -> list[tuple[int, int, int, int, 
         for b in found:
             b[3] = min(b[3], b[2] + int(1.4 * usual))
     return [(x0, x1, y0, y1, [x for x in words if x0 <= x.left + x.width / 2 <= x1 and y0 <= x.top + x.height / 2 <= y1])
-            for x0, x1, y0, y1 in found]
+            for x0, x1, y0, y1 in sorted(found, key=lambda b: (b[0] > w // 2, b[2]))]
 
 
 def score_pages(pages: list[tuple[int, int, bytes, list[Word]]]) -> dict:
