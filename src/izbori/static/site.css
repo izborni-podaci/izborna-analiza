@@ -189,6 +189,8 @@ select, input[type="search"] { font: inherit; font-size: 0.95rem; min-height: 40
 .numbers { color: var(--ink-2); margin: 6px 0; }
 .docs { margin: 6px 0 0; }
 .doc { white-space: nowrap; margin-right: 10px; }
+.commission { padding-left: 0; list-style: none; }
+.commission li { margin: 0 0 8px; }
 .ctrl { margin: 4px 0 0; color: var(--ink-2); }
 .note { font-size: 0.875rem; border-left: 3px solid var(--axis); padding-left: 8px; margin: 8px 0 0; }
 .note-label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-2); }

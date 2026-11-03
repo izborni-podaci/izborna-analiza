@@ -349,7 +349,7 @@ def cmd_boards(args) -> int:
 def cmd_documents(args) -> int:
     """Read RIK's register of minutes: every document published for each polling station (minutes, observers'
     records, remarks, corrections, rulings). Keeps labels, links and upload times; no names."""
-    from izbori import boards, documents
+    from izbori import boards, commission, documents
     archive = Archive(args.data)
     client = Client()
     known = archive.known_rounds()
@@ -365,7 +365,9 @@ def cmd_documents(args) -> int:
         return age <= 14 or (date >= recent and now.weekday() == 0)
 
     ids = [args.round] if args.round else [r for r in archive.round_ids() if args.all or due(r)]
-    if not ids:
+    # the commissions' documents of a round never read (once each, also for older rounds)
+    missing = [r for r in archive.round_ids() if r not in ids and not commission.path(archive.dir(r)).exists()]
+    if not ids and not missing:
         log("no round due: nothing is asked of RIK")
     changed = []
     # The register names municipalities as RIK does today; an older results file may not ("Ниш-Медијана" for
@@ -375,13 +377,20 @@ def cmd_documents(args) -> int:
     for other in loaded.values():
         for s in other.stations:
             every.setdefault(boards.municipality_key(s.municipality), s.municipality_code)
-    for rid in ids:
+    for rid in ids + missing:
         rik_type = int(archive.meta(rid).get("rik_type") or (known.get(rid) or {}).get("type") or 0)
         if not rik_type:
             log(f"{rid}: RIK's election type unknown, skipped")
             continue
         rnd = loaded.get(rid) or archive.load(rid)
         codes = {**every, **{boards.municipality_key(s.municipality): s.municipality_code for s in rnd.stations}}
+        try:
+            if commission.update(client, archive.dir(rid), rid, rik_type, codes, log=log):
+                changed.append(rid)
+        except RikError as e:
+            log(f"{rid}: commission documents not reachable ({e})")
+        if rid in missing:
+            continue
         before = documents.load(archive.dir(rid))
         try:
             counts = documents.counts(client, rid, rik_type)
@@ -406,7 +415,8 @@ def cmd_documents(args) -> int:
             announce = bool(before) and (archive.meta(rid).get("date") or "9999") >= recent
             n = after_change(archive, rid, now_iso(), args.notes, notify=args.notify and announce, announce=announce)
             log(f"{rid}: documents changed, {n} new flags" + ("" if announce else " (not announced)"))
-            changed.append(rid)
+            if rid not in changed:
+                changed.append(rid)
     if args.commit and changed and commit([str(args.data), str(args.notes)],
                                           f"Documents: {', '.join(changed)} ({now_iso()})"):
         if args.push and push() and args.dispatch_pages:

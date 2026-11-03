@@ -110,8 +110,10 @@ def parse_index_records(records: list[dict]) -> list[BoardDoc]:
     return docs
 
 
-def index_query(page: int, round_id: str, rik_type: int) -> str:
-    params = [("page", page), ("filters[document-type]", 4), ("filters[election-round]", round_id),
+def index_query(page: int, round_id: str, rik_type: int, document_type: int = 4) -> str:
+    """A page of RIK's register of additional documents: type 4 are the decisions on polling boards, type 1 the
+    documents of the municipalities' electoral commissions."""
+    params = [("page", page), ("filters[document-type]", document_type), ("filters[election-round]", round_id),
               ("filters[municipality-id]", 0), ("filters[election_station]", -1),
               ("filters[additional-data]", 0), ("order", 2), ("sort", 2), ("election_type", rik_type)]
     return "/get-additional-documents?" + urllib.parse.urlencode(params)

@@ -28,7 +28,7 @@ from izbori.links import safe_url
 from izbori.model import last_url
 from izbori.i18n import (LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, fmt_date, fmt_int, fmt_num, fmt_pct,
                          fmt_time, keep, kind_name, latin_page, strip_keep, t)
-from izbori import documents, narrative
+from izbori import commission, documents, narrative
 from izbori.places import RULES_FILE, Place, contradicts, follow
 from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
@@ -130,6 +130,12 @@ class Site:
             self.board_docs_cache[rid] = boards.station_docs(store)
         return self.ctrl_cache[rid]
 
+    def commission_of(self, rid: str) -> dict:
+        """Per municipality code, its electoral commission's documents by kind."""
+        if rid not in self.commission_cache:
+            self.commission_cache[rid] = commission.by_municipality(commission.load_store(self.archive.dir(rid)))
+        return self.commission_cache[rid]
+
     def board_docs_of(self, rid: str) -> dict:
         """Per station key, its decisions on the polling board (appointments and changes), to link."""
         self.ctrl_of(rid)
@@ -201,7 +207,7 @@ class Site:
                 d = self.archive.dir(r)
                 files += [d / n for n in ("results.csv", "meta.json", "changes.jsonl", "snapshots.jsonl", "state.json",
                                           "flags_seen.json", "first_seen.json", "boards.json", "documents.json",
-                                          "observer_reviews.csv")]
+                                          "observer_reviews.csv", "commission.json")]
                 if self.notes_dir:
                     files.append(Path(self.notes_dir) / f"{r}.csv")
             links = hashlib.sha256("|".join(self.st_path(rid, s.key) for s in self.analyses[rid].round.stations).encode())
@@ -489,6 +495,7 @@ class Site:
         self.cache: dict = {}
         self.ctrl_cache: dict = {}
         self.board_docs_cache: dict = {}
+        self.commission_cache: dict = {}
         rids = self.archive.round_ids()
         for rid in rids:
             self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, self.cache)
@@ -682,7 +689,8 @@ class Site:
             mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
             mres, top, by_st = vote_view(a.round.contestants, votes, a.totals, [s for s in sts if s.counted])
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
-                       mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st, **common)
+                       mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st,
+                       cdocs=self.commission_of(rid).get(m["code"], []), **common)
 
 
 def vote_view(contestants, votes: list[int], totals, stations: list) -> tuple[list[dict], list[dict], list[dict]]:

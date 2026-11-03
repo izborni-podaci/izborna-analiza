@@ -125,6 +125,13 @@ def test_site_shows_controllers(tmp_path, archive):
                                  [1, "/extfile/sr/election_results/801/371/6ade7b1be1216/@Примедба 23_c.pdf",
                                   "2026-10-25T22:56"]]}}
     (data / "rounds/680072/documents.json").write_text(json.dumps(docs, ensure_ascii=False), encoding="utf-8")
+    # the municipality's electoral commission published minutes of two sessions on one day, and a decision
+    at = "/extfile/sr/files/additionalDocuments/820/"
+    cdocs = {"complete": True, "docs": {
+        "1": {"m": s.municipality_code, "c": "session", "t": "1793700000", "u": at + "1/З 1.pdf"},
+        "2": {"m": s.municipality_code, "c": "session", "t": "1793700100", "u": at + "2/З 2.pdf"},
+        "3": {"m": s.municipality_code, "c": "decision", "t": "1792000000", "u": at + "3/Р.pdf"}}}
+    (data / "rounds/680072/commission.json").write_text(json.dumps(cdocs, ensure_ascii=False), encoding="utf-8")
     # a person read the observers' record and found remarks
     (data / "rounds/680072/observer_reviews.csv").write_text(
         "municipality_code,station,remarks,summary_sr,summary_en,checked\n"
@@ -155,6 +162,10 @@ def test_site_shows_controllers(tmp_path, archive):
     assert "%D0%A0%D0%B5%D1%88%D0%B5%D1%9A%D0%B5%20%D0%BF%D1%80%D0%BE%D1%88%D0%B8%D1%80%D0%B5%D0%BD%D0%B8" in board
     assert "Decisions on the polling board:" in (out / "en" / place).read_text(encoding="utf-8")
     assert "Rešenja o biračkom odboru" not in mun  # the municipality's list keeps to the documents of the vote
+    commission_part = mun[mun.index('id="commission"'):]
+    assert "Dokumenti izborne komisije" in commission_part
+    assert re.findall(r">([^<]+)</a>", commission_part)[:3] == ["3.11.2026. (1)", "3.11.2026. (2)", "14.10.2026."]
+    assert "Zapisnici sa sednica" in commission_part and "%D0%97%201.pdf" in commission_part
     api = json.loads((out / "api" / place.replace(".html", ".json")).read_text(encoding="utf-8"))
     kinds = [d["kind"] for e in api["elections"] if e["round"] == "680072" for d in e["documents"]]
     assert kinds == ["minutes", "observers", "remark", "board_standing", "board_extended"]

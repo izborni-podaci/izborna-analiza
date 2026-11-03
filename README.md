@@ -131,6 +131,10 @@ Station pages, the lists to check and the JSON name each document by its kind. R
 
 The first reading of a round, and any reading of a round older than 60 days, is recorded without a feed entry; new flags from documents of a recent round go to the feed like any others. The register uses today's municipality names, so names from every archived election map to the codes (the 2022 table writes "Ниш-Медијана" for "Градска општина Медијана").
 
+### Electoral commission documents
+
+RIK's register of additional documents also lists, per municipality, what its electoral commission publishes: minutes of its sessions, reports on the results, decisions, resolutions and notices. `izbori documents` reads them once for every archived round, and then only what is new while the round is recent (one request when nothing is). Each is kept by its link, RIK's kind and the day it was published, in `data/rounds/<id>/commission.json`; the titles are not kept, since the commissions write them and they may contain names. RIK's own documents are left out. The municipality's page lists them by kind and day.
+
 ## Observers' records
 
 The observers' record (RG-11) lists, for each observer at the station, whether they had remarks, with lines to write them on. They are handwritten scans, and "нема" or a line struck through the empty space is common, so they aren't turned into flags automatically. Two parts work together:
@@ -261,6 +265,7 @@ data/rounds/<id>/boards.json      decisions on polling boards: per decision, sta
 data/rounds/<id>/documents.json   every document RIK lists per station: label, link, upload time (no names)
 data/rounds/<id>/observers.json   per observers' record: how much is written in its remark lines (numbers only)
 data/rounds/<id>/observer_reviews.csv  what a person found in observers' records (edited by hand)
+data/rounds/<id>/commission.json  the municipal electoral commissions' documents: link, kind, day
 ```
 
 A parliamentary file has 8,392 stations and is 4.3 MB. Consecutive versions differ by a few rows, so git stores them as small deltas.
@@ -331,6 +336,7 @@ src/izbori/
   documents.py  RIK's register of minutes: observers' records, remarks, rulings per station
   observers.py  observers' records: reviews by a person, and the OCR score that orders them
   schedule.py   when to ask RIK, by the election calendar
+  commission.py the municipal electoral commissions' documents from RIK's register
   narrative.py  the sentences at the top of the pages across elections
   notes.py      news notes
   targets.py    private ranking
