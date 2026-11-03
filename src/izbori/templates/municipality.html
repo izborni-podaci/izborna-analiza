@@ -116,7 +116,7 @@
 <h2 id="commission">{{ t('commission_heading') }}</h2>
 <p class="rule">{{ t('commission_note') }}</p>
 <ul class="commission">
-{% for g in cdocs %}  <li><span class="muted">{{ t('commission_' ~ g.kind) }}:</span> {% for d in g.docs %}<a class="doc" href="{{ d.url|url }}" rel="noopener noreferrer" target="_blank">{{ date(d.day) if d.day else t('doc_other') }}{% if d.n %} ({{ d.n }}){% endif %}</a> {% endfor %}</li>
+{% for g in cdocs %}  <li><span class="muted">{{ t('commission_' ~ g.kind) }}:</span> {% for d in g.docs %}<a class="doc" href="{{ d.url|url }}" target="_blank">{{ date(d.day) if d.day else t('doc_other') }}{% if d.n %} ({{ d.n }}){% endif %}</a> {% endfor %}</li>
 {% endfor %}</ul>
 {% endif %}
 {% endblock %}

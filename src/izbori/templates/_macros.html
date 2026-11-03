@@ -61,7 +61,7 @@
 {# A station's documents as RIK published them, each named by its kind: minutes, observers' record, remark,
    correction, ruling. The full label is in the tooltip; documents of one kind and vote are numbered. #}
 {% macro doc_links(docs) %}
-{% for d in docs %}{% set same = docs|selectattr('kind', 'equalto', d.kind)|selectattr('repeat', 'equalto', d.repeat)|list %}<a class="doc doc-{{ d.kind }}" href="{{ d.url|url }}" rel="noopener noreferrer" target="_blank"{% if d.label %} title="{{ name(d.label) }}"{% endif %}>{{ t('doc_' ~ d.kind) }}{% if d.form %} {{ d.form }}{% endif %}{% if d.repeat %} ({{ t('doc_repeat') }}){% endif %}{% if same|length > 1 %} {{ same.index(d) + 1 }}{% endif %}</a> {% endfor %}
+{% for d in docs %}{% set same = docs|selectattr('kind', 'equalto', d.kind)|selectattr('repeat', 'equalto', d.repeat)|list %}<a class="doc doc-{{ d.kind }}" href="{{ d.url|url }}" target="_blank"{% if d.label and d.kind not in ('minutes', 'observers', 'remark') %} title="{{ name(d.label) }}"{% endif %}>{{ t('doc_' ~ d.kind) }}{% if d.form %} {{ d.form }}{% endif %}{% if d.repeat %} ({{ t('doc_repeat') }}){% endif %}{% if same|length > 1 %} {{ same.index(d) + 1 }}{% endif %}</a> {% endfor %}
 {% endmacro %}
 
 {# The sentences at the top of the pages across elections (narrative.py), one paragraph per topic. #}
@@ -95,8 +95,8 @@
 {% endmacro %}
 
 {% macro history_top(top) %}
-<td role="cell" class="block" data-label="{{ t('top_three') }}">{% if top %}<ol class="top3">
-{% for r in top %}<li><span class="t3-name" title="{{ name(r.full) }}">{{ r.number }}. {{ name(r.label) }}</span><span class="t3-pct">{{ pct(r.share, 1) }}</span></li>{% endfor %}
+<td role="cell" class="block l-top_three">{% if top %}<ol class="top3">
+{% for r in top %}<li><span class="t3-name">{{ r.number }}. {{ name(r.label) }}</span><span class="t3-pct">{{ pct(r.share, 1) }}</span></li>{% endfor %}
 </ol>{% else %}<span class="muted">—</span>{% endif %}</td>
 {% endmacro %}
 

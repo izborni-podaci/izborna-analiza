@@ -492,6 +492,7 @@ class Site:
         shutil.copytree(HERE / "static", self.out / "static", dirs_exist_ok=True)
         self.produced.update(str(f.relative_to(self.out)) for f in (self.out / "static").rglob("*") if f.is_file()
                              and (HERE / f.relative_to(self.out)).exists())
+        self.put("static/labels.css", cell_labels())
         self.put(".nojekyll", "")
         self.cache: dict = {}
         self.ctrl_cache: dict = {}
@@ -692,6 +693,23 @@ class Site:
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
                        mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st,
                        cdocs=self.commission_of(rid).get(m["code"], []), **common)
+
+
+LABELLED = ("station", "stations", "registered", "voted", "turnout", "invalid", "top_three", "flags", "flagged")
+
+
+def cell_labels() -> str:
+    """The labels a table across elections shows inside each cell on a phone, for every language: once here
+    rather than on every cell of every page (cells carry the class l-<key>)."""
+    def quote(text: str) -> str:
+        return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    rules = []
+    for loc in LOCALES:
+        for key in LABELLED:
+            text = t(key, loc)
+            text = latin(text) if loc == "lat" else text
+            rules.append(f"  :lang({LANG_ATTR[loc]}) table.history td.l-{key}::before {{ content: {quote(text)}; }}")
+    return "@media (max-width: 600px) {\n" + "\n".join(rules) + "\n}\n"
 
 
 def vote_view(contestants, votes: list[int], totals, stations: list) -> tuple[list[dict], list[dict], list[dict]]:

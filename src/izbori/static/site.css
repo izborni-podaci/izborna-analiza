@@ -383,7 +383,8 @@ table.places td:nth-child(2) { min-width: 14rem; }
   table.history tr.flagged td:first-child { box-shadow: none; }
   table.history th.election { font-size: 1.05rem; border-bottom: 1px solid var(--grid); padding: 10px 12px; }
   table.history td { display: flex; gap: 12px; justify-content: space-between; text-align: right; padding: 7px 12px; }
-  table.history td::before { content: attr(data-label); color: var(--ink-2); font-size: 0.85rem; text-align: left; flex: 0 0 auto; }
+  /* each cell's label comes from labels.css, written with the pages in every language */
+  table.history td::before { color: var(--ink-2); font-size: 0.85rem; text-align: left; flex: 0 0 auto; }
   table.history td.block { display: block; text-align: left; }
   table.history td.block::before { display: block; margin-bottom: 4px; }
   table.history .flags, .top3 { min-width: 0; }

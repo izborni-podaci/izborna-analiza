@@ -22,13 +22,13 @@
     {% set m = e.m %}
     <tr role="row">
       {{ mx.history_election(e, link('r/' ~ e.rid ~ '/m/' ~ code ~ '.html')) }}
-      <td role="cell" class="num" data-label="{{ t('stations') }}">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</td>
-      <td role="cell" class="num" data-label="{{ t('registered') }}">{{ i(m.registered) }}</td>
-      <td role="cell" class="num" data-label="{{ t('voted') }}">{{ i(m.voted) }}</td>
-      <td role="cell" class="num" data-label="{{ t('turnout') }}">{{ pct(m.turnout, 1) }}</td>
-      <td role="cell" class="num" data-label="{{ t('invalid') }}">{{ pct(m.invalid, 1) }}</td>
+      <td role="cell" class="num l-stations">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</td>
+      <td role="cell" class="num l-registered">{{ i(m.registered) }}</td>
+      <td role="cell" class="num l-voted">{{ i(m.voted) }}</td>
+      <td role="cell" class="num l-turnout">{{ pct(m.turnout, 1) }}</td>
+      <td role="cell" class="num l-invalid">{{ pct(m.invalid, 1) }}</td>
       {{ mx.history_top(e.top) }}
-      <td role="cell" class="num" data-label="{{ t('flagged') }}">{% if m.flagged %}<a href="{{ link('r/' ~ e.rid ~ '/check.html') }}#m-{{ code }}">{{ i(m.flagged) }}</a>{% else %}0{% endif %}</td>
+      <td role="cell" class="num l-flagged">{% if m.flagged %}<a href="{{ link('r/' ~ e.rid ~ '/check.html') }}#m-{{ code }}">{{ i(m.flagged) }}</a>{% else %}0{% endif %}</td>
     </tr>
   {% endfor %}
   </tbody>
