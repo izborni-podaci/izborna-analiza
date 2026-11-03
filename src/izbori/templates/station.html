@@ -2,69 +2,52 @@
 {% import "_macros.html" as mx with context %}
 {% block title %}{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}{% endblock %}
 {% block main %}
-{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(s.municipality), link('r/' ~ latest.rid ~ '/m/' ~ s.municipality_code ~ '.html')), (t('station_no') ~ ' ' ~ s.number, none)]) }}
-<p class="kicker">{{ name(s.municipality) }}</p>
+{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(s.municipality), link('m/' ~ s.municipality_code ~ '.html')), (t('station_no') ~ ' ' ~ s.number, none)]) }}
+<p class="kicker">{{ name(s.municipality) }} · {{ t('station_history') }}</p>
 <h1 class="station-title">{{ t('station_no') }} {{ s.number }}{% if s.name %} · {{ name(s.name) }}{% endif %}</h1>
 {% if address %}<p class="muted">{{ t('address') }}: {{ name(address) }}</p>{% endif %}
-<p class="station-summary"><strong>{{ t('home_example_k', k=row.k, n=row.n) }}</strong>{% if row.same %}<br>{{ t('repeat_same') }}: {% for code, m in row.same %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}, {{ t('repeat_times', n=m) }}</span>{% if not loop.last %}; {% endif %}{% endfor %}{% endif %}</p>
-<p class="principle">{{ t('principle') }}</p>
+<p class="station-summary"><strong>{% if k %}{{ t('home_example_k', k=k, n=n) }}{% else %}{{ t('place_clean', n=n) }}{% endif %}</strong>{% if same %}<br>{{ t('repeat_same') }}: {% for code, m in same %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}, {{ t('repeat_times', n=m) }}</span>{% if not loop.last %}; {% endif %}{% endfor %}{% endif %}</p>
+{% if former %}<p class="small muted">{{ t('place_former', numbers=former|join(', ')) }}</p>{% endif %}
+<p class="deck">{{ t('place_lede') }}</p>
 
-<section class="station-latest">
-  <h2>{{ t('station_latest', title=latest.short) }}</h2>
-  {% set st = latest.s %}
-  {% if st.counted %}
-  <div class="tiles">
-    <div class="tile"><p class="tile-label">{{ t('registered') }}</p><p class="tile-value">{{ i(st.registered) }}</p></div>
-    <div class="tile"><p class="tile-label">{{ t('voted') }}</p><p class="tile-value">{{ i(st.voted) }}</p><p class="tile-sub">{{ t('turnout') }} {{ pct(st.turnout, 1) }}</p></div>
-    <div class="tile"><p class="tile-label">{{ t('ballots') }}</p><p class="tile-value">{{ i(st.ballots) }}</p></div>
-    <div class="tile"><p class="tile-label">{{ t('invalid') }}</p><p class="tile-value">{{ i(st.invalid) }}</p></div>
-  </div>
-  {% else %}<p class="muted">{{ t('not_counted') }}</p>{% endif %}
-  {% if latest.flags %}
-  {{ mx.chips(latest.flags) }}
-  <div class="hint"><strong>{{ t('what_to_check') }}</strong>
-    <ul>{% for code in latest.codes %}<li>{{ t('hint_' ~ code) }}</li>{% endfor %}</ul>
-  </div>
-  {% else %}<p class="muted">{{ t('repeat_no_flag') }}</p>{% endif %}
-  <p class="docs">{{ mx.doc_links(st) }}</p>
-  {% if latest.ctrl_known %}{{ mx.controllers(latest.ctrl, 0) }}{% endif %}
-  {{ mx.notes_list(latest.notes) }}
-  {% if latest.votes %}
-  <h3>{{ t('station_votes') }}</h3>
-  <p class="rule">{{ t('station_votes_note') }}</p>
-<ul class="vote-list">
-{% for r in latest.votes if not r.minor %}
-    <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
-      <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
-      <span class="vl-ref small muted">{{ t('municipality_share', share=pct(r.mshare, 1)) }}</span></li>
-{% endfor %}
-</ul>
-{% set minor = latest.votes|selectattr('minor')|list %}
-{% if minor %}<details class="minor-votes"><summary>{{ t('minor_candidates' if latest.presidential else 'minor_lists', n=minor|length) }}</summary>
-<ul class="vote-list">
-{% for r in minor %}
-    <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
-      <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
-      <span class="vl-ref small muted">{{ t('municipality_share', share=pct(r.mshare, 1)) }}</span></li>
-{% endfor %}
-</ul></details>{% endif %}
-  {% endif %}
-</section>
-
-<section>
-  <h2>{{ t('station_history') }}</h2>
-  <ol class="timeline station-timeline">
-  {% for e in history %}
-    <li><span class="muted">{{ e.short }}</span>
-      <div>
-      {% if e.absent %}<span class="muted">{{ t('repeat_not_there') }}</span>
+<div class="table-wrap history-wrap">
+<table class="history">
+  <thead><tr>
+    <th>{{ t('home_col_election') }}</th><th>{{ t('station') }}</th>
+    <th class="num">{{ t('registered') }}</th><th class="num">{{ t('voted') }}</th><th class="num">{{ t('turnout') }}</th>
+    <th class="num">{{ t('invalid') }}</th><th>{{ t('top_three') }}</th><th>{{ t('flags') }}</th>
+  </tr></thead>
+  <tbody>
+  {% for e in rows %}
+    <tr{% if e.flags %} class="flagged"{% endif %}>
+      {{ mx.history_election(e, link('r/' ~ e.rid ~ '/m/' ~ e.s.municipality_code ~ '.html') ~ '#bm-' ~ e.s.number) }}
+      <td class="block" data-label="{{ t('station') }}"><span class="nowrap">{{ t('station_no') }} {{ e.s.number }}</span>{% if e.s.name %} · {{ name(e.s.name) }}{% endif %}{% if e.how %} <span class="joined small muted">({{ t('joined_' ~ e.how) }})</span>{% endif %}
+        {% if e.ctrl_known %}{{ mx.controllers(e.ctrl, e.n_lists) }}{% elif e.address %}<p class="small muted">{{ t('address') }}: {{ name(e.address) }}</p>{% endif %}
+        <div class="docs small">{{ mx.doc_links(e.s) }}</div></td>
+      {% if e.s.counted %}
+      <td class="num" data-label="{{ t('registered') }}">{{ i(e.s.registered) }}</td>
+      <td class="num" data-label="{{ t('voted') }}">{{ i(e.s.voted) }}</td>
+      <td class="num" data-label="{{ t('turnout') }}">{{ pct(e.s.turnout, 1) }}</td>
+      <td class="num" data-label="{{ t('invalid') }}">{{ i(e.s.invalid) }}</td>
+      {{ mx.history_top(e.top) }}
       {% else %}
-        {% if e.flags %}{{ mx.chips(e.flags) }}{% else %}<p class="muted">{{ t('repeat_no_flag') }}</p>{% endif %}
-        <p class="small muted">{% if e.s.counted %}{{ t('turnout') }} {{ pct(e.s.turnout, 1) }} · {{ t('voted') }} {{ i(e.s.voted) }} · {{ t('invalid') }} {{ i(e.s.invalid) }} · {% endif %}<a href="{{ link('r/' ~ e.rid ~ '/m/' ~ e.s.municipality_code ~ '.html') }}#bm-{{ e.s.number }}">{{ t('station_in_round') }}</a> {{ mx.doc_links(e.s) }}</p>
+      <td class="num" data-label="{{ t('registered') }}">{{ i(e.s.registered) }}</td>
+      <td colspan="4" class="muted" data-label="{{ t('voted') }}">{{ t('not_counted') }}</td>
       {% endif %}
-      </div>
-    </li>
+      <td class="block" data-label="{{ t('flags') }}">{% if e.flags %}{{ mx.chips(e.flags) }}{% else %}<span class="muted">{{ t('repeat_no_flag_short') }}</span>{% endif %}{{ mx.notes_list(e.notes) }}</td>
+    </tr>
   {% endfor %}
-  </ol>
+  </tbody>
+</table>
+</div>
+{% if absent %}<p class="small muted">{{ t('place_absent', list=absent|join(', ')) }}</p>{% endif %}
+<p class="rule">{{ t('place_rule') }}</p>
+
+{% if hints %}
+<section>
+  <h2>{{ t('what_to_check') }}</h2>
+  <p class="principle">{{ t('principle') }}</p>
+  <ul>{% for code in hints %}<li><span class="sym-line">{{ mx.sym(code, group_of[code]) }}<strong>{{ check_name(code) }}.</strong></span> {{ t('hint_' ~ code) }}</li>{% endfor %}</ul>
 </section>
+{% endif %}
 {% endblock %}

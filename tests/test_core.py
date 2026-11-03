@@ -27,6 +27,11 @@ def test_latin():
     assert latin("Њ") == "Nj"
     assert latin("Џеп и ђак") == "Džep i đak"
     assert latin("RIK 2026") == "RIK 2026"
+    # two-letter capitals follow the next letter, or at the end of a word the one before
+    assert latin("ЉИ Љи АЉ аЉ Љ.") == "LJI Lji ALJ aLj Lj."
+    assert latin("ЏАК Џак ЊЕГОШ") == "DŽAK Džak NJEGOŠ"
+    assert latin("ᲂ") == "o"  # an old form of о
+    assert latin("<p title=\"Ђак\">Ђурђевак</p>") == "<p title=\"Đak\">Đurđevak</p>"
 
 
 def test_parse_counts_contestants(raw2026):

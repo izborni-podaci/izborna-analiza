@@ -14,7 +14,7 @@
 {% if example %}{% set s = example.station %}
 <section class="example">
   <p class="kicker">{{ t('repeat_example_heading') }}</p>
-  <h2 class="example-title"><a href="{{ link(st_path(example.key)) }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %} <span class="muted">{{ name(s.name) }}</span>{% endif %}</h2>
+  <h2 class="example-title"><a href="{{ link(st_path(example.rid, example.key)) }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %} <span class="muted">{{ name(s.name) }}</span>{% endif %}</h2>
   <ol class="timeline">
   {% for r in rounds %}
     <li><span class="muted">{{ r.short }}</span><span>{% if r.id in example.flags %}{% for code in example.flags[r.id] %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}<strong>{{ check_name(code) }}</strong></span>{% if not loop.last %}<br>{% endif %}{% endfor %}{% elif r.id in example.took %}<span class="muted">{{ t('repeat_no_flag') }}</span>{% else %}<span class="muted">{{ t('repeat_not_there') }}</span>{% endif %}</span></li>
@@ -71,7 +71,7 @@
       <tbody>
       {% for row in group %}{% set s = row.station %}
         <tr data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same_codes }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}">
-          <td><a href="{{ link(st_path(row.key)) }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %}<div class="small muted">{{ name(s.name) }}</div>{% endif %}{% if row.same %}<div class="small st-same"><strong>{{ t('repeat_same') }}:</strong> {% for code, m in row.same %}{{ check_name(code) }} ({{ t('repeat_times', n=m) }}){% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}</td>
+          <td><a href="{{ link(st_path(row.rid, row.key)) }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %}<div class="small muted">{{ name(s.name) }}</div>{% endif %}{% if row.same %}<div class="small st-same"><strong>{{ t('repeat_same') }}:</strong> {% for code, m in row.same %}{{ check_name(code) }} ({{ t('repeat_times', n=m) }}){% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}</td>
           {% for r in rounds %}<td class="small">{% if r.id in row.flags %}{% for code in row.flags[r.id] %}<span class="sym-line cell-flag">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}</span>{% endfor %}{% elif r.id in row.took %}<span class="muted">{{ t('repeat_no_flag_short') }}</span>{% else %}<span class="muted">{{ t('repeat_not_there_short') }}</span>{% endif %}{% if r.id in row.renamed %} <span class="renamed" title="{{ t('repeat_renamed') }}">≠</span>{% endif %}</td>{% endfor %}
         </tr>
       {% endfor %}
