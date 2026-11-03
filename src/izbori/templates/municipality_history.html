@@ -5,29 +5,30 @@
 {{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(mname), none)]) }}
 <p class="kicker">{% if district %}{{ name(district) }} · {% endif %}{{ t('station_history') }}</p>
 <h1>{{ name(mname) }}</h1>
+<p class="tools"><a href="{{ feed_href }}" type="application/atom+xml">{{ t('mun_feed') }}</a></p>
 {{ mx.analysis(analysis) }}
 {{ mx.trends(charts, t('trend_here_mun'), t('trend_ref_all')) }}
-<p class="rule">{{ t('mun_across_lede') }}</p>
+<p class="rule">{{ t('mun_across_lede') }} <a href="{{ root }}api/m/{{ code }}.json" type="application/json">{{ t('json_link') }}</a></p>
 
 <div class="table-wrap history-wrap">
-<table class="history">
-  <thead><tr>
-    <th>{{ t('home_col_election') }}</th><th class="num">{{ t('stations') }}</th>
-    <th class="num">{{ t('registered') }}</th><th class="num">{{ t('voted') }}</th><th class="num">{{ t('turnout') }}</th>
-    <th class="num">{{ t('invalid') }}</th><th>{{ t('top_three') }}</th><th class="num">{{ t('flagged') }}</th>
+<table class="history" role="table">
+  <thead role="rowgroup"><tr role="row">
+    <th role="columnheader">{{ t('home_col_election') }}</th><th role="columnheader" class="num">{{ t('stations') }}</th>
+    <th role="columnheader" class="num">{{ t('registered') }}</th><th role="columnheader" class="num">{{ t('voted') }}</th><th role="columnheader" class="num">{{ t('turnout') }}</th>
+    <th role="columnheader" class="num">{{ t('invalid') }}</th><th role="columnheader">{{ t('top_three') }}</th><th role="columnheader" class="num">{{ t('flagged') }}</th>
   </tr></thead>
-  <tbody>
+  <tbody role="rowgroup">
   {% for e in rows %}
     {% set m = e.m %}
-    <tr>
+    <tr role="row">
       {{ mx.history_election(e, link('r/' ~ e.rid ~ '/m/' ~ code ~ '.html')) }}
-      <td class="num" data-label="{{ t('stations') }}">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</td>
-      <td class="num" data-label="{{ t('registered') }}">{{ i(m.registered) }}</td>
-      <td class="num" data-label="{{ t('voted') }}">{{ i(m.voted) }}</td>
-      <td class="num" data-label="{{ t('turnout') }}">{{ pct(m.turnout, 1) }}</td>
-      <td class="num" data-label="{{ t('invalid') }}">{{ pct(m.invalid, 1) }}</td>
+      <td role="cell" class="num" data-label="{{ t('stations') }}">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</td>
+      <td role="cell" class="num" data-label="{{ t('registered') }}">{{ i(m.registered) }}</td>
+      <td role="cell" class="num" data-label="{{ t('voted') }}">{{ i(m.voted) }}</td>
+      <td role="cell" class="num" data-label="{{ t('turnout') }}">{{ pct(m.turnout, 1) }}</td>
+      <td role="cell" class="num" data-label="{{ t('invalid') }}">{{ pct(m.invalid, 1) }}</td>
       {{ mx.history_top(e.top) }}
-      <td class="num" data-label="{{ t('flagged') }}">{% if m.flagged %}<a href="{{ link('r/' ~ e.rid ~ '/check.html') }}#m-{{ code }}">{{ i(m.flagged) }}</a>{% else %}0{% endif %}</td>
+      <td role="cell" class="num" data-label="{{ t('flagged') }}">{% if m.flagged %}<a href="{{ link('r/' ~ e.rid ~ '/check.html') }}#m-{{ code }}">{{ i(m.flagged) }}</a>{% else %}0{% endif %}</td>
     </tr>
   {% endfor %}
   </tbody>

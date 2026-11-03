@@ -69,7 +69,7 @@ The loader finds contestant columns by their position, not their name. A preside
 
 ## Station checks
 
-Every check treats every contestant the same way. Stations are matched across elections by municipality code + station number.
+Every check treats every contestant the same way. A station is followed across elections as a place: by address, then name, then number (see [Places across elections](#places-across-elections)).
 
 **Paperwork and arithmetic.** The strongest signals; they apply to every station.
 
@@ -180,7 +180,18 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 - **Observer guide:** what's allowed at a polling station on election day, with article references.
 - **About:** method, sources, limits.
 
-The pages across elections follow the same place through the archive (`places.py`): within its municipality, a station is joined to the station of an earlier election by address first (where the decisions on polling boards gave one), then by name, then by number. A number alone never joins two stations whose address or name clearly differs. The station checks and the station history table still match stations by municipality code + number.
+### Places across elections
+
+Everything that follows a station across elections uses the same places (`places.py`): the search and the pages across elections, the turnout checks against an earlier election, the station history table and the private target list. Going forward in time, within its municipality, a station is joined to a station of an earlier election:
+
+1. by a manual correction in `data/places.csv`, if a maintainer recorded one;
+2. by address, where the decisions on polling boards gave one;
+3. then by name (its telling words: "ОШ Вељко Петровић" and "Основна школа Вељко Петровић" are one name; a name made only of words like "school" tells nothing);
+4. then by number. A number alone never joins two stations whose address or name clearly differs.
+
+Stations that share an address or a name are paired by equal number first, and the rest in number order only when as many are left on each side (a renumbered building, not a co-op hall in several villages). Matching runs forward, so a new election never changes how earlier ones were joined.
+
+`data/places.csv` corrects the rules by hand. Columns: `action` (`join`: the two stations are one place; `split`: they never are), `municipality_code`, `round`, `number`, `other_round`, `other_number`, `note` (why, with a source). Rows with a missing field are skipped.
 
 Every page says which RIK timestamp the data comes from and when it was fetched. Charts are drawn as SVG when the site is built, so the site needs no JavaScript libraries.
 
@@ -199,6 +210,7 @@ Every page says which RIK timestamp the data comes from and when it was fetched.
 ```
 data/rounds.json                  every round RIK lists
 data/feed.json                    feed entries
+data/places.csv                   manual corrections to how stations are followed across elections
 data/mail.json                    email state: pending flags, time of the last message
 data/rounds/<id>/meta.json        type, title, English title, election day, contestants (name, short
                                   name, minority status), seat rules

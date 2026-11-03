@@ -95,3 +95,25 @@ def test_municipality():
     assert text[2].endswith("na 2 od 3 izbora prvi ovde bio je prvi i na celim izborima.")
     assert text[3] == ("Biračkih mesta: 207 (Parlamentarni 2023) → 221 (Parlamentarni 2026); novih: 17, više se ne "
                        "koristi: 8. Opština nije glasala na: Lokalni 2024.")  # no "renumbered: 0"
+
+
+def test_rank_among_peers():
+    r = rows()
+    r[0].rank_invalid, r[0].rank_turnout = (12, 221), (3, 221)
+    text = lat(place(r, [], "lat"))
+    assert text[0].endswith("Po udelu nevažećih listića (Parlamentarni 2026) mesto je 12. od 221 u opštini, "
+                            "računajući od najvećeg.")
+    assert "Po izlaznosti (Parlamentarni 2026) mesto je 3. od 221 u opštini, računajući od najveće." in text[1]
+    en = place(r, [], "en")
+    assert "By turnout (Parlamentarni 2026) it ranks 3 of 221 in the municipality, counting from the highest." in en[1]
+    r[0].rank_invalid = None  # too few stations to rank
+    assert "mesto je 12." not in lat(place(r, [], "lat"))[0]
+
+
+def test_rank_helper():
+    from izbori.site import rank_of
+    values = sorted([0.01, 0.02, 0.02, 0.03, 0.05, 0.08])
+    assert rank_of(0.08, values) == (1, 6)
+    assert rank_of(0.02, values) == (4, 6)  # tied with another, both fourth
+    assert rank_of(0.01, values) == (6, 6)
+    assert rank_of(0.02, values[:4]) is None  # fewer than five

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 import json
+import bisect
 import shutil
 import hashlib
 import platform
@@ -28,8 +29,8 @@ from izbori.model import last_url
 from izbori.i18n import (LANG_ATTR, LOCALES, MONTHS_EN, PREFIX, S, check_name, check_rule, fmt_int, fmt_num, fmt_pct,
                          fmt_time, keep, kind_name, latin_page, strip_keep, t)
 from izbori import narrative
-from izbori.places import Place, follow
-from izbori.report import Analysis, analyze
+from izbori.places import RULES_FILE, Place, follow
+from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
 
 HERE = Path(__file__).parent
@@ -144,13 +145,14 @@ class Site:
             if self.keep(loc, f"s/{p.id}.html", self.place_inputs(p, loc)):
                 continue
             rows, codes, story = [], set(), []
-            for rid in p.rounds:
+            for i, rid in enumerate(p.rounds):
                 a, s = self.analyses[rid], p.stations[rid]
                 flags = self.flagged[rid].get(s.key, [])
                 codes.update(f.code for f in flags)
                 ctrl = self.ctrl_of(rid)
+                older = p.stations[p.rounds[i + 1]] if i + 1 < len(p.rounds) else None
                 rows.append({"rid": rid, "short": cols[rid]["short"], "date": fmt_date(self.dates[rid], loc), "s": s,
-                             "how": p.how[rid] if s.number != p.newest.number else "",
+                             "how": p.how[rid] if older is not None and older.number != s.number else "",
                              "address": p.addresses.get(rid, ""), "flags": self.flag_view(a, flags, loc),
                              "notes": a.notes.get(s.key, []), "ctrl": ctrl.get(s.key), "ctrl_known": bool(ctrl),
                              "n_lists": len(a.round.contestants),
@@ -171,14 +173,15 @@ class Site:
             s = p.stations[rid]
             parts.append((rid, self.round_inputs[rid], s, self.flagged[rid].get(s.key), self.analyses[rid].notes.get(s.key),
                           self.ctrl_of(rid).get(s.key), self.mun_rows[rid][s.municipality_code],
-                          self.mun_votes[rid][s.municipality_code]))
+                          self.mun_votes[rid][s.municipality_code],
+                          self.peers[rid]["st"].get(s.municipality_code, {}).get("digest")))
         return repr(parts)
 
     def round_key(self, rid: str) -> str:
         """What a round's pages are made from: the archived files of this round and of the earlier ones (flags compare
         with them), and the pages its stations link to (place pages are named after the newest election)."""
         if rid not in self.round_keys:
-            files = []
+            files = [self.archive.root / RULES_FILE]  # manual corrections change which stations are compared
             for r in self.rids[: self.rids.index(rid) + 1]:
                 d = self.archive.dir(r)
                 files += [d / n for n in ("results.csv", "meta.json", "changes.jsonl", "snapshots.jsonl", "state.json",
@@ -213,6 +216,9 @@ class Site:
                                ref_turnout=m["turnout"], ref_invalid=m["invalid"])
         if s.counted:
             e.registered, e.turnout, e.invalid = s.registered, s.turnout, s.invalid_share
+            st = self.peers[rid]["st"].get(s.municipality_code, {})
+            e.rank_invalid = rank_of(e.invalid, st.get("invalid"))
+            e.rank_turnout = rank_of(e.turnout, st.get("turnout"))
             here, there = leading(s.votes), leading(mv)
             if here is not None:
                 e.leader = self.labels[rid][here]
@@ -228,6 +234,9 @@ class Site:
                                ref_turnout=totals.turnout, ref_invalid=totals.invalid_share, stations=m["stations"],
                                flagged=m["flagged"],
                                ref_flagged=len(self.flagged[rid]) / totals.stations if totals.stations else None)
+        if m["kind"] == "domestic":
+            e.rank_invalid = rank_of(m["invalid"], self.peers[rid]["mun"]["invalid"])
+            e.rank_turnout = rank_of(m["turnout"], self.peers[rid]["mun"]["turnout"])
         here, there = leading(mv), leading(totals.votes)
         if here is not None:
             e.leader = self.labels[rid][here]
@@ -245,8 +254,8 @@ class Site:
             by_code[p.code].append(p)
         for code, rids in self.mun_rounds.items():
             inputs = repr([code, rids, [(rid, self.round_inputs[rid], self.shorts[loc][rid], self.mun_rows[rid][code],
-                                         self.mun_votes[rid][code], self.analyses[rid].totals, len(self.flagged[rid]))
-                                        for rid in rids],
+                                         self.mun_votes[rid][code], self.analyses[rid].totals, len(self.flagged[rid]),
+                                         self.peers[rid]["mun"]["digest"]) for rid in rids],
                            [(p.id, p.rounds, p.newest.number, p.newest.name, p.former_numbers, self.flagged_in(p))
                             for p in by_code[code]], [self.shorts[loc][r] for r in newest_first if r not in rids]])
             if self.keep(loc, f"m/{code}.html", inputs):
@@ -273,8 +282,61 @@ class Site:
             analysis = narrative.municipality(elections, [cols[r]["short"] for r in newest_first if r not in rids],
                                               repeat, network, loc)
             self.write(loc, f"m/{code}.html", "municipality_history.html", code=code, mname=newest["name"],
+                       feed_href=f"{'../' * (PREFIX[loc] + 'm/').count('/')}feed/{code}.{'en' if loc == 'en' else 'sr'}.xml",
                        district=newest["district"] if newest["kind"] == "domestic" else "", rows=rows, places=places,
                        analysis=analysis, charts=self.trends(rids, elections, "all", loc))
+
+    def write_api(self) -> None:
+        """The data behind the pages across elections as JSON, for anyone who wants it without parsing HTML:
+        api/index.json (elections, municipalities, places), api/m/<code>.json and api/s/<place>.json. Names are as
+        RIK publishes them; shares are fractions; votes list each contestant with any vote, by ballot number."""
+        rounds = []
+        for rid in reversed(self.rids):
+            meta, rnd = self.archive.meta(rid), self.analyses[rid].round
+            rounds.append({"id": rid, "kind": rnd.kind, "date": self.dates[rid], "title": rnd.title,
+                           "title_en": meta.get("title_en", ""),
+                           "contestants": [{"number": c.number, "name": c.name, "short": c.short} for c in rnd.contestants]})
+        names = {code: self.mun_rows[rids[0]][code]["name"] for code, rids in self.mun_rounds.items()}
+        index = {"rounds": rounds,
+                 "municipalities": [{"code": c, "name": names[c], "rounds": self.mun_rounds[c]} for c in sorted(names)],
+                 "places": [{"id": p.id, "municipality": p.code, "number": p.newest.number, "name": p.newest.name}
+                            for p in self.places.places]}
+        self.put("api/index.json", dump(index))
+        by_code: dict[str, list[str]] = defaultdict(list)
+        for p in self.places.places:
+            by_code[p.code].append(p.id)
+            if not self.keep("lat", f"api/s/{p.id}.json", self.place_inputs(p, "lat")):
+                self.put(f"api/s/{p.id}.json", dump(self.place_json(p)))
+        for code, rids in self.mun_rounds.items():
+            elections = []
+            for rid in rids:
+                m, mv = self.mun_rows[rid][code], self.mun_votes[rid][code]
+                elections.append({"round": rid, "stations": m["stations"], "counted": m["counted"],
+                                  "registered": m["registered"], "voted": m["voted"], "turnout": m["turnout"],
+                                  "invalid_share": m["invalid"], "flagged": m["flagged"],
+                                  "votes": votes_json(self.analyses[rid].round.contestants, mv)})
+            data = {"code": code, "name": names[code], "elections": elections, "places": by_code[code]}
+            text = dump(data)
+            if not self.keep("lat", f"api/m/{code}.json", text):
+                self.put(f"api/m/{code}.json", text)
+
+    def place_json(self, p: Place) -> dict:
+        elections = []
+        for rid in p.rounds:
+            s, a = p.stations[rid], self.analyses[rid]
+            ctrl = self.ctrl_of(rid).get(s.key)
+            elections.append({
+                "round": rid, "number": s.number, "name": s.name, "joined_by": p.how[rid] or None,
+                "address": p.addresses.get(rid) or None, "registered": s.registered, "voted": s.voted,
+                "ballots": s.ballots, "valid": s.valid, "invalid": s.invalid, "turnout": s.turnout,
+                "invalid_share": s.invalid_share, "votes": votes_json(a.round.contestants, s.votes),
+                "flags": [{"code": f.code, "data": f.data} for f in self.flagged[rid].get(s.key, [])],
+                "minutes": [url for _, url in s.minutes_links], "corrections": [url for _, url in s.correction_links],
+                "controllers": ctrl.get("lists") if ctrl else None,
+                "notes": [{"date": n.date, "outlet": n.outlet, "url": n.url, "archive_url": n.archive_url,
+                           "summary_sr": n.summary_sr, "summary_en": n.summary_en} for n in a.notes.get(s.key, [])]})
+        return {"id": p.id, "municipality": {"code": p.code, "name": p.newest.municipality},
+                "number": p.newest.number, "name": p.newest.name, "address": p.address or None, "elections": elections}
 
     def write_search(self, loc: str) -> None:
         """search.json for the search on the home page, kept small. Municipalities: [name, code, elections]. Polling
@@ -406,18 +468,20 @@ class Site:
             self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, self.cache)
         rounds = [self.analyses[r] for r in reversed(rids)]
         oldest_first = [self.analyses[r] for r in rids]
-        rep_rows, rep_once = repeat.stations(oldest_first)
+        # the same polling place across elections (address, name, number, manual corrections): the checks used
+        # these links too, and the history table, the search and the pages across elections all follow them
+        self.places = links(self.archive, rids[-1], self.cache) if rids else follow([])
+        rep_rows, rep_once = repeat.stations(oldest_first, self.places)
         rep_muns, national = repeat.municipalities(oldest_first)
         rep_same = repeat.same_counts(rep_rows)
         rep_n2 = sum(1 for r in rep_rows if r["k"] >= 2)
-        places, by_code = set(), defaultdict(set)
+        by_code = defaultdict(set)
         for a in oldest_first:
-            places.update(s.key for s in a.round.stations)
             for key, flags in a.by_station.items():
                 for f in flags:
-                    by_code[f.code].add(key)
-        overall = {"flagged": len(rep_rows), "total": len(places), "repeated": rep_n2,
-                   "counts": {code: len(keys) for code, keys in by_code.items()}}
+                    by_code[f.code].add(self.places.of(a.round.id, key).id)
+        overall = {"flagged": len(rep_rows), "total": len(self.places.places), "repeated": rep_n2,
+                   "counts": {code: len(ids) for code, ids in by_code.items()}}
         group_of = {c.code: c.group for c in CHECKS}
         # the same polling place and municipality across elections, for the search and the pages across elections
         self.rids = rids
@@ -429,16 +493,16 @@ class Site:
                                                [(c.number, c.name, c.short) for c in a.round.contestants]))
                              for a in oldest_first}
         self.round_keys: dict[str, str] = {}
-        self.places = follow([(a.round.id, a.round.stations, boards.addresses(boards.load_store(self.archive.dir(a.round.id))))
-                              for a in oldest_first])
         self.mun_rows, self.mun_votes = {}, {}
         self.mun_rounds: dict[str, list[str]] = defaultdict(list)  # municipality code → round ids, newest first
+        self.peers: dict[str, dict] = {}  # round id → sorted values to rank stations and municipalities by
         for a in rounds:
             rid = a.round.id
             self.mun_rows[rid] = {m["code"]: m for m in self.municipalities(a)}
             self.mun_votes[rid] = municipality_votes(a.round)
             for code in self.mun_rows[rid]:
                 self.mun_rounds[code].append(rid)
+            self.peers[rid] = peer_values(a.round, self.mun_rows[rid])
         top = max(overall["counts"].values(), default=0) or 1
         appear = [{"code": c.code, "group": c.group, "n": overall["counts"][c.code],
                    "w": 100 * overall["counts"][c.code] / top}
@@ -472,11 +536,18 @@ class Site:
             self.municipality_history_pages(loc, cols)
             for a in rounds:
                 self.round_pages(a, loc)
+        self.write_api()
         # GitHub Pages serves this file for a missing page at any depth, so its links are absolute.
         self.write("lat", "404.html", "404.html", root=self.site_url,
                    link=lambda target: self.site_url + target)
         self.put("feed.sr.xml", feed.build(self.archive.root, self.archive, "lat", self.site_url))
         self.put("feed.en.xml", feed.build(self.archive.root, self.archive, "en", self.site_url))
+        entries = feed.load_entries(self.archive.root)
+        for code, rids in self.mun_rounds.items():  # one feed per municipality, for observers who follow one place
+            name = self.mun_rows[rids[0]][code]["name"]
+            for loc, lang in (("lat", "sr"), ("en", "en")):
+                self.put(f"feed/{code}.{lang}.xml", feed.build(self.archive.root, self.archive, loc, self.site_url,
+                                                               municipality=(code, name), entries=entries))
         self.finish()
         return self.out
 
@@ -615,6 +686,42 @@ def strength(code: str) -> tuple[int, int, str]:
     """Flags in the order the site lists them: paperwork first, then the heavier ones (by name when equal, so every
     build lists them alike)."""
     return GROUPS.index(BY_CODE[code].group), -BY_CODE[code].weight, code
+
+
+def dump(data) -> str:
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+
+
+def votes_json(contestants, votes: list) -> list[list[int]]:
+    """[ballot number, votes] for each contestant with any vote."""
+    return [[c.number, votes[i]] for i, c in enumerate(contestants) if i < len(votes) and votes[i]]
+
+
+PEERS_MIN = 5  # fewer peers than this, and a rank says little
+
+
+def peer_values(rnd, municipalities: dict[str, dict]) -> dict:
+    """Sorted invalid shares and turnouts to rank by: each municipality's counted stations, and the municipalities in
+    Serbia (not abroad or prisons). A digest of each set goes into the pages' fingerprints."""
+    by_code: dict[str, list] = defaultdict(list)
+    for s in rnd.stations:
+        if s.counted:
+            by_code[s.municipality_code].append(s)
+
+    def entry(invalid: list, turnout: list) -> dict:
+        out = {"invalid": sorted(v for v in invalid if v is not None), "turnout": sorted(v for v in turnout if v is not None)}
+        out["digest"] = hashlib.blake2b(repr(out).encode(), digest_size=8).hexdigest()
+        return out
+    domestic = [m for m in municipalities.values() if m["kind"] == "domestic"]
+    return {"st": {code: entry([s.invalid_share for s in sts], [s.turnout for s in sts]) for code, sts in by_code.items()},
+            "mun": entry([m["invalid"] for m in domestic], [m["turnout"] for m in domestic])}
+
+
+def rank_of(value: float | None, values: list | None) -> tuple[int, int] | None:
+    """Rank from the highest (ties share a rank) and the number ranked; None with too few values."""
+    if value is None or not values or len(values) < PEERS_MIN:
+        return None
+    return 1 + len(values) - bisect.bisect_right(values, value), len(values)
 
 
 def leading(votes: list) -> int | None:

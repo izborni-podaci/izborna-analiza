@@ -38,6 +38,8 @@ class Election:
     stations: int = 0  # for a municipality: its polling stations in that election
     flagged: int = 0  # for a municipality: stations flagged
     ref_flagged: float | None = None  # for a municipality: share of stations flagged in the whole election
+    rank_invalid: tuple[int, int] | None = None  # (rank from the highest, out of how many) among its peers
+    rank_turnout: tuple[int, int] | None = None
 
 
 def short_label(label: str) -> str:
@@ -171,11 +173,21 @@ def place_changes(rows: list[Election], absent: list[str], loc: str) -> list[str
     return out
 
 
+def rank(rows: list[Election], what: str, peers: str, loc: str) -> str | None:
+    """Where the newest election puts this place among its peers (the stations of its municipality, or all
+    municipalities), counting from the highest. Left out with fewer than five peers."""
+    now = next((r for r in rows if getattr(r, what) is not None), None)
+    if now is None or getattr(now, f"rank_{what}") is None:
+        return None
+    r, n = getattr(now, f"rank_{what}")
+    return t(f"an_rank_{what}_{peers}", loc, short=now.short, r=fmt_int(r, loc), n=fmt_int(n, loc))
+
+
 def place(rows: list[Election], absent: list[str], loc: str) -> list[str]:
     """The paragraphs at the top of a polling place's page. rows: newest election first."""
     paragraphs = [
-        [*flags(rows, loc), invalid(rows, "mun", loc)],
-        [turnout(rows, "mun", loc), registered(rows, loc)],
+        [*flags(rows, loc), invalid(rows, "mun", loc), rank(rows, "invalid", "mun", loc)],
+        [turnout(rows, "mun", loc), rank(rows, "turnout", "mun", loc), registered(rows, loc)],
         [leader(rows, "mun", loc)],
         place_changes(rows, absent, loc),
     ]
@@ -193,7 +205,7 @@ def municipality(rows: list[Election], absent: list[str], repeat: tuple[int, int
                overall=fmt_pct(now.ref_flagged, loc))]
     if len(rows) >= 2:
         first.append(t("an_mun_repeat", loc, a=fmt_int(repeat[0], loc), b=fmt_int(repeat[1], loc)))
-    first.append(invalid(rows, "all", loc))
+    first.extend([invalid(rows, "all", loc), rank(rows, "invalid", "all", loc)])
     changes = []
     if len(rows) >= 2:
         old = rows[-1]
@@ -204,5 +216,6 @@ def municipality(rows: list[Election], absent: list[str], repeat: tuple[int, int
         changes.append(text + ("; " + ", ".join(parts) if parts else "") + ".")
     if absent:
         changes.append(t("mun_absent", loc, list=", ".join(absent)))
-    paragraphs = [first, [turnout(rows, "all", loc), registered(rows, loc)], [leader(rows, "all", loc)], changes]
+    paragraphs = [first, [turnout(rows, "all", loc), rank(rows, "turnout", "all", loc), registered(rows, loc)],
+                  [leader(rows, "all", loc)], changes]
     return [" ".join(s for s in p if s) for p in paragraphs if any(p)]

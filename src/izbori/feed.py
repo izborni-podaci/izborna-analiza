@@ -80,14 +80,24 @@ def flag_lines(entry: dict, loc: str, archive: Archive, limit: int | None = SHOW
     return lines
 
 
-def build(data_root: Path, archive: Archive, loc: str, site_url: str) -> str:
-    entries = list(reversed(load_entries(data_root)))
+def build(data_root: Path, archive: Archive, loc: str, site_url: str, municipality: tuple[str, str] | None = None,
+          entries: list[dict] | None = None) -> str:
+    """The Atom feed for the whole site, or with municipality=(code, name) only that municipality's flags: an entry
+    for each fetch that flagged one of its stations, linking to the municipality in that election."""
+    entries = list(reversed(load_entries(data_root) if entries is None else entries))
     lang = "en" if loc == "en" else "sr"
     feed_url = f"{site_url}feed.{lang}.xml"
+    feed_title = t("feed_title", loc)
+    if municipality:
+        code, name = municipality
+        entries = [{**e, "flags": [x for x in e["flags"] if x.get("mc") == code]} for e in entries]
+        entries = [e for e in entries if e["flags"]]
+        feed_url = f"{site_url}feed/{code}.{lang}.xml"
+        feed_title = t("feed_title_mun", loc, name=latin(name) if loc == "en" else name)
     updated = entries[0]["t"] if entries else "2026-01-01T00:00:00+00:00"
     out = ['<?xml version="1.0" encoding="utf-8"?>',
            f'<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="{lang}">',
-           f"<title>{escape(t('feed_title', loc))}</title>",
+           f"<title>{escape(feed_title)}</title>",
            f"<id>{escape(feed_url)}</id>",
            f"<link rel=\"self\" href={quoteattr(feed_url)}/>",
            f"<link href={quoteattr(site_url + PREFIX[loc])}/>",
@@ -96,13 +106,13 @@ def build(data_root: Path, archive: Archive, loc: str, site_url: str) -> str:
     for e in entries:
         title = t("feed_entry", loc, title=f"{kind_name(e.get('kind', ''), loc)} · {entry_title(e, loc, archive)}",
                   n=fmt_int(len(e["flags"]), loc))
-        link = f"{site_url}{PREFIX[loc]}r/{e['round']}/check.html"
+        link = f"{site_url}{PREFIX[loc]}r/{e['round']}/" + (f"m/{municipality[0]}.html" if municipality else "check.html")
         progress = t("counted_of", loc, counted=fmt_int(e["counted"], loc), total=fmt_int(e["total"], loc))
         body = "<p>" + escape(progress) + "</p><ul>" + "".join(
             f"<li>{escape(line)}</li>" for line in flag_lines(e, loc, archive)) + "</ul>"
         out += ["<entry>",
                 f"<title>{escape(title)}</title>",
-                f"<id>{escape(f'{site_url}#{e['round']}-{e['t']}-{lang}')}</id>",
+                f"<id>{escape(f'{feed_url}#{e['round']}-{e['t']}' if municipality else f'{site_url}#{e['round']}-{e['t']}-{lang}')}</id>",
                 f"<link href={quoteattr(link)}/>",
                 f"<updated>{escape(e['t'])}</updated>",
                 f"<content type=\"html\">{escape(body)}</content>",

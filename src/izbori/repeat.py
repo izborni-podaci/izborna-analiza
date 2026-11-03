@@ -1,35 +1,41 @@
 """Polling stations and municipalities flagged again and again, across every archived election.
 
-A station is recognised by municipality and number. Station areas and addresses change between elections, so a
-row also notes the elections in which the station's name clearly differs from its newest one."""
+A station is followed as a place: by address, name and number (places.py). A row notes the elections in which the
+station had another number than its newest one."""
 
 from __future__ import annotations
 
 from collections import Counter, defaultdict
 
-from izbori.checks import BY_CODE, same_place
+from izbori.checks import BY_CODE
 from izbori.targets import DECAY
 
 TWICE = 2.0  # a municipality stands out in an election when its share of stations to check is at least this × national
 
 
-def stations(analyses: list) -> tuple[list[dict], int]:
-    """Every station flagged in at least one election, most elections first, then by score; and how many were
-    flagged in only one. analyses: oldest election first."""
+def stations(analyses: list, places=None) -> tuple[list[dict], int]:
+    """Every place flagged in at least one election, most elections first, then by score; and how many were
+    flagged in only one. analyses: oldest election first; places: places.Places across them (without them, the
+    rounds are followed by name and number alone)."""
+    if places is None:
+        from izbori.places import follow
+        places = follow([(a.round.id, a.round.stations, {}) for a in analyses])
     rows: dict[str, dict] = {}
     for age, a in enumerate(reversed(analyses)):
         weight = DECAY ** age
         rid = a.round.id
         for s in a.round.stations:
-            row = rows.get(s.key)
+            p = places.of(rid, s.key)
+            row = rows.get(p.id)
             if row is None:
-                row = rows[s.key] = {"key": s.key, "station": s, "rid": rid, "took": set(), "flags": {},
-                                     "score": 0.0, "renamed": set()}
-            elif s.name and row["station"].name and not same_place(row["station"], s):
+                row = rows[p.id] = {"key": p.newest.key, "id": p.id, "station": p.newest, "rid": p.rounds[0],
+                                    "took": set(), "flags": {}, "score": 0.0, "renamed": set()}
+            if s.number != p.newest.number:
                 row["renamed"].add(rid)
             row["took"].add(rid)
         for key, flags in a.by_station.items():
-            row = rows.get(key)
+            p = places.of(rid, key)
+            row = rows.get(p.id) if p else None
             if row is None:
                 continue
             codes = sorted({f.code for f in flags}, key=lambda c: (-BY_CODE[c].weight, c))

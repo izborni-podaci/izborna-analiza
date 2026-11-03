@@ -6,41 +6,42 @@
 <p class="kicker">{{ name(s.municipality) }} · {{ t('station_history') }}</p>
 <h1 class="station-title">{{ t('station_no') }} {{ s.number }}{% if s.name %} · {{ name(s.name) }}{% endif %}</h1>
 {% if address %}<p class="muted">{{ t('address') }}: {{ name(address) }}</p>{% endif %}
+<p class="tools"><button type="button" class="link-button" data-print hidden>{{ t('print') }}</button></p>
 {{ mx.analysis(analysis) }}
 {{ mx.trends(charts, t('trend_here_place'), t('trend_ref_mun')) }}
 <p class="rule">{{ t('place_lede') }}</p>
 
 <div class="table-wrap history-wrap">
-<table class="history">
-  <thead><tr>
-    <th>{{ t('home_col_election') }}</th><th>{{ t('station') }}</th>
-    <th class="num">{{ t('registered') }}</th><th class="num">{{ t('voted') }}</th><th class="num">{{ t('turnout') }}</th>
-    <th class="num">{{ t('invalid') }}</th><th>{{ t('top_three') }}</th><th>{{ t('flags') }}</th>
+<table class="history" role="table">
+  <thead role="rowgroup"><tr role="row">
+    <th role="columnheader">{{ t('home_col_election') }}</th><th role="columnheader">{{ t('station') }}</th>
+    <th role="columnheader" class="num">{{ t('registered') }}</th><th role="columnheader" class="num">{{ t('voted') }}</th><th role="columnheader" class="num">{{ t('turnout') }}</th>
+    <th role="columnheader" class="num">{{ t('invalid') }}</th><th role="columnheader">{{ t('top_three') }}</th><th role="columnheader">{{ t('flags') }}</th>
   </tr></thead>
-  <tbody>
+  <tbody role="rowgroup">
   {% for e in rows %}
-    <tr{% if e.flags %} class="flagged"{% endif %}>
+    <tr role="row"{% if e.flags %} class="flagged"{% endif %}>
       {{ mx.history_election(e, link('r/' ~ e.rid ~ '/m/' ~ e.s.municipality_code ~ '.html') ~ '#bm-' ~ e.s.number) }}
-      <td class="block" data-label="{{ t('station') }}"><span class="nowrap">{{ t('station_no') }} {{ e.s.number }}</span>{% if e.s.name %} · {{ name(e.s.name) }}{% endif %}{% if e.how %} <span class="joined small muted">({{ t('joined_' ~ e.how) }})</span>{% endif %}
+      <td role="cell" class="block" data-label="{{ t('station') }}"><span class="nowrap">{{ t('station_no') }} {{ e.s.number }}</span>{% if e.s.name %} · {{ name(e.s.name) }}{% endif %}{% if e.how %} <span class="joined small muted">({{ t('joined_' ~ e.how) }})</span>{% endif %}
         {% if e.ctrl_known %}{{ mx.controllers(e.ctrl, e.n_lists) }}{% elif e.address %}<p class="small muted">{{ t('address') }}: {{ name(e.address) }}</p>{% endif %}
         <div class="docs small">{{ mx.doc_links(e.s) }}</div></td>
       {% if e.s.counted %}
-      <td class="num" data-label="{{ t('registered') }}">{{ i(e.s.registered) }}</td>
-      <td class="num" data-label="{{ t('voted') }}">{{ i(e.s.voted) }}</td>
-      <td class="num" data-label="{{ t('turnout') }}">{{ pct(e.s.turnout, 1) }}</td>
-      <td class="num" data-label="{{ t('invalid') }}">{{ i(e.s.invalid) }}</td>
+      <td role="cell" class="num" data-label="{{ t('registered') }}">{{ i(e.s.registered) }}</td>
+      <td role="cell" class="num" data-label="{{ t('voted') }}">{{ i(e.s.voted) }}</td>
+      <td role="cell" class="num" data-label="{{ t('turnout') }}">{{ pct(e.s.turnout, 1) }}</td>
+      <td role="cell" class="num" data-label="{{ t('invalid') }}">{{ i(e.s.invalid) }}</td>
       {{ mx.history_top(e.top) }}
       {% else %}
-      <td class="num" data-label="{{ t('registered') }}">{{ i(e.s.registered) }}</td>
-      <td colspan="4" class="muted" data-label="{{ t('voted') }}">{{ t('not_counted') }}</td>
+      <td role="cell" class="num" data-label="{{ t('registered') }}">{{ i(e.s.registered) }}</td>
+      <td role="cell" colspan="4" class="muted" data-label="{{ t('voted') }}">{{ t('not_counted') }}</td>
       {% endif %}
-      <td class="block" data-label="{{ t('flags') }}">{% if e.flags %}{{ mx.chips(e.flags) }}{% else %}<span class="muted">{{ t('repeat_no_flag_short') }}</span>{% endif %}{{ mx.notes_list(e.notes) }}</td>
+      <td role="cell" class="block" data-label="{{ t('flags') }}">{% if e.flags %}{{ mx.chips(e.flags) }}{% else %}<span class="muted">{{ t('repeat_no_flag_short') }}</span>{% endif %}{{ mx.notes_list(e.notes) }}</td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
 </div>
-<p class="rule">{{ t('place_rule') }}</p>
+<p class="rule">{{ t('place_rule') }} <a href="{{ root }}api/s/{{ p.id }}.json" type="application/json">{{ t('json_link') }}</a></p>
 
 {% if hints %}
 <section>

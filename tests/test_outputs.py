@@ -158,7 +158,7 @@ def test_search_leads_to_pages_across_elections(site):
 def test_municipality_across_elections(site):
     # Novi Sad voted in the presidential 2022, parliamentary 2023, provincial 2023 and parliamentary 2026 elections
     page = (site / "m/89010.html").read_text(encoding="utf-8")
-    rows = re.findall(r'<th scope="row" class="election"><a href="\.\./r/(\d+)/m/89010\.html">', page)
+    rows = re.findall(r'<th scope="row" role="rowheader" class="election"><a href="\.\./r/(\d+)/m/89010\.html">', page)
     assert rows == ["680072", "341143", "341140", "42732"]  # newest first, one row each
     assert "Opština nije glasala na: Lokalni 2024." in page
     assert "Biračkih mesta za proveru (Parlamentarni 2026): 7 od 221" in page
@@ -233,7 +233,7 @@ def test_incremental_build_matches_a_full_build(tmp_path, archive):
     assert full.kept == 0
     shutil.copytree(tmp_path / "a", tmp_path / "b")
     again = run(tmp_path / "b" / "site", True)
-    assert again.kept > 1000 and again.rendered < 50  # only the pages every build writes
+    assert again.kept > 1000 and again.rendered < full.rendered / 10  # only what every build writes (feeds, search)
     assert same(tmp_path / "a" / "site", tmp_path / "b" / "site")
 
     # a correction at one Belgrade station

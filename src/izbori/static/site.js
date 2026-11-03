@@ -30,6 +30,12 @@
   }
   const fmt = new Intl.NumberFormat(lang.startsWith('sr') ? 'sr-Latn' : 'en');
 
+  // A station's page on paper, for election day; without scripts the browser's own print does the same.
+  document.querySelectorAll('[data-print]').forEach((b) => {
+    b.hidden = false;
+    b.addEventListener('click', () => window.print());
+  });
+
   // Search on the home page: municipalities and polling places from search.json, loaded on first use. Every result
   // opens its page across all elections.
   const search = document.querySelector('form[data-search]');

@@ -300,9 +300,22 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
   .card { padding: 14px; }
 }
 @media print {
-  header.top, .filters, .round-nav, .foot, .theme-toggle { display: none; }
+  header.top, .filters, .round-nav, .foot, .theme-toggle, .crumbs, .tools { display: none; }
   body { background: #fff; color: #000; }
+  /* paper is always light, whatever theme the screen uses */
+  :root, :root[data-theme="dark"], :root:not([data-theme="light"]) {
+    --page: #fff; --surface: #fff; --ink: #000; --ink-2: #444; --grid: #ddd; --axis: #bbb; --border: #ccc;
+    --link: #000; --accent: #c2410c; --accent-track: #f3e6de;
+  }
+  .wrap { max-width: none; padding: 0; }
+  .table-wrap { overflow: visible; border: 0; }
+  table.history tr, .analysis p, figure { break-inside: avoid; }
+  .analysis { border-left-width: 2px; }
+  a { text-decoration: none; }
+  .chart .hit { display: none; }
 }
+.tools { margin: 0 0 6px; font-size: 0.9rem; }
+.link-button { font: inherit; color: var(--link); background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .example .kicker { margin-top: 0; }
 

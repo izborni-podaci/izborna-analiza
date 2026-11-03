@@ -5,11 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from izbori import boards
 from izbori.checks import Flag, group_by_station, station_flags
 from izbori.contests import Presidential, Proportional, Totals, evaluate
 from izbori.history import Archive
 from izbori.model import Round
 from izbori.notes import Note, load_notes
+from izbori.places import RULES_FILE, Places, follow, load_rules
 
 
 @dataclass
@@ -55,13 +57,34 @@ def analyze(archive: Archive, rid: str, notes_dir: Path | None = None, cache: di
     previous_ids.sort(key=lambda r: archive.meta(r).get("kind") != kind)
     previous = [load(r) for r in previous_ids]
     changes = archive.changes(rid)
-    flags = station_flags(rnd, changes, previous)
+    flags = station_flags(rnd, changes, previous, links(archive, rid, cache))
     totals, contest = evaluate(rnd)
     return Analysis(
         round=rnd, totals=totals, contest=contest, flags=flags, changes=changes,
         snapshots=archive.snapshots(rid), notes=load_notes(notes_dir, rid) if notes_dir else {},
         flags_seen=archive.flags_seen(rid), previous=previous_ids,
     )
+
+
+def addresses(archive: Archive, rid: str, cache: dict) -> dict[str, str]:
+    key = ("addresses", rid)
+    if key not in cache:
+        cache[key] = boards.addresses(boards.load_store(archive.dir(rid)))
+    return cache[key]
+
+
+def links(archive: Archive, rid: str, cache: dict | None = None) -> Places:
+    """The places from the first archived round up to this one, with addresses and the manual corrections. They
+    run forward in time, so they agree with the places the site shows for these rounds."""
+    cache = cache if cache is not None else {}
+    ids = archive.round_ids()
+    ids = ids[: ids.index(rid) + 1] if rid in ids else [rid]
+    rounds = []
+    for r in ids:
+        if r not in cache:
+            cache[r] = archive.load(r)
+        rounds.append((r, cache[r].stations, addresses(archive, r, cache)))
+    return follow(rounds, load_rules(archive.root / RULES_FILE))
 
 
 def record_new_flags(archive: Archive, analysis: Analysis, when: str) -> list[str]:

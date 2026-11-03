@@ -14,24 +14,26 @@ from izbori.describe import describe
 from izbori.history import Archive
 from izbori.i18n import check_name, fmt_num, latin_page, t
 from izbori.links import safe_url
-from izbori.report import analyze
+from izbori.report import analyze, links
 from izbori.translit import latin
 
 DECAY = 0.7  # each older round counts 70% of the one after it
 
 
 def rank(archive: Archive, notes_dir: Path | None = None, rids: list[str] | None = None) -> list[dict]:
+    """Places (followed by address, name and number across elections) scored by their flags, newest first. Each row
+    names the place's newest station; an older station that was renumbered counts toward the same row."""
     ids = rids or archive.round_ids()
     cache: dict = {}
     rows: dict[str, dict] = {}
+    places = links(archive, ids[-1], cache) if ids else None
     for age, rid in enumerate(reversed(ids)):
         a = analyze(archive, rid, notes_dir, cache)
         weight = DECAY ** age
-        stations = {s.key: s for s in a.round.stations}
         for key, flags in a.by_station.items():
-            row = rows.setdefault(key, {"key": key, "score": 0.0, "station": None, "reasons": [], "notes": []})
-            if row["station"] is None:
-                row["station"] = stations.get(key)
+            p = places.of(rid, key)
+            row = rows.setdefault(p.id, {"key": p.newest.key, "score": 0.0, "station": p.newest, "rid": p.rounds[0],
+                                         "reasons": [], "notes": []})
             row["score"] += weight * sum(f.check.weight for f in flags)
             row["reasons"].extend((a.round, f) for f in flags)
             row["notes"].extend(a.notes.get(key, []))
@@ -39,8 +41,8 @@ def rank(archive: Archive, notes_dir: Path | None = None, rids: list[str] | None
         latest = ids[-1]
         ctrl = boards.coverage(boards.load_store(archive.dir(latest)))
         n_lists = len(archive.meta(latest).get("contestants") or [])
-        for key, row in rows.items():
-            c = ctrl.get(key)
+        for row in rows.values():
+            c = ctrl.get(row["key"]) if row["rid"] == latest else None
             if c is not None and c["lists"] is None:
                 c = None
             row["ctrl"] = None if c is None else sorted(int(n) for n, v in c["lists"].items() if v["member"])

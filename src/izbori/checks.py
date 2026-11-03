@@ -180,33 +180,31 @@ GENERIC = {"OSNOVNA", "SKOLA", "DOM", "KULTURE", "MESNA", "ZAJEDNICA", "SALA", "
            "UCIONICA", "HOL", "SREDNJA", "OPSTINE", "SKUPSTINA", "OBDANISTE", "VRTIC", "DECJI"}
 
 
-def same_place(a: Station, b: Station) -> bool:
-    """False when two stations with the same number clearly have different names (the network was renumbered)."""
-    from izbori.boards import tokens
-    ta, tb = tokens(a.name) - GENERIC, tokens(b.name) - GENERIC
-    return not (ta and tb and not ta & tb)
+def history_flags(rnd: Round, previous: list[Round], links=None) -> list[Flag]:
+    """Turnout at a station compared with the same place in the last earlier round that has it (same kind of
+    election first). The place is followed by address, name and number (places.py), so a renumbered station is
+    still compared with itself and a new station on an old number is not. The baseline is the median change at the
+    municipality's other stations, so regional swings and a different kind of election don't count. Registered
+    voters are compared per municipality instead (see stats.register_changes): station areas are redrawn between
+    elections, which moves voters around.
 
-
-def history_flags(rnd: Round, previous: list[Round]) -> list[Flag]:
-    """Turnout at a station compared with the last earlier round that has the same station (same kind of
-    election first). The baseline is the median change at the municipality's other stations, so regional swings
-    and a different kind of election don't count. Registered voters are compared per municipality instead
-    (see stats.register_changes): station areas are redrawn between elections, which moves voters around."""
-    now = {s.key: s for s in rnd.stations if s.counted and s.kind == "domestic"}
-    earlier = []
-    for prev in previous:
-        before = {s.key: s for s in prev.stations if s.counted and s.kind == "domestic"}
-        if any(k in before for k in now):
-            earlier.append((prev, before))
+    links: the places across these rounds (report.analyze passes them with addresses and manual corrections);
+    without them, the rounds are followed by name and number alone, taking `previous` newest first."""
+    if links is None:
+        from izbori.places import follow
+        links = follow([(r.id, r.stations, {}) for r in reversed(previous)] + [(rnd.id, rnd.stations, {})])
     pairs = []
-    for key, s in now.items():
-        for prev, before in earlier:
-            p = before.get(key)
-            if p is not None:
-                if s.registered >= RULES["jump_min_registered"] and p.registered >= RULES["jump_min_registered"] \
-                        and same_place(s, p):
-                    pairs.append((s, p, prev))
-                break
+    for s in rnd.stations:
+        if not (s.counted and s.kind == "domestic"):
+            continue
+        place = links.of(rnd.id, s.key)
+        for prev in previous:
+            p = place.stations.get(prev.id) if place else None
+            if p is None or not (p.counted and p.kind == "domestic"):
+                continue
+            if s.registered >= RULES["jump_min_registered"] and p.registered >= RULES["jump_min_registered"]:
+                pairs.append((s, p, prev))
+            break
     by_mun: dict[tuple, list[float]] = defaultdict(list)
     by_round: dict[str, list[float]] = defaultdict(list)
     for s, p, prev in pairs:
@@ -223,7 +221,8 @@ def history_flags(rnd: Round, previous: list[Round]) -> list[Flag]:
     return out
 
 
-def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[Round] | None = None) -> list[Flag]:
+def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[Round] | None = None,
+                  links=None) -> list[Flag]:
     counted = [s for s in rnd.stations if s.counted]
     by_mun: dict[str, list[Station]] = defaultdict(list)
     by_addr: dict[tuple, list[Station]] = defaultdict(list)
@@ -241,7 +240,7 @@ def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[
     if changes:
         flags.extend(change_flags(changes, {s.key: s for s in rnd.stations}))
     if previous:
-        flags.extend(history_flags(rnd, previous))
+        flags.extend(history_flags(rnd, previous, links))
     order = {c.code: i for i, c in enumerate(CHECKS)}
     flags.sort(key=lambda f: (f.station, order[f.code]))
     return flags
