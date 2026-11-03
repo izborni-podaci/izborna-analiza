@@ -8,7 +8,10 @@ from __future__ import annotations
 import re
 import json
 import shutil
+import hashlib
+import platform
 from collections import Counter, defaultdict
+from importlib.metadata import version
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -22,7 +25,7 @@ from izbori.describe import describe, field_label
 from izbori.history import Archive
 from izbori.links import safe_url
 from izbori.model import last_url
-from izbori.i18n import (LANG_ATTR, LOCALES, MONTHS_EN, PREFIX, check_name, check_rule, fmt_int, fmt_num, fmt_pct,
+from izbori.i18n import (LANG_ATTR, LOCALES, MONTHS_EN, PREFIX, S, check_name, check_rule, fmt_int, fmt_num, fmt_pct,
                          fmt_time, keep, kind_name, latin_page, strip_keep, t)
 from izbori import narrative
 from izbori.places import Place, follow
@@ -36,11 +39,24 @@ LOOKALIKE = str.maketrans("AaEeOoPpCcXxKkMHTBy", "АаЕеОоРрСсХхКкМ
 
 
 class Site:
-    def __init__(self, archive: Archive, out: Path, notes_dir: Path | None, site_url: str = SITE_URL):
+    """The whole site. With incremental=True the previous build in `out` is kept, and a page is rendered again only
+    when what it shows has changed: each page's inputs are fingerprinted and the fingerprints saved next to the
+    output (`<out>.state.json`). Changed code, templates or packages rebuild every page; files no page produced any
+    more are removed, so the result is the same as a full build."""
+
+    def __init__(self, archive: Archive, out: Path, notes_dir: Path | None, site_url: str = SITE_URL,
+                 incremental: bool = False):
         self.archive = archive
         self.out = Path(out)
         self.notes_dir = notes_dir
         self.site_url = site_url
+        self.incremental = incremental
+        self.state_path = self.out.parent / (self.out.name + ".state.json")
+        self.version = code_version()
+        self.previous: dict[str, str] = {}
+        self.state: dict[str, str] = {}
+        self.produced: set[str] = set()
+        self.kept = self.rendered = 0
         self.env = Environment(loader=FileSystemLoader(HERE / "templates"), autoescape=select_autoescape(),
                                trim_blocks=True, lstrip_blocks=True)
         self.env.filters["url"] = safe_url
@@ -74,9 +90,26 @@ class Site:
     def write(self, loc: str, page: str, template: str, **extra) -> None:
         html = self.env.get_template(template).render(**self.context(loc, page, **extra))
         html = latin_page(html) if loc == "lat" else strip_keep(html)
-        path = self.out / (PREFIX[loc] + page)
+        self.put(PREFIX[loc] + page, html)
+
+    def put(self, rel: str, text: str) -> None:
+        path = self.out / rel
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(html, encoding="utf-8")
+        path.write_text(text, encoding="utf-8")
+        self.produced.add(rel)
+        self.rendered += 1
+
+    def keep(self, loc: str, page: str, inputs: str) -> bool:
+        """Record what the page is made from; True when the previous build already has it from the same inputs, so
+        it needn't be rendered again."""
+        rel = PREFIX[loc] + page
+        fp = hashlib.blake2b(f"{self.version}|{loc}|{inputs}".encode(), digest_size=16).hexdigest()
+        self.state[rel] = fp
+        if self.previous.get(rel) == fp and (self.out / rel).exists():
+            self.produced.add(rel)
+            self.kept += 1
+            return True
+        return False
 
     # --- view models -------------------------------------------------------------------------
     def st_path(self, rid: str, key: str) -> str:
@@ -108,6 +141,8 @@ class Site:
         newest first, every election alike, each linking to the station's row in that election."""
         group_of = {c.code: c.group for c in CHECKS}
         for p in self.places.places:
+            if self.keep(loc, f"s/{p.id}.html", self.place_inputs(p, loc)):
+                continue
             rows, codes, story = [], set(), []
             for rid in p.rounds:
                 a, s = self.analyses[rid], p.stations[rid]
@@ -125,7 +160,50 @@ class Site:
             self.write(loc, f"s/{p.id}.html", "station.html", p=p, s=p.newest, rows=rows, address=p.address,
                        hints=hints, group_of=group_of,
                        analysis=narrative.place(story, [cols[r]["short"] for r in self.mun_rounds[p.code]
-                                                        if r not in p.stations], loc))
+                                                        if r not in p.stations], loc),
+                       charts=self.trends(p.rounds, story, "mun", loc))
+
+    def place_inputs(self, p: Place, loc: str) -> str:
+        """Everything a place's page is made from, as text to fingerprint."""
+        parts = [p.id, p.rounds, sorted(p.how.items()), sorted(p.addresses.items()),
+                 [(r, self.shorts[loc][r], self.dates[r]) for r in self.mun_rounds[p.code]]]
+        for rid in p.rounds:
+            s = p.stations[rid]
+            parts.append((rid, self.round_inputs[rid], s, self.flagged[rid].get(s.key), self.analyses[rid].notes.get(s.key),
+                          self.ctrl_of(rid).get(s.key), self.mun_rows[rid][s.municipality_code],
+                          self.mun_votes[rid][s.municipality_code]))
+        return repr(parts)
+
+    def round_key(self, rid: str) -> str:
+        """What a round's pages are made from: the archived files of this round and of the earlier ones (flags compare
+        with them), and the pages its stations link to (place pages are named after the newest election)."""
+        if rid not in self.round_keys:
+            files = []
+            for r in self.rids[: self.rids.index(rid) + 1]:
+                d = self.archive.dir(r)
+                files += [d / n for n in ("results.csv", "meta.json", "changes.jsonl", "snapshots.jsonl", "state.json",
+                                          "flags_seen.json", "first_seen.json", "boards.json")]
+                if self.notes_dir:
+                    files.append(Path(self.notes_dir) / f"{r}.csv")
+            links = hashlib.sha256("|".join(self.st_path(rid, s.key) for s in self.analyses[rid].round.stations).encode())
+            self.round_keys[rid] = file_digest(*files) + links.hexdigest()
+        return self.round_keys[rid]
+
+    def trends(self, rids: list[str], rows: list[narrative.Election], ref: str, loc: str) -> list[dict]:
+        """The charts across elections for a page: turnout and the share of invalid ballots, each drawn when it is
+        known in at least two elections. rids and rows: newest first; ref: "mun" or "all"."""
+        points = []
+        for rid, e in reversed(list(zip(rids, rows))):
+            kind = self.analyses[rid].round.kind
+            points.append({"abbr": t(f"abbr_{kind}", loc) if f"abbr_{kind}" in S else "", "title": self.shorts[loc][rid],
+                           "year": (self.dates[rid] or "")[:4], "turnout": e.turnout, "ref_turnout": e.ref_turnout,
+                           "invalid": e.invalid, "ref_invalid": e.ref_invalid})
+        charts = []
+        for key, title, zero in (("turnout", t("turnout", loc), False), ("invalid", t("trend_invalid", loc), True)):
+            if sum(1 for p in points if p[key] is not None) >= 2:
+                pts = [{**p, "v": p[key], "r": p[f"ref_{key}"]} for p in points]
+                charts.append({"title": title, "svg": svg.trend(pts, title, t(f"an_label_{ref}", loc), loc, zero=zero)})
+        return charts
 
     def place_election(self, rid: str, s, flags: list, short: str) -> narrative.Election:
         """One election at a polling place, next to its municipality in the same election."""
@@ -166,6 +244,13 @@ class Site:
         for p in self.places.places:
             by_code[p.code].append(p)
         for code, rids in self.mun_rounds.items():
+            inputs = repr([code, rids, [(rid, self.round_inputs[rid], self.shorts[loc][rid], self.mun_rows[rid][code],
+                                         self.mun_votes[rid][code], self.analyses[rid].totals, len(self.flagged[rid]))
+                                        for rid in rids],
+                           [(p.id, p.rounds, p.newest.number, p.newest.name, p.former_numbers, self.flagged_in(p))
+                            for p in by_code[code]], [self.shorts[loc][r] for r in newest_first if r not in rids]])
+            if self.keep(loc, f"m/{code}.html", inputs):
+                continue
             newest = self.mun_rows[rids[0]][code]
             rows = [{"rid": rid, "short": cols[rid]["short"], "date": fmt_date(self.dates[rid], loc),
                      "m": self.mun_rows[rid][code], "top": self.top_three(rid, self.mun_votes[rid][code])}
@@ -184,12 +269,12 @@ class Site:
             network = (sum(1 for p in mine if p.rounds == [rids[0]]),
                        sum(1 for p in mine if rids[0] not in p.stations),
                        sum(1 for p in mine if rids[0] in p.stations and p.former_numbers))
-            analysis = narrative.municipality([self.municipality_election(rid, code, cols[rid]["short"]) for rid in rids],
-                                              [cols[r]["short"] for r in newest_first if r not in rids], repeat, network,
-                                              loc)
+            elections = [self.municipality_election(rid, code, cols[rid]["short"]) for rid in rids]
+            analysis = narrative.municipality(elections, [cols[r]["short"] for r in newest_first if r not in rids],
+                                              repeat, network, loc)
             self.write(loc, f"m/{code}.html", "municipality_history.html", code=code, mname=newest["name"],
                        district=newest["district"] if newest["kind"] == "domestic" else "", rows=rows, places=places,
-                       analysis=analysis)
+                       analysis=analysis, charts=self.trends(rids, elections, "all", loc))
 
     def write_search(self, loc: str) -> None:
         """search.json for the search on the home page, kept small. Municipalities: [name, code, elections]. Polling
@@ -208,9 +293,7 @@ class Site:
                          [at[p.code], s.number, conv(s.name), page, k, len(p.rounds), ", ".join(p.former_numbers)]))
         rows.sort(key=lambda r: r[:4])
         data = {"m": [[conv(names[c]), c, len(self.mun_rounds[c])] for c in order], "s": [r[4] for r in rows]}
-        path = self.out / (PREFIX[loc] + "search.json")
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        self.put(PREFIX[loc] + "search.json", json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
     def short_title(self, rnd, loc: str) -> str:
         year = (self.archive.meta(rnd.id).get("date") or "")[:4]
@@ -305,11 +388,17 @@ class Site:
 
     # --- pages -------------------------------------------------------------------------------
     def build(self) -> Path:
-        if self.out.exists():
+        if self.incremental and self.state_path.exists() and self.out.exists():
+            saved = json.loads(self.state_path.read_text(encoding="utf-8"))
+            if saved.get("version") == self.version:
+                self.previous = saved.get("pages", {})
+        elif self.out.exists():
             shutil.rmtree(self.out)
-        (self.out / "static").mkdir(parents=True)
+        (self.out / "static").mkdir(parents=True, exist_ok=True)
         shutil.copytree(HERE / "static", self.out / "static", dirs_exist_ok=True)
-        (self.out / ".nojekyll").write_text("", encoding="utf-8")
+        self.produced.update(str(f.relative_to(self.out)) for f in (self.out / "static").rglob("*") if f.is_file()
+                             and (HERE / f.relative_to(self.out)).exists())
+        self.put(".nojekyll", "")
         self.cache: dict = {}
         self.ctrl_cache: dict = {}
         rids = self.archive.round_ids()
@@ -335,6 +424,11 @@ class Site:
         self.dates = {rid: self.archive.meta(rid).get("date") for rid in rids}
         self.flagged = {a.round.id: a.by_station for a in oldest_first}
         self.labels = {a.round.id: display_labels(a.round.contestants) for a in oldest_first}
+        self.shorts = {loc: {a.round.id: self.short_title(a.round, loc) for a in oldest_first} for loc in LOCALES}
+        self.round_inputs = {a.round.id: repr((a.round.kind, self.dates[a.round.id], self.labels[a.round.id],
+                                               [(c.number, c.name, c.short) for c in a.round.contestants]))
+                             for a in oldest_first}
+        self.round_keys: dict[str, str] = {}
         self.places = follow([(a.round.id, a.round.stations, boards.addresses(boards.load_store(self.archive.dir(a.round.id))))
                               for a in oldest_first])
         self.mun_rows, self.mun_votes = {}, {}
@@ -381,15 +475,30 @@ class Site:
         # GitHub Pages serves this file for a missing page at any depth, so its links are absolute.
         self.write("lat", "404.html", "404.html", root=self.site_url,
                    link=lambda target: self.site_url + target)
-        (self.out / "feed.sr.xml").write_text(feed.build(self.archive.root, self.archive, "lat", self.site_url),
-                                              encoding="utf-8")
-        (self.out / "feed.en.xml").write_text(feed.build(self.archive.root, self.archive, "en", self.site_url),
-                                              encoding="utf-8")
+        self.put("feed.sr.xml", feed.build(self.archive.root, self.archive, "lat", self.site_url))
+        self.put("feed.en.xml", feed.build(self.archive.root, self.archive, "en", self.site_url))
+        self.finish()
         return self.out
+
+    def finish(self) -> None:
+        """Remove what no page produced any more (pages of places that no longer exist, old static files) and save
+        the fingerprints for the next incremental build."""
+        for f in sorted(self.out.rglob("*"), reverse=True):
+            rel = str(f.relative_to(self.out))
+            if f.is_file() and rel not in self.produced:
+                f.unlink()
+            elif f.is_dir() and not any(f.iterdir()):
+                f.rmdir()
+        self.state_path.write_text(json.dumps({"version": self.version, "pages": self.state}, sort_keys=True),
+                                   encoding="utf-8")
 
     def round_pages(self, a: Analysis, loc: str) -> None:
         rid = a.round.id
         base = f"r/{rid}/"
+        pages = [base + "index.html", base + "check.html", base + "changes.html"] + [
+            base + f"m/{code}.html" for code in self.mun_rows[rid]]
+        if all([self.keep(loc, page, self.round_key(rid)) for page in pages]):  # a list: every page is recorded
+            return
         stations = {s.key: s for s in a.round.stations}
         by_station = self.flagged[rid]
         municipalities = list(self.mun_rows[rid].values())
@@ -502,9 +611,10 @@ def station_path(key: str) -> str:
     return f"s/{code}-{re.sub(r'[^0-9A-Za-z_-]', '_', number)}.html"
 
 
-def strength(code: str) -> tuple[int, int]:
-    """Flags in the order the site lists them: paperwork first, then the heavier ones."""
-    return GROUPS.index(BY_CODE[code].group), -BY_CODE[code].weight
+def strength(code: str) -> tuple[int, int, str]:
+    """Flags in the order the site lists them: paperwork first, then the heavier ones (by name when equal, so every
+    build lists them alike)."""
+    return GROUPS.index(BY_CODE[code].group), -BY_CODE[code].weight, code
 
 
 def leading(votes: list) -> int | None:
@@ -572,5 +682,28 @@ def ctrl_rows(contestants, coverage) -> tuple[list[dict], int]:
     return rows, len(readable)
 
 
-def build(archive: Archive, out: Path, notes_dir: Path | None, site_url: str = SITE_URL) -> Path:
-    return Site(archive, out, notes_dir, site_url).build()
+def build(archive: Archive, out: Path, notes_dir: Path | None, site_url: str = SITE_URL,
+          incremental: bool = False) -> Path:
+    return Site(archive, out, notes_dir, site_url, incremental).build()
+
+
+def code_version() -> str:
+    """Everything that shapes the pages besides the data: this package's code, templates and static files, and the
+    versions of the packages that render them. A change rebuilds every page."""
+    h = hashlib.sha256()
+    for f in sorted(p for p in HERE.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
+        h.update(str(f.relative_to(HERE)).encode())
+        h.update(f.read_bytes())
+    for package in ("jinja2", "markupsafe"):
+        h.update(f"{package}={version(package)}".encode())
+    h.update(platform.python_version().encode())
+    return h.hexdigest()[:16]
+
+
+def file_digest(*paths: Path) -> str:
+    """One digest for the content of these files; a missing file counts as empty."""
+    h = hashlib.sha256()
+    for path in paths:
+        h.update(str(path.name).encode())
+        h.update(path.read_bytes() if path.exists() else b"")
+    return h.hexdigest()

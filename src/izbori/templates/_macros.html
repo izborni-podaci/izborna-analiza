@@ -73,6 +73,19 @@
 {% endif %}
 {% endmacro %}
 
+{# Turnout and invalid ballots across elections, with one legend for both charts. #}
+{% macro trends(charts, here, there) %}
+{% if charts %}
+<section class="trends-wrap" aria-label="{{ t('trend_label') }}">
+  <ul class="legend"><li><span class="key"></span>{{ here }}</li><li><span class="key key-ref"></span>{{ there }}</li></ul>
+  <div class="trends">
+  {% for c in charts %}<figure><figcaption>{{ c.title }}</figcaption>{{ c.svg }}</figure>
+  {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endmacro %}
+
 {# Tables across elections: the election, linking to this place in it, and the three contestants with most votes. #}
 {% macro history_election(e, href) %}
 <th scope="row" class="election"><a href="{{ href }}">{{ e.short }}</a>{% if e.date %}<span class="small muted">{{ e.date }}</span>{% endif %}</th>

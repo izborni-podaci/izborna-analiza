@@ -6,6 +6,7 @@
 <p class="kicker">{% if district %}{{ name(district) }} · {% endif %}{{ t('station_history') }}</p>
 <h1>{{ name(mname) }}</h1>
 {{ mx.analysis(analysis) }}
+{{ mx.trends(charts, t('trend_here_mun'), t('trend_ref_all')) }}
 <p class="rule">{{ t('mun_across_lede') }}</p>
 
 <div class="table-wrap history-wrap">

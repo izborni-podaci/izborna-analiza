@@ -178,6 +178,17 @@ S: dict[str, tuple[str, str]] = {
     "mun_places_heading": ("Бирачка места кроз изборе", "Polling stations across elections"),
     "col_elections": ("Избори", "Elections"),
     "col_flagged": ("Са ознаком", "Flagged"),
+    # the charts across elections
+    "abbr_presidential": ("Пред.", "Pres."),
+    "abbr_parliamentary": ("Парл.", "Parl."),
+    "abbr_provincial": ("Покр.", "Prov."),
+    "abbr_local": ("Лок.", "Local"),
+    "trend_invalid": ("Удео неважећих листића", "Share of invalid ballots"),
+    "trend_here_place": ("Ово место", "This station"),
+    "trend_here_mun": ("Ова општина", "This municipality"),
+    "trend_ref_mun": ("Општина", "Municipality"),
+    "trend_ref_all": ("Цели избори", "Whole election"),
+    "trend_label": ("Графикони кроз изборе", "Charts across elections"),
     # the analysis at the top of the pages across elections (narrative.py)
     "an_heading": ("Укратко", "In short"),
     "an_note": ("Текст је састављен из РИК-ових бројева, по истим правилима за свако место и сваког учесника.", "Written from RIK's numbers, by the same rules for every place and every contestant."),

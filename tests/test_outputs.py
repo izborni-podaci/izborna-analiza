@@ -197,3 +197,62 @@ def test_place_across_elections(site):
     # the top three use names without the words every list's name starts with
     assert "1. ALEKSANDAR VUČIĆ - SRBIJA NE SME DA STANE" in page
     assert "IZBORNA LISTA KANDIDATA" not in page.split('title="')[0]
+
+
+def test_incremental_build_matches_a_full_build(tmp_path, archive):
+    """An incremental build renders only pages whose data changed, and ends up byte for byte like a full build:
+    with no change, after a station's numbers change, and after a whole round is removed."""
+    import csv
+    import filecmp
+    import io
+    import shutil
+
+    from izbori.history import Archive
+    from izbori.site import Site
+
+    data = tmp_path / "data"
+    for rid in ("341143", "567956"):  # two small rounds keep the test quick
+        shutil.copytree(archive.dir(rid), data / "rounds" / rid)
+
+    def same(a, b):
+        cmp = filecmp.dircmp(a, b)
+        stack = [cmp]
+        while stack:
+            c = stack.pop()
+            assert not (c.left_only or c.right_only or c.diff_files or c.funny_files), (c.left, c.left_only,
+                                                                                       c.right_only, c.diff_files)
+            stack.extend(c.subdirs.values())
+        return True
+
+    def run(out, incremental):
+        site = Site(Archive(data), out, None, "https://example.org/x/", incremental=incremental)
+        site.build()
+        return site
+
+    full = run(tmp_path / "a" / "site", False)
+    assert full.kept == 0
+    shutil.copytree(tmp_path / "a", tmp_path / "b")
+    again = run(tmp_path / "b" / "site", True)
+    assert again.kept > 1000 and again.rendered < 50  # only the pages every build writes
+    assert same(tmp_path / "a" / "site", tmp_path / "b" / "site")
+
+    # a correction at one Belgrade station
+    f = data / "rounds/567956/results.csv"
+    rows = list(csv.DictReader(io.StringIO(f.read_bytes().decode("utf-8-sig"))))
+    rows[0]["upisani_biraci"] = str(int(rows[0]["upisani_biraci"]) + 50)
+    out = io.StringIO()
+    w = csv.DictWriter(out, fieldnames=list(rows[0]), lineterminator="\n")
+    w.writeheader()
+    w.writerows(rows)
+    f.write_bytes(("﻿" + out.getvalue()).encode("utf-8"))
+    changed = run(tmp_path / "b" / "site", True)
+    assert changed.kept > 1000 and changed.rendered < full.rendered / 2
+    run(tmp_path / "c" / "site", False)
+    assert same(tmp_path / "c" / "site", tmp_path / "b" / "site")
+
+    # a round leaves the archive: its pages and its places' pages go
+    shutil.rmtree(data / "rounds/341143")
+    run(tmp_path / "b" / "site", True)
+    assert not (tmp_path / "b" / "site" / "r" / "341143").exists()
+    run(tmp_path / "d" / "site", False)
+    assert same(tmp_path / "d" / "site", tmp_path / "b" / "site")

@@ -326,6 +326,22 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .analysis p { margin: 0 0 10px; font-size: 1.05rem; line-height: 1.6; }
 .analysis .an-note { font-size: 0.85rem; color: var(--ink-2); margin: 0; }
 
+/* turnout and invalid ballots across elections: this place in the accent colour, the area compared with dashed */
+.trends-wrap { max-width: 760px; margin: 0 0 14px; }
+.trends { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 6px 28px; }
+.trends figcaption { font-size: 0.9rem; }
+.chart.trend { max-width: 360px; }
+.chart .trend-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .trend-ref { fill: none; stroke: var(--ink-2); stroke-width: 2; stroke-dasharray: 4 3; }
+.chart .dot circle { fill: var(--accent); stroke: var(--page); stroke-width: 2; pointer-events: none; }
+.chart .end { fill: var(--ink); font-size: 12px; font-weight: 600; font-family: var(--sans); }
+.chart .end-ref { fill: var(--ink-2); font-size: 12px; font-family: var(--sans); }
+.chart .hit { fill: transparent; }
+.chart .hit:hover { fill: var(--grid); }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 0; margin: 0 0 4px; font-size: 0.85rem; color: var(--ink-2); }
+.legend .key { display: inline-block; width: 20px; vertical-align: middle; margin-right: 6px; border-top: 2px solid var(--accent); }
+.legend .key-ref { border-top: 2px dashed var(--ink-2); }
+
 /* places and municipalities across elections: one row per election, every row alike */
 .across-link { margin: 0 0 6px; }
 table.history th.election { color: var(--ink); font-size: 0.925rem; white-space: normal; min-width: 8.5rem; }

@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 _site/
+_site.state.json
 # the observer target list is private: never commit it
 targets*.csv
 targets*.html

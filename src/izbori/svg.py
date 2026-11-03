@@ -28,6 +28,62 @@ def _col(x: float, y: float, w: float, h: float, r: float) -> str:
             f"H{x + w - r:.2f}Q{x + w:.2f},{y:.2f} {x + w:.2f},{y + r:.2f}V{y + h:.2f}Z")
 
 
+def trend(points: list[dict], label: str, ref_label: str, loc: str, zero: bool = False) -> Markup:
+    """A small line chart across elections, oldest on the left: this place in the accent colour, the area it is
+    compared with as a dashed grey line. The newest values are labelled at the right; each election's column has a
+    <title> with both values, shown on hover. The table on the page holds every number, so the chart is kept small:
+    it is drawn on thousands of pages. points: {"abbr", "year", "title", "v", "r"}, oldest first; values are shares
+    (0–1), None where unknown. zero: start the scale at 0."""
+    w, h, left, right, top, bottom = 320, 150, 38, 46, 10, 32
+    pw, ph = w - left - right, h - top - bottom
+    vals = [p[k] for p in points for k in ("v", "r") if p[k] is not None]
+    lo, hi = (0.0 if zero else min(vals)), max(vals)
+    step = _nice_step((hi - lo) or hi or 0.01, 3)
+    y0, y1 = math.floor(lo / step + 1e-9) * step, math.ceil(hi / step - 1e-9) * step
+    if y1 <= y0:
+        y1 = y0 + step
+    digits_ = 0 if abs(step * 100 - round(step * 100)) < 1e-9 else 1
+    slot = pw / len(points)
+
+    def x(i: int) -> int:
+        return round(left + (i + 0.5) * slot)
+
+    def y(v: float) -> int:
+        return round(top + ph - ph * (v - y0) / (y1 - y0))
+
+    out = [f'<svg class="chart trend" viewBox="0 0 {w} {h}" role="img" aria-label="{escape(label)}">']
+    ticks = [y0 + k * step for k in range(int(round((y1 - y0) / step)) + 1)]
+    out.append('<path class="grid" d="' + "".join(f"M{left} {y(t)}H{w - right}" for t in ticks) + '"/>')
+    out.append('<g class="tick" text-anchor="end">' + "".join(
+        f'<text x="{left - 6}" y="{y(t) + 4}">{fmt_pct(t, loc, digits_)}</text>' for t in ticks) + "</g>")
+    for i, p in enumerate(points):  # hover targets first, so the lines sit on top
+        out.append(f'<rect class="hit" x="{round(left + i * slot)}" y="{top}" width="{round(slot)}" height="{ph}"><title>'
+                   f'{escape(p["title"])}: {fmt_pct(p["v"], loc)} ({escape(ref_label)} {fmt_pct(p["r"], loc)})</title></rect>')
+    ends = []
+    for key, line, end in (("r", "trend-ref", "end-ref"), ("v", "trend-line", "end")):
+        known = [(i, p[key]) for i, p in enumerate(points) if p[key] is not None]
+        path, prev = "", None
+        for i, v in known:
+            path += f"{'L' if prev == i - 1 else 'M'}{x(i)} {y(v)}"
+            prev = i
+        out.append(f'<path class="{line}" d="{path}"/>')
+        if key == "v":  # dots only for this place; the dashed line is context
+            out.append('<g class="dot">' + "".join(f'<circle cx="{x(i)}" cy="{y(v)}" r="4"/>' for i, v in known) + "</g>")
+        if known:
+            i, v = known[-1]
+            ends.append([end, x(i) + 8, y(v) + 4, fmt_pct(v, loc)])
+    if len(ends) == 2 and abs(ends[0][2] - ends[1][2]) < 13:  # keep the two end labels apart
+        lower, upper = sorted(ends, key=lambda e: e[2], reverse=True)
+        mid = (lower[2] + upper[2]) / 2
+        lower[2], upper[2] = round(mid + 6.5), round(mid - 6.5)
+    out.extend(f'<text class="{c}" x="{ex}" y="{min(max(ey, 12), top + ph + 4)}">{text}</text>' for c, ex, ey, text in ends)
+    out.append('<g class="tick" text-anchor="middle">' + "".join(
+        f'<text x="{x(i)}" y="{h - 18}">{escape(p["abbr"])}<tspan x="{x(i)}" dy="12">{p["year"]}</tspan></text>'
+        for i, p in enumerate(points)) + "</g>")
+    out.append("</svg>")
+    return Markup("".join(out))
+
+
 def histogram(bins: list[int], loc: str) -> Markup:
     w, h = 640, 190
     left, right, top, bottom = 40, 20, 10, 24

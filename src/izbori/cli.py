@@ -369,9 +369,10 @@ def cmd_import_table(args) -> int:
 
 
 def cmd_site(args) -> int:
-    from izbori.site import build
-    out = build(Archive(args.data), Path(args.out), args.notes, args.site_url)
-    print(f"site written to {out}")
+    from izbori.site import Site
+    site = Site(Archive(args.data), Path(args.out), args.notes, args.site_url, incremental=args.incremental)
+    out = site.build()
+    print(f"site written to {out}: {site.rendered} files written, {site.kept} pages kept from the previous build")
     return 0
 
 
@@ -466,6 +467,8 @@ def main(argv: list[str] | None = None) -> int:
 
     s = sub.add_parser("site", help="build the static site")
     s.add_argument("--out", default="_site")
+    s.add_argument("--incremental", action="store_true",
+                   help="keep the previous build in --out and render only the pages whose data changed")
     s.set_defaults(fn=cmd_site)
 
     t = sub.add_parser("targets", help="ranked list of stations to watch, as a file for observer groups")

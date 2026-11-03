@@ -32,7 +32,7 @@ def stations(analyses: list) -> tuple[list[dict], int]:
             row = rows.get(key)
             if row is None:
                 continue
-            codes = sorted({f.code for f in flags}, key=lambda c: -BY_CODE[c].weight)
+            codes = sorted({f.code for f in flags}, key=lambda c: (-BY_CODE[c].weight, c))
             row["flags"][rid] = codes
             row["score"] += weight * sum(f.check.weight for f in flags)
     out, once = [], 0
@@ -42,7 +42,7 @@ def stations(analyses: list) -> tuple[list[dict], int]:
             continue
         once += k == 1
         seen = Counter(c for codes in row["flags"].values() for c in codes)
-        same = sorted(((c, m) for c, m in seen.items() if m >= 2), key=lambda x: (-x[1], -BY_CODE[x[0]].weight))
+        same = sorted(((c, m) for c, m in seen.items() if m >= 2), key=lambda x: (-x[1], -BY_CODE[x[0]].weight, x[0]))
         row.update({"k": k, "n": len(row["took"]), "types": " ".join(sorted(seen)), "same": same,
                     "same_codes": " ".join(c for c, _ in same)})
         out.append(row)

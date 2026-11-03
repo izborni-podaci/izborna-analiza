@@ -174,6 +174,7 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 - **Municipality across elections** (`m/<code>.html`): one row per election it took part in, every election alike: stations, registered voters, turnout, invalid ballots, the top three contestants and the number of stations to check, each linking to that election. Then its polling stations, each linking to its own page.
 - **Polling station across elections** (`s/<place>.html`, one for every station): one row per election with that election's number and name, the numbers, the top three, flags, notes and minutes.
 - **In short:** both pages across elections open with a few sentences written from the numbers (`narrative.py`), in this order: flags and invalid ballots, turnout and how it compares, who had most votes, and how the place changed. A station is compared with its municipality, a municipality with the whole election. The same sentences and rules apply to every place and contestant; the text states numbers and never judges them.
+- **Charts across elections:** below the text, turnout and the share of invalid ballots per election, the place against the area it is compared with (dashed).
 - **Search** on the home page finds a municipality or a polling station, by its current or a former number, and opens its page across elections.
 - **Changes:** what changed after first publication, and each archived version of the file.
 - **Observer guide:** what's allowed at a polling station on election day, with article references.
@@ -182,6 +183,8 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 The pages across elections follow the same place through the archive (`places.py`): within its municipality, a station is joined to the station of an earlier election by address first (where the decisions on polling boards gave one), then by name, then by number. A number alone never joins two stations whose address or name clearly differs. The station checks and the station history table still match stations by municipality code + number.
 
 Every page says which RIK timestamp the data comes from and when it was fetched. Charts are drawn as SVG when the site is built, so the site needs no JavaScript libraries.
+
+**Incremental build.** `izbori site --incremental` keeps the previous build and renders again only the pages whose data changed. Each page's inputs are fingerprinted into `_site.state.json`; a change to the code, templates or packages rebuilds every page, and pages that no longer exist are removed, so the result is byte for byte a full build. The **pages** workflow keeps the previous build in the Actions cache. With nothing changed a build takes about 15 seconds instead of about 90; after a change in one municipality, about 30. The site is about 550 MB, and GitHub Pages allows 1 GB; the workflow log prints the size.
 
 ## Alerts
 
@@ -237,6 +240,7 @@ uv run izbori update --watch              # what the hourly job runs
 uv run izbori check 680072                # flag counts for one round
 uv run izbori boards --round 680072       # controllers: read decisions on extended polling boards (needs tesseract)
 uv run izbori site --out _site            # build the site
+uv run izbori site --out _site --incremental   # render only what changed since the last build
 uv run izbori targets --out targets.csv --html targets.html   # private: never commit or post
 uv run pytest
 ```
@@ -297,7 +301,7 @@ All from `https://www.rik.parlament.gov.rs`:
    - `MAIL_FROM`
    - `MAIL_TO` (comma-separated)
 4. **New rounds:** the hourly job archives new rounds by itself. Then a person checks the round's `data/rounds/<id>/meta.json`:
-   - `kind`, `title_en` and `date` (election day, filled in automatically from the first minutes)
+   - `kind`, `title_en` and `date` (election day, filled in automatically from the first percent of minutes uploads, so a stray early upload doesn't move it)
    - for list elections, each list's `minority` status, taken from RIK's decisions, and then `"minority_checked": true` under `contest`. Until that is set, the site warns that seat numbers may be off.
    - for local elections, `contest.seats`, the size of the assembly
 5. **Commits:** scheduled commits come from GitHub's bot identity. People who commit by hand should use their GitHub no-reply address.

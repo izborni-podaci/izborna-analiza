@@ -78,7 +78,7 @@ def flags(rows: list[Election], loc: str) -> list[str]:
     items = "; ".join(f"{r.short} ({', '.join(_flag(c, loc) for c in r.flags)})" for r in flagged)
     out = [t("an_flags", loc, k=len(flagged), n=len(rows), items=items)]
     seen = Counter(c for r in rows for c in set(r.flags))
-    same = sorted(((c, m) for c, m in seen.items() if m >= 2), key=lambda x: (-x[1], -BY_CODE[x[0]].weight))
+    same = sorted(((c, m) for c, m in seen.items() if m >= 2), key=lambda x: (-x[1], -BY_CODE[x[0]].weight, x[0]))
     if same:
         out.append(t("an_same", loc, items=", ".join(f"{_flag(c, loc)} ({t('repeat_times', loc, n=m)})"
                                                       for c, m in same)))

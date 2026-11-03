@@ -7,6 +7,7 @@
 <h1 class="station-title">{{ t('station_no') }} {{ s.number }}{% if s.name %} · {{ name(s.name) }}{% endif %}</h1>
 {% if address %}<p class="muted">{{ t('address') }}: {{ name(address) }}</p>{% endif %}
 {{ mx.analysis(analysis) }}
+{{ mx.trends(charts, t('trend_here_place'), t('trend_ref_mun')) }}
 <p class="rule">{{ t('place_lede') }}</p>
 
 <div class="table-wrap history-wrap">
