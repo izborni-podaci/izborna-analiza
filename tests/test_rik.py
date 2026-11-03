@@ -82,3 +82,22 @@ def test_guess_kind():
     assert guess_kind(9, "Локални 2024 - Београд") == "local"
     assert guess_kind(9, "Парламентарни 2026") == "parliamentary"
     assert guess_kind(9, "Покрајински 2023") == "provincial"
+
+
+def test_register_page_and_counts():
+    from izbori import documents
+
+    def register(form):
+        t = (form.get("filters[election_document_type]") or ["0"])[0]
+        page = int(form["page"][0])
+        assert form["data[election_round]"] == ["680072"] and form["election_type"] == ["2"]
+        pages = {"29": 21, "12": 1}.get(t, 1)
+        n = 10 if page < pages else {"29": 8, "12": 3}.get(t, 0)
+        pagination = "".join(f'<a data-page="{p}">{p}</a>' for p in range(2, pages + 1))
+        return FakeResponse(json.dumps({"records": [{}] * n, "pagination": pagination}).encode())
+
+    opener = make_opener({"/get-election": register})
+    client = Client(base="https://rik.test", opener=opener, sleep=lambda s: None)
+    got = documents.counts(client, "680072", 2, types=(29, 12, 9))
+    assert got == {"29": 208, "12": 3, "9": 0}
+    assert len(opener.calls) == 4  # two requests for a kind with several pages, one otherwise

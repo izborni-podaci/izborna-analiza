@@ -11,7 +11,7 @@ the minutes, and the decisions annulling a vote (RG-9) or finding that the resul
 
 Kept per round in data/rounds/<id>/documents.json:
     {"labels": [label, ...], "stations": {"<code>/<number>": [[label index, path, uploaded], ...]},
-     "unmatched": [[municipality, number], ...]}
+     "unmatched": [[municipality, number], ...], "counts": {RIK's document type: stations having one}}
 where path is the document's path on RIK's site and uploaded its upload time (YYYY-MM-DDTHH:MM, Belgrade)."""
 
 from __future__ import annotations
@@ -110,6 +110,23 @@ def last_page(pagination_html: str) -> int:
     return max(pages) if pages else 1
 
 
+# RIK's numbers for the kinds of document the register adds to the results file: rulings RG-8 and RG-9 (and on a
+# repeat vote), the sample audit, observers' records, remarks.
+WATCHED_TYPES = (8, 9, 11, 12, 17, 18, 27, 28, 29, 30, 31)
+
+
+def counts(client, round_id: str, rik_type: int, types=WATCHED_TYPES) -> dict[str, int]:
+    """For each kind of document, at how many stations RIK lists one: a cheap check (one or two requests per kind)
+    whether anything was added since the register was last read in full."""
+    out = {}
+    for t in types:
+        first = client.register_page(round_id, rik_type, 1, document_type=t) or {}
+        pages = last_page(first.get("pagination", ""))
+        last = first if pages == 1 else client.register_page(round_id, rik_type, pages, document_type=t) or {}
+        out[str(t)] = (pages - 1) * 10 + len(last.get("records") or [])
+    return out
+
+
 def fetch(client, round_id: str, rik_type: int, threads: int = 3, log=print) -> list[tuple[str, str, list[Doc]]]:
     """Every record of the round's register (about one per polling station)."""
     from concurrent.futures import ThreadPoolExecutor
@@ -161,6 +178,11 @@ def store(records: list[tuple[str, str, list[Doc]]], codes: dict[str, str]) -> d
 
 def path(round_dir: Path) -> Path:
     return Path(round_dir) / FILE
+
+
+def saved_counts(round_dir: Path) -> dict[str, int] | None:
+    p = path(round_dir)
+    return json.loads(p.read_text(encoding="utf-8")).get("counts") if p.exists() else None
 
 
 def load(round_dir: Path) -> dict[str, list[Doc]]:

@@ -251,8 +251,9 @@ The archive starts with the three files from 1 November 2026 at 22:19, 23:26 and
 
 ## Schedule
 
-- **Every day.** The **documents** workflow reads RIK's register of minutes for recent rounds; the **boards** workflow reads new decisions on polling boards.
-- **Every hour.** A short run lists every round and checks its progress. It downloads a file only when the number of counted stations changed. Once a day it re-downloads every round, to catch silent corrections.
+- **Every day.** The **documents** workflow reads RIK's register of minutes: daily for two weeks after election day, then on Mondays until 60 days after it, and each time only if a quick count (one or two requests per kind of document) shows something new. The **boards** workflow reads new decisions on polling boards until 14 days after election day.
+- **Every hour.** A short run lists every round and checks its progress. It downloads a file only when the number of counted stations changed. Once a day it re-downloads every recent round, to catch silent corrections.
+- **With no election under way.** When every round is more than 30 days past its election day and not counting, the hourly run asks RIK only every 6 hours (every hour on Sundays, when elections are held), and those rounds are checked once a week, on Mondays. A run started by hand always asks.
 - **While a count is open.** The same run turns into a watch loop:
   - it checks RIK every 3 minutes;
   - it downloads when progress changes, and at least every 15 minutes in any case;

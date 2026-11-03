@@ -23,6 +23,11 @@ from izbori.translit import latin
 
 REFRESH_HOUR_UTC = 3  # once a day, re-download every round even if RIK's progress looks unchanged
 WATCH_REFRESH = timedelta(minutes=15)  # while watching, re-download at least this often
+# With no election under way, RIK is asked far less: a round this long after its election day, and not counting,
+# no longer changes, so it is checked once a week; and when every round is like that, RIK's list of rounds is read
+# every QUIET_EVERY_HOURS hours, except on Sundays, when Serbian elections are held, which keep the hourly look.
+SETTLED_AFTER = timedelta(days=30)
+QUIET_EVERY_HOURS = 6
 
 
 def log(msg: str) -> None:
@@ -184,8 +189,37 @@ def cmd_import(args) -> int:
     return 0
 
 
+def settled(archive: Archive, rid: str, now: datetime) -> bool:
+    """A round long past its election day and not counting: its results no longer change."""
+    date = archive.meta(rid).get("date")
+    if not date or archive.state(rid).get("counting"):
+        return False
+    return now.date() - datetime.fromisoformat(date[:10]).date() > SETTLED_AFTER
+
+
+def quiet_now(archive: Archive, now: datetime) -> bool:
+    """No election under way: every round RIK lists or the archive holds is settled."""
+    rids = set(archive.known_rounds()) | set(archive.round_ids())
+    return bool(rids) and all(settled(archive, rid, now) for rid in rids)
+
+
+def look_now(now: datetime) -> bool:
+    """With no election under way: every hour on Sundays (Belgrade time), otherwise every QUIET_EVERY_HOURS."""
+    local = now.astimezone(BELGRADE)
+    return local.weekday() == 6 or local.hour % QUIET_EVERY_HOURS == 0
+
+
 def cmd_update(args) -> int:
     archive = Archive(args.data)
+    now = datetime.now(UTC)
+    if not args.always and quiet_now(archive, now) and not look_now(now):
+        log("no election under way; RIK is asked again at the next quiet hour")
+        if args.commit:
+            heartbeat(Path(args.data))
+            if commit([str(args.data)], f"Heartbeat ({now_iso()})") and args.push:
+                push()
+        return 0
+    weekly = now.weekday() == 0 and now.hour == REFRESH_HOUR_UTC  # Mondays: one look at settled rounds
     client = Client()
     deadline = time.monotonic() + args.max_minutes * 60
     last_download: dict = {}
@@ -205,8 +239,12 @@ def cmd_update(args) -> int:
                 archive.save_known_rounds(merged)
         force = first and datetime.now(UTC).hour == REFRESH_HOUR_UTC
         for rid, info in sorted(found.items()):
+            old = settled(archive, rid, now)
+            if old and not (first and weekly):
+                continue
             try:
-                did, summ, finished = fetch_round(client, archive, rid, info, args.notes, args.notify, force=force,
+                did, summ, finished = fetch_round(client, archive, rid, info, args.notes, args.notify,
+                                                  force=force and not old,
                                                   last_download=last_download if args.watch else None)
             except RikError as e:
                 log(f"{rid}: {e}")
@@ -238,6 +276,9 @@ def cmd_update(args) -> int:
     return 0
 
 
+BOARDS_AFTER = timedelta(days=14)  # the daily run stops reading decisions on boards this long after election day
+
+
 def cmd_boards(args) -> int:
     """Read which lists appointed members to the extended polling boards (controllers)."""
     import os
@@ -251,6 +292,10 @@ def cmd_boards(args) -> int:
     rid = args.round or max(known, key=lambda r: int(r) if r.isdigit() else 0)
     info = known.get(rid) or {"type": args.type or 2, "name": "", "kind": "unknown"}
     meta = archive.meta(rid)
+    date = meta.get("date")
+    if not args.round and date and datetime.now(UTC).date() - datetime.fromisoformat(date[:10]).date() > BOARDS_AFTER:
+        log(f"{rid}: election day {date} is past; boards are appointed before it, so nothing is read")
+        return 0
     if not meta.get("contestants"):
         try:
             meta = ensure_meta(archive, rid, info, client.summary(info["type"], rid))
@@ -302,12 +347,20 @@ def cmd_documents(args) -> int:
     archive = Archive(args.data)
     client = Client()
     known = archive.known_rounds()
-    recent = (datetime.now(UTC) - timedelta(days=args.recent_days)).date().isoformat()
-    if args.round:
-        ids = [args.round]
-    else:
-        ids = [r for r in archive.round_ids() if args.all or not documents.path(archive.dir(r)).exists()
-               or (archive.meta(r).get("date") or "9999") >= recent]
+    now = datetime.now(UTC)
+    recent = (now - timedelta(days=args.recent_days)).date().isoformat()
+
+    def due(rid: str) -> bool:
+        """Rounds not read yet; daily for two weeks after election day, then on Mondays until --recent-days."""
+        date = archive.meta(rid).get("date")
+        if not documents.path(archive.dir(rid)).exists() or not date:
+            return True
+        age = (now.date() - datetime.fromisoformat(date[:10]).date()).days
+        return age <= 14 or (date >= recent and now.weekday() == 0)
+
+    ids = [args.round] if args.round else [r for r in archive.round_ids() if args.all or due(r)]
+    if not ids:
+        log("no round due: nothing is asked of RIK")
     changed = []
     # The register names municipalities as RIK does today; an older results file may not ("Ниш-Медијана" for
     # "Градска општина Медијана"). Codes don't change, so names from every archived election map to them.
@@ -325,11 +378,15 @@ def cmd_documents(args) -> int:
         codes = {**every, **{boards.municipality_key(s.municipality): s.municipality_code for s in rnd.stations}}
         before = documents.load(archive.dir(rid))
         try:
+            counts = documents.counts(client, rid, rik_type)
+            if before and not (args.round or args.all) and counts == documents.saved_counts(archive.dir(rid)):
+                log(f"{rid}: register unchanged since the last reading ({sum(counts.values())} documents watched)")
+                continue
             records = documents.fetch(client, rid, rik_type, threads=args.threads, log=log)
         except RikError as e:
             log(f"{rid}: register not reachable ({e})")
             continue
-        data = documents.store(records, codes)
+        data = {**documents.store(records, codes), "counts": counts}
         kinds = Counter(documents.classify(data["labels"][i])[0] for rows in data["stations"].values() for i, _, _ in rows)
         log(f"{rid}: {len(records)} register records, {len(data['stations'])} stations, documents {dict(kinds)}")
         if data["unmatched"]:
@@ -487,6 +544,7 @@ def main(argv: list[str] | None = None) -> int:
     u.add_argument("--push", action="store_true")
     u.add_argument("--dispatch-pages", action="store_true", help="start the pages workflow after a push")
     u.add_argument("--notify", action="store_true", help="send the email digest if SMTP settings are present")
+    u.add_argument("--always", action="store_true", help="ask RIK even when no election is under way")
     u.set_defaults(fn=cmd_update)
 
     b = sub.add_parser("boards", help="read which lists appointed members to extended polling boards")
@@ -504,7 +562,7 @@ def main(argv: list[str] | None = None) -> int:
     b.set_defaults(fn=cmd_boards)
 
     d = sub.add_parser("documents", help="read RIK's register of minutes: observers' records, remarks, rulings")
-    d.add_argument("--round", help="one round (default: rounds not read yet and those of the last --recent-days)")
+    d.add_argument("--round", help="one round, read in full (default: rounds due, see cmd_documents)")
     d.add_argument("--all", action="store_true", help="every archived round")
     d.add_argument("--recent-days", type=int, default=60)
     d.add_argument("--threads", type=int, default=3)

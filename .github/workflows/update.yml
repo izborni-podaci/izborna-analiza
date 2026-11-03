@@ -1,5 +1,7 @@
 # Every hour: check RIK, archive what changed, publish. While a count is open the same run keeps watching
 # (every 3 minutes, up to 5¾ hours); the next hourly run takes over after that. Only one runs at a time.
+# With no election under way it asks RIK only every 6 hours (hourly on Sundays, when elections are held), and
+# rounds more than 30 days past their election day are looked at once a week.
 name: update
 
 on:
@@ -43,4 +45,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          uv run izbori update --watch --max-minutes "$MINUTES" --commit --push --dispatch-pages --notify
+          args=(--watch --max-minutes "$MINUTES" --commit --push --dispatch-pages --notify)
+          # a run started by hand always asks RIK; scheduled runs ask less when no election is under way
+          [ "${{ github.event_name }}" = "workflow_dispatch" ] && args+=(--always)
+          uv run izbori update "${args[@]}"
