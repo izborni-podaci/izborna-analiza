@@ -151,6 +151,12 @@ def _differ(a: frozenset, b: frozenset) -> bool:
     return bool(a and b and not a & b)
 
 
+def contradicts(name: str, address: str) -> bool:
+    """Whether an address read from a decision names another building than the station's name in the results (a
+    decision filed under the wrong station, or a line that is only the town): such an address isn't used."""
+    return _differ(words(name), words(address))
+
+
 def match(places: list[Place], stations: list[Station], addresses: dict[str, str], rid: str = "",
           rules: Rules | None = None, at: dict | None = None) -> list[tuple[Place, Station, str]]:
     """Join one election's stations in a municipality to the places from earlier elections."""

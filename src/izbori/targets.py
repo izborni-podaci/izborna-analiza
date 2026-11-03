@@ -14,6 +14,7 @@ from izbori.describe import describe
 from izbori.history import Archive
 from izbori.i18n import check_name, fmt_num, latin_page, t
 from izbori.links import safe_url
+from izbori.places import contradicts
 from izbori.report import analyze, links
 from izbori.translit import latin
 
@@ -47,7 +48,8 @@ def rank(archive: Archive, notes_dir: Path | None = None, rids: list[str] | None
                 c = None
             row["ctrl"] = None if c is None else sorted(int(n) for n, v in c["lists"].items() if v["member"])
             row["ctrl_missing"] = None if c is None else [n for n in range(1, n_lists + 1) if n not in row["ctrl"]]
-            row["address"] = c["address"] if c else ""
+            address = c["address"] if c else ""
+            row["address"] = "" if contradicts(row["station"].name, address) else address
     return sorted(rows.values(), key=lambda r: (-r["score"], r["key"]))
 
 

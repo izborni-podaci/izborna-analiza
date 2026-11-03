@@ -176,3 +176,31 @@ def test_links_are_kept_and_filled_in_for_decisions_read_before(tmp_path):
     Client.calls = 0
     run(tmp_path, "680072", 2, [], stations, client, workers=1, log=lambda m: None)
     assert Client.calls == 1
+
+
+def test_a_members_line_is_never_kept_as_the_address(tmp_path):
+    """Where a decision has no address line, the first member's line (with a name) follows the station number: it
+    is not an address, and one kept by an earlier version is dropped when the store is read or written."""
+    import json
+
+    from izbori.boards import addresses, load_store, save_store
+    text = ("РЕШЕЊЕ\nУ бирачки одбор за бирачко место број 14\n1. члан: Петар Петровић из Вајске и\n"
+            "заменик члана: Марко Марковић, на предлог подносиоца изборне листе ПРВА ЛИСТА\n")
+    assert parse_decision(text).address == ""
+    assert parse_decision("БИРАЧКО МЕСТО БРОЈ 12\nОШ \"ВУК КАРАЏИЋ\", ГЛАВНА 1\n").address == 'ОШ "ВУК КАРАЏИЋ", ГЛАВНА 1'
+    (tmp_path / "boards.json").write_text(json.dumps({"docs": {
+        "a": {"s": "1/1", "k": "extended", "addr": "1) ЧЛАН: ПЕТАР ПЕТРОВИЋ, на предлог подносиоца"},
+        "b": {"s": "1/2", "k": "extended", "addr": "ОШ ПРИМЕР, ГЛАВНА 1"}}}, ensure_ascii=False), encoding="utf-8")
+    store = load_store(tmp_path)
+    assert addresses(store) == {"1/2": "ОШ ПРИМЕР, ГЛАВНА 1"}
+    save_store(tmp_path, store)
+    assert "ПЕТРОВИЋ" not in (tmp_path / "boards.json").read_text(encoding="utf-8")
+
+
+def test_an_address_naming_another_building_is_not_used():
+    from izbori.places import contradicts
+    assert contradicts('ОШ "ЛАЗАР САВАТИЋ"', "ЗЕМУНСКА ГИМНАЗИЈА, ГРАДСКИ ПАРК БР. 2")
+    assert contradicts('ОШ "СУТЈЕСКА"', "РАШКА")  # only the town
+    assert not contradicts('ОШ "ЛАЗАР САВАТИЋ"', 'ОШ"ЛАЗАР САВАТИЋ", КЕЈ ОСЛОБОЂЕЊА БР.27')
+    assert not contradicts("ПРАВНО ПОСЛОВНА ШКОЛА", 'ПРАВНО-ПОСЛОВНА ШКОЛА "ДИМИТРИЈЕ ДАВИДОВИЋ", ТОШИН БУНАР')
+    assert not contradicts("", "ГЛАВНА 1") and not contradicts("МЕСНА ЗАЈЕДНИЦА", "ГЛАВНА 1")  # nothing to compare

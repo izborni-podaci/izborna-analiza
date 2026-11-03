@@ -29,7 +29,7 @@ from izbori.model import last_url
 from izbori.i18n import (LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, fmt_date, fmt_int, fmt_num, fmt_pct,
                          fmt_time, keep, kind_name, latin_page, strip_keep, t)
 from izbori import documents, narrative
-from izbori.places import RULES_FILE, Place, follow
+from izbori.places import RULES_FILE, Place, contradicts, follow
 from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
 
@@ -121,7 +121,12 @@ class Site:
     def ctrl_of(self, rid: str) -> dict:
         if rid not in self.ctrl_cache:
             store = boards.load_store(self.archive.dir(rid))
-            self.ctrl_cache[rid] = boards.coverage(store)
+            cov = boards.coverage(store)
+            names = {s.key: s.name for s in self.analyses[rid].round.stations} if rid in self.analyses else {}
+            for key, c in cov.items():  # an address naming another building than the results is not shown
+                if c.get("address") and contradicts(names.get(key, ""), c["address"]):
+                    c["address"] = ""
+            self.ctrl_cache[rid] = cov
             self.board_docs_cache[rid] = boards.station_docs(store)
         return self.ctrl_cache[rid]
 

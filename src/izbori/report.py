@@ -11,7 +11,7 @@ from izbori.contests import Presidential, Proportional, Totals, evaluate
 from izbori.history import Archive
 from izbori.model import Round
 from izbori.notes import Note, load_notes
-from izbori.places import RULES_FILE, Places, follow, load_rules
+from izbori.places import RULES_FILE, Places, contradicts, follow, load_rules
 
 
 @dataclass
@@ -82,9 +82,14 @@ def station_documents(archive: Archive, rnd: Round) -> dict[str, list]:
 
 
 def addresses(archive: Archive, rid: str, cache: dict) -> dict[str, str]:
+    """Per station, the address on its decisions, unless it names another building than the results do."""
     key = ("addresses", rid)
     if key not in cache:
-        cache[key] = boards.addresses(boards.load_store(archive.dir(rid)))
+        if rid not in cache:
+            cache[rid] = archive.load(rid)
+        names = {s.key: s.name for s in cache[rid].stations}
+        found = boards.addresses(boards.load_store(archive.dir(rid)))
+        cache[key] = {k: a for k, a in found.items() if not contradicts(names.get(k, ""), a)}
     return cache[key]
 
 

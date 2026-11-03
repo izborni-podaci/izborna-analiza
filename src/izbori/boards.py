@@ -154,6 +154,18 @@ def _normalize(text: str) -> str:
     return text
 
 
+# Words of a member's line ("1. члан: <name>, на предлог подносиоца …"), never of an address. When OCR or a
+# decision's layout puts such a line where the address should be, it carries a name and must not be kept.
+PERSONAL = re.compile(r"члан|clan|član|заменик|zamenik|предлог|predlog|подносиоц|podnosioc|председни|predsedni|"
+                      r"секретар|sekretar|именуј|imenuj", re.I)
+
+
+def clean_address(text: str) -> str:
+    """The address as read, or "" when what was read isn't one (a member's line, with a name)."""
+    text = (text or "").strip(" ,;")
+    return "" if not text or PERSONAL.search(text) else text
+
+
 def _filled(part: str) -> bool:
     part = re.sub(r"\s+и\s*$|\s+i\s*$", "", part.strip())
     return len(LETTERS.findall(part)) >= 3
@@ -172,7 +184,7 @@ def parse_decision(text: str) -> Decision:
                 continue
             if ln.startswith("(") or re.match(r"^\d+\s*[.,]\s*(У|U)\s", ln):
                 break
-            address = ln.strip(" ,;")
+            address = clean_address(ln)
             break
     body = text
     end = END.search(text)
@@ -273,12 +285,25 @@ def store_path(round_dir: Path) -> Path:
     return Path(round_dir) / "boards.json"
 
 
+def scrub(store: dict) -> int:
+    """Empty every kept address that isn't one (a member's line, with a name); how many were emptied."""
+    n = 0
+    for d in store.get("docs", {}).values():
+        if d.get("addr") and not clean_address(d["addr"]):
+            d["addr"] = ""
+            n += 1
+    return n
+
+
 def load_store(round_dir: Path) -> dict:
     p = store_path(round_dir)
-    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {"docs": {}}
+    store = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {"docs": {}}
+    scrub(store)  # a store written before addresses were checked never shows a name
+    return store
 
 
 def save_store(round_dir: Path, store: dict) -> None:
+    scrub(store)
     store_path(round_dir).write_text(json.dumps(store, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
                                      encoding="utf-8")
 
