@@ -1,8 +1,9 @@
 """Station checks. Every check treats every contestant the same way; none looks at who gains.
 
-Three groups:
+Four groups:
 - paper:   the station's own numbers don't add up (strongest signals)
 - change:  the archive shows numbers, minutes or corrections changing after publication
+- records: RIK published a remark or a decision on the vote with the station's minutes
 - unusual: lopsided or shifting results; often legitimate, so they weigh least
 """
 
@@ -34,6 +35,9 @@ CHECKS = [
     Check("changed", "change", 3),
     Check("minutes_replaced", "change", 2),
     Check("correction_unapplied", "change", 3),
+    Check("voting_annulled", "records", 3),
+    Check("results_undetermined", "records", 3),
+    Check("remark_filed", "records", 2),
     Check("invalid_spike", "unusual", 2),
     Check("turnout_jump", "unusual", 2),
     Check("turnout_drop", "unusual", 1),
@@ -41,7 +45,7 @@ CHECKS = [
     Check("high_turnout", "unusual", 1),
 ]
 BY_CODE = {c.code: c for c in CHECKS}
-GROUPS = ["paper", "change", "unusual"]
+GROUPS = ["paper", "change", "records", "unusual"]
 
 # Starting values, documented on the site. Tune on real data, never per contestant.
 RULES = {
@@ -221,8 +225,24 @@ def history_flags(rnd: Round, previous: list[Round], links=None) -> list[Flag]:
     return out
 
 
+def document_flags(documents: dict) -> list[Flag]:
+    """Flags from the documents RIK published with a station's minutes (documents.py): a decision annulling the
+    vote (RG-9), a decision that the results can't be determined (RG-8), a remark filed with the minutes. What
+    they say is only in the document; the flag says it exists."""
+    out = []
+    for key, docs in documents.items():
+        for code, kind in (("voting_annulled", "annulled"), ("results_undetermined", "undetermined"),
+                           ("remark_filed", "remark")):
+            found = [d for d in docs if d.kind == kind]
+            if found:
+                out.append(Flag(key, code, {"n": len(found), "forms": sorted({d.form for d in found if d.form}),
+                                            "first": min(d.uploaded for d in found) or None,
+                                            "repeat": any(d.repeat for d in found)}))
+    return out
+
+
 def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[Round] | None = None,
-                  links=None) -> list[Flag]:
+                  links=None, documents: dict | None = None) -> list[Flag]:
     counted = [s for s in rnd.stations if s.counted]
     by_mun: dict[str, list[Station]] = defaultdict(list)
     by_addr: dict[tuple, list[Station]] = defaultdict(list)
@@ -241,6 +261,9 @@ def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[
         flags.extend(change_flags(changes, {s.key: s for s in rnd.stations}))
     if previous:
         flags.extend(history_flags(rnd, previous, links))
+    if documents:
+        stations = {s.key for s in rnd.stations}
+        flags.extend(f for f in document_flags(documents) if f.station in stations)
     order = {c.code: i for i, c in enumerate(CHECKS)}
     flags.sort(key=lambda f: (f.station, order[f.code]))
     return flags

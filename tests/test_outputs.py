@@ -114,6 +114,13 @@ def test_site_shows_controllers(tmp_path, archive):
     store = {"docs": {"x": {"s": s.key, "k": "extended", "r": False, "t": "1", "unmatched": 0,
                             "addr": "ОШ ПРИМЕР, ГЛАВНА 1", "slots": [[1, True, True], [3, True, False], [2, False, False]]}}}
     (data / "rounds/680072/boards.json").write_text(json.dumps(store, ensure_ascii=False), encoding="utf-8")
+    # RIK's register of minutes lists an observers' record and a remark for the same station
+    docs = {"labels": ["Записник о посматрачима (Образац РГ-11/НП)", "Примедба"], "unmatched": [],
+            "stations": {s.key: [[0, "/extfile/sr/election_results/799/052/6ade751ba7cbb/@БМ 23 - РГ-11_b.pdf",
+                                  "2026-10-25T22:31"],
+                                 [1, "/extfile/sr/election_results/801/371/6ade7b1be1216/@Примедба 23_c.pdf",
+                                  "2026-10-25T22:56"]]}}
+    (data / "rounds/680072/documents.json").write_text(json.dumps(docs, ensure_ascii=False), encoding="utf-8")
     out = build(Archive(data), tmp_path / "site", None, "https://example.org/x/")
     round_page = (out / "r/680072/index.html").read_text(encoding="utf-8")
     assert "Kontrolori u biračkim odborima" in round_page
@@ -122,6 +129,19 @@ def test_site_shows_controllers(tmp_path, archive):
     assert "Controllers: lists 1, 3" in (out / f"en/r/680072/m/{s.municipality_code}.html").read_text(
         encoding="utf-8")
     assert "Kontrolora ukupno" in mun and "Kontrolora ukupno" in round_page
+    # the observers' record and the remark are linked by name, and the remark is a flag
+    row = mun[mun.index('id="bm-23"'):]
+    row = row[:row.index("</tr>")]
+    assert 'class="doc doc-observers"' in row and ">Posmatrači</a>" in row and ">Primedba</a>" in row
+    assert "Primedba uz zapisnik" in row and "%D0%9F%D1%80%D0%B8%D0%BC%D0%B5%D0%B4%D0%B1%D0%B0" in row  # link encoded
+    place = re.search(r'href="\.\./\.\./\.\./(s/[^"]+\.html)"', row).group(1)
+    page = (out / place).read_text(encoding="utf-8")
+    assert re.search(r"Zapisnik o posmatračima RIK je objavio za \d od \d izbora \([^)]*Parlamentarni 2026", page)
+    assert ">Observers</a>" in (out / "en" / place).read_text(encoding="utf-8")
+    api = json.loads((out / "api" / place.replace(".html", ".json")).read_text(encoding="utf-8"))
+    kinds = [d["kind"] for e in api["elections"] if e["round"] == "680072" for d in e["documents"]]
+    assert kinds == ["minutes", "observers", "remark"]
+    assert "Zapisano na biračkom mestu" in (out / "about.html").read_text(encoding="utf-8")
     order = [round_page.index(f'id="{x}"') for x in ("check", "results", "controllers", "municipalities", "stats")]
     assert order == sorted(order)
 

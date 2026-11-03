@@ -173,6 +173,16 @@ class Client:
                                             "region": region, "municipality": municipality,
                                             "election_station": station}) or {}
 
+    def register_page(self, rid: str, rik_type: int, page: int, document_type: int | None = None) -> dict:
+        """One page (ten polling stations) of RIK's register of minutes ("Записници") for a round: each station's
+        documents with their labels, links and upload times. document_type limits it to stations having one kind
+        (RIK's numbering: 12 is the observers' record, 29 a remark)."""
+        form = {"page": page, "data[type]": 1, "data[election_round]": rid, "data[property_election_type]": rik_type,
+                "election_type": rik_type}
+        if document_type:
+            form["filters[election_document_type]"] = document_type
+        return self._json("/get-election", form) or {}
+
     def get_json(self, path: str):
         body, _ = self._request(path)
         return json.loads(body.decode("utf-8-sig") or "null")

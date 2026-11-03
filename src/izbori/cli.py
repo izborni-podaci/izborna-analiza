@@ -1,4 +1,4 @@
-"""Command line: izbori rounds | fetch | import | update | site | targets | check."""
+"""Command line: izbori rounds | fetch | import | update | documents | boards | site | targets | check."""
 
 from __future__ import annotations
 
@@ -295,6 +295,53 @@ def cmd_boards(args) -> int:
     return 0
 
 
+def cmd_documents(args) -> int:
+    """Read RIK's register of minutes: every document published for each polling station (minutes, observers'
+    records, remarks, corrections, rulings). Keeps labels, links and upload times; no names."""
+    from izbori import boards, documents
+    archive = Archive(args.data)
+    client = Client()
+    known = archive.known_rounds()
+    recent = (datetime.now(UTC) - timedelta(days=args.recent_days)).date().isoformat()
+    if args.round:
+        ids = [args.round]
+    else:
+        ids = [r for r in archive.round_ids() if args.all or not documents.path(archive.dir(r)).exists()
+               or (archive.meta(r).get("date") or "9999") >= recent]
+    changed = []
+    for rid in ids:
+        rik_type = int(archive.meta(rid).get("rik_type") or (known.get(rid) or {}).get("type") or 0)
+        if not rik_type:
+            log(f"{rid}: RIK's election type unknown, skipped")
+            continue
+        rnd = archive.load(rid)
+        codes = {boards.municipality_key(s.municipality): s.municipality_code for s in rnd.stations}
+        before = documents.load(archive.dir(rid))
+        try:
+            records = documents.fetch(client, rid, rik_type, threads=args.threads, log=log)
+        except RikError as e:
+            log(f"{rid}: register not reachable ({e})")
+            continue
+        data = documents.store(records, codes)
+        kinds = Counter(documents.classify(data["labels"][i])[0] for rows in data["stations"].values() for i, _, _ in rows)
+        log(f"{rid}: {len(records)} register records, {len(data['stations'])} stations, documents {dict(kinds)}")
+        if data["unmatched"]:
+            log(f"{rid}: {len(data['unmatched'])} records with an unknown municipality, e.g. "
+                f"{sorted({m for m, _ in data['unmatched']})[:5]}")
+        if len(data["stations"]) < 0.9 * len(before):  # a partial answer never replaces a fuller one
+            log(f"{rid}: only {len(data['stations'])} stations now, {len(before)} before; kept the earlier file")
+            continue
+        if documents.save(archive.dir(rid), data):
+            n = after_change(archive, rid, now_iso(), args.notes, notify=args.notify, announce=bool(before))
+            log(f"{rid}: documents changed, {n} new flags" + ("" if before else " (first read, not announced)"))
+            changed.append(rid)
+    if args.commit and changed and commit([str(args.data), str(args.notes)],
+                                          f"Documents: {', '.join(changed)} ({now_iso()})"):
+        if args.push and push() and args.dispatch_pages:
+            dispatch_pages()
+    return 0
+
+
 def cmd_import_app(args) -> int:
     """Rebuild a finished round's results from RIK's results app, station by station, and archive it."""
     from izbori import appdata, boards
@@ -446,6 +493,17 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--push", action="store_true")
     b.add_argument("--dispatch-pages", action="store_true")
     b.set_defaults(fn=cmd_boards)
+
+    d = sub.add_parser("documents", help="read RIK's register of minutes: observers' records, remarks, rulings")
+    d.add_argument("--round", help="one round (default: rounds not read yet and those of the last --recent-days)")
+    d.add_argument("--all", action="store_true", help="every archived round")
+    d.add_argument("--recent-days", type=int, default=60)
+    d.add_argument("--threads", type=int, default=3)
+    d.add_argument("--notify", action="store_true", help="queue the email digest for new flags")
+    d.add_argument("--commit", action="store_true")
+    d.add_argument("--push", action="store_true")
+    d.add_argument("--dispatch-pages", action="store_true")
+    d.set_defaults(fn=cmd_documents)
 
     a = sub.add_parser("import-app", help="rebuild a finished round from RIK's results app, station by station")
     a.add_argument("--round", required=True)

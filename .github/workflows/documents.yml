@@ -1,0 +1,55 @@
+# Documents: everything RIK publishes for each polling station (minutes, observers' records, remarks, rulings),
+# from its register of minutes. Daily, for recent rounds and rounds not read yet. Only labels, links and upload
+# times are kept; the documents themselves name people, so the site links to them and never copies them.
+name: documents
+
+on:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+    inputs:
+      round:
+        description: "Round id (empty: recent rounds and rounds not read yet)"
+        default: ""
+      all:
+        description: "Every archived round"
+        type: boolean
+        default: false
+      commit:
+        description: "Commit the results"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write  # commit the documents
+  actions: write   # start the pages workflow
+
+concurrency:
+  group: documents
+  cancel-in-progress: false
+
+jobs:
+  documents:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - name: Read RIK's register of minutes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ROUND: ${{ inputs.round }}
+          ALL: ${{ inputs.all }}
+          COMMIT: ${{ github.event_name == 'schedule' || inputs.commit }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          args=(--notify)
+          [ -n "$ROUND" ] && args+=(--round "$ROUND")
+          [ "$ALL" = "true" ] && args+=(--all)
+          [ "$COMMIT" = "true" ] && args+=(--commit --push --dispatch-pages)
+          uv run izbori documents "${args[@]}"

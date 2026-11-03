@@ -15,6 +15,9 @@
 {% elif code == 'turnout_drop' %}<path d="M8 13.4L2 3h12z" fill="currentColor"/>
 {% elif code == 'near_unanimity' %}<path d="M5.6 4.6 8.8 2.6v10.8M5.6 13.4h6.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
 {% elif code == 'high_turnout' %}<path d="M3.6 8.6 8 4.2l4.4 4.4M3.6 12.8 8 8.4l4.4 4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+{% elif code == 'voting_annulled' %}<circle cx="8" cy="8" r="5.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.2 11.8 11.8 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+{% elif code == 'results_undetermined' %}<rect x="2.6" y="2.6" width="10.8" height="10.8" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.4 8h5.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+{% elif code == 'remark_filed' %}<path d="M2.6 3.2h10.8v7.2H7.2l-3.2 2.6v-2.6H2.6z" fill="currentColor"/>
 {% else %}<circle cx="8" cy="8" r="4" fill="currentColor"/>{% endif %}</svg>{% endmacro %}
 
 {% macro crumbs(items) %}
@@ -54,11 +57,10 @@
 {% endfor %}
 {% endmacro %}
 
-{% macro doc_links(s) %}
-{% if s %}
-{% for label, url in s.minutes_links %}<a class="doc" href="{{ url|url }}" rel="noopener noreferrer" target="_blank" title="{{ name(label) }}">{{ t('minutes') }}{% if s.minutes_links|length > 1 %} {{ loop.index }}{% endif %}</a> {% endfor %}
-{% for label, url in s.correction_links %}<a class="doc" href="{{ url|url }}" rel="noopener noreferrer" target="_blank" title="{{ name(label) }}">{{ t('correction') }}{% set f = label|form %}{% if f %} {{ f }}{% endif %}</a> {% endfor %}
-{% endif %}
+{# A station's documents as RIK published them, each named by its kind: minutes, observers' record, remark,
+   correction, ruling. The full label is in the tooltip; documents of one kind and vote are numbered. #}
+{% macro doc_links(docs) %}
+{% for d in docs %}{% set same = docs|selectattr('kind', 'equalto', d.kind)|selectattr('repeat', 'equalto', d.repeat)|list %}<a class="doc doc-{{ d.kind }}" href="{{ d.url|url }}" rel="noopener noreferrer" target="_blank" title="{{ name(d.label) }}">{{ t('doc_' ~ d.kind) }}{% if d.form %} {{ d.form }}{% endif %}{% if d.repeat %} ({{ t('doc_repeat') }}){% endif %}{% if same|length > 1 %} {{ same.index(d) + 1 }}{% endif %}</a> {% endfor %}
 {% endmacro %}
 
 {# The sentences at the top of the pages across elections (narrative.py), one paragraph per topic. #}

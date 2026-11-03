@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from izbori import boards
+from izbori import boards, documents
 from izbori.checks import Flag, group_by_station, station_flags
 from izbori.contests import Presidential, Proportional, Totals, evaluate
 from izbori.history import Archive
@@ -25,6 +25,7 @@ class Analysis:
     notes: dict[str, list[Note]]
     flags_seen: dict
     previous: list[str] = field(default_factory=list)
+    documents: dict = field(default_factory=dict)  # station key → documents.Doc list: minutes, observers, remarks…
 
     @property
     def by_station(self) -> dict[str, list[Flag]]:
@@ -57,13 +58,25 @@ def analyze(archive: Archive, rid: str, notes_dir: Path | None = None, cache: di
     previous_ids.sort(key=lambda r: archive.meta(r).get("kind") != kind)
     previous = [load(r) for r in previous_ids]
     changes = archive.changes(rid)
-    flags = station_flags(rnd, changes, previous, links(archive, rid, cache))
+    docs = station_documents(archive, rnd)
+    flags = station_flags(rnd, changes, previous, links(archive, rid, cache), docs)
     totals, contest = evaluate(rnd)
     return Analysis(
         round=rnd, totals=totals, contest=contest, flags=flags, changes=changes,
         snapshots=archive.snapshots(rid), notes=load_notes(notes_dir, rid) if notes_dir else {},
-        flags_seen=archive.flags_seen(rid), previous=previous_ids,
+        flags_seen=archive.flags_seen(rid), previous=previous_ids, documents=docs,
     )
+
+
+def station_documents(archive: Archive, rnd: Round) -> dict[str, list]:
+    """Each station's documents: those in the results file and those in RIK's register of minutes, each once."""
+    register = documents.load(archive.dir(rnd.id))
+    out = {}
+    for s in rnd.stations:
+        docs = documents.for_station(s.minutes_links + s.correction_links, register.get(s.key))
+        if docs:
+            out[s.key] = docs
+    return out
 
 
 def addresses(archive: Archive, rid: str, cache: dict) -> dict[str, str]:

@@ -28,7 +28,7 @@ from izbori.links import safe_url
 from izbori.model import last_url
 from izbori.i18n import (LANG_ATTR, LOCALES, MONTHS_EN, PREFIX, S, check_name, check_rule, fmt_int, fmt_num, fmt_pct,
                          fmt_time, keep, kind_name, latin_page, strip_keep, t)
-from izbori import narrative
+from izbori import documents, narrative
 from izbori.places import RULES_FILE, Place, follow
 from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
@@ -61,7 +61,6 @@ class Site:
         self.env = Environment(loader=FileSystemLoader(HERE / "templates"), autoescape=select_autoescape(),
                                trim_blocks=True, lstrip_blocks=True)
         self.env.filters["url"] = safe_url
-        self.env.filters["form"] = lambda label: ((re.search(r"РГ-7-\d+", label or "") or [""])[0]).replace("РГ", "RG")
         self.analyses: dict[str, Analysis] = {}
 
     # --- helpers handed to templates ---------------------------------------------------------
@@ -155,6 +154,7 @@ class Site:
                              "how": p.how[rid] if older is not None and older.number != s.number else "",
                              "address": p.addresses.get(rid, ""), "flags": self.flag_view(a, flags, loc),
                              "notes": a.notes.get(s.key, []), "ctrl": ctrl.get(s.key), "ctrl_known": bool(ctrl),
+                             "docs": a.documents.get(s.key, []),
                              "n_lists": len(a.round.contestants),
                              "top": self.top_three(rid, s.votes) if s.counted else []})
                 story.append(self.place_election(rid, s, flags, cols[rid]["short"]))
@@ -174,7 +174,8 @@ class Site:
             parts.append((rid, self.round_inputs[rid], s, self.flagged[rid].get(s.key), self.analyses[rid].notes.get(s.key),
                           self.ctrl_of(rid).get(s.key), self.mun_rows[rid][s.municipality_code],
                           self.mun_votes[rid][s.municipality_code],
-                          self.peers[rid]["st"].get(s.municipality_code, {}).get("digest")))
+                          self.peers[rid]["st"].get(s.municipality_code, {}).get("digest"),
+                          self.analyses[rid].documents.get(s.key)))
         return repr(parts)
 
     def round_key(self, rid: str) -> str:
@@ -185,7 +186,7 @@ class Site:
             for r in self.rids[: self.rids.index(rid) + 1]:
                 d = self.archive.dir(r)
                 files += [d / n for n in ("results.csv", "meta.json", "changes.jsonl", "snapshots.jsonl", "state.json",
-                                          "flags_seen.json", "first_seen.json", "boards.json")]
+                                          "flags_seen.json", "first_seen.json", "boards.json", "documents.json")]
                 if self.notes_dir:
                     files.append(Path(self.notes_dir) / f"{r}.csv")
             links = hashlib.sha256("|".join(self.st_path(rid, s.key) for s in self.analyses[rid].round.stations).encode())
@@ -214,6 +215,8 @@ class Site:
         e = narrative.Election(short=short, number=s.number, name=s.name,
                                flags=sorted(dict.fromkeys(f.code for f in flags), key=strength),
                                ref_turnout=m["turnout"], ref_invalid=m["invalid"])
+        if self.docs_known[rid]:
+            e.observers = any(d.kind == "observers" for d in self.analyses[rid].documents.get(s.key, []))
         if s.counted:
             e.registered, e.turnout, e.invalid = s.registered, s.turnout, s.invalid_share
             st = self.peers[rid]["st"].get(s.municipality_code, {})
@@ -234,6 +237,8 @@ class Site:
                                ref_turnout=totals.turnout, ref_invalid=totals.invalid_share, stations=m["stations"],
                                flagged=m["flagged"],
                                ref_flagged=len(self.flagged[rid]) / totals.stations if totals.stations else None)
+        if self.docs_known[rid]:
+            e.observed = self.observed[rid][code]
         if m["kind"] == "domestic":
             e.rank_invalid = rank_of(m["invalid"], self.peers[rid]["mun"]["invalid"])
             e.rank_turnout = rank_of(m["turnout"], self.peers[rid]["mun"]["turnout"])
@@ -255,7 +260,8 @@ class Site:
         for code, rids in self.mun_rounds.items():
             inputs = repr([code, rids, [(rid, self.round_inputs[rid], self.shorts[loc][rid], self.mun_rows[rid][code],
                                          self.mun_votes[rid][code], self.analyses[rid].totals, len(self.flagged[rid]),
-                                         self.peers[rid]["mun"]["digest"]) for rid in rids],
+                                         self.peers[rid]["mun"]["digest"], self.docs_known[rid],
+                                         self.observed[rid][code]) for rid in rids],
                            [(p.id, p.rounds, p.newest.number, p.newest.name, p.former_numbers, self.flagged_in(p))
                             for p in by_code[code]], [self.shorts[loc][r] for r in newest_first if r not in rids]])
             if self.keep(loc, f"m/{code}.html", inputs):
@@ -331,7 +337,10 @@ class Site:
                 "ballots": s.ballots, "valid": s.valid, "invalid": s.invalid, "turnout": s.turnout,
                 "invalid_share": s.invalid_share, "votes": votes_json(a.round.contestants, s.votes),
                 "flags": [{"code": f.code, "data": f.data} for f in self.flagged[rid].get(s.key, [])],
-                "minutes": [url for _, url in s.minutes_links], "corrections": [url for _, url in s.correction_links],
+                "minutes": [d.url for d in a.documents.get(s.key, []) if d.kind == "minutes"],
+                "corrections": [d.url for d in a.documents.get(s.key, []) if d.kind == "correction"],
+                "documents": [{"kind": d.kind, "repeat": d.repeat, "label": d.label, "url": d.url,
+                               "uploaded": d.uploaded or None} for d in a.documents.get(s.key, [])],
                 "controllers": ctrl.get("lists") if ctrl else None,
                 "notes": [{"date": n.date, "outlet": n.outlet, "url": n.url, "archive_url": n.archive_url,
                            "summary_sr": n.summary_sr, "summary_en": n.summary_en} for n in a.notes.get(s.key, [])]})
@@ -493,6 +502,13 @@ class Site:
                                                [(c.number, c.name, c.short) for c in a.round.contestants]))
                              for a in oldest_first}
         self.round_keys: dict[str, str] = {}
+        # rounds whose documents are known: RIK's register was read, or the results file lists observers' records
+        self.docs_known = {a.round.id: documents.path(self.archive.dir(a.round.id)).exists()
+                           or any(d.kind == "observers" for docs in a.documents.values() for d in docs)
+                           for a in oldest_first}
+        self.observed = {a.round.id: Counter(s.municipality_code for s in a.round.stations
+                                             if any(d.kind == "observers" for d in a.documents.get(s.key, [])))
+                         for a in oldest_first}  # municipality code → its stations with an observers' record
         self.mun_rows, self.mun_votes = {}, {}
         self.mun_rounds: dict[str, list[str]] = defaultdict(list)  # municipality code → round ids, newest first
         self.peers: dict[str, dict] = {}  # round id → sorted values to rank stations and municipalities by
@@ -617,7 +633,7 @@ class Site:
                 "key": key, "s": s, "flags": self.flag_view(a, flags, loc),
                 "types": " ".join(sorted({f.code for f in flags})),
                 "rank": (min(group_rank[f.check.group] for f in flags), -sum(f.check.weight for f in flags)),
-                "seen": min(seen) if seen else None, "notes": a.notes.get(key, []),
+                "seen": min(seen) if seen else None, "notes": a.notes.get(key, []), "docs": a.documents.get(key, []),
                 "mun": s.municipality_code if s else key.split("/")[0],
             })
         items.sort(key=lambda x: (x["rank"], latin(x["s"].municipality) if x["s"] else "", int(x["s"].number)
@@ -644,7 +660,7 @@ class Site:
         for m in municipalities:
             sts = sorted(by_code[m["code"]], key=lambda s: (int(s.number) if s.number.isdigit() else 0, s.number))
             rows = [{"s": s, "flags": self.flag_view(a, by_station.get(s.key, []), loc),
-                     "notes": a.notes.get(s.key, [])} for s in sts]
+                     "notes": a.notes.get(s.key, []), "docs": a.documents.get(s.key, [])} for s in sts]
             votes = self.mun_votes[rid][m["code"]]
             mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
             mres, top, by_st = vote_view(a.round.contestants, votes, a.totals, [s for s in sts if s.counted])

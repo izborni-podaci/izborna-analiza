@@ -40,6 +40,12 @@ _TEXT = {
     "near_unanimity": ("Излазност {turnout}; {contestant}: {share} важећих гласова",
                        "Turnout {turnout}; {contestant}: {share} of valid votes"),
     "high_turnout": ("Излазност {turnout}, уписано {registered}", "Turnout {turnout}, {registered} registered"),
+    "voting_annulled": ("Решење о поништавању гласања{forms}{repeat}, објављено {first}",
+                        "Ruling annulling the vote{forms}{repeat}, published {first}"),
+    "results_undetermined": ("Решење да се резултати не могу утврдити{forms}{repeat}, објављено {first}",
+                             "Ruling that the results can't be determined{forms}{repeat}, published {first}"),
+    "remark_filed": ("Примедби уз записник: {n}{repeat}; прва објављена {first}",
+                     "Remarks filed with the minutes: {n}{repeat}; the first published {first}"),
 }
 
 
@@ -88,6 +94,10 @@ def describe(flag: Flag, loc: str, contestant_label=lambda n: str(n), kind: str 
         n = 100 * d.get("base", d.get("national", 0))
         values = {"before": p(d["before"]), "now": p(d["now"]),
                   "base": ("+" if n > 0 else "−" if n < 0 else "") + fmt_num(abs(n), loc)}
+    elif flag.code in ("voting_annulled", "results_undetermined", "remark_filed"):
+        forms = ", ".join(d.get("forms") or [])
+        values = {"n": i(d.get("n", 1)), "forms": f" ({forms})" if forms else "", "first": fmt_time(d.get("first"), loc),
+                  "repeat": t("doc_repeat_note", loc) if d.get("repeat") else ""}
     elif flag.code == "near_unanimity":
         values = {"turnout": p(d["turnout"]), "contestant": contestant_label(d["contestant"]), "share": p(d["share"])}
     return " ".join(text.format(**values).split())

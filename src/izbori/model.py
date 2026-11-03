@@ -69,8 +69,10 @@ class Station:
 
     @property
     def minutes_url(self) -> str:
-        """The latest minutes."""
-        return last_url(self.minutes)
+        """The latest minutes (form RG-2), not an observers' record or a remark listed with them."""
+        from izbori.documents import classify
+        found = [url for label, url in links(self.minutes) if classify(label)[0] == "minutes"]
+        return found[-1] if found else last_url(self.minutes)
 
     @property
     def correction_url(self) -> str:

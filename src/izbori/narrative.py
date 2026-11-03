@@ -38,6 +38,8 @@ class Election:
     stations: int = 0  # for a municipality: its polling stations in that election
     flagged: int = 0  # for a municipality: stations flagged
     ref_flagged: float | None = None  # for a municipality: share of stations flagged in the whole election
+    observers: bool | None = None  # whether RIK published an observers' record (form RG-11); None when not known
+    observed: int | None = None  # for a municipality: its stations with an observers' record; None when not known
     rank_invalid: tuple[int, int] | None = None  # (rank from the highest, out of how many) among its peers
     rank_turnout: tuple[int, int] | None = None
 
@@ -183,10 +185,28 @@ def rank(rows: list[Election], what: str, peers: str, loc: str) -> str | None:
     return t(f"an_rank_{what}_{peers}", loc, short=now.short, r=fmt_int(r, loc), n=fmt_int(n, loc))
 
 
+def observers(rows: list[Election], loc: str) -> str | None:
+    """In which elections RIK published an observers' record for the station, among those whose documents are known."""
+    known = [r for r in rows if r.observers is not None]
+    if not known:
+        return None
+    seen = [r.short for r in known if r.observers]
+    if not seen:
+        return t("an_observers_none", loc, n=len(known))
+    return t("an_observers", loc, k=len(seen), n=len(known), items=", ".join(seen))
+
+
+def mun_observers(rows: list[Election], loc: str) -> str | None:
+    now = next((r for r in rows if r.observed is not None), None)
+    if now is None or not now.stations:
+        return None
+    return t("an_mun_observers", loc, short=now.short, o=fmt_int(now.observed, loc), s=fmt_int(now.stations, loc))
+
+
 def place(rows: list[Election], absent: list[str], loc: str) -> list[str]:
     """The paragraphs at the top of a polling place's page. rows: newest election first."""
     paragraphs = [
-        [*flags(rows, loc), invalid(rows, "mun", loc), rank(rows, "invalid", "mun", loc)],
+        [*flags(rows, loc), observers(rows, loc), invalid(rows, "mun", loc), rank(rows, "invalid", "mun", loc)],
         [turnout(rows, "mun", loc), rank(rows, "turnout", "mun", loc), registered(rows, loc)],
         [leader(rows, "mun", loc)],
         place_changes(rows, absent, loc),
@@ -205,7 +225,7 @@ def municipality(rows: list[Election], absent: list[str], repeat: tuple[int, int
                overall=fmt_pct(now.ref_flagged, loc))]
     if len(rows) >= 2:
         first.append(t("an_mun_repeat", loc, a=fmt_int(repeat[0], loc), b=fmt_int(repeat[1], loc)))
-    first.extend([invalid(rows, "all", loc), rank(rows, "invalid", "all", loc)])
+    first.extend([mun_observers(rows, loc), invalid(rows, "all", loc), rank(rows, "invalid", "all", loc)])
     changes = []
     if len(rows) >= 2:
         old = rows[-1]

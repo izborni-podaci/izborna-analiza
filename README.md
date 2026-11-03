@@ -91,6 +91,14 @@ Every check treats every contestant the same way. A station is followed across e
 | Minutes replaced | The link to the minutes changed. The link carries an upload stamp, so every replacement shows. | 2 |
 | Correction published, numbers unchanged | A correction ruling appeared after first publication, and no number has changed since. | 3 |
 
+**Recorded at the station.** Remarks and rulings RIK published with the station's minutes (see [Documents per polling station](#documents-per-polling-station)). The flag says the document exists; what it says is only in the document.
+
+| Flag | Rule | Weight |
+|---|---|---|
+| Voting annulled | A ruling annulling the vote at the station (form RG-9) was published; the vote is repeated. | 3 |
+| Results can't be determined | A ruling that the station's results can't be determined (form RG-8) was published. | 3 |
+| Remark filed with the minutes | A separate remark on the polling board's work was published with the minutes. | 2 |
+
 **Unusual results.** Weak signals and often legitimate, e.g. bloc voting in minority areas. They cover stations in Serbia only, not abroad or in prisons.
 
 | Flag | Rule (starting values) | Weight |
@@ -108,6 +116,19 @@ The two turnout checks skip stations flagged as a likely typing error.
 - round percentages
 - correlation between turnout and share
 - turnout histogram
+
+## Documents per polling station
+
+RIK's register of minutes ("Записници", e.g. [parliamentary 2026](https://www.rik.parlament.gov.rs/zapisnici/779676)) lists every document published for each polling station: the minutes (RG-2), the **observers' record** (RG-11: which observers attended and their remarks), separate **remarks**, corrections (RG-7) and rulings that annul the vote (RG-9) or find that the results can't be determined (RG-8). RIK's results export carries only the minutes and corrections.
+
+`izbori documents` (and the daily **documents** workflow) reads the register for recent rounds and rounds not read yet:
+1. pages through `POST /get-election` for the round, ten stations at a time;
+2. keeps, per station, each document's label, link and upload time in `data/rounds/<id>/documents.json`;
+3. never stores names: the register has none, and the documents themselves (which name board members and observers) are linked, never copied.
+
+Station pages, the lists to check and the JSON name each document by its kind. Remarks and the RG-8 and RG-9 rulings become flags (see [Station checks](#station-checks)); the observers' record is linked on every row, and the "In short" text says in which elections it exists. Remarks written by hand inside the observers' record aren't read automatically yet.
+
+The first reading of a round is recorded without a feed entry; later new flags from documents go to the feed like any others.
 
 ## Controllers on polling boards
 
@@ -221,6 +242,7 @@ data/rounds/<id>/first_seen.json  when each station first had results in the arc
 data/rounds/<id>/flags_seen.json  when each flag first appeared
 data/rounds/<id>/state.json       RIK's progress at the last download
 data/rounds/<id>/boards.json      controllers: per decision, station, address, and each list's member yes/no
+data/rounds/<id>/documents.json   every document RIK lists per station: label, link, upload time (no names)
 ```
 
 A parliamentary file has 8,392 stations and is 4.3 MB. Consecutive versions differ by a few rows, so git stores them as small deltas.
@@ -229,6 +251,7 @@ The archive starts with the three files from 1 November 2026 at 22:19, 23:26 and
 
 ## Schedule
 
+- **Every day.** The **documents** workflow reads RIK's register of minutes for recent rounds; the **boards** workflow reads new decisions on polling boards.
 - **Every hour.** A short run lists every round and checks its progress. It downloads a file only when the number of counted stations changed. Once a day it re-downloads every round, to catch silent corrections.
 - **While a count is open.** The same run turns into a watch loop:
   - it checks RIK every 3 minutes;
@@ -251,6 +274,7 @@ uv run izbori import FILE.csv --round 680072 --kind parliamentary --contestants 
 uv run izbori update --watch              # what the hourly job runs
 uv run izbori check 680072                # flag counts for one round
 uv run izbori boards --round 680072       # controllers: read decisions on extended polling boards (needs tesseract)
+uv run izbori documents --round 680072    # observers' records, remarks and rulings from RIK's register of minutes
 uv run izbori site --out _site            # build the site
 uv run izbori site --out _site --incremental   # render only what changed since the last build
 uv run izbori targets --out targets.csv --html targets.html   # private: never commit or post
@@ -276,6 +300,7 @@ src/izbori/
   describe.py   one line per flag with its numbers, in each language
   stats.py      statistics for the whole round
   places.py     the same polling place across elections: address, then name, then number
+  documents.py  RIK's register of minutes: observers' records, remarks, rulings per station
   narrative.py  the sentences at the top of the pages across elections
   notes.py      news notes
   targets.py    private ranking
@@ -299,6 +324,7 @@ All from `https://www.rik.parlament.gov.rs`:
 |---|---|
 | `POST /get-elections/` with `election_type=N` | Rounds of that type (id → name). |
 | `POST /get_results/` with the round id | Counted and total stations, RIK's timestamp, totals per contestant, whether download is allowed. |
+| `POST /get-election` with the round id and type | RIK's register of minutes, ten stations per page: each station's documents with label, link and upload time. |
 | `GET /export-results/{round}/2` | The results CSV, one row per station. It has registered voters, voters, ballots in the box, valid and invalid ballots, entry time, one column per contestant, and links to the minutes and any correction. Available only while RIK allows downloads. |
 
 ## Setup
