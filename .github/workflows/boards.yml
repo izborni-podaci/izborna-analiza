@@ -1,5 +1,9 @@
 # Controllers: read RIK's decisions on extended polling boards with OCR and keep, per polling station, which
 # lists appointed a member. Daily, only new decisions are read. Names in the decisions are never stored or logged.
+#
+# Three steps, so that four jobs read at once: plan indexes RIK's register and lists what to read; read (four
+# jobs) each read their share with OCR; merge keeps the index and every part in the round's store and commits
+# once. With nothing to read, merge still keeps what the register lists (links, kinds).
 name: boards
 
 on:
@@ -14,7 +18,7 @@ on:
         description: "Stop starting new decisions after this many minutes"
         default: "320"
       limit:
-        description: "Read at most this many decisions (empty: all)"
+        description: "Read at most this many decisions per job (empty: all)"
         default: ""
       commit:
         description: "Commit the results"
@@ -34,9 +38,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  boards:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      planned: ${{ steps.plan.outputs.planned }}
+      todo: ${{ steps.plan.outputs.todo }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - name: Index the register and list what to read
+        id: plan
+        env:
+          ROUND: ${{ inputs.round }}
+          RETRY: ${{ inputs.retry }}
+        run: |
+          args=(--plan plan.json)
+          [ -n "$ROUND" ] && args+=(--round "$ROUND")
+          [ "$RETRY" = "true" ] && args+=(--retry-unparsed)
+          uv run izbori boards "${args[@]}"
+          if [ -f plan.json ]; then
+            echo "planned=true" >> "$GITHUB_OUTPUT"
+            echo "todo=$(python3 -c 'import json; print(len(json.load(open("plan.json"))["todo"]))')" >> "$GITHUB_OUTPUT"
+          else
+            echo "planned=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: steps.plan.outputs.planned == 'true'
+        with:
+          name: plan
+          path: plan.json
+          retention-days: 3
+
+  read:
+    needs: plan
+    if: needs.plan.outputs.planned == 'true' && needs.plan.outputs.todo != '0'
     runs-on: ubuntu-latest
     timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -48,20 +94,50 @@ jobs:
           sudo apt-get install -y -q tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils
       - name: Install
         run: pip install uv && uv sync --frozen
-      - name: Read board decisions
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+      - name: Read this job's share
         env:
-          GH_TOKEN: ${{ github.token }}
-          ROUND: ${{ inputs.round }}
+          SHARD: ${{ matrix.shard }}
           MINUTES: ${{ inputs.minutes || '320' }}
           LIMIT: ${{ inputs.limit }}
+        run: |
+          args=(--read plan.json --shard "$SHARD/4" --out "part-$SHARD.json" --budget-minutes "$MINUTES" --diagnose 4)
+          [ -n "$LIMIT" ] && args+=(--limit "$LIMIT")
+          uv run izbori boards "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: part-${{ matrix.shard }}
+          path: part-${{ matrix.shard }}.json
+          retention-days: 3
+          if-no-files-found: ignore
+
+  merge:
+    needs: [plan, read]
+    if: always() && needs.plan.outputs.planned == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*"
+          merge-multiple: true
+      - name: Keep the index and the parts read
+        env:
+          GH_TOKEN: ${{ github.token }}
           COMMIT: ${{ github.event_name == 'schedule' || inputs.commit }}
-          RETRY: ${{ inputs.retry }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          args=(--budget-minutes "$MINUTES" --show 15 --diagnose 15)
-          [ -n "$ROUND" ] && args+=(--round "$ROUND")
-          [ -n "$LIMIT" ] && args+=(--limit "$LIMIT")
+          shopt -s nullglob  # with nothing to read there are no parts
+          args=(--merge plan.json --show 15)
           [ "$COMMIT" = "true" ] && args+=(--commit --push --dispatch-pages)
-          [ "$RETRY" = "true" ] && args+=(--retry-unparsed)
-          uv run izbori boards "${args[@]}"
+          uv run izbori boards "${args[@]}" part-*.json

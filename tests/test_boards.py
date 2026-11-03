@@ -204,3 +204,63 @@ def test_an_address_naming_another_building_is_not_used():
     assert not contradicts('ОШ "ЛАЗАР САВАТИЋ"', 'ОШ"ЛАЗАР САВАТИЋ", КЕЈ ОСЛОБОЂЕЊА БР.27')
     assert not contradicts("ПРАВНО ПОСЛОВНА ШКОЛА", 'ПРАВНО-ПОСЛОВНА ШКОЛА "ДИМИТРИЈЕ ДАВИДОВИЋ", ТОШИН БУНАР')
     assert not contradicts("", "ГЛАВНА 1") and not contradicts("МЕСНА ЗАЈЕДНИЦА", "ГЛАВНА 1")  # nothing to compare
+
+
+def test_reading_split_across_jobs_ends_like_one_run(tmp_path, monkeypatch):
+    """The boards workflow reads in parts: a plan lists what to read, each job reads its share, and the merge
+    keeps the index and every part in the round's store, complete only when nothing was left."""
+    import json
+
+    from izbori import cli
+    from izbori.boards import load_store
+    records = [index_record(801, 30, "Решење о именовању члана и заменика члана бирачког одбора у проширеном саставу"),
+               index_record(802, 31, "Решење о именовању члана и заменика члана бирачког одбора у проширеном саставу"),
+               index_record(803, 31, "Решење о именовању члана бирачког одбора у сталном саставу")]
+
+    class Client:
+        base = "https://rik.test"
+
+        def get_json(self, path):
+            return index_page(records)
+
+    data = tmp_path / "data"
+    rnd = data / "rounds" / "680072"
+    rnd.mkdir(parents=True)
+    (rnd / "meta.json").write_text(json.dumps({"kind": "parliamentary", "date": "2026-10-25",
+                                               "contestants": [{"name": "ПРВА ЛИСТА"}]}), encoding="utf-8")
+    (data / "rounds.json").write_text(json.dumps({"680072": {"type": 2, "name": "", "kind": "parliamentary"}}),
+                                      encoding="utf-8")
+    monkeypatch.setattr(cli, "Client", Client)
+    monkeypatch.setattr(cli.Archive, "latest_raw", lambda self, rid: None)
+    monkeypatch.setattr(cli.Archive, "round_ids", lambda self: ["680072"])
+
+    class Rnd:
+        stations = [type("S", (), {"municipality": "Куршумлија", "municipality_code": "70017"})()]
+    monkeypatch.setattr(cli.Archive, "load", lambda self, rid: Rnd())
+    plan = tmp_path / "plan.json"
+    assert cli.main(["--data", str(data), "boards", "--round", "680072", "--plan", str(plan)]) == 0
+    planned = json.loads(plan.read_text(encoding="utf-8"))
+    assert [d["id"] for d in planned["todo"]] == ["819801", "819802"] and planned["contestants"]
+    assert not (rnd / "boards.json").exists()  # a plan changes no store
+    # a job reads its share of the plan (none here, with --limit 0) and writes what it read
+    out = tmp_path / "part-x.json"
+    assert cli.main(["--data", str(data), "boards", "--read", str(plan), "--shard", "1/2", "--out", str(out),
+                     "--limit", "0"]) == 0
+    assert json.loads(out.read_text(encoding="utf-8")) == {"failed": [], "left": 0, "results": {}, "unparsed": 0}
+    # two jobs read one decision each; the second ran out of time before its decision
+    part0, part1 = tmp_path / "part-0.json", tmp_path / "part-1.json"
+    read = {"s": "70017/30", "k": "extended", "r": False, "t": "1793400468", "u": "/x/801.pdf",
+            "slots": [[1, True, False]], "unmatched": 0, "addr": "ОШ", "unparsed": False, "station_ok": True}
+    part0.write_text(json.dumps({"results": {"819801": read}, "failed": [], "left": 0, "unparsed": 0}),
+                     encoding="utf-8")
+    part1.write_text(json.dumps({"results": {}, "failed": [], "left": 1, "unparsed": 0}), encoding="utf-8")
+    assert cli.main(["--data", str(data), "boards", "--merge", str(plan), str(part0), str(part1)]) == 0
+    store = load_store(rnd)
+    assert store["docs"]["819801"]["slots"] == [[1, True, False]]
+    assert store["docs"]["819803"]["k"] == "standing"
+    assert store["docs"]["819803"]["u"].endswith("/803/Решење БМ 31.pdf")
+    assert "819802" not in store["docs"] and not store["complete"]  # left for the next run
+    part1.write_text(json.dumps({"results": {"819802": {**read, "s": "70017/31"}}, "failed": [], "left": 0,
+                                 "unparsed": 0}), encoding="utf-8")
+    assert cli.main(["--data", str(data), "boards", "--merge", str(plan), str(part0), str(part1)]) == 0
+    assert load_store(rnd)["complete"]

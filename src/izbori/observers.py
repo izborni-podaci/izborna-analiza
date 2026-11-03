@@ -27,6 +27,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from izbori import jsonfile
 from izbori.documents import path_of
 
 REVIEWS = "observer_reviews.csv"
@@ -353,8 +354,7 @@ def load_scores(round_dir: Path) -> dict:
 
 
 def save_scores(round_dir: Path, store: dict) -> None:
-    (Path(round_dir) / SCORES).write_text(json.dumps(store, ensure_ascii=False, indent=0, sort_keys=True) + "\n",
-                                          encoding="utf-8")
+    (Path(round_dir) / SCORES).write_text(jsonfile.dumps(store, "docs"), encoding="utf-8")
 
 
 def _work(args: tuple) -> tuple[str, dict | None, str | None]:

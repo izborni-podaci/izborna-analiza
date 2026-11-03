@@ -15,6 +15,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from izbori import jsonfile
 from izbori.boards import doc_id, last_page, link_path, municipality_key
 from izbori.config import RIK_PUBLIC
 from izbori.i18n import BELGRADE
@@ -86,7 +87,7 @@ def load_store(round_dir: Path) -> dict:
 
 def save_store(round_dir: Path, store: dict) -> bool:
     p = path(round_dir)
-    text = json.dumps(store, ensure_ascii=False, indent=0, sort_keys=True) + "\n"
+    text = jsonfile.dumps(store, "docs")
     if p.exists() and p.read_text(encoding="utf-8") == text:
         return False
     p.write_text(text, encoding="utf-8")

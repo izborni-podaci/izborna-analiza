@@ -24,6 +24,7 @@ from datetime import datetime
 from html import unescape
 from pathlib import Path
 
+from izbori import jsonfile
 from izbori.config import RIK_PUBLIC
 from izbori.i18n import BELGRADE
 
@@ -203,7 +204,7 @@ def load(round_dir: Path) -> dict[str, list[Doc]]:
 def save(round_dir: Path, data: dict) -> bool:
     """Write documents.json; False when the content is what the file already holds."""
     p = path(round_dir)
-    text = json.dumps(data, ensure_ascii=False, indent=0, sort_keys=True) + "\n"
+    text = jsonfile.dumps(data, "stations")
     if p.exists() and p.read_text(encoding="utf-8") == text:
         return False
     p.write_text(text, encoding="utf-8")

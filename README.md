@@ -154,7 +154,9 @@ the names or left blank. RIK publishes them in its register of decisions on poll
 1. reads RIK's register of decisions for the round;
 2. reads the decisions on the extended composition with OCR, since most are scans;
 3. keeps, for each polling station, the address and, for each list, whether it appointed a member and a deputy;
-4. never stores or logs names.
+4. never stores or logs names. An address is checked before it is kept: a member's line read where the address should be is dropped.
+
+The workflow splits the reading so that four jobs read at once, about four times faster (a whole election's 8,700 decisions in about an hour and a half instead of five and a half): `--plan plan.json` indexes the register and lists what to read; four jobs each run `--read plan.json --shard I/4 --out part-I.json`; `--merge plan.json part-*.json` keeps the index and every part in the round's store and commits once. Run without these, `izbori boards` does all three in one process.
 
 The site then shows, for each list, at how many stations it has a member, and on each station's row which
 lists do. The private target list gets the lists with and without a member.
@@ -171,6 +173,8 @@ Limits:
   decision was read at all.
 
 Results are in `data/rounds/<id>/boards.json`.
+
+The derived stores (`boards.json`, `documents.json`, `commission.json`, `observers.json`) are written one entry per line, so that git keeps a small diff when a few entries change.
 
 ## Notes from news reports
 

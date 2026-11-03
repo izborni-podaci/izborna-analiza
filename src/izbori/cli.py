@@ -283,13 +283,48 @@ def cmd_update(args) -> int:
 
 
 BOARDS_AFTER = timedelta(days=14)  # the daily run stops reading decisions on boards this long after election day
+BOARDS_CHECKPOINT = 2 * 3600  # seconds between commits while one long run reads decisions
 
 
 def cmd_boards(args) -> int:
-    """Read which lists appointed members to the extended polling boards (controllers)."""
+    """Read which lists appointed members to the extended polling boards (controllers).
+
+    In one go, or in three steps that let several jobs read at once: --plan FILE indexes the register and lists
+    what to read; --read FILE --shard I/N reads one part of that list into --out; --merge FILE PART... keeps it
+    all in the round's store."""
     import os
     from izbori import boards
     archive = Archive(args.data)
+    workers = args.workers or os.cpu_count() or 2
+    if args.read:  # one part of a plan: no RIK register, no store, only the decisions themselves
+        planned = json.loads(Path(args.read).read_text(encoding="utf-8"))
+        i, n = (int(x) for x in args.shard.split("/"))
+        todo = [d for k, d in enumerate(planned["todo"]) if k % n == i][: args.limit]
+        log(f"{planned['round']}: part {i + 1} of {n}, {len(todo)} decisions to read")
+        got = boards.read(todo, planned["contestants"], Client().base, workers, args.budget_minutes * 60, log,
+                          args.diagnose)
+        Path(args.out).write_text(json.dumps(got, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+        return 0
+    if args.merge:
+        planned = json.loads(Path(args.merge).read_text(encoding="utf-8"))
+        rid = planned["round"]
+        store = boards.load_store(archive.dir(rid))
+        boards.apply_index(store, planned)
+        read = failed = left = 0
+        parts = [json.loads(Path(f).read_text(encoding="utf-8")) for f in args.parts]
+        for part in parts:
+            boards.apply_results(store, part["results"])
+            read, failed, left = read + len(part["results"]), failed + len(part["failed"]), left + part["left"]
+        done = {d for part in parts for d in part["results"]}
+        store["complete"] = not failed and not left and all(d["id"] in done for d in planned["todo"])
+        boards.save_store(archive.dir(rid), store)
+        log(f"{rid}: {len(parts)} parts merged, {read} decisions read, failed {failed}, left {left}")
+        show_boards(archive, rid, planned["contestants"], args.show)
+        if args.commit and commit([str(args.data)], f"Boards: {rid}, {read} decisions read ({now_iso()})"):
+            if args.push and push() and args.dispatch_pages:
+                dispatch_pages()
+        return 0
+
     client = Client()
     known = archive.known_rounds()
     if not known:
@@ -317,33 +352,44 @@ def cmd_boards(args) -> int:
         return 1
     stations = {boards.municipality_key(s.municipality): s.municipality_code for s in archive.load(source).stations}
     archive.dir(rid).mkdir(parents=True, exist_ok=True)
+    if args.plan:
+        planned = boards.plan(archive.dir(rid), rid, int(info["type"]), stations, client, log, args.retry_unparsed)
+        planned["contestants"] = contestants
+        Path(args.plan).write_text(json.dumps(planned, ensure_ascii=False), encoding="utf-8")
+        return 0
     last_commit = [time.monotonic()]
 
-    def checkpoint():
-        if args.commit and time.monotonic() - last_commit[0] > 1800:
+    def checkpoint():  # a long run keeps its work now and then, rather than in many small commits
+        if args.commit and time.monotonic() - last_commit[0] > BOARDS_CHECKPOINT:
             if commit([str(args.data)], f"Boards: {rid} ({now_iso()})") and args.push:
                 push()
             last_commit[0] = time.monotonic()
 
     result = boards.run(archive.dir(rid), rid, int(info["type"]), contestants, stations, client,
-                        workers=args.workers or os.cpu_count() or 2, budget_seconds=args.budget_minutes * 60,
-                        limit=args.limit, log=log, checkpoint=checkpoint, diagnose=args.diagnose,
-                        retry_unparsed=args.retry_unparsed)
-    if args.show:
-        cov = boards.coverage(boards.load_store(archive.dir(rid)))
-        for key in sorted(cov)[: args.show]:
-            c = cov[key]
-            if c["lists"] is None:
-                log(f"{key}: decision not readable")
-                continue
-            members = sorted(int(n) for n, v in c["lists"].items() if v["member"])
-            log(f"{key}: lists with a member {members} of {len(contestants)}; unmatched {c['unmatched']}; "
-                f"address: {latin(c['address'])}")
-        log(f"stations with a decision read: {len(cov)}")
+                        workers=workers, budget_seconds=args.budget_minutes * 60, limit=args.limit, log=log,
+                        checkpoint=checkpoint, diagnose=args.diagnose, retry_unparsed=args.retry_unparsed)
+    show_boards(archive, rid, contestants, args.show)
     if args.commit and commit([str(args.data)], f"Boards: {rid}, {result['read']} decisions read ({now_iso()})"):
         if args.push and push() and args.dispatch_pages:
             dispatch_pages()
     return 0
+
+
+def show_boards(archive: Archive, rid: str, contestants: list, n: int) -> None:
+    """Log the first n stations' lists with a member, and their addresses (no names)."""
+    from izbori import boards
+    if not n:
+        return
+    cov = boards.coverage(boards.load_store(archive.dir(rid)))
+    for key in sorted(cov)[:n]:
+        c = cov[key]
+        if c["lists"] is None:
+            log(f"{key}: decision not readable")
+            continue
+        members = sorted(int(x) for x, v in c["lists"].items() if v["member"])
+        log(f"{key}: lists with a member {members} of {len(contestants)}; unmatched {c['unmatched']}; "
+            f"address: {latin(c['address'])}")
+    log(f"stations with a decision read: {len(cov)}")
 
 
 def cmd_documents(args) -> int:
@@ -614,6 +660,12 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--show", type=int, default=0, help="print this many station summaries (no names)")
     b.add_argument("--diagnose", type=int, default=0, help="log the masked layout of this many unreadable decisions")
     b.add_argument("--retry-unparsed", action="store_true", help="read unreadable decisions again")
+    b.add_argument("--plan", metavar="FILE", help="index the register and write what to read to FILE, then stop")
+    b.add_argument("--read", metavar="FILE", help="read one part (--shard) of a plan's decisions into --out")
+    b.add_argument("--shard", default="0/1", help="which part of the plan to read, as I/N")
+    b.add_argument("--out", default="part.json", help="where --read writes what it read")
+    b.add_argument("--merge", metavar="FILE", help="keep a plan and the parts read for it in the round's store")
+    b.add_argument("parts", nargs="*", help="with --merge: the parts written by --read")
     b.add_argument("--commit", action="store_true")
     b.add_argument("--push", action="store_true")
     b.add_argument("--dispatch-pages", action="store_true")

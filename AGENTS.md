@@ -52,6 +52,7 @@ These are the project's promises to its readers. Never change them without the m
 
 - **Git is the archive.** `data/rounds/<id>/` holds RIK's files as downloaded and the derived stores; the history is
   a timestamped record of what RIK published. A file is committed only when its content changed.
+- **The derived stores are written one entry per line** (`jsonfile.py`), so git keeps a small diff.
 - **Each derived store keeps only what a page needs.** None of them holds a name:
   - `boards.json`: per decision, the station, kind, link, address, and whether each list appointed a member.
   - `documents.json`: label, link and upload time of every station document in RIK's register of minutes.
@@ -104,6 +105,9 @@ These are the project's promises to its readers. Never change them without the m
   be downloaded; use `rus` for local checks and confirm on a runner.
 - **Decisions on polling boards** use the PDF's text layer when there is one, otherwise OCR. Each list's slot gives
   "member yes/no", and the address is cleaned before it is kept.
+  - The workflow reads in four jobs at once (about 1,600 decisions an hour each): `--plan` lists what to read,
+    `--read --shard I/4` reads one share, `--merge` keeps everything and commits once. The plan and the parts are
+    workflow artifacts, so they hold no names either.
 - **Observers' records (RG-11)** are read by a person. OCR only orders the review list:
   - The score is the ink and words between "… су следеће:" and "(примедбе уписује …)". Each column of a landscape
     page is read on its own, and printed rules are left out by the length of their dark runs.
@@ -138,7 +142,7 @@ These are the project's promises to its readers. Never change them without the m
 |---|---|---|
 | update | hourly, plus Sunday evenings; asks RIK by the calendar | results, flags, feeds, email |
 | documents | daily | register of minutes, commission documents |
-| boards | daily, until 14 days after election day | decisions on polling boards (OCR) |
+| boards | daily, until 14 days after election day | decisions on polling boards: plan, four OCR jobs, merge (one commit) |
 | observers | daily, until 60 days after election day | OCR score of observers' records |
 | pages | on push | incremental site build and deploy |
 | test | on push | the whole test suite |
@@ -172,3 +176,4 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   - The commissions' documents are listed on the municipality page without their titles.
   - Member lines are never kept as addresses, and an address that contradicts the results is not used.
   - Repeated markup was cut from 713 MB to 657 MB, and the languages are built in parallel.
+  - Decisions on polling boards are read in four jobs at once, and the stores are written one entry per line.

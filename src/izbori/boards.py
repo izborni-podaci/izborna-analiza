@@ -19,6 +19,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from izbori import jsonfile
 from izbori.config import RIK_PUBLIC
 from izbori.translit import latin
 
@@ -306,8 +307,7 @@ def load_store(round_dir: Path) -> dict:
 
 def save_store(round_dir: Path, store: dict) -> None:
     scrub(store)
-    store_path(round_dir).write_text(json.dumps(store, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
-                                     encoding="utf-8")
+    store_path(round_dir).write_text(jsonfile.dumps(store, "docs"), encoding="utf-8")
 
 
 KEEP_WORDS = {"члан", "члана", "заменик", "на", "предлог", "подносиоца", "изборне", "листе", "посланичке", "групе",
@@ -444,47 +444,65 @@ def fetch_index(client, round_id: str, rik_type: int, known: frozenset = frozens
     return unique
 
 
-def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], stations: dict[str, str], client,
-        workers: int = 4, budget_seconds: float = 5 * 3600, limit: int | None = None, log=print,
-        save_every: int = 200, checkpoint=None, diagnose: int = 0, retry_unparsed: bool = False) -> dict:
-    """Index the round's board decisions and read the ones not yet read.
+def plan(round_dir: Path, round_id: str, rik_type: int, stations: dict[str, str], client, log=print,
+         retry_unparsed: bool = False) -> dict:
+    """Index the round's board decisions and say which to read: {"round", "whole", "index", "todo"}.
 
-    `stations` maps a municipality key (see municipality_key) to its code in the results file."""
+    The whole register is paged through unless the last run read everything and kept every decision's link;
+    otherwise older unread decisions (or links) deep in the register would be missed. `stations` maps a
+    municipality key (see municipality_key) to its code in the results file. Nothing here holds a name."""
+    store = load_store(round_dir)
+    known = store.get("docs", {})
+    whole = not store.get("complete") or any("u" not in d for d in known.values())
+    docs = fetch_index(client, round_id, rik_type, frozenset() if whole else frozenset(known), log)
+    index, todo = [], []
+    for d in docs:
+        code = stations.get(municipality_key(d.municipality))
+        key = f"{code}/{d.station}" if code and d.station else None
+        index.append({"id": d.id, "s": key, "k": d.kind, "r": d.repeat, "t": d.published, "u": link_path(d.url)})
+        entry = known.get(d.id)
+        if d.kind == "extended" and (entry is None or entry.get("slots") is None
+                                     or (retry_unparsed and entry.get("unparsed"))):
+            todo.append({"id": d.id, "s": key, "station": d.station, "kind": d.kind, "repeat": d.repeat,
+                         "published": d.published, "url": d.url})
+    log(f"{len(docs)} decisions indexed, {len(todo)} to read")
+    return {"round": round_id, "whole": whole, "index": index, "todo": todo}
+
+
+def apply_index(store: dict, planned: dict) -> None:
+    """Record what the register lists: every decision's link, and the kind of those not read with OCR."""
+    known = store.setdefault("docs", {})
+    for e in planned["index"]:
+        entry = known.get(e["id"])
+        if entry is not None:
+            entry["u"] = e["u"]
+            if entry.get("slots") is None:  # not read with OCR: the register's listing is all that is kept
+                entry.update({"k": e["k"], "r": e["r"], **({"s": e["s"]} if e["s"] else {})})
+        elif e["k"] != "extended":
+            known[e["id"]] = {"s": e["s"], "k": e["k"], "r": e["r"], "t": e["t"], "u": e["u"]}
+    if planned["whole"]:
+        for entry in known.values():
+            entry.setdefault("u", "")  # no longer in RIK's register: nothing to link to
+    store["indexed"] = len(set(known) | {e["id"] for e in planned["index"]})
+
+
+def read(todo: list[dict], contestants: list[dict], base: str, workers: int = 4, budget_seconds: float = 5 * 3600,
+         log=print, diagnose: int = 0, every: int = 200, progress=None) -> dict:
+    """Read decisions with OCR, in worker processes: {"results": {id: what is kept}, "failed": [ids], "left": n}.
+
+    No new decision is started after budget_seconds. progress(results) is called every `every` decisions."""
     import time
     from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 
     started = time.monotonic()
-    store = load_store(round_dir)
-    known = store.setdefault("docs", {})
-    # Page through the whole register unless the last run read everything and kept every decision's link;
-    # otherwise older unread decisions (or links) deep in the register would be missed.
-    whole = not store.get("complete") or any("u" not in d for d in known.values())
-    docs = fetch_index(client, round_id, rik_type, frozenset() if whole else frozenset(known), log)
-    store["indexed"] = len(set(known) | {d.id for d in docs})
-    todo = []
-    for d in docs:
-        code = stations.get(municipality_key(d.municipality))
-        key = f"{code}/{d.station}" if code and d.station else None
-        entry = known.get(d.id)
-        if entry is not None:
-            entry["u"] = link_path(d.url)
-            if entry.get("slots") is None:  # not read with OCR: the register's listing is all that is kept
-                entry.update({"k": d.kind, "r": d.repeat, **({"s": key} if key else {})})
-        if d.kind != "extended":
-            if d.id not in known:
-                known[d.id] = {"s": key, "k": d.kind, "r": d.repeat, "t": d.published, "u": link_path(d.url)}
-            continue
-        if d.id in known and known[d.id].get("slots") is not None and not (
-                retry_unparsed and known[d.id].get("unparsed")):
-            continue
-        todo.append((d.__dict__, contestants, key, client.base, diagnose > 0))
-    if limit is not None:
-        todo = todo[:limit]
-    log(f"{len(docs)} decisions indexed, {len(todo)} to read")
-    done = failed = unparsed = shown = 0
+    items = [({"municipality": "", "title": "", "decision": "", **{k: d[k] for k in
+                ("id", "station", "kind", "repeat", "published", "url")}}, contestants, d["s"], base, diagnose > 0)
+             for d in todo]
+    results: dict[str, dict] = {}
+    failed: list[str] = []
+    unparsed = shown = 0
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        pending = set()
-        queue = iter(todo)
+        pending, queue = set(), iter(items)
         while True:
             while len(pending) < workers * 2 and time.monotonic() - started < budget_seconds:
                 item = next(queue, None)
@@ -503,21 +521,42 @@ def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], 
                         if layout and shown < diagnose:
                             shown += 1
                             log(f"unreadable decision {did} ({result.get('s')}), layout with names masked:\n{layout}")
-                    known[did] = result
-                    done += 1
+                    results[did] = result
                 else:
-                    failed += 1
+                    failed.append(did)
                     log(f"could not read decision {did}: {error}")
-                if (done + failed) % save_every == 0:
-                    save_store(round_dir, store)
-                    log(f"read {done}, failed {failed}")
-                    if checkpoint:
-                        checkpoint()
-    if whole:
-        for entry in known.values():
-            entry.setdefault("u", "")  # no longer in RIK's register: nothing to link to
-    store["complete"] = limit is None and done + failed == len(todo) and failed == 0
+                if (len(results) + len(failed)) % every == 0:
+                    log(f"read {len(results)}, failed {len(failed)}")
+                    if progress:
+                        progress(results)
+    left = len(items) - len(results) - len(failed)
+    log(f"read {len(results)} (unreadable {unparsed}), failed {len(failed)}, left {left}")
+    return {"results": results, "failed": failed, "left": left, "unparsed": unparsed}
+
+
+def apply_results(store: dict, results: dict) -> None:
+    store.setdefault("docs", {}).update(results)
+
+
+def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], stations: dict[str, str], client,
+        workers: int = 4, budget_seconds: float = 5 * 3600, limit: int | None = None, log=print,
+        save_every: int = 200, checkpoint=None, diagnose: int = 0, retry_unparsed: bool = False) -> dict:
+    """Index the round's board decisions and read the ones not yet read, in this process's workers (the boards
+    workflow splits the reading across several jobs instead: plan, read, merge)."""
+    planned = plan(round_dir, round_id, rik_type, stations, client, log, retry_unparsed)
+    store = load_store(round_dir)
+    apply_index(store, planned)
+    todo = planned["todo"] if limit is None else planned["todo"][:limit]
+
+    def progress(results: dict) -> None:
+        apply_results(store, results)
+        save_store(round_dir, store)
+        if checkpoint:
+            checkpoint()
+
+    got = read(todo, contestants, client.base, workers, budget_seconds, log, diagnose, save_every, progress)
+    apply_results(store, got["results"])
+    store["complete"] = limit is None and not got["failed"] and not got["left"]
     save_store(round_dir, store)
-    log(f"read {done} (unreadable {unparsed}), failed {failed}, left {len(todo) - done - failed}")
-    return {"indexed": len(docs), "read": done, "failed": failed, "unparsed": unparsed,
-            "left": len(todo) - done - failed}
+    return {"indexed": len(planned["index"]), "read": len(got["results"]), "failed": len(got["failed"]),
+            "unparsed": got["unparsed"], "left": got["left"]}
