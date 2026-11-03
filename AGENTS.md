@@ -32,14 +32,17 @@ These are the project's promises to its readers. Never change them without the m
 2. **A flag is a question, not a verdict.** The site says "unusual, check the minutes", never "fraud".
 3. **Flags come from primary sources only:** laws, RIK's documents, ODIHR reports. A news report is a note, marked
    unconfirmed; it never makes a flag or changes a ranking. An OCR score is never a flag either.
-4. **No personal data.**
-   - Never store, log, print or transcribe a name from a document. Link to RIK's document instead.
+4. **No personally identifying data; link to RIK instead** (the maintainer's decision, 3 Nov 2026).
+   - The archive, the site, logs and CI output never record a person's name or other identifying detail, even
+     though RIK publishes them in its documents (board members, observers, commission members). Linking to RIK's
+     own document is always fine: whoever needs the names reads them there.
+   - Never store, log, print or transcribe a name from a document.
    - Don't copy titles that commissions write: they may name a person. Keep RIK's own kind of document instead.
    - Diagnostics in public CI logs mask every word that isn't printed on the form.
    - Summaries of observers' remarks never name anyone.
    - Anything parsed from a document that could hold a name is checked before it is kept. For example,
      `boards.clean_address` drops a member's line read where an address should be, and stores are scrubbed when
-     they are read and written. Names that leaked once are listed under *Known issues*.
+     they are read and written.
 5. **Nothing from third parties on the pages:** no analytics scripts, cookies, external fonts or scripts. Visitor
    counts, if any, come from the host or the edge (for example Cloudflare's proxy analytics), not from a script on
    the page.
@@ -160,9 +163,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 
 ## Known issues and open decisions
 
-- **Names in git history.** Before 3 Nov 2026, 401 "addresses" in `boards.json` (2023 parliamentary, 2023
-  provincial, 2026) were a member's line with a name. They are emptied in the current files, but remain in the
-  repository's history. Rewriting the history is the maintainer's decision.
 - **Custom domain and hosting:** waiting for the maintainer's choice of domain.
 - **Belgrade 2024 decisions on polling boards (round 567956):** 127 of 129 are listed under "Београд" with a station
   number, while the results number stations within each city municipality, so they can't be placed. All 17
@@ -178,5 +178,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   - Decisions on polling boards are linked on the place's page.
   - The commissions' documents are listed on the municipality page without their titles.
   - Member lines are never kept as addresses, and an address that contradicts the results is not used.
+  - Personally identifying data is never recorded; links to RIK's documents are. The 401 member lines that
+    leaked into `boards.json` as addresses before this date stay in git history: the names are public at RIK,
+    the fragments are shown nowhere, and rewriting history would break every clone. It is not rewritten.
   - Repeated markup was cut from 713 MB to 657 MB, and the languages are built in parallel.
   - Decisions on polling boards are read in four jobs at once, and the stores are written one entry per line.

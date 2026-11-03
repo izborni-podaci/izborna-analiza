@@ -39,7 +39,7 @@ A Serbian version of this file (`README.sr.md`) will follow.
 3. **Flags come from primary sources only:** laws, RIK documents, ODIHR reports.
    - A news report about a specific polling station can be attached to it as a note, marked as unconfirmed.
    - A note never creates a flag or changes the ranking.
-4. **No personal data.** RIK's results are station totals. The minutes carry board members' names and signatures, so the site links to them and never re-hosts or transcribes them.
+4. **No personally identifying data, links to RIK instead.** RIK's results are station totals. Its documents name board members, observers and commission members; the site links to those documents and never records, re-hosts or transcribes the names, even though RIK publishes them.
 5. **Nothing from third parties.** No analytics, cookies, fonts or scripts from other servers.
 
 ## What it does
