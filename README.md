@@ -155,6 +155,10 @@ the names or left blank. RIK publishes them in its register of decisions on poll
 The site then shows, for each list, at how many stations it has a member, and on each station's row which
 lists do. The private target list gets the lists with and without a member.
 
+Every decision on a station's board is also linked on the station's page, under "Decisions on the polling board":
+the standing and extended members, changes to either, and refused proposals, for the original and any repeated
+vote. Only the link is kept, never the content; the municipality's lists keep to the documents of the vote.
+
 Limits:
 - This is who was appointed before election day, not who turned up. Attendance is only in the minutes.
 - Later changes and dismissals are not yet applied; only appointments and supplements are. If a station voted
@@ -251,7 +255,7 @@ data/rounds/<id>/changes.jsonl    one line per value that changed at a station a
 data/rounds/<id>/first_seen.json  when each station first had results in the archive
 data/rounds/<id>/flags_seen.json  when each flag first appeared
 data/rounds/<id>/state.json       RIK's progress at the last download
-data/rounds/<id>/boards.json      controllers: per decision, station, address, and each list's member yes/no
+data/rounds/<id>/boards.json      decisions on polling boards: per decision, station, link, address, each list's member yes/no
 data/rounds/<id>/documents.json   every document RIK lists per station: label, link, upload time (no names)
 data/rounds/<id>/observers.json   per observers' record: how much is written in its remark lines (numbers only)
 data/rounds/<id>/observer_reviews.csv  what a person found in observers' records (edited by hand)

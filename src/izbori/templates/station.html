@@ -24,7 +24,7 @@
       {{ mx.history_election(e, link('r/' ~ e.rid ~ '/m/' ~ e.s.municipality_code ~ '.html') ~ '#bm-' ~ e.s.number) }}
       <td role="cell" class="block" data-label="{{ t('station') }}"><span class="nowrap">{{ t('station_no') }} {{ e.s.number }}</span>{% if e.s.name %} · {{ name(e.s.name) }}{% endif %}{% if e.how %} <span class="joined small muted">({{ t('joined_' ~ e.how) }})</span>{% endif %}
         {% if e.ctrl_known %}{{ mx.controllers(e.ctrl, e.n_lists) }}{% elif e.address %}<p class="small muted">{{ t('address') }}: {{ name(e.address) }}</p>{% endif %}
-        <div class="docs small">{{ mx.doc_links(e.docs) }}</div>{% if e.review and not e.review.remarks %}<p class="small muted">{{ t('review_none', date=t('review_checked', date=date(e.review.checked)) if e.review.checked else '') }}</p>{% endif %}</td>
+        <div class="docs small">{{ mx.doc_links(e.docs) }}</div>{% if e.board_docs %}<div class="docs small"><span class="muted">{{ t('board_docs') }}:</span> {{ mx.doc_links(e.board_docs) }}</div>{% endif %}{% if e.review and not e.review.remarks %}<p class="small muted">{{ t('review_none', date=t('review_checked', date=date(e.review.checked)) if e.review.checked else '') }}</p>{% endif %}</td>
       {% if e.s.counted %}
       <td role="cell" class="num" data-label="{{ t('registered') }}">{{ i(e.s.registered) }}</td>
       <td role="cell" class="num" data-label="{{ t('voted') }}">{{ i(e.s.voted) }}</td>

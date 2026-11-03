@@ -111,8 +111,12 @@ def test_site_shows_controllers(tmp_path, archive):
     shutil.copytree(archive.root, data)
     rnd = archive.load("680072")
     s = next(x for x in rnd.stations if x.municipality == "Дољевац" and x.number == "23")
-    store = {"docs": {"x": {"s": s.key, "k": "extended", "r": False, "t": "1", "unmatched": 0,
-                            "addr": "ОШ ПРИМЕР, ГЛАВНА 1", "slots": [[1, True, True], [3, True, False], [2, False, False]]}}}
+    store = {"docs": {"x": {"s": s.key, "k": "extended", "r": False, "t": "1792900000", "unmatched": 0,
+                            "addr": "ОШ ПРИМЕР, ГЛАВНА 1", "slots": [[1, True, True], [3, True, False], [2, False, False]],
+                            "u": "/extfile/sr/files/additionalDocuments/810/101/Решење проширени БМ 23.pdf"},
+                      "y": {"s": s.key, "k": "standing", "r": False, "t": "1791000000",
+                            "u": "/extfile/sr/files/additionalDocuments/790/202/Resenje stalni 23.pdf"},
+                      "z": {"s": s.key, "k": "extended_change", "r": False, "t": "1793000000", "u": ""}}}
     (data / "rounds/680072/boards.json").write_text(json.dumps(store, ensure_ascii=False), encoding="utf-8")
     # RIK's register of minutes lists an observers' record and a remark for the same station
     docs = {"labels": ["Записник о посматрачима (Образац РГ-11/НП)", "Примедба"], "unmatched": [],
@@ -144,9 +148,16 @@ def test_site_shows_controllers(tmp_path, archive):
     page = (out / place).read_text(encoding="utf-8")
     assert re.search(r"Zapisnik o posmatračima RIK je objavio za \d od \d izbora \([^)]*Parlamentarni 2026", page)
     assert ">Observers</a>" in (out / "en" / place).read_text(encoding="utf-8")
+    # the decisions on its polling board are linked on its page, apart from the documents of the vote
+    board = page[page.index("Rešenja o biračkom odboru:"):]
+    board = board[:board.index("</div>")]
+    assert re.findall(r">([^<]+)</a>", board) == ["stalni sastav", "prošireni sastav"]  # one without a link: not shown
+    assert "%D0%A0%D0%B5%D1%88%D0%B5%D1%9A%D0%B5%20%D0%BF%D1%80%D0%BE%D1%88%D0%B8%D1%80%D0%B5%D0%BD%D0%B8" in board
+    assert "Decisions on the polling board:" in (out / "en" / place).read_text(encoding="utf-8")
+    assert "Rešenja o biračkom odboru" not in mun  # the municipality's list keeps to the documents of the vote
     api = json.loads((out / "api" / place.replace(".html", ".json")).read_text(encoding="utf-8"))
     kinds = [d["kind"] for e in api["elections"] if e["round"] == "680072" for d in e["documents"]]
-    assert kinds == ["minutes", "observers", "remark"]
+    assert kinds == ["minutes", "observers", "remark", "board_standing", "board_extended"]
     assert "Zapisano na biračkom mestu" in (out / "about.html").read_text(encoding="utf-8")
     order = [round_page.index(f'id="{x}"') for x in ("check", "results", "controllers", "municipalities", "stats")]
     assert order == sorted(order)

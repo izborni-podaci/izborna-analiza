@@ -61,7 +61,7 @@
 {# A station's documents as RIK published them, each named by its kind: minutes, observers' record, remark,
    correction, ruling. The full label is in the tooltip; documents of one kind and vote are numbered. #}
 {% macro doc_links(docs) %}
-{% for d in docs %}{% set same = docs|selectattr('kind', 'equalto', d.kind)|selectattr('repeat', 'equalto', d.repeat)|list %}<a class="doc doc-{{ d.kind }}" href="{{ d.url|url }}" rel="noopener noreferrer" target="_blank" title="{{ name(d.label) }}">{{ t('doc_' ~ d.kind) }}{% if d.form %} {{ d.form }}{% endif %}{% if d.repeat %} ({{ t('doc_repeat') }}){% endif %}{% if same|length > 1 %} {{ same.index(d) + 1 }}{% endif %}</a> {% endfor %}
+{% for d in docs %}{% set same = docs|selectattr('kind', 'equalto', d.kind)|selectattr('repeat', 'equalto', d.repeat)|list %}<a class="doc doc-{{ d.kind }}" href="{{ d.url|url }}" rel="noopener noreferrer" target="_blank"{% if d.label %} title="{{ name(d.label) }}"{% endif %}>{{ t('doc_' ~ d.kind) }}{% if d.form %} {{ d.form }}{% endif %}{% if d.repeat %} ({{ t('doc_repeat') }}){% endif %}{% if same|length > 1 %} {{ same.index(d) + 1 }}{% endif %}</a> {% endfor %}
 {% endmacro %}
 
 {# The sentences at the top of the pages across elections (narrative.py), one paragraph per topic. #}

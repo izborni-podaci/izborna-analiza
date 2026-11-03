@@ -120,8 +120,15 @@ class Site:
 
     def ctrl_of(self, rid: str) -> dict:
         if rid not in self.ctrl_cache:
-            self.ctrl_cache[rid] = boards.coverage(boards.load_store(self.archive.dir(rid)))
+            store = boards.load_store(self.archive.dir(rid))
+            self.ctrl_cache[rid] = boards.coverage(store)
+            self.board_docs_cache[rid] = boards.station_docs(store)
         return self.ctrl_cache[rid]
+
+    def board_docs_of(self, rid: str) -> dict:
+        """Per station key, its decisions on the polling board (appointments and changes), to link."""
+        self.ctrl_of(rid)
+        return self.board_docs_cache[rid]
 
     def flagged_in(self, p: Place) -> int:
         """In how many of its elections the place had at least one flag."""
@@ -156,6 +163,7 @@ class Site:
                              "address": p.addresses.get(rid, ""), "flags": self.flag_view(a, flags, loc),
                              "notes": a.notes.get(s.key, []), "ctrl": ctrl.get(s.key), "ctrl_known": bool(ctrl),
                              "docs": a.documents.get(s.key, []), "review": a.reviews.get(s.key),
+                             "board_docs": self.board_docs_of(rid).get(s.key, []),
                              "n_lists": len(a.round.contestants),
                              "top": self.top_three(rid, s.votes) if s.counted else []})
                 story.append(self.place_election(rid, s, flags, cols[rid]["short"]))
@@ -341,8 +349,9 @@ class Site:
                 "flags": [{"code": f.code, "data": f.data} for f in self.flagged[rid].get(s.key, [])],
                 "minutes": [d.url for d in a.documents.get(s.key, []) if d.kind == "minutes"],
                 "corrections": [d.url for d in a.documents.get(s.key, []) if d.kind == "correction"],
-                "documents": [{"kind": d.kind, "repeat": d.repeat, "label": d.label, "url": d.url,
-                               "uploaded": d.uploaded or None} for d in a.documents.get(s.key, [])],
+                "documents": [{"kind": d.kind, "repeat": d.repeat, "label": d.label or None, "url": d.url,
+                               "uploaded": d.uploaded or None}
+                              for d in a.documents.get(s.key, []) + self.board_docs_of(rid).get(s.key, [])],
                 "controllers": ctrl.get("lists") if ctrl else None,
                 "notes": [{"date": n.date, "outlet": n.outlet, "url": n.url, "archive_url": n.archive_url,
                            "summary_sr": n.summary_sr, "summary_en": n.summary_en} for n in a.notes.get(s.key, [])]})
@@ -474,6 +483,7 @@ class Site:
         self.put(".nojekyll", "")
         self.cache: dict = {}
         self.ctrl_cache: dict = {}
+        self.board_docs_cache: dict = {}
         rids = self.archive.round_ids()
         for rid in rids:
             self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, self.cache)

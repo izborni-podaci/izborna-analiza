@@ -19,6 +19,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from izbori.config import RIK_PUBLIC
 from izbori.translit import latin
 
 # --- the register of decisions -----------------------------------------------------------------
@@ -43,7 +44,10 @@ def classify(title: str, decision: str) -> tuple[str, bool]:
     repeat = "ПОНОВН" in text or "PONOVN" in text
     extended = "ПРОШИРЕН" in text or "PROŠIREN" in text or "PROSIREN" in text
     if not extended:
-        return ("standing" if ("СТАЛН" in text or "STALN" in text) else "other"), repeat
+        if "СТАЛН" not in text and "STALN" not in text:
+            return "other", repeat
+        changed = any(w in text for w in ("ИЗМЕН", "IZMEN", "РАЗРЕШ", "RAZREŠ", "ПРЕСТАН", "PRESTAN"))
+        return ("standing_change" if changed else "standing"), repeat
     if any(w in text for w in ("ОДБИЈ", "ОДБАЦ", "ODBIJ", "ODBAC")):
         return "extended_rejected", repeat
     if any(w in text for w in ("ПРЕСТАН", "РАЗРЕШ", "PRESTAN", "RAZREŠ")):
@@ -56,6 +60,38 @@ def classify(title: str, decision: str) -> tuple[str, bool]:
 def doc_id(url: str) -> str:
     m = re.search(r"additionalDocuments/(\d+)/(\d+)/", url)
     return f"{m.group(1)}{m.group(2)}" if m else url
+
+
+def link_path(url: str) -> str:
+    """The decision's path on RIK's site, decoded (kept so the station's page can link to it)."""
+    return urllib.parse.unquote(urllib.parse.urlsplit(url.strip()).path)
+
+
+# Kinds of decision as listed among a station's documents (documents.KINDS), in that order.
+DOC_KINDS = {"standing": "board_standing", "standing_change": "board_standing_change", "extended": "board_extended",
+             "extended_change": "board_extended_change", "extended_end": "board_extended_change",
+             "extended_rejected": "board_refused", "other": "board_other"}
+
+
+def station_docs(store: dict) -> dict:
+    """Per station key, its decisions on the polling board as documents to link (documents.Doc), oldest first.
+
+    Only decisions whose link was kept; the label is left empty, as the kind says what each one is."""
+    from datetime import datetime
+
+    from izbori.documents import Doc, order
+    from izbori.i18n import BELGRADE
+    out: dict[str, list] = {}
+    for d in store.get("docs", {}).values():
+        if not d.get("s") or not d.get("u"):
+            continue
+        when = d.get("t") or ""
+        if when.isdigit():
+            when = datetime.fromtimestamp(int(when), tz=BELGRADE).strftime("%Y-%m-%dT%H:%M")
+        url = d["u"] if d["u"].startswith("http") else RIK_PUBLIC.rstrip("/") + d["u"]
+        out.setdefault(d["s"], []).append(Doc(DOC_KINDS.get(d.get("k"), "board_other"), bool(d.get("r")), "", url,
+                                              when))
+    return {key: order(docs) for key, docs in out.items()}
 
 
 def parse_index_records(records: list[dict]) -> list[BoardDoc]:
@@ -275,8 +311,8 @@ def read_doc(doc: BoardDoc, pdf: bytes, contestants: list[dict], station_key: st
         if number is None:
             unmatched += 1
         slots.append([number, s.member, s.deputy])
-    result = {"s": station_key, "k": doc.kind, "r": doc.repeat, "t": doc.published, "slots": slots,
-              "unmatched": unmatched, "addr": decision.address, "unparsed": not slots,
+    result = {"s": station_key, "k": doc.kind, "r": doc.repeat, "t": doc.published, "u": link_path(doc.url),
+              "slots": slots, "unmatched": unmatched, "addr": decision.address, "unparsed": not slots,
               "station_ok": decision.station is None or decision.station == doc.station}
     if diagnose and not slots:
         result["_shape"] = shape(text)
@@ -393,17 +429,23 @@ def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], 
     started = time.monotonic()
     store = load_store(round_dir)
     known = store.setdefault("docs", {})
-    # Page through the whole register unless the last run read everything; otherwise older unread decisions
-    # deep in the register would be missed.
-    docs = fetch_index(client, round_id, rik_type, frozenset(known) if store.get("complete") else frozenset(), log)
+    # Page through the whole register unless the last run read everything and kept every decision's link;
+    # otherwise older unread decisions (or links) deep in the register would be missed.
+    whole = not store.get("complete") or any("u" not in d for d in known.values())
+    docs = fetch_index(client, round_id, rik_type, frozenset() if whole else frozenset(known), log)
     store["indexed"] = len(set(known) | {d.id for d in docs})
     todo = []
     for d in docs:
         code = stations.get(municipality_key(d.municipality))
         key = f"{code}/{d.station}" if code and d.station else None
+        entry = known.get(d.id)
+        if entry is not None:
+            entry["u"] = link_path(d.url)
+            if entry.get("slots") is None:  # not read with OCR: the register's listing is all that is kept
+                entry.update({"k": d.kind, "r": d.repeat, **({"s": key} if key else {})})
         if d.kind != "extended":
             if d.id not in known:
-                known[d.id] = {"s": key, "k": d.kind, "r": d.repeat, "t": d.published}
+                known[d.id] = {"s": key, "k": d.kind, "r": d.repeat, "t": d.published, "u": link_path(d.url)}
             continue
         if d.id in known and known[d.id].get("slots") is not None and not (
                 retry_unparsed and known[d.id].get("unparsed")):
@@ -444,6 +486,9 @@ def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], 
                     log(f"read {done}, failed {failed}")
                     if checkpoint:
                         checkpoint()
+    if whole:
+        for entry in known.values():
+            entry.setdefault("u", "")  # no longer in RIK's register: nothing to link to
     store["complete"] = limit is None and done + failed == len(todo) and failed == 0
     save_store(round_dir, store)
     log(f"read {done} (unreadable {unparsed}), failed {failed}, left {len(todo) - done - failed}")

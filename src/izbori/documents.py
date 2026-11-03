@@ -29,8 +29,12 @@ from izbori.i18n import BELGRADE
 
 FILE = "documents.json"
 
-# Kinds of document, in the order a station's documents are listed. The first rule a label matches decides.
-KINDS = ["minutes", "observers", "remark", "correction", "annulled", "undetermined", "audit", "other"]
+# Kinds of document, in the order a station's documents are listed. The first rule a label matches decides. The
+# decisions on the polling board come from another register (boards.station_docs).
+KINDS = ["minutes", "observers", "remark", "correction", "annulled", "undetermined", "audit", "other",
+         "board_standing", "board_standing_change", "board_extended", "board_extended_change", "board_refused",
+         "board_other"]
+BOARD_KINDS = frozenset(k for k in KINDS if k.startswith("board_"))
 _RULES = [
     ("remark", ("ПРИМЕДБ", "PRIMEDB")),
     ("observers", ("ПОСМАТРАЧ", "POSMATRAČ", "POSMATRAC")),
@@ -209,6 +213,11 @@ def save(round_dir: Path, data: dict) -> bool:
 # --- a station's documents -----------------------------------------------------------------------
 
 
+def order(docs) -> list[Doc]:
+    """Documents by kind, then the original vote before a repeated one, then by upload time."""
+    return sorted(docs, key=lambda d: (KINDS.index(d.kind), d.repeat, d.uploaded, d.url))
+
+
 def for_station(links: list[tuple[str, str]], register: list[Doc] | None = None) -> list[Doc]:
     """A station's documents: those in the results file (label, url pairs) and those in the register, each once,
     by kind and then by upload time."""
@@ -218,4 +227,4 @@ def for_station(links: list[tuple[str, str]], register: list[Doc] | None = None)
         out.setdefault(path_of(d.url), d)
     for d in register or []:
         out.setdefault(path_of(d.url), d)
-    return sorted(out.values(), key=lambda d: (KINDS.index(d.kind), d.repeat, d.uploaded, d.url))
+    return order(out.values())

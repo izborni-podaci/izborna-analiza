@@ -69,6 +69,8 @@ def test_classify():
     assert classify("РЕШЕЊЕ О ИМЕНОВАЊУ ПРЕДСЕДНИКА ... У СТАЛНОМ САСТАВУ", "")[0] == "standing"
     assert classify("", "Решење о одбијању предлога ... у проширеном саставу")[0] == "extended_rejected"
     assert classify("", "Решење о измени решења ... у проширеном саставу")[0] == "extended_change"
+    assert classify("РЕШЕЊЕ О ИЗМЕНИ РЕШЕЊА БО - БМ 25", "Решење о измени решења о именовању члана / заменика члана "
+                    "бирачког одбора у сталном саставу – поновно гласање") == ("standing_change", True)
 
 
 def test_index_records():
@@ -116,3 +118,61 @@ def test_shape_masks_names():
     masked = shape(text)
     assert "Петар" not in masked and "Петровић" not in masked and "Марковић" not in masked
     assert "члан" in masked and "предлог" in masked
+
+
+def index_page(records, pages=1):
+    return {"records": records, "pagination": "".join(f'<a data-page="{p}">{p}</a>' for p in range(1, pages + 1))}
+
+
+def index_record(n, station, decision, name="РЕШЕЊЕ"):
+    return {"datetime": "1793400468", "document_name": name, "election_board_decision": decision,
+            "election_station_title": f"{station} - ОШ", "municipality_display_name": "Куршумлија",
+            "extfiles_link": [f'<div><a href="/extfile/sr/files/additionalDocuments/819/{n}/Решење БМ {station}.pdf">'
+                              "</a></div>"]}
+
+
+def test_links_are_kept_and_filled_in_for_decisions_read_before(tmp_path):
+    """A store from before links were kept gets them from one pass through the whole register, and the kinds of
+    the decisions not read with OCR follow the register; decisions read with OCR keep what was read."""
+    import json
+
+    from izbori.boards import load_store, run, station_docs
+    records = [index_record(701, 30, "Решење о измени решења о именовању члана бирачког одбора у сталном саставу"),
+               index_record(702, 30, "Решење о именовању члана и заменика члана бирачког одбора у проширеном саставу"),
+               index_record(703, 31, "Решење о именовању члана бирачког одбора у сталном саставу")]
+    (tmp_path / "boards.json").write_text(json.dumps({"complete": True, "docs": {
+        "819701": {"s": "70017/30", "k": "standing", "r": False, "t": "1793400468"},
+        "819702": {"s": "70017/30", "k": "extended", "r": False, "t": "1793400468", "slots": [[1, True, False]],
+                   "addr": "ОШ"},
+        "819600": {"s": "70017/31", "k": "standing", "r": False, "t": "1"},  # no longer in RIK's register
+    }}, ensure_ascii=False), encoding="utf-8")
+
+    class Client:
+        base = "https://rik.test"
+        calls = 0
+
+        def get_json(self, path):
+            Client.calls += 1
+            return index_page(records)
+
+    client = Client()
+    stations = {municipality_key("Куршумлија"): "70017"}
+    result = run(tmp_path, "680072", 2, [], stations, client, workers=1, log=lambda m: None)
+    assert result["read"] == 0
+    docs = load_store(tmp_path)["docs"]
+    assert docs["819701"]["k"] == "standing_change" and docs["819701"]["u"].endswith("/819/701/Решење БМ 30.pdf")
+    assert docs["819702"]["slots"] == [[1, True, False]]
+    assert docs["819702"]["u"].endswith("/819/702/Решење БМ 30.pdf")
+    assert docs["819703"] == {"s": "70017/31", "k": "standing", "r": False, "t": "1793400468",
+                              "u": "/extfile/sr/files/additionalDocuments/819/703/Решење БМ 31.pdf"}
+    assert docs["819600"]["u"] == ""
+    linked = station_docs(load_store(tmp_path))
+    assert [(d.kind, d.uploaded) for d in linked["70017/30"]] == [("board_standing_change", "2026-10-30T23:47"),
+                                                                    ("board_extended", "2026-10-30T23:47")]
+    assert linked["70017/30"][0].url == "https://www.rik.parlament.gov.rs/extfile/sr/files/additionalDocuments/819/701/" \
+                                        "Решење БМ 30.pdf"
+    assert [d.kind for d in linked["70017/31"]] == ["board_standing"]  # the decision without a link isn't listed
+    # with every link kept, the next run only reads the register's newest page
+    Client.calls = 0
+    run(tmp_path, "680072", 2, [], stations, client, workers=1, log=lambda m: None)
+    assert Client.calls == 1
