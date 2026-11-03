@@ -4,14 +4,24 @@ import re
 import xml.etree.ElementTree as ET
 from datetime import UTC, datetime, timedelta
 
+import json
+
+import pytest
+
 from izbori import feed, mail, targets
 from izbori.site import build
 
 CYRILLIC = re.compile(r"[Ѐ-ӿ]")
 
 
-def test_site(tmp_path, archive):
-    out = build(archive, tmp_path / "site", None, "https://example.org/x/")
+@pytest.fixture(scope="module")
+def site(tmp_path_factory, archive):
+    """The site built once from the archive, shared by the tests that only read it."""
+    return build(archive, tmp_path_factory.mktemp("site") / "site", None, "https://example.org/x/")
+
+
+def test_site(site):
+    out = site
     for prefix in ("", "cyr/", "en/"):
         for page in ("index.html", "guide.html", "about.html", "r/680072/index.html", "r/680072/check.html",
                      "r/680072/changes.html"):
@@ -19,7 +29,8 @@ def test_site(tmp_path, archive):
     assert len(list((out / "r/680072/m").glob("*.html"))) == 191
 
     # Latin and English pages carry no Cyrillic except the name of the Cyrillic switch
-    for path in list(out.glob("*.html")) + list((out / "r").rglob("*.html")) + list((out / "en").rglob("*.html")):
+    for path in [*out.glob("*.html"), *(out / "r").rglob("*.html"), *(out / "s").glob("*.html"),
+                 *(out / "m").glob("*.html"), *(out / "en").rglob("*.html")]:
         text = path.read_text(encoding="utf-8").replace("Ћирилица", "")
         assert not CYRILLIC.search(text), path
     assert CYRILLIC.search((out / "cyr/r/680072/index.html").read_text(encoding="utf-8"))
@@ -115,12 +126,64 @@ def test_site_shows_controllers(tmp_path, archive):
     assert order == sorted(order)
 
 
-def test_site_station_pages_and_breadcrumbs(archive, tmp_path):
-    from izbori.site import build
-    out = build(archive, tmp_path / "site", None, "https://example.org/x/")
+def test_site_station_pages_and_breadcrumbs(site):
+    out = site
     pages = sorted((out / "s").glob("*.html"))
-    assert pages, "a page for every station flagged in at least one election"
+    assert pages, "a page for every polling place"
     text = pages[0].read_text(encoding="utf-8")
     assert 'class="crumbs"' in text and "Kroz sve izbore" in text
     assert 'class="crumbs"' in (out / "r/680072/check.html").read_text(encoding="utf-8")
     assert (out / "elections.html").exists() and (out / "search.json").exists()
+
+
+def test_search_leads_to_pages_across_elections(site):
+    """Every search result opens a page across all elections: a municipality page with a row per election, and a
+    page for every polling place, flagged or not."""
+    for prefix in ("", "cyr/", "en/"):
+        data = json.loads((site / prefix / "search.json").read_text(encoding="utf-8"))
+        assert all(len(m) == 3 and m[2] >= 1 for m in data["m"])
+        for m in data["m"]:
+            assert (site / prefix / f"m/{m[1]}.html").exists(), m
+        for s in data["s"]:
+            mi, number, _, page, k, n, _ = s
+            page = page or f"{data['m'][mi][1]}-{re.sub(r'[^0-9A-Za-z_-]', '_', number)}"
+            assert (site / prefix / f"s/{page}.html").exists(), s
+            assert 0 <= k <= n
+    data = json.loads((site / "search.json").read_text(encoding="utf-8"))
+    assert len(data["s"]) == len(list((site / "s").glob("*.html")))
+    flagged = [s for s in data["s"] if s[4]]
+    assert flagged and data["s"][:len(flagged)] == flagged  # flagged places first
+
+
+def test_municipality_across_elections(site):
+    # Novi Sad voted in the presidential 2022, parliamentary 2023, provincial 2023 and parliamentary 2026 elections
+    page = (site / "m/89010.html").read_text(encoding="utf-8")
+    rows = re.findall(r'<th scope="row" class="election"><a href="\.\./r/(\d+)/m/89010\.html">', page)
+    assert rows == ["680072", "341143", "341140", "42732"]  # newest first, one row each
+    assert "Opština nije glasala na: Lokalni 2024." in page
+    assert 'href="../r/680072/check.html#m-89010"' in page
+    assert 'href="../s/89010-140.html"' in page and "Biračka mesta kroz izbore" in page
+    # round pages link to it, and their stations to their own pages
+    mun = (site / "r/680072/m/89010.html").read_text(encoding="utf-8")
+    assert 'href="../../../m/89010.html"' in mun and 'href="../../../s/89010-1.html"' in mun
+
+
+def test_place_across_elections(site):
+    # Zemun's gymnasium was station 10 until 2023 and is 14 since 2024: one place, found by its name
+    page = (site / "s/70157-14.html").read_text(encoding="utf-8")
+    rows = re.findall(r'<a href="\.\./r/(\d+)/m/70157\.html#bm-(\d+)">', page)
+    assert rows == [("680072", "14"), ("567956", "14"), ("341140", "10"), ("42732", "10")]
+    assert "isto mesto po nazivu" in page and "Ranije: BM 10" in page
+    assert "Nije glasalo na: Pokrajinski 2023." in page
+    # a school that held stations 134 and 140 in 2023 kept only 140 in 2026; station 134 of 2026 is another place
+    # with another name, so the number alone doesn't join it to the school's old 134
+    def stations(path):
+        return re.findall(r'<a href="\.\./r/(\d+)/m/89010\.html#bm-(\d+)">', (site / path).read_text(encoding="utf-8"))
+    assert stations("s/89010-140.html") == [("680072", "140"), ("341143", "140"), ("341140", "140"), ("42732", "140")]
+    assert stations("s/89010-134-341143.html") == [("341143", "134"), ("341140", "134"), ("42732", "134")]
+    assert stations("s/89010-134.html") == [("680072", "134")]
+    assert "JOVAN POPOVIĆ" in (site / "s/89010-134-341143.html").read_text(encoding="utf-8")
+    assert "RADOSNO DETINJSTVO" in (site / "s/89010-134.html").read_text(encoding="utf-8")
+    # the top three use names without the words every list's name starts with
+    assert "1. ALEKSANDAR VUČIĆ - SRBIJA NE SME DA STANE" in page
+    assert "IZBORNA LISTA KANDIDATA" not in page.split('title="')[0]

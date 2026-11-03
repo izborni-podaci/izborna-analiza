@@ -61,6 +61,17 @@
 {% endif %}
 {% endmacro %}
 
+{# Tables across elections: the election, linking to this place in it, and the three contestants with most votes. #}
+{% macro history_election(e, href) %}
+<th scope="row" class="election"><a href="{{ href }}">{{ e.short }}</a>{% if e.date %}<span class="small muted">{{ e.date }}</span>{% endif %}</th>
+{% endmacro %}
+
+{% macro history_top(top) %}
+<td class="block" data-label="{{ t('top_three') }}">{% if top %}<ol class="top3">
+{% for r in top %}<li><span class="t3-name" title="{{ name(r.full) }}">{{ r.number }}. {{ name(r.label) }}</span><span class="t3-pct">{{ pct(r.share, 1) }}</span></li>{% endfor %}
+</ol>{% else %}<span class="muted">—</span>{% endif %}</td>
+{% endmacro %}
+
 {% macro data_note() %}
 <p class="data-note">{{ t('rik_time') }}: {{ time(rnd.rik_time) }} · {{ t('fetched') }}: {{ time(rnd.fetched) }}</p>
 {% endmacro %}

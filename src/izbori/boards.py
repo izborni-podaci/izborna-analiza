@@ -317,6 +317,17 @@ def coverage(store: dict) -> dict[str, dict]:
     return out
 
 
+def addresses(store: dict) -> dict[str, str]:
+    """Per station: the address on its newest decision of any kind, where one was read."""
+    out: dict[str, tuple[str, str]] = {}
+    for d in store.get("docs", {}).values():
+        if d.get("s") and d.get("addr"):
+            when = d.get("t") or ""
+            if d["s"] not in out or when >= out[d["s"]][0]:
+                out[d["s"]] = (when, d["addr"])
+    return {key: addr for key, (_, addr) in out.items()}
+
+
 def municipality_key(name: str) -> str:
     s = latin(name).upper()
     s = re.sub(r"^(GRADSKA OPŠTINA|GRADSKA OPSTINA|GRAD|OPŠTINA|OPSTINA)\s+", "", s.strip())

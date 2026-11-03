@@ -320,6 +320,37 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .station-timeline > li { padding: 14px 0; border-top: 1px solid var(--grid); }
 .station-timeline .flags { margin: 0; }
 
+/* places and municipalities across elections: one row per election, every row alike */
+.across-link { margin: 0 0 6px; }
+table.history th.election { color: var(--ink); font-size: 0.925rem; white-space: normal; min-width: 8.5rem; }
+table.history th.election span { display: block; font-weight: 400; }
+table.history td { min-width: 4.5rem; }
+table.history .flags { margin: 0; min-width: 14rem; }
+table.history .flag { font-size: 0.875rem; }
+table.history .ctrl, table.history p { margin: 4px 0 0; }
+.top3 { list-style: none; padding: 0; margin: 0; min-width: 12rem; }
+.top3 li { display: flex; gap: 8px; justify-content: space-between; align-items: baseline; }
+.t3-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16rem; }
+.t3-pct { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.joined { white-space: nowrap; }
+table.places td:nth-child(2) { min-width: 14rem; }
+@media (max-width: 600px) {
+  /* each election becomes a card: label on the left, value on the right */
+  .history-wrap { border: 0; overflow: visible; }
+  table.history, table.history tbody, table.history tr, table.history th.election, table.history td { display: block; width: auto; min-width: 0; }
+  table.history thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.history tr { border: 1px solid var(--border); border-radius: 4px; margin: 0 0 12px; background: var(--surface); }
+  table.history tr.flagged { box-shadow: inset 3px 0 var(--accent); }
+  table.history tr.flagged td:first-child { box-shadow: none; }
+  table.history th.election { font-size: 1.05rem; border-bottom: 1px solid var(--grid); padding: 10px 12px; }
+  table.history td { display: flex; gap: 12px; justify-content: space-between; text-align: right; padding: 7px 12px; }
+  table.history td::before { content: attr(data-label); color: var(--ink-2); font-size: 0.85rem; text-align: left; flex: 0 0 auto; }
+  table.history td.block { display: block; text-align: left; }
+  table.history td.block::before { display: block; margin-bottom: 4px; }
+  table.history .flags, .top3 { min-width: 0; }
+  .t3-name { max-width: 70vw; }
+}
+
 /* votes made readable */
 .vote-list { list-style: none; padding: 0; margin: 10px 0 20px; max-width: 820px; }
 .vote-list li { display: grid; grid-template-columns: minmax(10rem, 16rem) minmax(0, 1fr) 4.5em 4.2em 7.5em; grid-template-areas: "name bar n pct ref"; gap: 2px 14px; align-items: center; padding: 7px 0; border-top: 1px solid var(--grid); }

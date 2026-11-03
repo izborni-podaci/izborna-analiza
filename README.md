@@ -171,9 +171,14 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 - **Round:** totals, results, seats or the majority, statistics for the whole round, and municipalities.
 - **To check:** every flagged station. Filter by municipality and flag type. Each flag shows its rule, its numbers and RIK's minutes.
 - **Municipality:** every station, with its numbers, flags, minutes and notes.
+- **Municipality across elections** (`m/<code>.html`): one row per election it took part in, every election alike: stations, registered voters, turnout, invalid ballots, the top three contestants and the number of stations to check, each linking to that election. Then its polling stations, each linking to its own page.
+- **Polling station across elections** (`s/<place>.html`, one for every station): one row per election with that election's number and name, the numbers, the top three, flags, notes and minutes.
+- **Search** on the home page finds a municipality or a polling station, by its current or a former number, and opens its page across elections.
 - **Changes:** what changed after first publication, and each archived version of the file.
 - **Observer guide:** what's allowed at a polling station on election day, with article references.
 - **About:** method, sources, limits.
+
+The pages across elections follow the same place through the archive (`places.py`): within its municipality, a station is joined to the station of an earlier election by address first (where the decisions on polling boards gave one), then by name, then by number. A number alone never joins two stations whose address or name clearly differs. The station checks and the station history table still match stations by municipality code + number.
 
 Every page says which RIK timestamp the data comes from and when it was fetched. Charts are drawn as SVG when the site is built, so the site needs no JavaScript libraries.
 
@@ -253,6 +258,7 @@ src/izbori/
   report.py     everything about one round, for the site, feeds and targets
   describe.py   one line per flag with its numbers, in each language
   stats.py      statistics for the whole round
+  places.py     the same polling place across elections: address, then name, then number
   notes.py      news notes
   targets.py    private ranking
   feed.py       Atom feeds

@@ -5,6 +5,7 @@
 {{ mx.round_nav('') }}
 <p class="kicker">{{ rtitle }}{% if m.kind == 'domestic' %} · {{ name(m.district) }}{% endif %}</p>
 <h1>{{ name(m.name) }}</h1>
+<p class="across-link"><a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ t('mun_across_link') }}</a></p>
 {{ mx.data_note() }}
 
 <section class="tiles">
@@ -32,7 +33,7 @@
     {% set s = r.s %}
     <tr id="bm-{{ s.number }}"{% if r.flags %} class="flagged"{% endif %}>
       <td class="num">{{ s.number }}</td>
-      <td>{% if st_path(s.key) %}<a href="{{ link(st_path(s.key)) }}">{{ name(s.name) or t('station_details') }}</a>{% else %}{{ name(s.name) }}{% endif %}{% if ctrl_known %}{{ mx.controllers(ctrl.get(s.key), rnd.contestants|length) }}{% endif %}<div class="docs small">{{ mx.doc_links(s) }}</div></td>
+      <td><a href="{{ link(st_path(rnd.id, s.key)) }}">{{ name(s.name) or t('station_details') }}</a>{% if ctrl_known %}{{ mx.controllers(ctrl.get(s.key), rnd.contestants|length) }}{% endif %}<div class="docs small">{{ mx.doc_links(s) }}</div></td>
       {% if s.counted %}
       <td class="num">{{ i(s.registered) }}</td><td class="num">{{ i(s.voted) }}</td><td class="num">{{ pct(s.turnout, 1) }}</td>
       <td class="num">{{ i(s.ballots) }}</td><td class="num">{{ i(s.invalid) }}</td>
@@ -79,7 +80,7 @@
   {% for b in mby %}
     <tr>
       <td class="num">{{ b.s.number }}</td>
-      <td>{% if st_path(b.s.key) %}<a href="{{ link(st_path(b.s.key)) }}">{{ name(b.s.name) or t('station_details') }}</a>{% else %}{{ name(b.s.name) }}{% endif %}</td>
+      <td><a href="{{ link(st_path(rnd.id, b.s.key)) }}">{{ name(b.s.name) or t('station_details') }}</a></td>
       {% for share, n in b.cells %}<td class="num heat" style="--h: {{ '%.0f'|format(100 * (share or 0)) }}%" title="{{ i(n) }}">{{ pct(share, 1) }}</td>{% endfor %}
       <td class="num muted" title="{{ i(b.rest[1]) }}">{{ pct(b.rest[0], 1) }}</td>
       <td class="num">{{ i(b.valid) }}</td>
