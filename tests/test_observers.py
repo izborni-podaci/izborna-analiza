@@ -20,9 +20,9 @@ def test_reviews_become_flags(tmp_path):
     assert set(reviews) == {"70092/1", "70092/2"} and not reviews["70092/2"].remarks
     flags = review_flags(reviews)
     assert [(f.station, f.code) for f in flags] == [("70092/1", "observer_remarks")]
-    assert describe(flags[0], "en") == ("Observers wrote remarks in the observers' record (read 2026-11-04): "
+    assert describe(flags[0], "en") == ("Observers wrote remarks in the observers' record (read 4 Nov 2026): "
                                         "Voters voted without an ID card")
-    assert describe(flags[0], "cyr").endswith(": Бирачи гласали без личне карте")
+    assert describe(flags[0], "cyr").endswith(" (прочитано 4.11.2026.): Бирачи гласали без личне карте")
     assert load_reviews(tmp_path / "missing") == {}
 
 
@@ -107,3 +107,41 @@ def test_landscape_page_is_read_column_by_column():
         (False, 94, 113), (False, 153, 172), (False, 36, 54), (False, 94, 113)]
     assert [x0 < w / 2 for x0, *_ in found] == [True, True, False, False]
     assert all(not inside for *_, inside in found)
+
+
+def test_merge_a_filled_in_review_list(tmp_path):
+    """Rows of the review list with a yes or no go into observer_reviews.csv, one per station; the rest stay out."""
+    (tmp_path / observers.REVIEWS).write_text(
+        "municipality_code,station,remarks,summary_sr,summary_en,checked\n"
+        "70017,50,ne,,,2026-11-01\n33000,52,da,Старо,Old,2026-11-01\n", encoding="utf-8")
+    filled = tmp_path / "observers-review.csv"
+    filled.write_text(
+        "score,municipality,station_name,observers_record,other,municipality_code,station,remarks,summary_sr,"
+        "summary_en,checked\n"
+        "11.6,Inostranstvo,X,https://rik.test/a.pdf,,33000,52,da,Десетак бирача враћено јер нису били на списку,"
+        "About ten voters turned away as they were not on the list,\n"
+        "10.9,Aranđelovac,Y,https://rik.test/b.pdf,,70033,7,ne,,,2026-11-02\n"
+        "9.0,Aranđelovac,Z,https://rik.test/c.pdf,,70033,8,,,,\n"
+        "8.0,Aranđelovac,W,https://rik.test/d.pdf,,70033,9,možda,,,\n", encoding="utf-8")
+    assert observers.merge_reviews(tmp_path, filled, "2026-11-03") == (1, 1)
+    reviews = load_reviews(tmp_path)
+    assert sorted(reviews) == ["33000/52", "70017/50", "70033/7"]
+    assert reviews["33000/52"].remarks and reviews["33000/52"].checked == "2026-11-03"  # summary rewritten today
+    assert reviews["33000/52"].summary("en") == "About ten voters turned away as they were not on the list"
+    assert not reviews["70033/7"].remarks and reviews["70033/7"].checked == "2026-11-02"
+    assert observers.merge_reviews(tmp_path, filled, "2026-11-04") == (0, 0)  # the same list again changes nothing
+
+
+def test_merge_a_list_saved_by_a_spreadsheet(tmp_path):
+    """Excel in a Serbian locale saves with ; and a byte order mark, and writes dates as 3.11.2026."""
+    filled = tmp_path / "observers-review.csv"
+    filled.write_bytes("﻿score;municipality;station_name;observers_record;other;municipality_code;station;remarks;"
+                       "summary_sr;summary_en;checked\r\n"
+                       "15,4;Inostranstvo;X;https://rik.test/a.pdf;;33000;55;Da;\"Примедба у два\nреда\";;3.11.2026.\r\n"
+                       .encode("utf-8"))
+    assert observers.merge_reviews(tmp_path, filled, "2026-11-04") == (1, 0)
+    review = load_reviews(tmp_path)["33000/55"]
+    assert review.remarks and review.checked == "2026-11-03" and review.summary_sr == "Примедба у два\nреда"
+    from izbori.i18n import fmt_date
+    assert (fmt_date(review.checked, "cyr"), fmt_date(review.checked, "en"), fmt_date("лане", "cyr")) == (
+        "3.11.2026.", "3 Nov 2026", "лане")

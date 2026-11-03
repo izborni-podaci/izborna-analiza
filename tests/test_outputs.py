@@ -139,7 +139,7 @@ def test_site_shows_controllers(tmp_path, archive):
     row = row[:row.index("</tr>")]
     assert 'class="doc doc-observers"' in row and ">Posmatrači</a>" in row and ">Primedba</a>" in row
     assert "Primedba uz zapisnik" in row and "%D0%9F%D1%80%D0%B8%D0%BC%D0%B5%D0%B4%D0%B1%D0%B0" in row  # link encoded
-    assert "Primedbe posmatrača" in row and "Gužva ispred biračkog mesta" in row
+    assert "Primedbe posmatrača" in row and "Gužva ispred biračkog mesta" in row and "pročitano 4.11.2026." in row
     place = re.search(r'href="\.\./\.\./\.\./(s/[^"]+\.html)"', row).group(1)
     page = (out / place).read_text(encoding="utf-8")
     assert re.search(r"Zapisnik o posmatračima RIK je objavio za \d od \d izbora \([^)]*Parlamentarni 2026", page)

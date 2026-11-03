@@ -127,7 +127,7 @@ RIK's register of minutes ("Записници", e.g. [parliamentary 2026](https
 2. keeps, per station, each document's label, link and upload time in `data/rounds/<id>/documents.json`;
 3. never stores names: the register has none, and the documents themselves (which name board members and observers) are linked, never copied.
 
-Station pages, the lists to check and the JSON name each document by its kind. Remarks and the RG-8 and RG-9 rulings become flags (see [Station checks](#station-checks)); the observers' record is linked on every row, and the "In short" text says in which elections it exists. Remarks written by hand inside the observers' record aren't read automatically yet.
+Station pages, the lists to check and the JSON name each document by its kind. Remarks and the RG-8 and RG-9 rulings become flags (see [Station checks](#station-checks)); the observers' record is linked on every row, and the "In short" text says in which elections it exists. Remarks written by hand inside the observers' record become flags once a person has read them (see [Observers' records](#observers-records)).
 
 The first reading of a round, and any reading of a round older than 60 days, is recorded without a feed entry; new flags from documents of a recent round go to the feed like any others. The register uses today's municipality names, so names from every archived election map to the codes (the 2022 table writes "Ниш-Медијана" for "Градска општина Медијана").
 
@@ -136,7 +136,9 @@ The first reading of a round, and any reading of a round older than 60 days, is 
 The observers' record (RG-11) lists, for each observer at the station, whether they had remarks, with lines to write them on. They are handwritten scans, and "нема" or a line struck through the empty space is common, so they aren't turned into flags automatically. Two parts work together:
 
 1. **A person reads the record.** `data/rounds/<id>/observer_reviews.csv` has the columns `municipality_code`, `station`, `remarks` (`да`/`не`, `da`/`ne` or `yes`/`no`), `summary_sr`, `summary_en`, `checked` (the date). A "yes" becomes the flag "Observers' remarks" with the summary; a "no" shows on the station's page as read. **Summaries never name anyone.**
-2. **OCR orders what to read.** `izbori observers` (and the daily **observers** workflow) reads each record once, finds the remark lines between "… су следеће:" and "(примедбе уписује …)", and scores how much is written there: the share of dark pixels, leaving out the printed rules, plus the words OCR finds, less for a lone "нема". Only numbers are kept (`data/rounds/<id>/observers.json`), never the text, and a score is never a flag. `izbori observers --review --html review.html` writes the records not yet reviewed, most written-in first, with columns ready to copy into the CSV.
+2. **OCR orders what to read.** `izbori observers` (and the daily **observers** workflow) reads each record once, finds the remark lines between "… су следеће:" and "(примедбе уписује …)" (each column of a landscape record on its own), and scores how much is written there: the share of dark pixels, leaving out the printed rules, plus the words OCR finds, less for a lone "нема". Only numbers are kept (`data/rounds/<id>/observers.json`), never the text, and a score is never a flag. `izbori observers --review --html review.html` writes the records not yet reviewed, most written-in first (`observers-review.csv`, and the same as a page with links); fill in `remarks`, the summaries and the date there, and `izbori observers --merge observers-review.csv` copies the rows with a yes or no into the round's `observer_reviews.csv`.
+
+A high score means "read this first", not "there are remarks": a sentence such as "no remarks, so no need to sign" or lines struck through also leave ink. On a sample of 150 records from 2026, 136 scored below 2; of those scoring 5 or more that were checked by eye, all had something written in the remark lines. To tune the score on real records without showing what is written, `izbori observers --round <id> --station <code>/<number> --diagnose 5 --layout` logs the lines OCR found and the areas it measured, every word not printed on the form masked.
 
 ## Controllers on polling boards
 
@@ -288,6 +290,8 @@ uv run izbori boards --round 680072       # controllers: read decisions on exten
 uv run izbori documents --round 680072    # observers' records, remarks and rulings from RIK's register of minutes
 uv run izbori observers --round 680072    # score observers' records with OCR (needs tesseract); numbers only
 uv run izbori observers --review --html review.html   # the records to read, most written-in first
+uv run izbori observers --merge observers-review.csv  # the rows filled in there, into observer_reviews.csv
+uv run izbori observers --station 70017/50 --diagnose 1 --layout   # what OCR found in one record, names masked
 uv run izbori site --out _site            # build the site
 uv run izbori site --out _site --incremental   # render only what changed since the last build
 uv run izbori targets --out targets.csv --html targets.html   # private: never commit or post

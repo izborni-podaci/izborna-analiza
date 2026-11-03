@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from izbori.checks import Flag
-from izbori.i18n import fmt_int, fmt_num, fmt_pct, fmt_time, t
+from izbori.i18n import fmt_date, fmt_int, fmt_num, fmt_pct, fmt_time, t
 from izbori.translit import latin
 
 FIELD_KEYS = {
@@ -103,7 +103,7 @@ def describe(flag: Flag, loc: str, contestant_label=lambda n: str(n), kind: str 
                   "repeat": t("doc_repeat_note", loc) if d.get("repeat") else ""}
     elif flag.code == "observer_remarks":
         summary = (d.get("summary_en") or latin(d.get("summary_sr") or "")) if loc == "en" else d.get("summary_sr") or ""
-        values = {"checked": t("review_checked", loc, date=d["checked"]) if d.get("checked") else "",
+        values = {"checked": t("review_checked", loc, date=fmt_date(d["checked"], loc)) if d.get("checked") else "",
                   "summary": f": {summary}" if summary else ""}
     elif flag.code == "near_unanimity":
         values = {"turnout": p(d["turnout"]), "contestant": contestant_label(d["contestant"]), "share": p(d["share"])}

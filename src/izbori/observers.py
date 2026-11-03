@@ -18,6 +18,7 @@ Writing "нема" or striking out the empty lines also leaves ink, so a high sc
 from __future__ import annotations
 
 import csv
+import io
 import json
 import os
 import re
@@ -38,6 +39,27 @@ NO = {"не", "ne", "no", "n", "0", "false"}
 # --- reviews by a person -------------------------------------------------------------------------
 
 
+def iso_day(text: str) -> str:
+    """A date as YYYY-MM-DD, from that or from 3.11.2026(.) as people write it; anything else as it is."""
+    from datetime import date
+    text = (text or "").strip()
+    m = re.fullmatch(r"(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\.?", text)
+    if m:
+        try:
+            return date(int(m.group(3)), int(m.group(2)), int(m.group(1))).isoformat()
+        except ValueError:
+            return text
+    return text
+
+
+def _csv_rows(path: Path) -> list[dict]:
+    """Rows of a CSV file as saved by hand or by a spreadsheet (with ; instead of , and a byte order mark)."""
+    with Path(path).open(encoding="utf-8-sig", newline="") as f:
+        text = f.read()
+    header = text.split("\n", 1)[0]
+    return list(csv.DictReader(io.StringIO(text), delimiter=";" if header.count(";") > header.count(",") else ","))
+
+
 @dataclass(frozen=True)
 class Review:
     remarks: bool
@@ -56,14 +78,13 @@ def load_reviews(round_dir: Path) -> dict[str, Review]:
     if not p.exists():
         return {}
     out = {}
-    with p.open(encoding="utf-8", newline="") as f:
-        for row in csv.DictReader(f):
-            row = {k: (v or "").strip() for k, v in row.items() if k}
-            answer = row.get("remarks", "").lower()
-            if not row.get("municipality_code") or not row.get("station") or answer not in YES | NO:
-                continue
-            out[f"{row['municipality_code']}/{row['station']}"] = Review(
-                answer in YES, row.get("summary_sr", ""), row.get("summary_en", ""), row.get("checked", ""))
+    for row in _csv_rows(p):
+        row = {k: (v or "").strip() for k, v in row.items() if k}
+        answer = row.get("remarks", "").lower()
+        if not row.get("municipality_code") or not row.get("station") or answer not in YES | NO:
+            continue
+        out[f"{row['municipality_code']}/{row['station']}"] = Review(
+            answer in YES, row.get("summary_sr", ""), row.get("summary_en", ""), iso_day(row.get("checked", "")))
     return out
 
 
@@ -73,6 +94,37 @@ def write_template(round_dir: Path) -> Path:
         with p.open("w", encoding="utf-8", newline="") as f:
             csv.writer(f).writerow(FIELDS)
     return p
+
+
+def merge_reviews(round_dir: Path, filled: Path, today: str) -> tuple[int, int]:
+    """Copy the rows of a filled-in review list (izbori observers --review) that have a yes or no into
+    observer_reviews.csv, a row per station, the date filled in if empty. Returns (added, changed)."""
+    def rows_of(path: Path) -> list[dict]:
+        rows = [{k: (r.get(k) or "").strip() for k in FIELDS} for r in _csv_rows(path)]
+        for r in rows:
+            r["checked"] = iso_day(r["checked"])
+        return rows
+
+    p = write_template(round_dir)
+    kept = {(r["municipality_code"], r["station"]): r for r in rows_of(p) if r["municipality_code"]}
+    added = changed = 0
+    for row in rows_of(filled):
+        if not row["municipality_code"] or not row["station"] or row["remarks"].lower() not in YES | NO:
+            continue
+        key = (row["municipality_code"], row["station"])
+        same = key in kept and all(kept[key][k] == row[k] for k in FIELDS if k != "checked")
+        row["checked"] = row["checked"] or (kept[key]["checked"] if same else today)  # a row merged again keeps its date
+        if key not in kept:
+            added += 1
+        elif kept[key] != row:
+            changed += 1
+        kept[key] = row
+    with p.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w.writeheader()
+        for key in sorted(kept, key=lambda k: (k[0], int(k[1]) if k[1].isdigit() else 0, k[1])):
+            w.writerow(kept[key])
+    return added, changed
 
 
 # --- the OCR score -------------------------------------------------------------------------------
@@ -315,16 +367,18 @@ def _work(args: tuple) -> tuple[str, dict | None, str | None]:
 
 
 def run(round_dir: Path, records: list[tuple[str, str]], client, workers: int = 4, budget_seconds: float = 5 * 3600,
-        limit: int | None = None, log=print, diagnose: int = 0, save_every: int = 100, layout: bool = False) -> dict:
-    """Score the observers' records not scored yet. records: (station key, document url). With layout, the
-    diagnosed records' layout is logged too, every word not printed on the form masked."""
+        limit: int | None = None, log=print, diagnose: int = 0, save_every: int = 100, layout: bool = False,
+        again: bool = False) -> dict:
+    """Score the observers' records not scored yet (with again, those scored before too). records: (station key,
+    document url). With layout, the diagnosed records' layout is logged too, every word not printed on the form
+    masked."""
     import time
     from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 
     started = time.monotonic()
     store = load_scores(round_dir)
     known = store.setdefault("docs", {})
-    todo = [(key, url, client.base, layout) for key, url in records if path_of(url) not in known]
+    todo = [(key, url, client.base, layout) for key, url in records if again or path_of(url) not in known]
     if limit is not None:
         todo = todo[:limit]
     log(f"{len(records)} observers' records, {len(todo)} to read")
@@ -391,7 +445,7 @@ def write_review(rows: list[dict], rid: str, csv_path: Path, html_path: Path | N
     from izbori.i18n import check_name
     from izbori.links import safe_url
     from izbori.translit import latin
-    with Path(csv_path).open("w", encoding="utf-8", newline="") as f:
+    with Path(csv_path).open("w", encoding="utf-8-sig", newline="") as f:  # the mark lets Excel read the letters
         w = csv.writer(f)
         w.writerow(["score", "municipality", "station_name", "observers_record", "other", *FIELDS])
         for r in rows:
@@ -408,7 +462,9 @@ def write_review(rows: list[dict], rid: str, csv_path: Path, html_path: Path | N
                  f"<h1>Zapisnici o posmatračima za čitanje ({len(rows)})</h1>",
                  "<p>Redosled daje automatsko čitanje: koliko je upisano u linije za primedbe. Visok skor znači "
                  "„pročitaj prvo”, ne „ima primedbi”: i „nema” ili precrtan prostor ostavljaju trag. Šta si našao "
-                 "upiši u observer_reviews.csv (da/ne, kratak opis bez imena).</p>",
+                 f"upiši u {html.escape(Path(csv_path).name)}: remarks (da/ne), summary_sr i summary_en (kratak opis, "
+                 "<b>bez imena</b>), checked (datum, ili prazno za danas). Zatim <code>izbori observers --merge "
+                 f"{html.escape(Path(csv_path).name)}</code> prepisuje popunjene redove u observer_reviews.csv.</p>",
                  "<table><tr><th>Skor</th><th>Opština</th><th>BM</th><th>Mesto</th><th>Zapisnik</th><th>Drugo</th></tr>"]
         for r in rows:
             s = r["s"]

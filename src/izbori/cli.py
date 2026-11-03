@@ -418,13 +418,19 @@ def cmd_observers(args) -> int:
     if not rids:
         return 0
     rid = args.round or rids[-1]
+    if args.merge:
+        today = datetime.now(BELGRADE).date().isoformat()
+        added, changed = observers.merge_reviews(archive.dir(rid), Path(args.merge), today)
+        print(f"{rid}: {added} reviews added, {changed} changed in {archive.dir(rid) / observers.REVIEWS}")
+        return 0
     if args.review:
         a = analyze(archive, rid, args.notes)
         rows = observers.review_rows(a, observers.load_scores(archive.dir(rid)).get("docs", {}))
         observers.write_review(rows, rid, Path(args.out), Path(args.html) if args.html else None)
         template = observers.write_template(archive.dir(rid))
         print(f"{len(rows)} observers' records to read → {args.out}" + (f" and {args.html}" if args.html else ""))
-        print(f"Write what you find in {template} (yes/no, a short summary that names no one, the date).")
+        print(f"Fill in remarks (yes/no), a short summary that names no one, and the date in {args.out}, then "
+              f"`izbori observers --merge {args.out}` copies those rows into {template}.")
         return 0
     date = archive.meta(rid).get("date")
     if not args.round and date and (datetime.now(UTC).date() - datetime.fromisoformat(date[:10]).date()).days > 60:
@@ -435,7 +441,7 @@ def cmd_observers(args) -> int:
                and (not args.station or key in args.station)]
     result = observers.run(archive.dir(rid), records, Client(), workers=args.workers or os.cpu_count() or 2,
                            budget_seconds=args.budget_minutes * 60, limit=args.limit, log=log, diagnose=args.diagnose,
-                           layout=args.layout)
+                           layout=args.layout, again=bool(args.station))
     if args.commit and commit([str(args.data)], f"Observers: {rid}, {result['read']} records scored ({now_iso()})"):
         if args.push:
             push()
@@ -611,13 +617,16 @@ def main(argv: list[str] | None = None) -> int:
     o.add_argument("--review", action="store_true", help="write the list to read, most written-in first")
     o.add_argument("--out", default="observers-review.csv")
     o.add_argument("--html")
+    o.add_argument("--merge", metavar="CSV",
+                   help="copy the rows of a filled-in review list that have a yes or no into observer_reviews.csv")
     o.add_argument("--workers", type=int, help="parallel OCR processes (default: number of CPUs)")
     o.add_argument("--budget-minutes", type=float, default=320, help="stop starting new records after this")
     o.add_argument("--limit", type=int, help="read at most this many records (for trials)")
     o.add_argument("--diagnose", type=int, default=0, help="log the numbers behind this many scores")
     o.add_argument("--layout", action="store_true",
                    help="with --diagnose, also log each record's layout, every word not printed on the form masked")
-    o.add_argument("--station", action="append", help="only this station (municipality code/number); repeatable")
+    o.add_argument("--station", action="append",
+                   help="only this station (municipality code/number), read again if scored before; repeatable")
     o.add_argument("--commit", action="store_true")
     o.add_argument("--push", action="store_true")
     o.set_defaults(fn=cmd_observers)

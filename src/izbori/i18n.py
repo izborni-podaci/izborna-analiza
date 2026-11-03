@@ -626,6 +626,17 @@ def fmt_time(value, loc: str) -> str:
     return f"{d.day}.{d.month}.{d.year}. {d:%H:%M}"
 
 
+def fmt_date(iso: str | None, loc: str) -> str:
+    """A day (YYYY-MM-DD) as 25.10.2026. or 25 Oct 2026; anything else as it is."""
+    if not iso:
+        return ""
+    try:
+        y, m, d = (int(x) for x in iso[:10].split("-"))
+    except ValueError:
+        return iso
+    return f"{d} {MONTHS_EN[m - 1]} {y}" if loc == "en" else f"{d}.{m}.{y}."
+
+
 def rule_values(rules: dict, loc: str) -> dict:
     """The check thresholds, formatted for the rule texts."""
     out = dict(rules)

@@ -26,7 +26,7 @@ from izbori.describe import describe, field_label
 from izbori.history import Archive
 from izbori.links import safe_url
 from izbori.model import last_url
-from izbori.i18n import (LANG_ATTR, LOCALES, MONTHS_EN, PREFIX, S, check_name, check_rule, fmt_int, fmt_num, fmt_pct,
+from izbori.i18n import (LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, fmt_date, fmt_int, fmt_num, fmt_pct,
                          fmt_time, keep, kind_name, latin_page, strip_keep, t)
 from izbori import documents, narrative
 from izbori.places import RULES_FILE, Place, follow
@@ -80,7 +80,8 @@ class Site:
             "loc": loc, "lang": LANG_ATTR[loc], "root": root, "link": link, "langs": langs, "page": page,
             "t": lambda key, **kw: t(key, loc, **kw), "i": lambda n: fmt_int(n, loc),
             "pct": lambda x, d=1: fmt_pct(x, loc, d), "num": lambda x, d=1: fmt_num(x, loc, d),
-            "time": lambda v: fmt_time(v, loc), "name": name, "kind_name": lambda k: kind_name(k, loc),
+            "time": lambda v: fmt_time(v, loc), "date": lambda v: fmt_date(v, loc), "name": name,
+            "kind_name": lambda k: kind_name(k, loc),
             "check_name": lambda c: check_name(c, loc), "check_rule": lambda c: check_rule(c, loc, RULES),
             "repo_url": REPO_URL, "rik_url": RIK_PUBLIC, "feed_href": root + ("feed.en.xml" if loc == "en"
                                                                               else "feed.sr.xml"),
@@ -779,14 +780,6 @@ def display_labels(contestants) -> list[str]:
             words = words[1:]
         out.append(" ".join(words) or label)
     return out
-
-
-def fmt_date(iso: str | None, loc: str) -> str:
-    """An election day (YYYY-MM-DD) as 25.10.2026. or 25 Oct 2026."""
-    if not iso:
-        return ""
-    y, m, d = (int(x) for x in iso[:10].split("-"))
-    return f"{d} {MONTHS_EN[m - 1]} {y}" if loc == "en" else f"{d}.{m}.{y}."
 
 
 def ctrl_rows(contestants, coverage) -> tuple[list[dict], int]:
