@@ -5,103 +5,120 @@
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402280"
+   "t": "1716402280",
+   "u": "/extfile/sr/files/additionalDocuments/611/654/70092_Barajevo_ResenjaBO_StalniSastav.pdf"
   },
   "611660": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402408"
+   "t": "1716402408",
+   "u": "/extfile/sr/files/additionalDocuments/611/660/70106_Vozdovac_ResenjaBO_StalniSastav.pdf"
   },
   "611669": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402443"
+   "t": "1716402443",
+   "u": "/extfile/sr/files/additionalDocuments/611/669/70114_Vracar_ResenjaBO_StalniSastav.pdf"
   },
   "611681": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402469"
+   "t": "1716402469",
+   "u": "/extfile/sr/files/additionalDocuments/611/681/70122_Grocka_ResenjaBO_StalniSastav.pdf"
   },
   "611690": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402500"
+   "t": "1716402500",
+   "u": "/extfile/sr/files/additionalDocuments/611/690/70149_Zvezdara_ResenjaBO_StalniSastav.pdf"
   },
   "611699": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402524"
+   "t": "1716402524",
+   "u": "/extfile/sr/files/additionalDocuments/611/699/70157_Zemun_ResenjaBO_StalniSastav.pdf"
   },
   "611708": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402546"
+   "t": "1716402546",
+   "u": "/extfile/sr/files/additionalDocuments/611/708/70165_Lazarevac_ResenjaBO_StalniSastav.pdf"
   },
   "611717": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402568"
+   "t": "1716402568",
+   "u": "/extfile/sr/files/additionalDocuments/611/717/70173_Mladenovac_ResenjaBO_StalniSastav.pdf"
   },
   "611729": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402602"
+   "t": "1716402602",
+   "u": "/extfile/sr/files/additionalDocuments/611/729/70181_NoviBeograd_ResenjaBO_StalniSastav.pdf"
   },
   "611738": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402625"
+   "t": "1716402625",
+   "u": "/extfile/sr/files/additionalDocuments/611/738/70190_Obrenovac_ResenjaBO_StalniSastav.pdf"
   },
   "611744": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402648"
+   "t": "1716402648",
+   "u": "/extfile/sr/files/additionalDocuments/611/744/70203_Palilula_ResenjaBO_StalniSastav.pdf"
   },
   "611753": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402667"
+   "t": "1716402667",
+   "u": "/extfile/sr/files/additionalDocuments/611/753/70211_Rakovica_ResenjaBO_StalniSastav.pdf"
   },
   "611759": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402688"
+   "t": "1716402688",
+   "u": "/extfile/sr/files/additionalDocuments/611/759/70220_SavskiVenac_ResenjaBO_StalniSastav.pdf"
   },
   "611768": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402718"
+   "t": "1716402718",
+   "u": "/extfile/sr/files/additionalDocuments/611/768/70238_Sopot_ResenjaBO_StalniSastav.pdf"
   },
   "611774": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402742"
+   "t": "1716402742",
+   "u": "/extfile/sr/files/additionalDocuments/611/774/70246_StariGrad_ResenjaBO_StalniSastav.pdf"
   },
   "611777": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402765"
+   "t": "1716402765",
+   "u": "/extfile/sr/files/additionalDocuments/611/777/70254_Cukarica_ResenjaBO_StalniSastav.pdf"
   },
   "611783": {
    "k": "standing",
    "r": false,
    "s": null,
-   "t": "1716402787"
+   "t": "1716402787",
+   "u": "/extfile/sr/files/additionalDocuments/611/783/71293_Surcin_ResenjaBO_StalniSastav.pdf"
   },
   "611855": {
    "addr": "МК \"АРНАЈЕВО\", АРНАЈЕВО, БРАТСТВА И ЈЕДИНСТВА БР. 1",
@@ -111,6 +128,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403305",
+   "u": "/extfile/sr/files/additionalDocuments/611/855/70092_Barajevo_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -122,6 +140,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403324",
+   "u": "/extfile/sr/files/additionalDocuments/611/861/70106_Vozdovac_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -133,6 +152,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403343",
+   "u": "/extfile/sr/files/additionalDocuments/611/867/70114_Vracar_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -144,6 +164,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403370",
+   "u": "/extfile/sr/files/additionalDocuments/611/876/70122_Grocka_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -155,6 +176,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403401",
+   "u": "/extfile/sr/files/additionalDocuments/611/885/70149_Zvezdara_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -166,6 +188,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403427",
+   "u": "/extfile/sr/files/additionalDocuments/611/900/70157_Zemun_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -177,6 +200,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403447",
+   "u": "/extfile/sr/files/additionalDocuments/611/909/70165_Lazarevac_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -188,6 +212,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403469",
+   "u": "/extfile/sr/files/additionalDocuments/611/912/70173_Mladenovac_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -199,6 +224,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403488",
+   "u": "/extfile/sr/files/additionalDocuments/611/918/70181_NoviBeograd_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -210,6 +236,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403506",
+   "u": "/extfile/sr/files/additionalDocuments/611/924/70190_Obrenovac_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -221,6 +248,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403525",
+   "u": "/extfile/sr/files/additionalDocuments/611/933/70203_Palilula_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -232,6 +260,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403550",
+   "u": "/extfile/sr/files/additionalDocuments/611/942/70211_Rakovica_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -243,6 +272,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403573",
+   "u": "/extfile/sr/files/additionalDocuments/611/948/70220_SavskiVenac_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -254,6 +284,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403592",
+   "u": "/extfile/sr/files/additionalDocuments/611/957/70238_Sopot_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -265,6 +296,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403631",
+   "u": "/extfile/sr/files/additionalDocuments/611/969/70246_StariGrad_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -276,6 +308,7 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403656",
+   "u": "/extfile/sr/files/additionalDocuments/611/978/70254_Cukarica_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
@@ -287,578 +320,674 @@
    "slots": [],
    "station_ok": true,
    "t": "1716403675",
+   "u": "/extfile/sr/files/additionalDocuments/611/990/71293_Surcin_ResenjaBO_ProsireniSastav.pdf",
    "unmatched": 0,
    "unparsed": true
   },
   "638603": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101114"
+   "t": "1717101114",
+   "u": "/extfile/sr/files/additionalDocuments/638/603/70092_Barajevo_IzmenaResenja_StalniSastav.pdf"
   },
   "638609": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101137"
+   "t": "1717101137",
+   "u": "/extfile/sr/files/additionalDocuments/638/609/70106_Vozdovac_IzmenaResenja_StalniSastav.pdf"
   },
   "638612": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101158"
+   "t": "1717101158",
+   "u": "/extfile/sr/files/additionalDocuments/638/612/70114_Vracar_IzmenaResenja_StalniSastav.pdf"
   },
   "638615": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101182"
+   "t": "1717101182",
+   "u": "/extfile/sr/files/additionalDocuments/638/615/70122_Grocka_IzmenaResenja_StalniSastav.pdf"
   },
   "638618": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101213"
+   "t": "1717101213",
+   "u": "/extfile/sr/files/additionalDocuments/638/618/70157_Zemun_IzmenaResenja_StalniSastav.pdf"
   },
   "638624": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101232"
+   "t": "1717101232",
+   "u": "/extfile/sr/files/additionalDocuments/638/624/70149_Zvezdara_IzmenaResenja_StalniSastav.pdf"
   },
   "638627": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101282"
+   "t": "1717101282",
+   "u": "/extfile/sr/files/additionalDocuments/638/627/70165_Lazarevac_IzmenaResenja_StalniSastav.pdf"
   },
   "638633": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101309"
+   "t": "1717101309",
+   "u": "/extfile/sr/files/additionalDocuments/638/633/70173_Mladenovac_IzmenaResenja_StalniSastav.pdf"
   },
   "638636": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101335"
+   "t": "1717101335",
+   "u": "/extfile/sr/files/additionalDocuments/638/636/70181_NoviBeograd_IzmenaResenja_StalniSastav.pdf"
   },
   "638639": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101362"
+   "t": "1717101362",
+   "u": "/extfile/sr/files/additionalDocuments/638/639/70190_Obrenovac_IzmenaResenja_StalniSastav.pdf"
   },
   "638642": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101400"
+   "t": "1717101400",
+   "u": "/extfile/sr/files/additionalDocuments/638/642/70203_Palilula_IzmenaResenja_StalniSastav.pdf"
   },
   "638645": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101424"
+   "t": "1717101424",
+   "u": "/extfile/sr/files/additionalDocuments/638/645/70211_Rakovica_IzmenaResenja_StalniSastav.pdf"
   },
   "638651": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101462"
+   "t": "1717101462",
+   "u": "/extfile/sr/files/additionalDocuments/638/651/70220_SavskiVenac_IzmenaResenja_StalniSastav.pdf"
   },
   "638654": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101491"
+   "t": "1717101491",
+   "u": "/extfile/sr/files/additionalDocuments/638/654/70238_Sopot_IzmenaResenja_StalniSastav.pdf"
   },
   "638660": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101525"
+   "t": "1717101525",
+   "u": "/extfile/sr/files/additionalDocuments/638/660/70246_StariGrad_IzmenaResenja_StalniSastav.pdf"
   },
   "638663": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101562"
+   "t": "1717101562",
+   "u": "/extfile/sr/files/additionalDocuments/638/663/71293_Surcin_IzmenaResenja_StalniSastav.pdf"
   },
   "638666": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717101585"
+   "t": "1717101585",
+   "u": "/extfile/sr/files/additionalDocuments/638/666/70254_Cukarica_IzmenaResenja_StalniSastav.pdf"
   },
   "642509": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717135821"
+   "t": "1717135821",
+   "u": "/extfile/sr/files/additionalDocuments/642/509/70092_Barajevo_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642512": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717135843"
+   "t": "1717135843",
+   "u": "/extfile/sr/files/additionalDocuments/642/512/70106_Vozdovac_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642515": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717135861"
+   "t": "1717135861",
+   "u": "/extfile/sr/files/additionalDocuments/642/515/70114_Vracar_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642518": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717135881"
+   "t": "1717135881",
+   "u": "/extfile/sr/files/additionalDocuments/642/518/70122_Grocka_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642548": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137495"
+   "t": "1717137495",
+   "u": "/extfile/sr/files/additionalDocuments/642/548/70149_Zvezdara_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642551": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137521"
+   "t": "1717137521",
+   "u": "/extfile/sr/files/additionalDocuments/642/551/70165_Lazarevac_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642554": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137552"
+   "t": "1717137552",
+   "u": "/extfile/sr/files/additionalDocuments/642/554/70173_Mladenovac_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642557": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137578"
+   "t": "1717137578",
+   "u": "/extfile/sr/files/additionalDocuments/642/557/70181_NoviBeograd_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642560": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137602"
+   "t": "1717137602",
+   "u": "/extfile/sr/files/additionalDocuments/642/560/70190_Obrenovac_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642563": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137629"
+   "t": "1717137629",
+   "u": "/extfile/sr/files/additionalDocuments/642/563/70203_Palilula_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642566": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137652"
+   "t": "1717137652",
+   "u": "/extfile/sr/files/additionalDocuments/642/566/70211_Rakovica_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642569": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137691"
+   "t": "1717137691",
+   "u": "/extfile/sr/files/additionalDocuments/642/569/70220_SavskiVenac_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642572": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137714"
+   "t": "1717137714",
+   "u": "/extfile/sr/files/additionalDocuments/642/572/70238_Sopot_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642575": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137734"
+   "t": "1717137734",
+   "u": "/extfile/sr/files/additionalDocuments/642/575/70246_StariGrad_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642581": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137756"
+   "t": "1717137756",
+   "u": "/extfile/sr/files/additionalDocuments/642/581/71293_Surcin_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642584": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717137780"
+   "t": "1717137780",
+   "u": "/extfile/sr/files/additionalDocuments/642/584/70254_Cukarica_IzmenaResenja_ProsireniSastav.pdf"
   },
   "642593": {
    "k": "extended_change",
    "r": false,
    "s": null,
-   "t": "1717138646"
+   "t": "1717138646",
+   "u": "/extfile/sr/files/additionalDocuments/642/593/70157_Zemun_IzmenaResenja_ProsireniSastav.pdf"
   },
   "647930": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717172401"
+   "t": "1717172401",
+   "u": "/extfile/sr/files/additionalDocuments/647/930/Resenje o izmeni Resenja za predsednika BO - BM 22 - GO Stari grad.pdf"
   },
   "647939": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717172542"
+   "t": "1717172542",
+   "u": "/extfile/sr/files/additionalDocuments/647/939/GO Savski venac bm 14 izmena rešenja predsednik bo.pdf"
   },
   "647945": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717172640"
+   "t": "1717172640",
+   "u": "/extfile/sr/files/additionalDocuments/647/945/GO Savski venac bm 14 izmena rešenja zamenika predsednika bo.pdf"
   },
   "647951": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717172696"
+   "t": "1717172696",
+   "u": "/extfile/sr/files/additionalDocuments/647/951/GO Savski venac bm 13 izmena rešenja predsednik bo.pdf"
   },
   "647954": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717172740"
+   "t": "1717172740",
+   "u": "/extfile/sr/files/additionalDocuments/647/954/GO Savski venac bm 20 izmena rešenja predsednik bo.pdf"
   },
   "647957": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717172824"
+   "t": "1717172824",
+   "u": "/extfile/sr/files/additionalDocuments/647/957/BM 44 IZMENA palilula.pdf"
   },
   "647960": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717172867"
+   "t": "1717172867",
+   "u": "/extfile/sr/files/additionalDocuments/647/960/BM 112 IZMENA palilula.pdf"
   },
   "647963": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717172915"
+   "t": "1717172915",
+   "u": "/extfile/sr/files/additionalDocuments/647/963/BM 38 IZMENA palilula.pdf"
   },
   "647966": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717172952"
+   "t": "1717172952",
+   "u": "/extfile/sr/files/additionalDocuments/647/966/BM 76 IZMENA palilula.pdf"
   },
   "647969": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173031"
+   "t": "1717173031",
+   "u": "/extfile/sr/files/additionalDocuments/647/969/Odluka o izmenama ss BM 5 grocka.pdf"
   },
   "647972": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173082"
+   "t": "1717173082",
+   "u": "/extfile/sr/files/additionalDocuments/647/972/Odluka o izmenima ss bm 42 grocka.pdf"
   },
   "647975": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173189"
+   "t": "1717173189",
+   "u": "/extfile/sr/files/additionalDocuments/647/975/lazarevac Jelena Ranković - BM 25 - ZAJEDNO MOŽEMO SVE.pdf"
   },
   "647978": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173236"
+   "t": "1717173236",
+   "u": "/extfile/sr/files/additionalDocuments/647/978/lazarevac SRĐAN JANKOVIĆ - BM 45 - BEDEM - DS.pdf"
   },
   "647981": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173286"
+   "t": "1717173286",
+   "u": "/extfile/sr/files/additionalDocuments/647/981/BM47predsednik_izmena cukarica.pdf"
   },
   "647984": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173359"
+   "t": "1717173359",
+   "u": "/extfile/sr/files/additionalDocuments/647/984/zvezdara 62.pdf"
   },
   "647987": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173395"
+   "t": "1717173395",
+   "u": "/extfile/sr/files/additionalDocuments/647/987/zvezdara 63-1.pdf"
   },
   "647990": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173424"
+   "t": "1717173424",
+   "u": "/extfile/sr/files/additionalDocuments/647/990/zvezdara 63-2.pdf"
   },
   "647996": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173461"
+   "t": "1717173461",
+   "u": "/extfile/sr/files/additionalDocuments/647/996/zvezdara 65.pdf"
   },
   "648002": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173492"
+   "t": "1717173492",
+   "u": "/extfile/sr/files/additionalDocuments/648/002/zvezdara 72.pdf"
   },
   "648005": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173528"
+   "t": "1717173528",
+   "u": "/extfile/sr/files/additionalDocuments/648/005/zvezdara 90.pdf"
   },
   "648008": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173584"
+   "t": "1717173584",
+   "u": "/extfile/sr/files/additionalDocuments/648/008/Izmena BO Obrenovac 24.pdf"
   },
   "648011": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173663"
+   "t": "1717173663",
+   "u": "/extfile/sr/files/additionalDocuments/648/011/Izmena rešenja BM 29 GO Surčin.pdf"
   },
   "648014": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173700"
+   "t": "1717173700",
+   "u": "/extfile/sr/files/additionalDocuments/648/014/Izmnena Rešenja BM 24 GO Surčin.pdf"
   },
   "648017": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173731"
+   "t": "1717173731",
+   "u": "/extfile/sr/files/additionalDocuments/648/017/Измена Решења БМ 13 ГО Сурчин.pdf"
   },
   "648020": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173760"
+   "t": "1717173760",
+   "u": "/extfile/sr/files/additionalDocuments/648/020/Измена решења БМ 20 ГО Сурчин.pdf"
   },
   "648023": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173818"
+   "t": "1717173818",
+   "u": "/extfile/sr/files/additionalDocuments/648/023/Vracar - vise RESENJA O IZMENI PREDSEDNIKA I ZAMENIKA PREDSEDNIKA BO.pdf"
   },
   "648026": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173869"
+   "t": "1717173869",
+   "u": "/extfile/sr/files/additionalDocuments/648/026/Vracar - vise RESENJA O IZMENI PREDSEDNIKA I ZAMENIKA PREDSEDNIKA BO.pdf"
   },
   "648029": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173923"
+   "t": "1717173923",
+   "u": "/extfile/sr/files/additionalDocuments/648/029/Vracar - vise RESENJA O IZMENI PREDSEDNIKA I ZAMENIKA PREDSEDNIKA BO.pdf"
   },
   "648032": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717173959"
+   "t": "1717173959",
+   "u": "/extfile/sr/files/additionalDocuments/648/032/Vracar - vise RESENJA O IZMENI PREDSEDNIKA I ZAMENIKA PREDSEDNIKA BO.pdf"
   },
   "648392": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234049"
+   "t": "1717234049",
+   "u": "/extfile/sr/files/additionalDocuments/648/392/BM-11,63,49,129,134 i 145 novi beograd.pdf"
   },
   "648395": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234086"
+   "t": "1717234086",
+   "u": "/extfile/sr/files/additionalDocuments/648/395/BM-11,63,49,129,134 i 145 novi beograd.pdf"
   },
   "648398": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234118"
+   "t": "1717234118",
+   "u": "/extfile/sr/files/additionalDocuments/648/398/BM-11,63,49,129,134 i 145 novi beograd.pdf"
   },
   "648401": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234152"
+   "t": "1717234152",
+   "u": "/extfile/sr/files/additionalDocuments/648/401/BM-11,63,49,129,134 i 145 novi beograd.pdf"
   },
   "648404": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234193"
+   "t": "1717234193",
+   "u": "/extfile/sr/files/additionalDocuments/648/404/BM-11,63,49,129,134 i 145 novi beograd.pdf"
   },
   "648407": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234224"
+   "t": "1717234224",
+   "u": "/extfile/sr/files/additionalDocuments/648/407/BM-11,63,49,129,134 i 145 novi beograd.pdf"
   },
   "648410": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234302"
+   "t": "1717234302",
+   "u": "/extfile/sr/files/additionalDocuments/648/410/BM23zam_predsednika_izmena cukarica.pdf"
   },
   "648413": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234363"
+   "t": "1717234363",
+   "u": "/extfile/sr/files/additionalDocuments/648/413/BM53zam_predsednika_izmena cukarica.pdf"
   },
   "648416": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234481"
+   "t": "1717234481",
+   "u": "/extfile/sr/files/additionalDocuments/648/416/bm 54 zvezdara.pdf"
   },
   "648419": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234517"
+   "t": "1717234517",
+   "u": "/extfile/sr/files/additionalDocuments/648/419/br 93 zvezdara.pdf"
   },
   "648422": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717234548"
+   "t": "1717234548",
+   "u": "/extfile/sr/files/additionalDocuments/648/422/IZMENA BO BM 25 OBRENOVAC.pdf"
   },
   "648491": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717253981"
+   "t": "1717253981",
+   "u": "/extfile/sr/files/additionalDocuments/648/491/BM.59 i 149.pdf"
   },
   "648494": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717254020"
+   "t": "1717254020",
+   "u": "/extfile/sr/files/additionalDocuments/648/494/BM.59 i 149.pdf"
   },
   "648497": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717254078"
+   "t": "1717254078",
+   "u": "/extfile/sr/files/additionalDocuments/648/497/BM18zam_predsednika_izmena.pdf"
   },
   "648503": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717254127"
+   "t": "1717254127",
+   "u": "/extfile/sr/files/additionalDocuments/648/503/BM55zam_predsednika_izmena.pdf"
   },
   "648506": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717254204"
+   "t": "1717254204",
+   "u": "/extfile/sr/files/additionalDocuments/648/506/BM 60. vracar.pdf"
   },
   "648509": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717254563"
+   "t": "1717254563",
+   "u": "/extfile/sr/files/additionalDocuments/648/509/ISPRAVKA GRESKE BM 68. GO ZEMUN.pdf"
   },
   "648515": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717255072"
+   "t": "1717255072",
+   "u": "/extfile/sr/files/additionalDocuments/648/515/vozdovac.pdf"
   },
   "648518": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717255112"
+   "t": "1717255112",
+   "u": "/extfile/sr/files/additionalDocuments/648/518/vozdovac.pdf"
   },
   "648521": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717255150"
+   "t": "1717255150",
+   "u": "/extfile/sr/files/additionalDocuments/648/521/vozdovac.pdf"
   },
   "648722": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717266187"
+   "t": "1717266187",
+   "u": "/extfile/sr/files/additionalDocuments/648/722/измена зам председника бм 12.pdf"
   },
   "648878": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717278384"
+   "t": "1717278384",
+   "u": "/extfile/sr/files/additionalDocuments/648/878/izmena zamnik predsednika bm57.pdf"
   },
   "648881": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717278447"
+   "t": "1717278447",
+   "u": "/extfile/sr/files/additionalDocuments/648/881/resenje o izmeni - BO 48 -GO ZEMUN.pdf"
   },
   "648884": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717278491"
+   "t": "1717278491",
+   "u": "/extfile/sr/files/additionalDocuments/648/884/BM 39 IZMENA.pdf"
   },
   "648887": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717278526"
+   "t": "1717278526",
+   "u": "/extfile/sr/files/additionalDocuments/648/887/BM 47 IZMENA.pdf"
   },
   "648890": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717278560"
+   "t": "1717278560",
+   "u": "/extfile/sr/files/additionalDocuments/648/890/BM 76 IZMENA.pdf"
   },
   "648893": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717278599"
+   "t": "1717278599",
+   "u": "/extfile/sr/files/additionalDocuments/648/893/BM 95 IZMENA.pdf"
   },
   "648896": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717278636"
+   "t": "1717278636",
+   "u": "/extfile/sr/files/additionalDocuments/648/896/BM 109 IZMENA.pdf"
   },
   "648899": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717278673"
+   "t": "1717278673",
+   "u": "/extfile/sr/files/additionalDocuments/648/899/BM 121 IZMENA.pdf"
   },
   "649007": {
-   "k": "standing",
+   "k": "standing_change",
    "r": false,
    "s": null,
-   "t": "1717304665"
+   "t": "1717304665",
+   "u": "/extfile/sr/files/additionalDocuments/649/007/Milic MIlijana .pdf"
   },
   "739242": {
    "k": "standing",
    "r": false,
    "s": "70203/59",
-   "t": "1791998151"
+   "t": "1791998151",
+   "u": "/extfile/sr/files/additionalDocuments/739/242/Стални састав БМ 59.pdf"
   },
   "756642": {
    "k": "standing",
    "r": false,
    "s": "70181/44",
-   "t": "1792056416"
+   "t": "1792056416",
+   "u": "/extfile/sr/files/additionalDocuments/756/642/BM 44.pdf"
   }
  },
  "indexed": 129
