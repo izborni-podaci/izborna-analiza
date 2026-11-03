@@ -38,6 +38,7 @@ CHECKS = [
     Check("voting_annulled", "records", 3),
     Check("results_undetermined", "records", 3),
     Check("remark_filed", "records", 2),
+    Check("observer_remarks", "records", 2),
     Check("invalid_spike", "unusual", 2),
     Check("turnout_jump", "unusual", 2),
     Check("turnout_drop", "unusual", 1),
@@ -241,8 +242,15 @@ def document_flags(documents: dict) -> list[Flag]:
     return out
 
 
+def review_flags(reviews: dict) -> list[Flag]:
+    """Observers' remarks a person found in the observers' record (observers.py), with their neutral summary."""
+    return [Flag(key, "observer_remarks", {"summary_sr": r.summary_sr, "summary_en": r.summary_en,
+                                           "checked": r.checked or None})
+            for key, r in reviews.items() if r.remarks]
+
+
 def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[Round] | None = None,
-                  links=None, documents: dict | None = None) -> list[Flag]:
+                  links=None, documents: dict | None = None, reviews: dict | None = None) -> list[Flag]:
     counted = [s for s in rnd.stations if s.counted]
     by_mun: dict[str, list[Station]] = defaultdict(list)
     by_addr: dict[tuple, list[Station]] = defaultdict(list)
@@ -261,9 +269,9 @@ def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[
         flags.extend(change_flags(changes, {s.key: s for s in rnd.stations}))
     if previous:
         flags.extend(history_flags(rnd, previous, links))
-    if documents:
+    if documents or reviews:
         stations = {s.key for s in rnd.stations}
-        flags.extend(f for f in document_flags(documents) if f.station in stations)
+        flags.extend(f for f in document_flags(documents or {}) + review_flags(reviews or {}) if f.station in stations)
     order = {c.code: i for i, c in enumerate(CHECKS)}
     flags.sort(key=lambda f: (f.station, order[f.code]))
     return flags

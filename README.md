@@ -98,6 +98,7 @@ Every check treats every contestant the same way. A station is followed across e
 | Voting annulled | A ruling annulling the vote at the station (form RG-9) was published; the vote is repeated. | 3 |
 | Results can't be determined | A ruling that the station's results can't be determined (form RG-8) was published. | 3 |
 | Remark filed with the minutes | A separate remark on the polling board's work was published with the minutes. | 2 |
+| Observers' remarks | A person read the observers' record (RG-11) and found observers' remarks in it (see [Observers' records](#observers-records)). | 2 |
 
 **Unusual results.** Weak signals and often legitimate, e.g. bloc voting in minority areas. They cover stations in Serbia only, not abroad or in prisons.
 
@@ -129,6 +130,13 @@ RIK's register of minutes ("Записници", e.g. [parliamentary 2026](https
 Station pages, the lists to check and the JSON name each document by its kind. Remarks and the RG-8 and RG-9 rulings become flags (see [Station checks](#station-checks)); the observers' record is linked on every row, and the "In short" text says in which elections it exists. Remarks written by hand inside the observers' record aren't read automatically yet.
 
 The first reading of a round, and any reading of a round older than 60 days, is recorded without a feed entry; new flags from documents of a recent round go to the feed like any others. The register uses today's municipality names, so names from every archived election map to the codes (the 2022 table writes "Ниш-Медијана" for "Градска општина Медијана").
+
+## Observers' records
+
+The observers' record (RG-11) lists, for each observer at the station, whether they had remarks, with lines to write them on. They are handwritten scans, and "нема" or a line struck through the empty space is common, so they aren't turned into flags automatically. Two parts work together:
+
+1. **A person reads the record.** `data/rounds/<id>/observer_reviews.csv` has the columns `municipality_code`, `station`, `remarks` (`да`/`не`, `da`/`ne` or `yes`/`no`), `summary_sr`, `summary_en`, `checked` (the date). A "yes" becomes the flag "Observers' remarks" with the summary; a "no" shows on the station's page as read. **Summaries never name anyone.**
+2. **OCR orders what to read.** `izbori observers` (and the daily **observers** workflow) reads each record once, finds the remark lines between "… су следеће:" and "(примедбе уписује …)", and scores how much is written there: the share of dark pixels, leaving out the printed rules, plus the words OCR finds, less for a lone "нема". Only numbers are kept (`data/rounds/<id>/observers.json`), never the text, and a score is never a flag. `izbori observers --review --html review.html` writes the records not yet reviewed, most written-in first, with columns ready to copy into the CSV.
 
 ## Controllers on polling boards
 
@@ -243,6 +251,8 @@ data/rounds/<id>/flags_seen.json  when each flag first appeared
 data/rounds/<id>/state.json       RIK's progress at the last download
 data/rounds/<id>/boards.json      controllers: per decision, station, address, and each list's member yes/no
 data/rounds/<id>/documents.json   every document RIK lists per station: label, link, upload time (no names)
+data/rounds/<id>/observers.json   per observers' record: how much is written in its remark lines (numbers only)
+data/rounds/<id>/observer_reviews.csv  what a person found in observers' records (edited by hand)
 ```
 
 A parliamentary file has 8,392 stations and is 4.3 MB. Consecutive versions differ by a few rows, so git stores them as small deltas.
@@ -251,7 +261,7 @@ The archive starts with the three files from 1 November 2026 at 22:19, 23:26 and
 
 ## Schedule
 
-- **Every day.** The **documents** workflow reads RIK's register of minutes: daily for two weeks after election day, then on Mondays until 60 days after it, and each time only if a quick count (one or two requests per kind of document) shows something new. The **boards** workflow reads new decisions on polling boards until 14 days after election day.
+- **Every day.** The **documents** workflow reads RIK's register of minutes: daily for two weeks after election day, then on Mondays until 60 days after it, and each time only if a quick count (one or two requests per kind of document) shows something new. The **boards** workflow reads new decisions on polling boards until 14 days after election day. The **observers** workflow scores new observers' records of the newest round, once each, until 60 days after election day.
 - **Every hour.** A short run lists every round and checks its progress. It downloads a file only when the number of counted stations changed. Once a day it re-downloads every recent round, to catch silent corrections.
 - **With no election under way.** When every round is more than 30 days past its election day and not counting, the hourly run asks RIK only every 6 hours (every hour on Sundays, when elections are held), and those rounds are checked once a week, on Mondays. A run started by hand always asks.
 - **While a count is open.** The same run turns into a watch loop:
@@ -276,6 +286,8 @@ uv run izbori update --watch              # what the hourly job runs
 uv run izbori check 680072                # flag counts for one round
 uv run izbori boards --round 680072       # controllers: read decisions on extended polling boards (needs tesseract)
 uv run izbori documents --round 680072    # observers' records, remarks and rulings from RIK's register of minutes
+uv run izbori observers --round 680072    # score observers' records with OCR (needs tesseract); numbers only
+uv run izbori observers --review --html review.html   # the records to read, most written-in first
 uv run izbori site --out _site            # build the site
 uv run izbori site --out _site --incremental   # render only what changed since the last build
 uv run izbori targets --out targets.csv --html targets.html   # private: never commit or post
@@ -302,6 +314,7 @@ src/izbori/
   stats.py      statistics for the whole round
   places.py     the same polling place across elections: address, then name, then number
   documents.py  RIK's register of minutes: observers' records, remarks, rulings per station
+  observers.py  observers' records: reviews by a person, and the OCR score that orders them
   narrative.py  the sentences at the top of the pages across elections
   notes.py      news notes
   targets.py    private ranking

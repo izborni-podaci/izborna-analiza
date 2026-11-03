@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from izbori import boards, documents
+from izbori import boards, documents, observers
 from izbori.checks import Flag, group_by_station, station_flags
 from izbori.contests import Presidential, Proportional, Totals, evaluate
 from izbori.history import Archive
@@ -26,6 +26,7 @@ class Analysis:
     flags_seen: dict
     previous: list[str] = field(default_factory=list)
     documents: dict = field(default_factory=dict)  # station key → documents.Doc list: minutes, observers, remarks…
+    reviews: dict = field(default_factory=dict)  # station key → observers.Review: a person read the observers' record
 
     @property
     def by_station(self) -> dict[str, list[Flag]]:
@@ -59,12 +60,13 @@ def analyze(archive: Archive, rid: str, notes_dir: Path | None = None, cache: di
     previous = [load(r) for r in previous_ids]
     changes = archive.changes(rid)
     docs = station_documents(archive, rnd)
-    flags = station_flags(rnd, changes, previous, links(archive, rid, cache), docs)
+    reviews = observers.load_reviews(archive.dir(rid))
+    flags = station_flags(rnd, changes, previous, links(archive, rid, cache), docs, reviews)
     totals, contest = evaluate(rnd)
     return Analysis(
         round=rnd, totals=totals, contest=contest, flags=flags, changes=changes,
         snapshots=archive.snapshots(rid), notes=load_notes(notes_dir, rid) if notes_dir else {},
-        flags_seen=archive.flags_seen(rid), previous=previous_ids, documents=docs,
+        flags_seen=archive.flags_seen(rid), previous=previous_ids, documents=docs, reviews=reviews,
     )
 
 

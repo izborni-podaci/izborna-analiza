@@ -333,6 +333,7 @@ S: dict[str, tuple[str, str]] = {
     "hint_near_unanimity": ("Скоро сви гласови за једну листу уз високу излазност. Прочитај примедбе и погледај које листе су имале контролоре и да ли је било посматрача.", "Nearly all votes for one contestant with high turnout. Read the remarks and see which lists had controllers and whether observers were present."),
     "hint_voting_annulled": ("Прочитај решење о поништавању и записник са поновљеног гласања; упореди бројеве са првим записником.", "Read the ruling and the minutes of the repeat vote; compare their numbers with the first minutes."),
     "hint_results_undetermined": ("Прочитај решење: зашто се резултати не могу утврдити и шта је комисија одлучила.", "Read the ruling: why the results can't be determined and what the commission decided."),
+    "hint_observer_remarks": ("Прочитај примедбе у записнику о посматрачима и упореди их са записником бирачког одбора.", "Read the remarks in the observers' record and compare them with the polling board's minutes."),
     "hint_remark_filed": ("Отвори примедбу и види на шта се односи; упореди је са записником и записником о посматрачима.", "Open the remark and see what it is about; compare it with the minutes and the observers' record."),
     "hint_high_turnout": ("Веома висока излазност. Упореди број заокружених у изводу са бројем листића и прочитај примедбе.", "Very high turnout. Compare voters marked in the extract with the ballots and read the remarks."),
     "flagged_share": ("% места за проверу", "% of stations to check"),
@@ -389,6 +390,8 @@ S: dict[str, tuple[str, str]] = {
     "doc_other": ("Документ", "Document"),
     "doc_repeat": ("поновно гласање", "repeat vote"),
     "doc_repeat_note": (" (поновно гласање)", " (repeat vote)"),
+    "review_checked": (" (прочитано {date})", " (read {date})"),
+    "review_none": ("Записник о посматрачима прочитан{date}: без примедби посматрача", "Observers' record read{date}: no observers' remarks"),
     "doc_observers_title": ("Записник о посматрачима: ко је посматрао рад бирачког одбора и њихове примедбе", "Observers' record: who observed the polling board, and their remarks"),
     "correction": ("Решење", "Ruling"),
     "notes": ("Белешке", "Notes"),
@@ -506,6 +509,7 @@ CHECK_NAMES: dict[str, tuple[str, str]] = {
     "voting_annulled": ("Гласање поништено", "Voting annulled"),
     "results_undetermined": ("Резултати се не могу утврдити", "Results can't be determined"),
     "remark_filed": ("Примедба уз записник", "Remark filed with the minutes"),
+    "observer_remarks": ("Примедбе посматрача", "Observers' remarks"),
 }
 
 CHECK_RULES: dict[str, tuple[str, str]] = {
@@ -544,6 +548,8 @@ CHECK_RULES: dict[str, tuple[str, str]] = {
                              "A ruling that the station's results can't be determined (form RG-8) was published with the minutes."),
     "remark_filed": ("Уз записник је објављена посебна примедба на рад бирачког одбора. Ко ју је поднео и шта у њој пише, види се у документу.",
                      "A separate remark on the polling board's work was published with the minutes. Who filed it and what it says is in the document."),
+    "observer_remarks": ("Човек је прочитао записник о посматрачима (образац РГ-11) и у њему нашао примедбе посматрача на поступак гласања. Кратак опис не именује никога.",
+                         "A person read the observers' record (form RG-11) and found observers' remarks on how the vote was run in it. The short summary names no one."),
 }
 
 

@@ -154,7 +154,7 @@ class Site:
                              "how": p.how[rid] if older is not None and older.number != s.number else "",
                              "address": p.addresses.get(rid, ""), "flags": self.flag_view(a, flags, loc),
                              "notes": a.notes.get(s.key, []), "ctrl": ctrl.get(s.key), "ctrl_known": bool(ctrl),
-                             "docs": a.documents.get(s.key, []),
+                             "docs": a.documents.get(s.key, []), "review": a.reviews.get(s.key),
                              "n_lists": len(a.round.contestants),
                              "top": self.top_three(rid, s.votes) if s.counted else []})
                 story.append(self.place_election(rid, s, flags, cols[rid]["short"]))
@@ -175,7 +175,7 @@ class Site:
                           self.ctrl_of(rid).get(s.key), self.mun_rows[rid][s.municipality_code],
                           self.mun_votes[rid][s.municipality_code],
                           self.peers[rid]["st"].get(s.municipality_code, {}).get("digest"),
-                          self.analyses[rid].documents.get(s.key)))
+                          self.analyses[rid].documents.get(s.key), self.analyses[rid].reviews.get(s.key)))
         return repr(parts)
 
     def round_key(self, rid: str) -> str:
@@ -186,7 +186,8 @@ class Site:
             for r in self.rids[: self.rids.index(rid) + 1]:
                 d = self.archive.dir(r)
                 files += [d / n for n in ("results.csv", "meta.json", "changes.jsonl", "snapshots.jsonl", "state.json",
-                                          "flags_seen.json", "first_seen.json", "boards.json", "documents.json")]
+                                          "flags_seen.json", "first_seen.json", "boards.json", "documents.json",
+                                          "observer_reviews.csv")]
                 if self.notes_dir:
                     files.append(Path(self.notes_dir) / f"{r}.csv")
             links = hashlib.sha256("|".join(self.st_path(rid, s.key) for s in self.analyses[rid].round.stations).encode())

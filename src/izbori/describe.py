@@ -6,6 +6,7 @@ import re
 
 from izbori.checks import Flag
 from izbori.i18n import fmt_int, fmt_num, fmt_pct, fmt_time, t
+from izbori.translit import latin
 
 FIELD_KEYS = {
     "upisani_biraci": "registered", "glasali_biraci": "voted", "listici_u_kutiji": "ballots",
@@ -46,6 +47,8 @@ _TEXT = {
                              "Ruling that the results can't be determined{forms}{repeat}, published {first}"),
     "remark_filed": ("Примедби уз записник: {n}{repeat}; прва објављена {first}",
                      "Remarks filed with the minutes: {n}{repeat}; the first published {first}"),
+    "observer_remarks": ("Посматрачи су уписали примедбе у записник о посматрачима{checked}{summary}",
+                         "Observers wrote remarks in the observers' record{checked}{summary}"),
 }
 
 
@@ -98,6 +101,10 @@ def describe(flag: Flag, loc: str, contestant_label=lambda n: str(n), kind: str 
         forms = ", ".join(d.get("forms") or [])
         values = {"n": i(d.get("n", 1)), "forms": f" ({forms})" if forms else "", "first": fmt_time(d.get("first"), loc),
                   "repeat": t("doc_repeat_note", loc) if d.get("repeat") else ""}
+    elif flag.code == "observer_remarks":
+        summary = (d.get("summary_en") or latin(d.get("summary_sr") or "")) if loc == "en" else d.get("summary_sr") or ""
+        values = {"checked": t("review_checked", loc, date=d["checked"]) if d.get("checked") else "",
+                  "summary": f": {summary}" if summary else ""}
     elif flag.code == "near_unanimity":
         values = {"turnout": p(d["turnout"]), "contestant": contestant_label(d["contestant"]), "share": p(d["share"])}
     return " ".join(text.format(**values).split())

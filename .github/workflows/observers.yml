@@ -1,0 +1,64 @@
+# Observers' records (form RG-11): read each one once with OCR and score how much is written in its remark lines,
+# to order the list people read (izbori observers --review). Only numbers are kept, never the text. Daily, for the
+# newest round, and only records not read before; nothing is asked of RIK when there are none.
+name: observers
+
+on:
+  schedule:
+    - cron: "47 5 * * *"
+  workflow_dispatch:
+    inputs:
+      round:
+        description: "Round id (empty: the newest round)"
+        default: ""
+      minutes:
+        description: "Stop starting new records after this many minutes"
+        default: "320"
+      limit:
+        description: "Read at most this many records (empty: all)"
+        default: ""
+      diagnose:
+        description: "Log the numbers behind this many scores"
+        default: "0"
+      commit:
+        description: "Commit the scores"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: observers
+  cancel-in-progress: false
+
+jobs:
+  observers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install OCR
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - name: Score observers' records
+        env:
+          ROUND: ${{ inputs.round }}
+          MINUTES: ${{ inputs.minutes || '320' }}
+          LIMIT: ${{ inputs.limit }}
+          DIAGNOSE: ${{ inputs.diagnose || '0' }}
+          COMMIT: ${{ github.event_name == 'schedule' || inputs.commit }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          args=(--budget-minutes "$MINUTES" --diagnose "$DIAGNOSE")
+          [ -n "$ROUND" ] && args+=(--round "$ROUND")
+          [ -n "$LIMIT" ] && args+=(--limit "$LIMIT")
+          [ "$COMMIT" = "true" ] && args+=(--commit --push)
+          uv run izbori observers "${args[@]}"

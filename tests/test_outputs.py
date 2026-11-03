@@ -121,6 +121,11 @@ def test_site_shows_controllers(tmp_path, archive):
                                  [1, "/extfile/sr/election_results/801/371/6ade7b1be1216/@Примедба 23_c.pdf",
                                   "2026-10-25T22:56"]]}}
     (data / "rounds/680072/documents.json").write_text(json.dumps(docs, ensure_ascii=False), encoding="utf-8")
+    # a person read the observers' record and found remarks
+    (data / "rounds/680072/observer_reviews.csv").write_text(
+        "municipality_code,station,remarks,summary_sr,summary_en,checked\n"
+        f"{s.municipality_code},{s.number},да,Гужва испред бирачког места,A crowd outside the station,2026-11-04\n",
+        encoding="utf-8")
     out = build(Archive(data), tmp_path / "site", None, "https://example.org/x/")
     round_page = (out / "r/680072/index.html").read_text(encoding="utf-8")
     assert "Kontrolori u biračkim odborima" in round_page
@@ -134,6 +139,7 @@ def test_site_shows_controllers(tmp_path, archive):
     row = row[:row.index("</tr>")]
     assert 'class="doc doc-observers"' in row and ">Posmatrači</a>" in row and ">Primedba</a>" in row
     assert "Primedba uz zapisnik" in row and "%D0%9F%D1%80%D0%B8%D0%BC%D0%B5%D0%B4%D0%B1%D0%B0" in row  # link encoded
+    assert "Primedbe posmatrača" in row and "Gužva ispred biračkog mesta" in row
     place = re.search(r'href="\.\./\.\./\.\./(s/[^"]+\.html)"', row).group(1)
     page = (out / place).read_text(encoding="utf-8")
     assert re.search(r"Zapisnik o posmatračima RIK je objavio za \d od \d izbora \([^)]*Parlamentarni 2026", page)

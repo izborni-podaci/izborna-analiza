@@ -1,4 +1,4 @@
-"""Command line: izbori rounds | fetch | import | update | documents | boards | site | targets | check."""
+"""Command line: izbori rounds | fetch | import | update | documents | boards | observers | site | targets | check."""
 
 from __future__ import annotations
 
@@ -408,6 +408,38 @@ def cmd_documents(args) -> int:
     return 0
 
 
+def cmd_observers(args) -> int:
+    """Observers' records (RG-11): score each once with OCR (no text kept), or write the list to review."""
+    import os
+    from izbori import observers
+    from izbori.report import station_documents
+    archive = Archive(args.data)
+    rids = archive.round_ids()
+    if not rids:
+        return 0
+    rid = args.round or rids[-1]
+    if args.review:
+        a = analyze(archive, rid, args.notes)
+        rows = observers.review_rows(a, observers.load_scores(archive.dir(rid)).get("docs", {}))
+        observers.write_review(rows, rid, Path(args.out), Path(args.html) if args.html else None)
+        template = observers.write_template(archive.dir(rid))
+        print(f"{len(rows)} observers' records to read → {args.out}" + (f" and {args.html}" if args.html else ""))
+        print(f"Write what you find in {template} (yes/no, a short summary that names no one, the date).")
+        return 0
+    date = archive.meta(rid).get("date")
+    if not args.round and date and (datetime.now(UTC).date() - datetime.fromisoformat(date[:10]).date()).days > 60:
+        log(f"{rid}: election day {date} is long past; pass --round to read its observers' records")
+        return 0
+    docs = station_documents(archive, archive.load(rid))
+    records = [(key, d.url) for key, ds in sorted(docs.items()) for d in ds if d.kind == "observers"]
+    result = observers.run(archive.dir(rid), records, Client(), workers=args.workers or os.cpu_count() or 2,
+                           budget_seconds=args.budget_minutes * 60, limit=args.limit, log=log, diagnose=args.diagnose)
+    if args.commit and commit([str(args.data)], f"Observers: {rid}, {result['read']} records scored ({now_iso()})"):
+        if args.push:
+            push()
+    return 0
+
+
 def cmd_import_app(args) -> int:
     """Rebuild a finished round's results from RIK's results app, station by station, and archive it."""
     from izbori import appdata, boards
@@ -571,6 +603,19 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--push", action="store_true")
     d.add_argument("--dispatch-pages", action="store_true")
     d.set_defaults(fn=cmd_documents)
+
+    o = sub.add_parser("observers", help="observers' records: score them with OCR, or list them to review")
+    o.add_argument("--round", help="round id (default: the newest)")
+    o.add_argument("--review", action="store_true", help="write the list to read, most written-in first")
+    o.add_argument("--out", default="observers-review.csv")
+    o.add_argument("--html")
+    o.add_argument("--workers", type=int, help="parallel OCR processes (default: number of CPUs)")
+    o.add_argument("--budget-minutes", type=float, default=320, help="stop starting new records after this")
+    o.add_argument("--limit", type=int, help="read at most this many records (for trials)")
+    o.add_argument("--diagnose", type=int, default=0, help="log the numbers behind this many scores")
+    o.add_argument("--commit", action="store_true")
+    o.add_argument("--push", action="store_true")
+    o.set_defaults(fn=cmd_observers)
 
     a = sub.add_parser("import-app", help="rebuild a finished round from RIK's results app, station by station")
     a.add_argument("--round", required=True)
