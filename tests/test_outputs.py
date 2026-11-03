@@ -27,6 +27,12 @@ def test_site(site):
                      "r/680072/changes.html"):
             assert (out / prefix / page).exists(), prefix + page
     assert len(list((out / "r/680072/m").glob("*.html"))) == 191
+    # a phone shows each cell's label from one stylesheet, in the page's language
+    labels = (out / "static/labels.css").read_text(encoding="utf-8")
+    assert ':lang(sr-Cyrl) table.history td.l-registered::before { content: "Уписани бирачи"; }' in labels
+    assert ':lang(sr-Latn) table.history td.l-registered::before { content: "Upisani birači"; }' in labels
+    place = next((out / "s").glob("*.html")).read_text(encoding="utf-8")
+    assert "static/labels.css" in place and "l-registered" in place and "data-label" not in place
 
     # Latin and English pages carry no Cyrillic except the name of the Cyrillic switch
     for path in [*out.glob("*.html"), *(out / "r").rglob("*.html"), *(out / "s").glob("*.html"),

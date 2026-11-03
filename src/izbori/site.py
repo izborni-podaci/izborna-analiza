@@ -552,7 +552,11 @@ class Site:
         example = rep_rows[0] if rep_rows and rep_rows[0]["k"] >= 2 else None
         share = {a.round.id: len(a.by_station) / a.totals.stations if a.totals.stations else 0.0 for a in rounds}
         share_top = max(share.values(), default=0) or 1
-        for loc in LOCALES:
+        for rid in rids:  # loaded once here, before the languages are written side by side
+            self.ctrl_of(rid)
+            self.commission_of(rid)
+
+        def pages_in(loc: str) -> None:
             columns = [{"id": a.round.id, "title": self.round_title(a.round, loc), "national": national[a.round.id],
                         "short": self.short_title(a.round, loc)} for a in oldest_first]
             summaries = [{"id": a.round.id, "title_display": self.round_title(a.round, loc), "kind": a.round.kind,
@@ -578,6 +582,8 @@ class Site:
             self.municipality_history_pages(loc, cols)
             for a in rounds:
                 self.round_pages(a, loc)
+
+        self.side_by_side([lambda loc=loc: pages_in(loc) for loc in LOCALES])
         self.write_api()
         # GitHub Pages serves this file for a missing page at any depth, so its links are absolute.
         self.write("lat", "404.html", "404.html", root=self.site_url,
@@ -592,6 +598,40 @@ class Site:
                                                                municipality=(code, name), entries=entries))
         self.finish()
         return self.out
+
+    def side_by_side(self, jobs: list) -> None:
+        """Run jobs that write pages (one per language) each in a process of its own, at the same time, and keep
+        what they wrote and recorded as if they had run here one after another. Where processes can't be forked
+        (Windows), or IZBORI_SERIAL is set, they run here in turn."""
+        import multiprocessing
+        import os
+        if len(jobs) < 2 or os.environ.get("IZBORI_SERIAL") or "fork" not in multiprocessing.get_all_start_methods():
+            for job in jobs:
+                job()
+            return
+        ctx = multiprocessing.get_context("fork")
+        running = []
+        for job in jobs:
+            receive, send = ctx.Pipe(duplex=False)
+            proc = ctx.Process(target=_write_pages, args=(self, job, send))
+            proc.start()
+            send.close()
+            running.append((proc, receive))
+        errors = []
+        for proc, receive in running:
+            try:
+                produced, state, kept, rendered, error = receive.recv()
+            except EOFError:
+                produced, state, kept, rendered, error = set(), {}, 0, 0, "a process writing pages died"
+            proc.join()
+            if error:
+                errors.append(error)
+            self.produced |= produced
+            self.state.update(state)
+            self.kept += kept
+            self.rendered += rendered
+        if errors:
+            raise RuntimeError("\n".join(errors))
 
     def finish(self) -> None:
         """Remove what no page produced any more (pages of places that no longer exist, old static files) and save
@@ -693,6 +733,19 @@ class Site:
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
                        mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st,
                        cdocs=self.commission_of(rid).get(m["code"], []), **common)
+
+
+def _write_pages(site: Site, job, send) -> None:
+    """In a forked process: run the job and send back what it wrote and recorded."""
+    import traceback
+    site.produced, site.state, site.kept, site.rendered = set(), {}, 0, 0
+    error = ""
+    try:
+        job()
+    except Exception:  # noqa: BLE001 - reported to the parent, which fails the build
+        error = traceback.format_exc()
+    send.send((site.produced, site.state, site.kept, site.rendered, error))
+    send.close()
 
 
 LABELLED = ("station", "stations", "registered", "voted", "turnout", "invalid", "top_three", "flags", "flagged")
