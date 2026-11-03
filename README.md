@@ -128,7 +128,7 @@ RIK's register of minutes ("Записници", e.g. [parliamentary 2026](https
 
 Station pages, the lists to check and the JSON name each document by its kind. Remarks and the RG-8 and RG-9 rulings become flags (see [Station checks](#station-checks)); the observers' record is linked on every row, and the "In short" text says in which elections it exists. Remarks written by hand inside the observers' record aren't read automatically yet.
 
-The first reading of a round is recorded without a feed entry; later new flags from documents go to the feed like any others.
+The first reading of a round, and any reading of a round older than 60 days, is recorded without a feed entry; new flags from documents of a recent round go to the feed like any others. The register uses today's municipality names, so names from every archived election map to the codes (the 2022 table writes "Ниш-Медијана" for "Градска општина Медијана").
 
 ## Controllers on polling boards
 

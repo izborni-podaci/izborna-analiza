@@ -309,13 +309,20 @@ def cmd_documents(args) -> int:
         ids = [r for r in archive.round_ids() if args.all or not documents.path(archive.dir(r)).exists()
                or (archive.meta(r).get("date") or "9999") >= recent]
     changed = []
+    # The register names municipalities as RIK does today; an older results file may not ("Ниш-Медијана" for
+    # "Градска општина Медијана"). Codes don't change, so names from every archived election map to them.
+    loaded = {r: archive.load(r) for r in archive.round_ids()}
+    every = {}
+    for other in loaded.values():
+        for s in other.stations:
+            every.setdefault(boards.municipality_key(s.municipality), s.municipality_code)
     for rid in ids:
         rik_type = int(archive.meta(rid).get("rik_type") or (known.get(rid) or {}).get("type") or 0)
         if not rik_type:
             log(f"{rid}: RIK's election type unknown, skipped")
             continue
-        rnd = archive.load(rid)
-        codes = {boards.municipality_key(s.municipality): s.municipality_code for s in rnd.stations}
+        rnd = loaded.get(rid) or archive.load(rid)
+        codes = {**every, **{boards.municipality_key(s.municipality): s.municipality_code for s in rnd.stations}}
         before = documents.load(archive.dir(rid))
         try:
             records = documents.fetch(client, rid, rik_type, threads=args.threads, log=log)
@@ -332,8 +339,10 @@ def cmd_documents(args) -> int:
             log(f"{rid}: only {len(data['stations'])} stations now, {len(before)} before; kept the earlier file")
             continue
         if documents.save(archive.dir(rid), data):
-            n = after_change(archive, rid, now_iso(), args.notes, notify=args.notify, announce=bool(before))
-            log(f"{rid}: documents changed, {n} new flags" + ("" if before else " (first read, not announced)"))
+            # new flags go to the feed only for a recent round read before; filling in older ones stays quiet
+            announce = bool(before) and (archive.meta(rid).get("date") or "9999") >= recent
+            n = after_change(archive, rid, now_iso(), args.notes, notify=args.notify and announce, announce=announce)
+            log(f"{rid}: documents changed, {n} new flags" + ("" if announce else " (not announced)"))
             changed.append(rid)
     if args.commit and changed and commit([str(args.data), str(args.notes)],
                                           f"Documents: {', '.join(changed)} ({now_iso()})"):
