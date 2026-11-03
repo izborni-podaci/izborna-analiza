@@ -64,13 +64,16 @@
 {% for d in docs %}{% set same = docs|selectattr('kind', 'equalto', d.kind)|selectattr('repeat', 'equalto', d.repeat)|list %}<a class="doc doc-{{ d.kind }}" href="{{ d.url|url }}" target="_blank"{% if d.label and d.kind not in ('minutes', 'observers', 'remark') %} title="{{ name(d.label) }}"{% endif %}>{{ t('doc_' ~ d.kind) }}{% if d.form %} {{ d.form }}{% endif %}{% if d.repeat %} ({{ t('doc_repeat') }}){% endif %}{% if same|length > 1 %} {{ same.index(d) + 1 }}{% endif %}</a> {% endfor %}
 {% endmacro %}
 
-{# The sentences at the top of the pages across elections (narrative.py), one paragraph per topic. #}
-{% macro analysis(paragraphs) %}
-{% if paragraphs %}
+{# "In short" at the top of the pages across elections (narrative.py): one labelled row per topic, the main fact
+   first and the context below it. #}
+{% macro analysis(an) %}
+{% if an and an.rows %}
 <section class="analysis" aria-labelledby="analysis-heading">
   <h2 id="analysis-heading">{{ t('an_heading') }}</h2>
-  {% for p in paragraphs %}<p>{{ p }}</p>
-  {% endfor %}
+  <p class="an-context">{{ an.context }}</p>
+  <dl class="an-rows">
+  {% for r in an.rows %}<div class="an-row"><dt>{{ r.label }}</dt><dd>{% for line in r.lines %}<span class="an-line">{{ line }}</span>{% endfor %}</dd></div>
+  {% endfor %}</dl>
   <p class="an-note">{{ t('an_note') }}</p>
 </section>
 {% endif %}

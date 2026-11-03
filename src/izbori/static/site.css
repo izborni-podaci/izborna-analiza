@@ -313,7 +313,7 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
   }
   .wrap { max-width: none; padding: 0; }
   .table-wrap { overflow: visible; border: 0; }
-  table.history tr, .analysis p, figure { break-inside: avoid; }
+  table.history tr, .an-row, figure { break-inside: avoid; }
   .analysis { border-left-width: 2px; }
   a { text-decoration: none; }
   .chart .hit { display: none; }
@@ -338,10 +338,22 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .station-timeline .flags { margin: 0; }
 
 /* the sentences at the top of the pages across elections */
-.analysis { max-width: 68ch; margin: 16px 0 20px; padding: 4px 0 4px 16px; border-left: 3px solid var(--accent); }
-.analysis h2 { font-family: var(--sans); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); margin: 0 0 6px; }
-.analysis p { margin: 0 0 10px; font-size: 1.05rem; line-height: 1.6; }
-.analysis .an-note { font-size: 0.85rem; color: var(--ink-2); margin: 0; }
+.analysis { max-width: 74ch; margin: 16px 0 20px; padding: 4px 0 4px 16px; border-left: 3px solid var(--accent); }
+.analysis h2 { font-family: var(--sans); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); margin: 0 0 2px; }
+.analysis .an-context { margin: 0 0 12px; font-size: 0.85rem; color: var(--ink-2); }
+/* one row per topic: the label on the left, the main fact and its context on the right */
+.an-rows { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 20px; margin: 0 0 12px; }
+.an-row { display: contents; }
+.an-rows dt { font-weight: 600; font-size: 0.95rem; line-height: 1.5; }
+.an-rows dd { margin: 0; }
+.an-line { display: block; line-height: 1.5; }
+.an-line + .an-line { color: var(--ink-2); font-size: 0.93rem; }
+.analysis .an-note { font-size: 0.8rem; color: var(--ink-2); margin: 0; }
+@media (max-width: 600px) {
+  .an-rows { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .an-rows dt { margin-top: 10px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
+  .an-row:first-child dt { margin-top: 0; }
+}
 
 /* turnout and invalid ballots across elections: this place in the accent colour, the area compared with dashed */
 .trends-wrap { max-width: 760px; margin: 0 0 14px; }

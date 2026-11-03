@@ -4,8 +4,8 @@ from izbori.narrative import Election, municipality, place, short_label
 from izbori.translit import latin
 
 
-def lat(paragraphs: list[str]) -> list[str]:
-    return [latin(p) for p in paragraphs]
+def lat(summary) -> list[tuple[str, list[str]]]:
+    return [(latin(r.label), [latin(x) for x in r.lines]) for r in summary.rows]
 
 
 def rows() -> list[Election]:
@@ -24,47 +24,51 @@ def rows() -> list[Election]:
 
 
 def test_place_in_the_asked_order():
-    text = lat(place(rows(), ["Pokrajinski 2023"], "lat"))
-    assert text == [
-        "Provere su dale oznaku na 2 od 3 izbora: Parlamentarni 2026 (pad izlaznosti); Parlamentarni 2023 "
-        "(mnogo nevažećih listića, pad izlaznosti). Ista oznaka više puta: pad izlaznosti (na 2 izbora). "
-        "Udeo nevažećih listića bio je veći nego u opštini na 1 od 3 izbora; najveći je bio 1,2% "
-        "(Lokalni 2024; opština 1,0%).",
-        "Izlaznost: 70,4% (Parlamentarni 2026), 0,9 poena više nego u opštini; na ranijim izborima od 47,6% do "
-        "59,7%. Upisanih birača: 1.492 (Parlamentarni 2023) → 1.321 (Parlamentarni 2026), −11,5%.",
-        "Najviše glasova (Parlamentarni 2026): Lista A, 71,8% (opština 60,7%); na 2 od 3 izbora prvi ovde bio "
-        "je prvi i u opštini.",
-        "Broj mesta ranije je bio 10 (Parlamentarni 2023). Nije glasalo na: Pokrajinski 2023.",
+    summary = place(rows(), ["Pokrajinski 2023"], "lat")
+    assert latin(summary.context) == "Najnoviji izbori: Parlamentarni 2026 · poređenje sa opštinom"
+    assert lat(summary) == [
+        ("Oznake", ["Na 2 od 3 izbora: Parlamentarni 2026 (pad izlaznosti); Parlamentarni 2023 (mnogo nevažećih "
+                    "listića, pad izlaznosti)",
+                    "Ista oznaka više puta: pad izlaznosti (na 2 izbora)",
+                    "Nevažeći 0,5% (opština 0,9%) · veći nego u opštini na 1 od 3 izbora"]),
+        ("Izlaznost", ["70,4% · 0,9 poena više nego u opštini", "Ranije 47,6–59,7%"]),
+        ("Najviše glasova", ["Lista A 71,8% (opština 60,7%)", "Na 2 od 3 izbora prvi i u opštini"]),
+        ("Mesto", ["Ranije BM 10 (Parlamentarni 2023)", "Upisanih 1.492 (Parlamentarni 2023) → 1.321, −11,5%",
+                   "Nije glasalo na: Pokrajinski 2023"]),
     ]
 
 
 def test_place_in_english():
-    text = place(rows(), [], "en")
-    assert text[0].startswith("Checks flagged it in 2 of 3 elections: Parlamentarni 2026 (turnout drop);")
-    assert "the highest was 1.2% (Lokalni 2024; municipality 1.0%)" in text[0]
-    assert text[1].startswith("Turnout: 70.4% (Parlamentarni 2026), 0.9 points higher than in the municipality")
-    assert text[2] == ("Most votes (Parlamentarni 2026): Lista A, 71.8% (municipality 60.7%); in 2 of 3 elections, "
-                       "whoever led here also led in the municipality.")
-    assert text[3] == "Its number used to be 10 (Parlamentarni 2023)."
+    rows_en = {r.label: r.lines for r in place(rows(), [], "en").rows}
+    assert rows_en["Flags"][0].startswith("In 2 of 3 elections: Parlamentarni 2026 (turnout drop);")
+    assert rows_en["Flags"][2] == "Invalid ballots 0.5% (municipality 0.9%) · higher than in the municipality in 1 of 3 elections"
+    assert rows_en["Turnout"] == ["70.4% · 0.9 points higher than in the municipality", "Earlier 47.6–59.7%"]
+    assert rows_en["Most votes"] == ["Lista A 71.8% (municipality 60.7%)", "Also first in the municipality in 2 of 3 elections"]
+    assert rows_en["The place"][0] == "Earlier No. 10 (Parlamentarni 2023)"
 
 
 def test_place_variants():
     one = [rows()[0]]
     one[0].flags = []
-    text = lat(place(one, [], "lat"))
-    assert text[0] == ("Nijedna provera nije dala oznaku ni na jednim izborima na kojima je mesto glasalo. "
-                       "Udeo nevažećih listića: 0,5% (Parlamentarni 2026; opština 0,9%).")
-    assert text[1] == "Izlaznost: 70,4% (Parlamentarni 2026), 0,9 poena više nego u opštini."  # nothing earlier
-    assert text[2] == "Najviše glasova (Parlamentarni 2026): Lista A, 71,8% (opština 60,7%)."
-    assert len(text) == 3  # one election: nothing changed, and it missed none
+    assert lat(place(one, [], "lat")) == [
+        ("Oznake", ["Bez oznake", "Nevažeći 0,5% (opština 0,9%)"]),
+        ("Izlaznost", ["70,4% · 0,9 poena više nego u opštini"]),  # nothing earlier
+        ("Najviše glasova", ["Lista A 71,8% (opština 60,7%)"]),
+    ]  # one election: nothing changed, and it missed none
 
     same = rows()[:2]
     same[0].ref_turnout = 0.7041  # equal once rounded as the page shows it
     same[1].turnout, same[1].invalid = 0.5, 0.009
-    text = lat(place(same, [], "lat"))
-    assert "Izlaznost: 70,4% (Parlamentarni 2026), koliko i u opštini; na ranijim izborima 50,0% (Lokalni 2024)." in text[1]
-    assert "Udeo nevažećih listića ni na jednim izborima nije bio veći nego u opštini" in text[0]
-    assert text[-1] == "Broj i naziv mesta isti su na svim izborima na kojima je glasalo."
+    got = dict(lat(place(same, [], "lat")))
+    assert got["Izlaznost"] == ["70,4% · koliko i u opštini", "Ranije 50,0% (Lokalni 2024)"]
+    assert got["Oznake"][-1].endswith("nikad veći nego u opštini")
+    assert got["Mesto"][0] == "Isti broj i naziv na svim izborima"
+
+    # the latest election has no count yet: the figures name the one they come from
+    late = rows()
+    late[0].turnout = late[0].invalid = None
+    got = dict(lat(place(late, [], "lat")))
+    assert got["Izlaznost"][0].startswith("47,6% (Lokalni 2024)")
 
 
 def test_place_names_that_really_changed():
@@ -72,8 +76,17 @@ def test_place_names_that_really_changed():
     r[1].name = 'ОШ „ИВАН ГОРАН КОВАЧИЋ“-3'
     r[0].name = 'ОШ "ИВАН ГОРАН КОВАЧИЋ" - 3'  # the same name, written differently
     r[2].name = "МК АРНАЈЕВО"
-    text = lat(place(r, [], "lat"))
-    assert text[-1] == "Broj mesta ranije je bio 10 (Parlamentarni 2023). Naziv je ranije bio MK ARNAJEVO (Parlamentarni 2023)."
+    got = dict(lat(place(r, [], "lat")))
+    assert got["Mesto"][:2] == ["Ranije BM 10 (Parlamentarni 2023)", "Ranije naziv MK ARNAJEVO (Parlamentarni 2023)"]
+
+
+def test_observers_records():
+    r = rows()
+    r[0].observers, r[1].observers, r[2].observers = True, False, True
+    assert dict(lat(place(r, [], "lat")))["Zapisnici"] == ["O posmatračima za 2 od 3 izbora · bez: Lokalni 2024"]
+    one = [rows()[0]]
+    one[0].observers = False
+    assert dict(lat(place(one, [], "lat")))["Zapisnici"] == ["Zapisnik o posmatračima nije objavljen"]
 
 
 def test_short_label_same_rule_for_everyone():
@@ -87,27 +100,29 @@ def test_municipality():
     r = rows()
     for e, (stations, flagged, overall) in zip(r, [(221, 7, 0.026), (212, 12, 0.03), (207, 27, 0.04)]):
         e.stations, e.flagged, e.ref_flagged, e.flags = stations, flagged, overall, []
-    text = lat(municipality(r, ["Lokalni 2024"], (46, 14), (17, 8, 0), "lat"))
-    assert text[0].startswith("Biračkih mesta za proveru (Parlamentarni 2026): 7 od 221 (3,2%; ukupno 2,6%). "
-                              "Mesta sa oznakom na bar jednim izborima: 46; na bar dvoje izbora: 14. "
-                              "Udeo nevažećih listića bio je veći nego na celim izborima na 1 od 3 izbora;")
-    assert text[1].startswith("Izlaznost: 70,4% (Parlamentarni 2026), 0,9 poena više nego na celim izborima;")
-    assert text[2].endswith("na 2 od 3 izbora prvi ovde bio je prvi i na celim izborima.")
-    assert text[3] == ("Biračkih mesta: 207 (Parlamentarni 2023) → 221 (Parlamentarni 2026); novih: 17, više se ne "
-                       "koristi: 8. Opština nije glasala na: Lokalni 2024.")  # no "renumbered: 0"
+    summary = municipality(r, ["Lokalni 2024"], (46, 14), (17, 8, 0), "lat")
+    assert latin(summary.context) == "Najnoviji izbori: Parlamentarni 2026 · poređenje sa celim izborima"
+    got = dict(lat(summary))
+    assert got["Oznake"] == ["7 od 221 biračkih mesta za proveru (3,2%; ukupno 2,6%)",
+                             "Mesta sa oznakom na bar jednim izborima: 46 · na bar dvoje: 14",
+                             "Nevažeći 0,5% (ukupno 0,9%) · veći nego na celim izborima na 1 od 3 izbora"]
+    assert got["Izlaznost"][0] == "70,4% · 0,9 poena više nego na celim izborima"
+    assert got["Najviše glasova"][1] == "Na 2 od 3 izbora prvi i na celim izborima"
+    assert got["Biračka mesta"] == ["207 (Parlamentarni 2023) → 221 · novih 17 · ne koristi se 8",  # no "renumbered 0"
+                                    "Upisanih 1.492 (Parlamentarni 2023) → 1.321, −11,5%",
+                                    "Opština nije glasala na: Lokalni 2024"]
 
 
 def test_rank_among_peers():
     r = rows()
     r[0].rank_invalid, r[0].rank_turnout = (12, 221), (3, 221)
-    text = lat(place(r, [], "lat"))
-    assert text[0].endswith("Po udelu nevažećih listića (Parlamentarni 2026) mesto je 12. od 221 u opštini, "
-                            "računajući od najvećeg.")
-    assert "Po izlaznosti (Parlamentarni 2026) mesto je 3. od 221 u opštini, računajući od najveće." in text[1]
-    en = place(r, [], "en")
-    assert "By turnout (Parlamentarni 2026) it ranks 3 of 221 in the municipality, counting from the highest." in en[1]
+    got = dict(lat(place(r, [], "lat")))
+    assert got["Oznake"][-1] == "Nevažeći 0,5% (opština 0,9%) · 12. od 221 u opštini · veći nego u opštini na 1 od 3 izbora"
+    assert got["Izlaznost"][1] == "3. od 221 u opštini · ranije 47,6–59,7%"
+    en = {x.label: x.lines for x in place(r, [], "en").rows}
+    assert en["Turnout"][1] == "3 of 221 in the municipality · earlier 47.6–59.7%"
     r[0].rank_invalid = None  # too few stations to rank
-    assert "mesto je 12." not in lat(place(r, [], "lat"))[0]
+    assert "12. od 221" not in " ".join(dict(lat(place(r, [], "lat")))["Oznake"])
 
 
 def test_rank_helper():

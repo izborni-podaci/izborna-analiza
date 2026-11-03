@@ -163,7 +163,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 
 ## Known issues and open decisions
 
-- **Custom domain and hosting:** waiting for the maintainer's choice of domain.
+- **Custom domain and hosting:** set aside until it is clear how useful the site is; GitHub Pages meanwhile.
 - **Belgrade 2024 decisions on polling boards (round 567956):** 127 of 129 are listed under "Београд" with a station
   number, while the results number stations within each city municipality, so they can't be placed. All 17
   decisions on the extended composition are unreadable by the current parser. The round is small and in the past.
@@ -183,3 +183,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
     the fragments are shown nowhere, and rewriting history would break every clone. It is not rewritten.
   - Repeated markup was cut from 713 MB to 657 MB, and the languages are built in parallel.
   - Decisions on polling boards are read in four jobs at once, and the stores are written one entry per line.
+  - "In short" on the pages across elections is short labelled rows (flags, turnout, most votes, the place,
+    records), the main fact first and context below, figures for the latest election unless a line names
+    another, instead of paragraphs of sentences. The maintainer chose this layout.
+  - The custom domain waits until it is clear how useful the site is.

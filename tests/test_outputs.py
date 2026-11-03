@@ -160,7 +160,7 @@ def test_site_shows_controllers(tmp_path, archive):
     assert "Primedbe posmatrača" in row and "Gužva ispred biračkog mesta" in row and "pročitano 4.11.2026." in row
     place = re.search(r'href="\.\./\.\./\.\./(s/[^"]+\.html)"', row).group(1)
     page = (out / place).read_text(encoding="utf-8")
-    assert re.search(r"Zapisnik o posmatračima RIK je objavio za \d od \d izbora \([^)]*Parlamentarni 2026", page)
+    assert re.search(r"Zapisnik o posmatračima objavljen|O posmatračima za \d od \d izbora", page)
     assert ">Observers</a>" in (out / "en" / place).read_text(encoding="utf-8")
     # the decisions on its polling board are linked on its page, apart from the documents of the vote
     board = page[page.index("Rešenja o biračkom odboru:"):]
@@ -215,9 +215,9 @@ def test_municipality_across_elections(site):
     page = (site / "m/89010.html").read_text(encoding="utf-8")
     rows = re.findall(r'<th scope="row" role="rowheader" class="election"><a href="\.\./r/(\d+)/m/89010\.html">', page)
     assert rows == ["680072", "341143", "341140", "42732"]  # newest first, one row each
-    assert "Opština nije glasala na: Lokalni 2024." in page
-    assert "Biračkih mesta za proveru (Parlamentarni 2026): 7 od 221" in page
-    assert "Biračkih mesta: 207 (Predsednički 2022) → 221 (Parlamentarni 2026); novih:" in page
+    assert "Opština nije glasala na: Lokalni 2024" in page
+    assert "7 od 221 biračkih mesta za proveru" in page
+    assert "207 (Predsednički 2022) → 221 · novih" in page
     assert 'href="../r/680072/check.html#m-89010"' in page
     assert 'href="../s/89010-140.html"' in page and "Biračka mesta kroz izbore" in page
     # round pages link to it, and their stations to their own pages
@@ -233,13 +233,14 @@ def test_place_across_elections(site):
     assert "isto mesto po nazivu" in page
     # the analysis on top: flags and invalid ballots, turnout, most votes, then how the place changed
     analysis = re.search(r'<section class="analysis".*?</section>', page, re.S).group(0)
-    order = [analysis.index(x) for x in ("Nijedna provera nije dala oznaku", "Udeo nevažećih listića", "Izlaznost: 70,4%",
-                                         "Najviše glasova (Parlamentarni 2026): Studentska lista, 71,8%",
-                                         "Broj mesta ranije je bio 10 (Parlamentarni 2023, Predsednički 2022).")]
+    assert "Najnoviji izbori: Parlamentarni 2026 · poređenje sa opštinom" in analysis
+    order = [analysis.index(x) for x in ("<dt>Oznake</dt>", "Bez oznake ni na jednim od 4 izbora", "Nevažeći ",
+                                         "<dt>Izlaznost</dt>", "70,4% · ", "Studentska lista 71,8%",
+                                         "Ranije BM 10 (Parlamentarni 2023, Predsednički 2022)")]
     assert order == sorted(order)
     assert "Pokrajinski 2023" not in analysis  # not held in Belgrade, so not a gap in this station's history
     en = (site / "en/s/70157-14.html").read_text(encoding="utf-8")
-    assert "Its number used to be 10 (Parliamentary 2023, Presidential 2022)." in en
+    assert "Earlier No. 10 (Parliamentary 2023, Presidential 2022)" in en
     # a school that held stations 134 and 140 in 2023 kept only 140 in 2026; station 134 of 2026 is another place
     # with another name, so the number alone doesn't join it to the school's old 134
     def stations(path):

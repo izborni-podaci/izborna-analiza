@@ -1,6 +1,8 @@
-"""A few sentences at the top of the pages across elections, written from the numbers by the same rules for every
-place and every contestant: invalid ballots and flags first, then turnout and how it compares, then who had most
-votes, and last how the place itself changed. The text states numbers and comparisons; it never judges them.
+"""The short rows at the top of the pages across elections ("In short"), written from the numbers by the same
+rules for every place and every contestant: flags and invalid ballots first, then turnout and how it compares, then
+who had most votes, how the place itself changed, and the observers' records. Each row has a label and a line or
+two of short facts, the main one first; the numbers are the latest election's unless the line names another. The
+text states numbers and comparisons; it never judges them.
 
 A place is compared with its municipality in the same election, a municipality with the whole election (the
 country, Vojvodina for provincial elections, the city for local ones)."""
@@ -75,52 +77,98 @@ def _higher(a: float, b: float) -> bool:
     return round(a * 1000) > round(b * 1000)
 
 
+SEP = " · "
+
+
+@dataclass
+class Row:
+    label: str
+    lines: list[str]
+
+
+@dataclass
+class Summary:
+    """What the "In short" section shows: which election and comparison the numbers are for, then the rows."""
+    context: str
+    rows: list[Row]
+
+
+def _join(*parts: str | None) -> str:
+    return SEP.join(p for p in parts if p)
+
+
+def _cap(text: str) -> str:
+    return text[:1].upper() + text[1:]
+
+
+def _when(r: Election, rows: list[Election]) -> str:
+    """The election a figure comes from, named only when it isn't the latest one."""
+    return f" ({r.short})" if r is not rows[0] else ""
+
+
+def _rank(r: Election, what: str, peers: str, loc: str) -> str | None:
+    """Where the election puts this place among its peers (the stations of its municipality, or all
+    municipalities), counting from the highest; None with fewer than five peers."""
+    got = getattr(r, f"rank_{what}")
+    return t(f"ar_rank_{what}_{peers}", loc, r=fmt_int(got[0], loc), n=fmt_int(got[1], loc)) if got else None
+
+
 def flags(rows: list[Election], loc: str) -> list[str]:
     flagged = [r for r in rows if r.flags]
     if not flagged:
-        return [t("an_no_flags", loc)]
-    items = "; ".join(f"{r.short} ({', '.join(_flag(c, loc) for c in r.flags)})" for r in flagged)
-    out = [t("an_flags", loc, k=len(flagged), n=len(rows), items=items)]
+        return [t("ar_no_flags_one" if len(rows) == 1 else "ar_no_flags", loc, n=len(rows))]
+    if len(rows) == 1:
+        out = [_cap(", ".join(_flag(c, loc) for c in rows[0].flags))]
+    else:
+        items = "; ".join(f"{r.short} ({', '.join(_flag(c, loc) for c in r.flags)})" for r in flagged)
+        out = [t("ar_flags", loc, k=len(flagged), n=len(rows), items=items)]
     seen = Counter(c for r in rows for c in set(r.flags))
     same = sorted(((c, m) for c, m in seen.items() if m >= 2), key=lambda x: (-x[1], -BY_CODE[x[0]].weight, x[0]))
     if same:
-        out.append(t("an_same", loc, items=", ".join(f"{_flag(c, loc)} ({t('repeat_times', loc, n=m)})"
-                                                      for c, m in same)))
+        out.append(_cap(t("ar_same", loc, items=", ".join(f"{_flag(c, loc)} ({t('repeat_times', loc, n=m)})"
+                                                          for c, m in same))))
     return out
 
 
 def invalid(rows: list[Election], ref: str, loc: str) -> str | None:
+    """The latest share of invalid ballots against the area, its rank, and how often it was higher."""
     rs = [r for r in rows if r.invalid is not None and r.ref_invalid is not None]
     if not rs:
         return None
-    top = max(rs, key=lambda r: r.invalid)  # the newest when tied
-    kw = {"share": fmt_pct(top.invalid, loc), "short": top.short, "label": t(f"an_label_{ref}", loc),
-          "ref": fmt_pct(top.ref_invalid, loc), "cmp": t(f"an_cmp_{ref}", loc), "n": len(rs)}
-    if len(rs) == 1:
-        return t("an_invalid_one", loc, **kw)
-    j = sum(1 for r in rs if _higher(r.invalid, r.ref_invalid))
-    return t("an_invalid" if j else "an_invalid_never", loc, j=j, **kw)
+    now = rs[0]
+    head = t("ar_invalid", loc, share=fmt_pct(now.invalid, loc), label=t(f"an_label_{ref}", loc),
+             ref=fmt_pct(now.ref_invalid, loc)) + _when(now, rows)
+    history = None
+    if len(rs) >= 2:
+        j = sum(1 for r in rs if _higher(r.invalid, r.ref_invalid))
+        cmp = t(f"an_cmp_{ref}", loc)
+        history = t("ar_invalid_above", loc, j=j, n=len(rs), cmp=cmp) if j else t("ar_invalid_never", loc, cmp=cmp)
+    return _cap(_join(head, _rank(now, "invalid", ref, loc), history))
 
 
-def turnout(rows: list[Election], ref: str, loc: str) -> str | None:
+def turnout(rows: list[Election], ref: str, loc: str) -> list[str]:
     rs = [r for r in rows if r.turnout is not None]
     if not rs:
-        return None
+        return []
     now, earlier = rs[0], rs[1:]
-    kw = {"t": fmt_pct(now.turnout, loc), "short": now.short, "cmp": t(f"an_cmp_{ref}", loc)}
+    cmp = t(f"an_cmp_{ref}", loc)
     if now.ref_turnout is None:
-        text = t("an_turnout_plain", loc, **kw)
+        against = None
     elif not _higher(now.turnout, now.ref_turnout) and not _higher(now.ref_turnout, now.turnout):
-        text = t("an_turnout_same", loc, **kw)
+        against = t("ar_turnout_same", loc, cmp=cmp)
     else:
         d = now.turnout - now.ref_turnout
-        text = t("an_turnout", loc, d=fmt_num(abs(d) * 100, loc), dir=t("an_higher" if d > 0 else "an_lower", loc), **kw)
+        against = t("ar_turnout_diff", loc, d=fmt_num(abs(d) * 100, loc), dir=t("an_higher" if d > 0 else "an_lower", loc),
+                    cmp=cmp)
+    lines = [_join(fmt_pct(now.turnout, loc) + _when(now, rows), against)]
+    before = None
     if len(earlier) == 1:
-        text += "; " + t("an_earlier_one", loc, x=fmt_pct(earlier[0].turnout, loc), short=earlier[0].short)
+        before = t("ar_earlier_one", loc, x=fmt_pct(earlier[0].turnout, loc), short=earlier[0].short)
     elif earlier:
-        text += "; " + t("an_earlier_range", loc, lo=fmt_pct(min(r.turnout for r in earlier), loc),
-                         hi=fmt_pct(max(r.turnout for r in earlier), loc))
-    return text + "."
+        before = t("ar_earlier_range", loc, lo=fmt_num(100 * min(r.turnout for r in earlier), loc),
+                   hi=fmt_pct(max(r.turnout for r in earlier), loc))
+    second = _join(_rank(now, "turnout", ref, loc), before)
+    return lines + ([_cap(second)] if second else [])
 
 
 def registered(rows: list[Election], loc: str) -> str | None:
@@ -128,29 +176,29 @@ def registered(rows: list[Election], loc: str) -> str | None:
     if len(rs) < 2:
         return None
     new, old = rs[0], rs[-1]
-    return t("an_registered", loc, a=fmt_int(old.registered, loc), first=old.short, b=fmt_int(new.registered, loc),
-             last=new.short, change=_signed_pct(new.registered / old.registered - 1, loc))
+    return t("ar_registered", loc, a=fmt_int(old.registered, loc), first=old.short, b=fmt_int(new.registered, loc),
+             change=_signed_pct(new.registered / old.registered - 1, loc))
 
 
-def leader(rows: list[Election], ref: str, loc: str) -> str | None:
+def leader(rows: list[Election], ref: str, loc: str) -> list[str]:
     rs = [r for r in rows if r.leader]
     if not rs:
-        return None
+        return []
     now = rs[0]
     label = short_label(now.leader)
-    text = t("an_leader", loc, short=now.short, label=latin(label) if loc == "en" else label,
-             share=fmt_pct(now.leader_share, loc), ref_label=t(f"an_label_{ref}", loc),
-             ref=fmt_pct(now.ref_leader_share, loc))
+    lines = [t("ar_leader", loc, label=latin(label) if loc == "en" else label, share=fmt_pct(now.leader_share, loc),
+               ref_label=t(f"an_label_{ref}", loc), ref=fmt_pct(now.ref_leader_share, loc)) + _when(now, rows)]
     known = [r for r in rs if r.same_leader is not None]
     if len(known) >= 2:
         s = sum(1 for r in known if r.same_leader)
-        key = "an_same_leader_all" if s == len(known) else "an_same_leader_none" if s == 0 else "an_same_leader"
-        text += "; " + t(key, loc, s=s, n=len(known), cmp=t(f"an_cmp_{ref}", loc))
-    return text + "."
+        key = "ar_same_leader_all" if s == len(known) else "ar_same_leader_none" if s == 0 else "ar_same_leader"
+        lines.append(_cap(t(key, loc, s=s, n=len(known), cmp=t(f"an_cmp_{ref}", loc))))
+    return lines
 
 
 def place_changes(rows: list[Election], absent: list[str], loc: str) -> list[str]:
-    """Earlier numbers and names, newest first, and the elections the place was not part of."""
+    """Earlier numbers and names, newest first; the registered voters then and now; the elections the place was
+    not part of."""
     now, out = rows[0], []
     former: dict[str, list[str]] = {}
     names: list[tuple[str, list[str]]] = []
@@ -164,78 +212,79 @@ def place_changes(rows: list[Election], absent: list[str], loc: str) -> list[str
             else:
                 names.append((r.name, [r.short]))
     if former:
-        out.append(t("an_former", loc, items="; ".join(f"{n} ({', '.join(s)})" for n, s in former.items())))
+        out.append(t("ar_former", loc, items="; ".join(f"{n} ({', '.join(s)})" for n, s in former.items())))
     if names:
         name, shorts = names[0]
-        out.append(t("an_renamed", loc, name=latin(name) if loc == "en" else name, shorts=", ".join(shorts)))
+        out.append(t("ar_renamed", loc, name=latin(name) if loc == "en" else name, shorts=", ".join(shorts)))
     if not out and len(rows) >= 2:
-        out.append(t("an_same_place", loc))
-    if absent:
-        out.append(t("place_absent", loc, list=", ".join(absent)))
-    return out
+        out.append(t("ar_same_place", loc))
+    reg = registered(rows, loc)
+    return out + [_cap(x) for x in (reg, t("ar_absent", loc, list=", ".join(absent)) if absent else None) if x]
 
 
-def rank(rows: list[Election], what: str, peers: str, loc: str) -> str | None:
-    """Where the newest election puts this place among its peers (the stations of its municipality, or all
-    municipalities), counting from the highest. Left out with fewer than five peers."""
-    now = next((r for r in rows if getattr(r, what) is not None), None)
-    if now is None or getattr(now, f"rank_{what}") is None:
-        return None
-    r, n = getattr(now, f"rank_{what}")
-    return t(f"an_rank_{what}_{peers}", loc, short=now.short, r=fmt_int(r, loc), n=fmt_int(n, loc))
-
-
-def observers(rows: list[Election], loc: str) -> str | None:
+def observers(rows: list[Election], loc: str) -> list[str]:
     """In which elections RIK published an observers' record for the station, among those whose documents are known."""
     known = [r for r in rows if r.observers is not None]
     if not known:
-        return None
+        return []
     seen = [r.short for r in known if r.observers]
+    if len(known) == 1:
+        return [t("ar_observers_one" if seen else "ar_observers_none_one", loc)]
     if not seen:
-        return t("an_observers_none", loc, n=len(known))
-    return t("an_observers", loc, k=len(seen), n=len(known), items=", ".join(seen))
+        return [t("ar_observers_none", loc, n=len(known))]
+    missing = [r.short for r in known if not r.observers]
+    return [_join(t("ar_observers", loc, k=len(seen), n=len(known)),
+                  t("ar_observers_missing", loc, items=", ".join(missing)) if missing else None)]
 
 
-def mun_observers(rows: list[Election], loc: str) -> str | None:
+def mun_observers(rows: list[Election], loc: str) -> list[str]:
     now = next((r for r in rows if r.observed is not None), None)
     if now is None or not now.stations:
-        return None
-    return t("an_mun_observers", loc, short=now.short, o=fmt_int(now.observed, loc), s=fmt_int(now.stations, loc))
+        return []
+    return [t("ar_mun_records", loc, o=fmt_int(now.observed, loc), s=fmt_int(now.stations, loc)) + _when(now, rows)]
 
 
-def place(rows: list[Election], absent: list[str], loc: str) -> list[str]:
-    """The paragraphs at the top of a polling place's page. rows: newest election first."""
-    paragraphs = [
-        [*flags(rows, loc), observers(rows, loc), invalid(rows, "mun", loc), rank(rows, "invalid", "mun", loc)],
-        [turnout(rows, "mun", loc), rank(rows, "turnout", "mun", loc), registered(rows, loc)],
-        [leader(rows, "mun", loc)],
-        place_changes(rows, absent, loc),
-    ]
-    return [" ".join(s for s in p if s) for p in paragraphs if any(p)]
+def _summary(context: str, rows: list[tuple[str, list[str | None]]], loc: str) -> Summary:
+    return Summary(context, [Row(t(label, loc), [x for x in lines if x]) for label, lines in rows
+                             if any(lines)])
+
+
+def place(rows: list[Election], absent: list[str], loc: str) -> Summary:
+    """The rows at the top of a polling place's page. rows: newest election first."""
+    return _summary(t("ar_context_mun", loc, short=rows[0].short), [
+        ("ar_flags_label", [*flags(rows, loc), invalid(rows, "mun", loc)]),
+        ("ar_turnout_label", turnout(rows, "mun", loc)),
+        ("ar_leader_label", leader(rows, "mun", loc)),
+        ("ar_place_label", place_changes(rows, absent, loc)),
+        ("ar_records_label", observers(rows, loc)),
+    ], loc)
 
 
 def municipality(rows: list[Election], absent: list[str], repeat: tuple[int, int],
-                 network: tuple[int, int, int], loc: str) -> list[str]:
-    """The paragraphs at the top of a municipality's page. rows: newest election first; repeat: its places
-    flagged in at least one and in at least two elections; network: places new in its newest election, places no
-    longer used, places renumbered."""
+                 network: tuple[int, int, int], loc: str) -> Summary:
+    """The rows at the top of a municipality's page. rows: newest election first; repeat: its places flagged in
+    at least one and in at least two elections; network: places new in its newest election, places no longer
+    used, places renumbered."""
     now = rows[0]
-    first = [t("an_mun_flags", loc, short=now.short, f=fmt_int(now.flagged, loc), s=fmt_int(now.stations, loc),
-               share=fmt_pct(now.flagged / now.stations if now.stations else None, loc),
-               overall=fmt_pct(now.ref_flagged, loc))]
+    flagged = [t("ar_mun_flags", loc, f=fmt_int(now.flagged, loc), s=fmt_int(now.stations, loc),
+                 share=fmt_pct(now.flagged / now.stations if now.stations else None, loc),
+                 overall=fmt_pct(now.ref_flagged, loc))]
     if len(rows) >= 2:
-        first.append(t("an_mun_repeat", loc, a=fmt_int(repeat[0], loc), b=fmt_int(repeat[1], loc)))
-    first.extend([mun_observers(rows, loc), invalid(rows, "all", loc), rank(rows, "invalid", "all", loc)])
-    changes = []
+        flagged.append(_cap(t("ar_mun_repeat", loc, a=fmt_int(repeat[0], loc), b=fmt_int(repeat[1], loc))))
+    flagged.append(invalid(rows, "all", loc))
+    stations = []
     if len(rows) >= 2:
         old = rows[-1]
-        text = t("an_mun_network", loc, a=fmt_int(old.stations, loc), first=old.short, b=fmt_int(now.stations, loc),
-                 last=now.short)
-        parts = [t(key, loc, n=fmt_int(n, loc)) for key, n in zip(("an_net_new", "an_net_gone", "an_net_renum"), network)
-                 if n]
-        changes.append(text + ("; " + ", ".join(parts) if parts else "") + ".")
-    if absent:
-        changes.append(t("mun_absent", loc, list=", ".join(absent)))
-    paragraphs = [first, [turnout(rows, "all", loc), rank(rows, "turnout", "all", loc), registered(rows, loc)],
-                  [leader(rows, "all", loc)], changes]
-    return [" ".join(s for s in p if s) for p in paragraphs if any(p)]
+        parts = [t(key, loc, n=fmt_int(n, loc)) for key, n in zip(("ar_net_new", "ar_net_gone", "ar_net_renum"),
+                                                                    network) if n]
+        stations.append(_join(t("ar_mun_network", loc, a=fmt_int(old.stations, loc), first=old.short,
+                                b=fmt_int(now.stations, loc)), *parts))
+    reg = registered(rows, loc)
+    stations += [_cap(x) for x in (reg, t("ar_mun_absent", loc, list=", ".join(absent)) if absent else None) if x]
+    return _summary(t("ar_context_all", loc, short=now.short), [
+        ("ar_flags_label", flagged),
+        ("ar_turnout_label", turnout(rows, "all", loc)),
+        ("ar_leader_label", leader(rows, "all", loc)),
+        ("ar_stations_label", stations),
+        ("ar_records_label", mun_observers(rows, loc)),
+    ], loc)
