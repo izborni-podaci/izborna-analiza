@@ -80,3 +80,30 @@ def test_header_read_as_a_remark_line_opens_no_area():
              Word("(примедбе", 90, 20, 200, 100, 15, line(4)), Word("уписује", 90, 130, 200, 80, 15, line(4))]
     found = blocks(words, w, h)
     assert len(found) == 1 and found[0][2] > 110 and found[0][3] < 200
+
+
+def test_landscape_page_is_read_column_by_column():
+    """On a landscape record OCR joins a line of the left column with the line beside it in the right one: the
+    areas still stay in their own column, and a handwritten line beside a remark line is in none."""
+    w, h = 3300, 2330
+    line = lambda n: ("1", "1", str(n), "1")  # noqa: E731
+    words = [
+        Word("НА", 96, 336, 321, 60, 40, line(1)), Word("СПРОВОЂЕЊУ", 96, 420, 321, 300, 40, line(1)),
+        Word("ПРИМЕДБЕ", 92, 1863, 321, 200, 40, line(1)), Word("следеће:", 96, 2700, 321, 124, 40, line(1)),
+        Word("Александровац", 40, 600, 487, 500, 80, line(2)),  # handwritten, in the left column
+        Word("(примедбе", 96, 1863, 549, 150, 26, line(3)), Word("уписује", 96, 2030, 549, 120, 26, line(3)),
+        Word("прилогу,", 96, 3000, 549, 130, 26, line(3)),
+        Word("ПРИМЕДБЕ", 92, 196, 910, 200, 31, line(4)), Word("следеће:", 96, 1050, 910, 126, 31, line(4)),
+        Word("ПРИМЕДБЕ", 92, 1863, 910, 200, 31, line(4)), Word("следеће:", 96, 2700, 910, 124, 31, line(4)),
+        Word("(примедбе", 96, 214, 1138, 150, 28, line(5)), Word("уписује", 96, 380, 1138, 120, 28, line(5)),
+        Word("прилогу,", 96, 1350, 1138, 130, 28, line(5)), Word("(примедбе", 96, 1863, 1138, 150, 28, line(5)),
+        Word("уписује", 96, 2030, 1138, 120, 28, line(5)), Word("прилогу,", 96, 3000, 1138, 130, 28, line(5)),
+        Word("ПРИМЕДБЕ", 92, 194, 1500, 200, 27, line(6)), Word("следеће:", 95, 1050, 1500, 126, 27, line(6)),
+        Word("(примедбе", 96, 212, 1728, 150, 24, line(7)), Word("уписује", 96, 380, 1728, 120, 24, line(7)),
+        Word("прилогу,", 96, 1350, 1728, 130, 24, line(7)),
+    ]
+    found = blocks(words, w, h)
+    assert [(x0 < w / 2 < x1, y0 // 10, y1 // 10) for x0, x1, y0, y1, _ in found] == [
+        (False, 94, 113), (False, 153, 172), (False, 36, 54), (False, 94, 113)]
+    assert [x0 < w / 2 for x0, *_ in found] == [True, True, False, False]
+    assert all(not inside for *_, inside in found)

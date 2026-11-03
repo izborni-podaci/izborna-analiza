@@ -156,12 +156,31 @@ PRINTED = ("представ", "посматра", "имао", "поступ", "
            "biračk", "birack", "časova", "casova", "ispred")  # words of the printed form, not of a remark
 
 
+def columns(words: list[Word], w: int, h: int) -> list[list[Word]]:
+    """A landscape page carries the form in two columns, and OCR often joins a line of one column with the line
+    beside it in the other: so each column is read on its own."""
+    if w <= h:
+        return [words]
+    return [[x for x in words if x.left + x.width / 2 < w / 2], [x for x in words if x.left + x.width / 2 >= w / 2]]
+
+
 def blocks(words: list[Word], w: int, h: int) -> list[tuple[int, int, int, int, list[Word]]]:
-    """The remark areas: from each "… су следеће:" line down to the "(примедбе уписује …)" line below it.
+    """The remark areas: from each "… су следеће:" line down to the "(примедбе уписује …)" line below it, in each
+    column of the page.
 
     Each "(примедбе уписује" line closes the area of the nearest "следеће:" line above it, so the header's
     "следећи представници" (which OCR may read as "следеће") opens no area of its own; and an area starts below any
     printed words of the form that fall in it (the observer's name, times, organisation)."""
+    found = [box for column in columns(words, w, h) for box in _column_blocks(column, w, h)]
+    if found:  # when OCR missed an end line, the area would run into the next observer's: cut it to the usual height
+        usual = sorted(b[3] - b[2] for b in found)[len(found) // 2]
+        for b in found:
+            b[3] = min(b[3], b[2] + int(1.4 * usual))
+    return [(x0, x1, y0, y1, [x for x in words if x0 <= x.left + x.width / 2 <= x1 and y0 <= x.top + x.height / 2 <= y1])
+            for x0, x1, y0, y1 in sorted(found, key=lambda b: (b[0] > w // 2, b[2]))]
+
+
+def _column_blocks(words: list[Word], w: int, h: int) -> list[list[int]]:
     lines: dict[tuple, list[Word]] = {}
     for word in words:
         lines.setdefault(word.line, []).append(word)
@@ -198,12 +217,7 @@ def blocks(words: list[Word], w: int, h: int) -> list[tuple[int, int, int, int, 
             y0 = max(x.bottom for x in printed) + 4
         if y1 - y0 >= 10:
             found.append([x0, x1, y0, y1])
-    if found:  # when OCR missed an end line, the area would run into the next observer's: cut it to the usual height
-        usual = sorted(b[3] - b[2] for b in found)[len(found) // 2]
-        for b in found:
-            b[3] = min(b[3], b[2] + int(1.4 * usual))
-    return [(x0, x1, y0, y1, [x for x in words if x0 <= x.left + x.width / 2 <= x1 and y0 <= x.top + x.height / 2 <= y1])
-            for x0, x1, y0, y1 in sorted(found, key=lambda b: (b[0] > w // 2, b[2]))]
+    return found
 
 
 def score_pages(pages: list[tuple[int, int, bytes, list[Word]]]) -> dict:
@@ -242,14 +256,15 @@ def shape(pages: list[tuple[int, int, bytes, list[Word]]]) -> str:
     out = []
     for n, (w, h, img, words) in enumerate(pages, start=1):
         out.append(f"page {n}: {w}x{h}")
-        lines: dict[tuple, list[Word]] = {}
-        for x in words:
-            lines.setdefault(x.line, []).append(x)
-        for ws in sorted(lines.values(), key=lambda ws: (min(x.left for x in ws) > w // 2, min(x.top for x in ws))):
-            ws.sort(key=lambda x: x.left)
-            out.append(f"  {'R' if ws[0].left > w // 2 else 'L'} y {min(x.top for x in ws)}-{max(x.bottom for x in ws)}"
-                       f" x {ws[0].left}-{max(x.right for x in ws)}: "
-                       + " ".join(f"{_form_word(x.text)}/{int(x.conf)}" for x in ws))
+        for side, column in zip("LR", columns(words, w, h)):
+            lines: dict[tuple, list[Word]] = {}
+            for x in column:
+                lines.setdefault(x.line, []).append(x)
+            for ws in sorted(lines.values(), key=lambda ws: min(x.top for x in ws)):
+                ws.sort(key=lambda x: x.left)
+                out.append(f"  {side} y {min(x.top for x in ws)}-{max(x.bottom for x in ws)}"
+                           f" x {ws[0].left}-{max(x.right for x in ws)}: "
+                           + " ".join(f"{_form_word(x.text)}/{int(x.conf)}" for x in ws))
         for x0, x1, y0, y1, inside in blocks(words, w, h):
             density, rows = ink(img, w, x0, x1, y0, y1)
             out.append(f"  area x {x0}-{x1} y {y0}-{y1}: ink {100 * density:.2f}%, rows {rows}, words "
