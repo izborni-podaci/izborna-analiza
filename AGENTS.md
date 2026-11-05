@@ -129,6 +129,10 @@ These are the project's promises to its readers. Never change them without the m
   - The incremental test compares with a full build. When you add an input, extend that test.
 - **The languages are built side by side** in forked processes (`Site.side_by_side`). Windows, or
   `IZBORI_SERIAL=1`, builds them one after another. The result is the same file for file.
+- **The guide for controllers and observers** (`guide.sr.html`, `guide.en.html`) gives the article or RIK document
+  for every rule, and says which month it was checked against. When the law or RIK's instructions change, update
+  both languages and that line. Rules come from the law and RIK only; a party's handbook may suggest what to cover,
+  never what the rule is, and its partisan advice stays out.
 - **Size budget:** GitHub Pages allows 1 GB, and the site is about 660 MB with about 40,000 files (Nov 2026).
   - Keep repeated markup out of per-row HTML: cell labels live in the generated `static/labels.css`, links carry no
     per-link `rel`, and a `title` appears only where it adds something.
@@ -187,3 +191,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
     records), the main fact first and context below, figures for the latest election unless a line names
     another, instead of paragraphs of sentences. The maintainer chose this layout.
   - The custom domain waits until it is clear how useful the site is.
+- **5 Nov 2026:** the observer guide became the guide for controllers and observers, at the maintainer's request:
+  written from the law (14/2022 and the 2026 amendments) and RIK's 2026 handbook for polling boards and instruction
+  on handovers, with the topics of a controllers' handbook he shared. That handbook's partisan advice is left out,
+  and the old guide's objection rule is corrected: a request to annul a station's vote goes to the local commission
+  within 72 hours of closing (Art. 148).

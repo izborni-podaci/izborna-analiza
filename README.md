@@ -31,6 +31,7 @@ A Serbian version of this file (`README.sr.md`) will follow.
 
 - **Journalists:** what stood out, at which station, with the numbers and a link to RIK's own minutes.
 - **Observer groups:** the same checks during the count, plus a private list of stations to watch next time.
+- **Controllers** (members of a polling board's extended composition) **and observers:** a guide to the rules at the polling station, with each article, and every station's documents and history before they go.
 
 ## Principles
 
@@ -220,7 +221,7 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 - **Charts across elections:** below the text, turnout and the share of invalid ballots per election, the place against the area it is compared with (dashed).
 - **Search** on the home page finds a municipality or a polling station, by its current or a former number, and opens its page across elections.
 - **Changes:** what changed after first publication, and each archived version of the file.
-- **Observer guide:** what's allowed at a polling station on election day, with article references.
+- **Guide for controllers and observers** (`guide.sr.html`, `guide.en.html`): the rules at a polling station from the handover of the materials before the vote to the handover after it — who is who on the board, the deadlines in one table, opening and the control sheet, the voting steps, voting outside the station, order, the count and the arithmetic that must hold, the minutes and remarks, remedies and their deadlines, and the crimes with their penalties. Every rule gives its article in the Law on the Election of Members of Parliament (14/2022, 47/2026) or the RIK document it comes from (the 2026 handbook for polling boards, the instruction on handovers). The arithmetic names the site's matching flags, and the practical part points to the station's page, the controllers per list and the list to check. It states the law the same way for every list; a party's own handbook is used only where the law or RIK confirms it.
 - **About:** method, sources, limits.
 
 ### Places across elections

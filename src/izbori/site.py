@@ -571,7 +571,8 @@ class Site:
                        checks=CHECKS, groups=GROUPS)
             self.write(loc, "elections.html", "elections.html", rounds=summaries)
             self.write_search(loc)
-            self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html")
+            self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html",
+                       latest=summaries[0] if summaries else None)
             self.write(loc, "about.html", "about.html", checks=CHECKS, groups=GROUPS)
             groups = [(k, [r for r in rep_rows if r["k"] == k]) for k in sorted({r["k"] for r in rep_rows}, reverse=True)]
             self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns, groups=groups,

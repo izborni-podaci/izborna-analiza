@@ -93,6 +93,12 @@ header.top { background: var(--page); border-bottom: 2px solid var(--ink); }
 .data-note { color: var(--ink-2); font-size: 0.85rem; }
 .prose { max-width: 760px; }
 .prose li { margin: 4px 0; }
+.guide-toc ol { columns: 2; column-gap: 32px; margin: 8px 0 0; padding-left: 1.4em; }
+.guide-toc li { break-inside: avoid; margin: 2px 0; }
+.guide h2[id] { scroll-margin-top: 12px; }
+.guide th { white-space: normal; }
+.guide .deadlines td:first-child { min-width: 8.5rem; }
+.guide .deadlines td:last-child { white-space: nowrap; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .accent { color: var(--accent); }
 
@@ -294,6 +300,16 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
   .round-nav a { display: inline-flex; align-items: center; min-height: 44px; }
   .langs a, .theme-toggle, .menu summary { min-height: 44px; }
   .key { columns: 1; }
+  .guide-toc ol { columns: 1; }
+  /* the guide's tables become one block per row, each cell under its column's name */
+  .guide table.stack thead { display: none; }
+  .guide table.stack tr { display: block; padding: 10px 12px; border-bottom: 1px solid var(--grid); }
+  .guide table.stack tbody tr:last-child { border-bottom: 0; }
+  .guide table.stack td { display: block; border: 0; padding: 2px 0; white-space: normal; min-width: 0; }
+  .guide table.stack td:first-child { font-weight: 600; }
+  .guide table.stack td:empty { display: none; }
+  .guide table.stack td[data-label]::before { content: attr(data-label) ": "; color: var(--ink-2); }
+  .guide table.stack.deadlines td:nth-child(2)::before { content: none; }
   .bar-col { min-width: 90px; }
   .filters { position: static; flex-direction: column; align-items: stretch; }
   select, input[type="search"] { min-height: 48px; font-size: 1.05rem; width: 100%; min-width: 0; }

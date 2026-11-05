@@ -1,88 +1,254 @@
 {% extends "base.html" %}
-{% block title %}Observer guide{% endblock %}
+{% import "_macros.html" as mx with context %}
+{% block title %}Guide for controllers and observers{% endblock %}
 {% block main %}
-<article class="prose">
-<h1>Observer guide: what's allowed on election day</h1>
-<p class="lede">A short summary of the rules for observers and journalists. The laws themselves are the authority; article references and links are at the end.</p>
+<article class="prose guide">
+<h1>Guide for controllers and observers</h1>
+<p class="lede">What the law and the Republic Electoral Commission (RIK) lay down for a polling station, from the handover of the materials to the handover of the minutes. The same rules apply to every list. The law and RIK's instructions are the authority: each rule gives its article, and the links are at the end.</p>
+<p class="small muted">Controllers are the members and deputies of a polling board's extended composition, nominated by the lists. Articles are from the Law on the Election of Members of Parliament (Official Gazette 14/2022 and 47/2026), which also applies to presidential elections. Local elections have their own law, so check its deadlines. Checked against the law and RIK's instructions in force in November 2026.</p>
 
-<h2>Before election day</h2>
-<ul>
-  <li><strong>Campaign silence.</strong> No campaigning and no published poll estimates for 48 hours before election day and on election day until the polls close.</li>
-  <li><strong>Observers.</strong> Domestic organisations register their observers with RIK at least 7 days before election day, international ones at least 10 days before. Observers wear their accreditation at all times.</li>
-</ul>
-
-<h2>Who may be inside a polling station</h2>
-<ul>
-  <li>The polling board: its standing members and the members nominated by candidates or lists.</li>
-  <li>Accredited observers.</li>
-  <li>Voters, while they vote.</li>
-  <li>Nobody else. Candidates have no right to stay in the station.</li>
-</ul>
-<p>The law treats these as breaches of order: gathering in front of the station, party symbols, keeping unofficial lists of who has voted, and filming without permission.</p>
-
-<h2>Opening, 7:00</h2>
-<ul>
-  <li>The board shows that the ballot box is empty and seals it.</li>
-  <li>The first voter checks the box and signs a <strong>control sheet</strong>, which goes into the box. The sheet must be found in the box at the count.</li>
-</ul>
-
-<h2>Voting, 7:00–20:00</h2>
-<ul>
-  <li>Each voter shows a photo ID. The board checks the right index finger under a UV lamp, then sprays it.</li>
-  <li>One ballot per voter, marked alone behind the screen. Nobody may approach the screen.</li>
-  <li>Only a voter who can't mark the ballot themselves may bring a helper. The minutes record how many voters were helped.</li>
-  <li>Voting outside the station must be requested by 11:00 on election day. Three board members nominated by different contestants take the ballot, and at least one of them must come from the opposition. The minutes record it.</li>
-  <li>Voters already in the queue at 20:00 may still vote.</li>
-</ul>
-
-<h2>Counting, in this order</h2>
+<nav class="guide-toc" aria-label="{{ t('on_this_page') }}">
 <ol>
-  <li>Count the signatures in the voter list: these are the voters who voted.</li>
-  <li>Count the unused ballots and set them aside.</li>
-  <li>Check the seal and open the box.</li>
-  <li>Find the control sheet.</li>
-  <li>Count the invalid ballots.</li>
-  <li>Count the valid ballots for each candidate or list.</li>
+  <li><a href="#uloge">Who is who</a></li>
+  <li><a href="#rokovi">Deadlines</a></li>
+  <li><a href="#pre">Before voting day</a></li>
+  <li><a href="#jutro">The morning, before opening</a></li>
+  <li><a href="#otvaranje">Opening and the control sheet</a></li>
+  <li><a href="#glasanje">Voting</a></li>
+  <li><a href="#van">Voting outside the station</a></li>
+  <li><a href="#red">Order at the station</a></li>
+  <li><a href="#brojanje">Closing and the count</a></li>
+  <li><a href="#zapisnik">The minutes and remarks</a></li>
+  <li><a href="#predaja">Handing over the materials</a></li>
+  <li><a href="#posle">When something is wrong</a></li>
+  <li><a href="#kd">Crimes</a></li>
+  <li><a href="#praksa">In practice and on this site</a></li>
+  <li><a href="#izvori">Sources</a></li>
 </ol>
-<p>A ballot is valid when the voter's choice is clear.</p>
+</nav>
 
-<h2>The minutes</h2>
+<h2 id="uloge">Who is who at a polling station</h2>
+<div class="table-wrap"><table class="compact stack">
+<thead><tr><th scope="col">Who</th><th scope="col">Appointed by</th><th scope="col">Decides on the board</th><th scope="col">Writes remarks in</th></tr></thead>
+<tbody>
+<tr><td><strong>Standing composition:</strong> the chair, two members and their deputies</td><td data-label="Appointed by">the local electoral commission (LIK), on the proposal of parliamentary groups (Art. 35)</td><td data-label="Decides on the board">yes</td><td data-label="Writes remarks in">the polling board's minutes</td></tr>
+<tr><td><strong>Extended composition, controllers:</strong> a member and a deputy for each list</td><td data-label="Appointed by">the LIK, on the proposal of the list's submitter (Art. 39)</td><td data-label="Decides on the board">yes, with the same rights and duties as the standing members (Art. 10)</td><td data-label="Writes remarks in">the polling board's minutes</td></tr>
+<tr><td><strong>Observers</strong></td><td data-label="Appointed by">RIK issues the authorisation and the badge (Art. 165)</td><td data-label="Decides on the board">no, they only watch</td><td data-label="Writes remarks in">the observers' record, which they fill in and sign themselves</td></tr>
+</tbody>
+</table></div>
 <ul>
-  <li>The board fills in the minutes (form RG-2) in several copies. One goes to RIK, one to the local commission and one is posted at the polling station; the others go to the contestants' representatives.</li>
-  <li>A board member's objection must be written into the minutes (section 16.1). That entry is what starts a review.</li>
-  <li>Observers don't sign the minutes. They record what they saw in their own organisation's report.</li>
+  <li><strong>The board decides by a majority</strong> of all its members' votes (Art. 12). A deputy votes only when the member they stand in for is absent (Art. 9).</li>
+  <li><strong>A member and their deputy</strong> may be at the station at the same time or take turns (Art. 87). The board can't bar the deputy of a member who is present (RIK's handbook).</li>
+  <li><strong>If a list nominates no one,</strong> the board works and decides validly without it (Art. 10).</li>
+  <li><strong>Appointment.</strong> Proposals are due at least 15 days before voting day, and the decisions at least 10 days before (Art. 34). An objection to an appointment goes to RIK within 48 hours of its publication (Art. 40). From 1 January 2028 a nominee must hold a valid RIK training certificate (the 2026 amendments).</li>
+  <li><strong>The role lasts</strong> from the publication of the decision until the materials are handed over after the vote and the minutes checked, not until the station closes (Art. 34).</li>
+  <li><strong>A member or deputy nominated by an opposition list</strong> has the right to take part in everything the board does. The chair must encourage such members to check the box, the sorting of ballots and the count of votes on their own (Art. 107).</li>
+  <li><strong>A candidate</strong> may not attend the work of election bodies (Art. 8), and comes to a polling station only to vote.</li>
+  <li><strong>Observers</strong> are registered by an association registered in Serbia, at least 7 days before voting day, or by a foreign organisation, at least 10 days before (Arts. 161, 162). A candidate or a member of an election body can't be an observer. An authorisation covers every station in one LIK's area, and two representatives of the same association can't be at the same station at once (Art. 164). The badge is worn where it can be seen (Art. 166).</li>
 </ul>
 
-<h2>When something goes wrong</h2>
+<h2 id="rokovi">Deadlines in one place</h2>
+<div class="table-wrap"><table class="compact stack deadlines">
+<thead><tr><th scope="col">When</th><th scope="col">What</th><th scope="col">Article</th></tr></thead>
+<tbody>
+<tr><td>15 days before voting day</td><td data-label="What">last day to nominate polling board members</td><td data-label="Article">34</td></tr>
+<tr><td>10 days before</td><td data-label="What">last day for the appointment decisions; foreign observers register</td><td data-label="Article">34, 162</td></tr>
+<tr><td>7 days before</td><td data-label="What">domestic observers register</td><td data-label="Article">161</td></tr>
+<tr><td>72 hours before</td><td data-label="What">a voter may now ask to vote outside the station</td><td data-label="Article">96</td></tr>
+<tr><td>48 hours before</td><td data-label="What">campaign silence until the stations close: no public presentation of candidates, no calls to vote for a list and no published estimates of the result</td><td data-label="Article">6</td></tr>
+<tr><td>24 hours before</td><td data-label="What">latest handover of the materials to the polling board</td><td data-label="Article">88</td></tr>
+<tr><td>Voting day, 6:00 at the latest</td><td data-label="What">the board meets at the station (the law: an hour before opening)</td><td data-label="Article">87</td></tr>
+<tr><td>7:00–20:00</td><td data-label="What">voting, without a break</td><td data-label="Article">91</td></tr>
+<tr><td>by 11:00</td><td data-label="What">requests to vote outside the station</td><td data-label="Article">96</td></tr>
+<tr><td>20:00</td><td data-label="What">closing; everyone still there votes; no results announced before then</td><td data-label="Article">91, 99</td></tr>
+<tr><td>12 hours after closing</td><td data-label="What">latest handover of the materials to the LIK</td><td data-label="Article">106</td></tr>
+<tr><td>48 hours after closing</td><td data-label="What">an opposition list's request for a sample check; RIK and LIK members may inspect the materials</td><td data-label="Article">111, 112</td></tr>
+<tr><td>72 hours after closing</td><td data-label="What">request to annul the vote at a polling station</td><td data-label="Article">148</td></tr>
+<tr><td>5 days after voting day</td><td data-label="What">lists' representatives and candidates may inspect the materials</td><td data-label="Article">54</td></tr>
+<tr><td>72 hours after a decision is published</td><td data-label="What">objection to RIK, then appeal to the Administrative Court</td><td data-label="Article">152, 156</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="pre">Before voting day</h2>
 <ul>
-  <li>A serious error, such as more ballots in the box than voters who signed, sends the materials to the commission. It can correct the minutes, declare that the result can't be determined, or annul the vote at that station, which is then repeated.</li>
-  <li>Objections to a station's or the overall result go to RIK within 72 hours of RIK publishing them. RIK's decisions can be appealed to the Administrative Court.</li>
+  <li><strong>The materials are handed</strong> to the polling board at least 24 hours before voting day (Art. 88). The lists' authorised representatives and accredited observers may attend (Arts. 48, 168).</li>
+  <li>A record of the handover is made. The bag is closed with a numbered security seal, whose number goes into the record, and it isn't opened until the board meets at the station on voting day (RIK's instruction on handovers, Art. 5). The record lists what must arrive: check it item by item and copy the seal's number.</li>
+  <li>The materials include the combined list of candidates, the extract from the voter register, the ballots in packs of 100, the control sheet, six copies of the polling board's minutes, the observers' record form and the control form. The ballot box, screens, UV lamps and sprays come from the municipal or city administration.</li>
+  <li><strong>Controllers:</strong> check the decision appointing you. On your polling station's page on this site, under "Decisions on the polling board", there's a link to it on RIK's site. Bring the decision and your ID: a board member who has spray traces on their fingers from the day's work votes only after showing it (Art. 93).</li>
 </ul>
 
-<h2>Crimes against electoral rights</h2>
-<p>Criminal Code, Articles 154–162:</p>
+<h2 id="jutro">The morning, before opening</h2>
 <ul>
-  <li>vote buying, where both the person offering and the voter accepting are liable;</li>
-  <li>forcing or threatening a voter;</li>
-  <li>voting twice or in someone else's name;</li>
-  <li>breaking the secrecy of the vote;</li>
-  <li>falsifying results;</li>
-  <li>destroying election documents.</li>
+  <li>The board is at the station <strong>by 6:00 at the latest</strong> (RIK's handbook; the law requires an hour before opening, Art. 87). Members wear their identification cards where they can be seen.</li>
+  <li>The chair cuts the seal with scissors and keeps it. The bag's contents are compared with the handover record. If something is missing or faulty, the board writes it into the minutes and tells the LIK at once (Art. 89).</li>
+  <li><strong>Without the extract from the voter register, the ballot box or the control sheet the station doesn't open</strong> (Art. 89). To start, RIK also requires the combined list, ballots, at least one spray, one UV lamp, one screen and the means to seal the box. If there are fewer ballots than registered voters, the station opens anyway (Art. 89).</li>
+  <li><strong>The layout,</strong> from the door: the UV lamp, the identity check, the extract, the spray, handing out the ballot, the screens, the box (Art. 90). The combined list is displayed where it can be seen (Art. 83). Party symbols and campaign material at the station and directly in front of it are removed (Art. 98).</li>
+  <li><strong>Screens:</strong> no more voters in the room than there are screens. The screens stand apart, at least a metre according to RIK, and are placed so that nobody can see how a voter marks the ballot (Art. 95). Check too that no mirror, window or camera shows the screens.</li>
+  <li><strong>Who does what</strong> (RIK's handbook): who handles the extract, who makes sure voters put their folded ballots in the box, who fills in the control form and checks the arithmetic, and the three trustees for voting outside the station. Tasks may change during the day.</li>
+  <li>Before opening, the station's number, the municipality, the date and the number of voters in the extract go into the minutes (items 1–4).</li>
 </ul>
 
-<h2>For observers in practice</h2>
+<h2 id="otvaranje">Opening at 7:00 and the control sheet</h2>
 <ul>
-  <li>Work in pairs. Document, don't confront. Leave if you feel unsafe; your safety comes first.</li>
+  <li>The exact opening time goes into the minutes as soon as the station opens (item 5).</li>
+  <li>The box is checked with <strong>the first voter who isn't a member of that board</strong>. The voter first passes the UV lamp and the checks of identity and the extract. In the voter's presence the board establishes that the box is sound and empty (Art. 92).</li>
+  <li><strong>The control sheet</strong> is signed by the first voter and by board members. The law requires at least one member; RIK says every member present signs (Art. 92). The sheet goes into the box and the box is sealed. The first voter's name and number in the extract go into the minutes. Only then does the first voter vote.</li>
+  <li>The control sheet is a different colour from the ballots (Art. 42). If it isn't in the box at the count, or isn't filled in or signed, the vote at that station is annulled (Art. 116).</li>
+</ul>
+
+<h2 id="glasanje">Voting, 7:00–20:00</h2>
+<p>Each step has its own place in the room, in this order (Arts. 90, 93, 94; RIK's handbook):</p>
+<ol>
+  <li><strong>UV lamp.</strong> The right index finger is checked, or the next finger if there is none. A trace means the voter has already voted and doesn't vote. The exception is a board member who shows their appointment decision (Art. 93).</li>
+  <li><strong>Identity.</strong> A valid ID card or passport; members of the Armed Forces may also use a military ID. With an expired document a voter votes only with proof of having applied for a new one. A driving licence doesn't count. If the surname on the document differs from the extract, the voter votes when the photo and the personal number confirm it's the same person. The invitation to vote isn't needed.</li>
+  <li><strong>Extract.</strong> A board member circles the voter's number and the voter signs (Art. 93). Nobody is added to the extract, even when it looks like an error left them out (Art. 89). If the board lets someone vote who isn't in the extract, the vote at that station is annulled (Art. 116).</li>
+  <li><strong>Spray</strong> on the right index finger; the trace lasts at least 24 hours (Art. 93).</li>
+  <li><strong>The ballot,</strong> one per voter.</li>
+  <li><strong>Instructions.</strong> The voter votes for one list by circling the number in front of its name, in secret behind the screen, and folds the ballot before putting it in the box. The vote is free, and nobody may ask a voter whom they voted for (Art. 94).</li>
+  <li><strong>Behind the screen.</strong> Nobody approaches the screen while a voter marks the ballot. Nobody, board members and observers included, may suggest to a voter whom to vote for. Nobody votes for someone else (Art. 95).</li>
+  <li><strong>The box.</strong> The voter puts the folded ballot in the box themselves. If the board suspects a voter didn't, it tells the police and the LIK (RIK's handbook). That's what the scheme known as the "Bulgarian train" relies on: a voter drops in a ballot someone marked in advance and carries out the blank ballot received at the station.</li>
+</ol>
+<p><strong>Helpers.</strong> A voter who can't mark the ballot alone, for example because of illiteracy, poor sight or disability, votes with a helper of their own choosing, who marks the ballot as the voter says (Art. 97). The minutes record how many voters were helped.</p>
+
+<h2 id="van">Voting outside the polling station</h2>
+<ul>
+  <li><strong>Who:</strong> a voter who can't come because of serious illness, old age or disability, within the station's area (Art. 96).</li>
+  <li><strong>Request:</strong> to the LIK no earlier than 72 hours before voting day and by 11:00 on voting day, or to the polling board on voting day by 11:00. Before the stations open the LIK publishes the total number of such voters (Art. 96).</li>
+  <li><strong>Who goes:</strong> three trustees, members or deputies nominated by different proposers. At least one of them must represent an opposition list (Arts. 96, 107). Accredited observers have the right to attend (RIK's handbook).</li>
+  <li><strong>At the voter's:</strong> identity, UV lamp, spray. The voter signs a certificate of the right to vote and receives a ballot, the combined list and a special envelope. The folded ballot goes into the envelope, which is sealed in the voter's presence. The envelope and the signed certificate go into an official envelope (Art. 96).</li>
+  <li><strong>Back at the station</strong> the chair opens the official envelope. If the certificate is signed, the voter's number is circled in the extract with a note that they voted outside the station, and the ballot goes into the box without being shown. <strong>An unsigned certificate means the voter didn't vote:</strong> the envelope with the ballot stays closed and is handed over with the unused ballots (Art. 96).</li>
+  <li>The minutes record how many voted outside the station and how many certificates were filled in and signed.</li>
+</ul>
+
+<h2 id="red">Order at the polling station</h2>
+<ul>
+  <li><strong>Who may be at the station:</strong> members and deputies of the polling board, the LIK and RIK; voters, only while they vote; accredited observers; the media, announced in advance to the LIK or RIK's coordinator and only while preparing a report (RIK's handbook).</li>
+  <li><strong>Breaches of order</strong> at the station or directly in front of it include (Art. 98):
+    <ul>
+      <li>people staying who have no rights or duties in running the election;</li>
+      <li>filming and photographing without authorisation;</li>
+      <li>reporting by phone or other means who has voted and who hasn't;</li>
+      <li>keeping lists of who has voted, outside the extract;</li>
+      <li>party symbols and campaign material.</li>
+    </ul>
+  </li>
+  <li><strong>Tally marks for turnout</strong> on a separate sheet are allowed, and the figures must be open to every board member (Art. 98). Writing down the names, personal numbers or extract numbers of voters who voted is not: that's a parallel list.</li>
+  <li><strong>Suspension.</strong> The board may suspend voting until order is restored (Art. 98). The reason and length go into the minutes. If a suspension lasts more than an hour, voting is extended by as long (Art. 91).</li>
+  <li><strong>The board may remove an observer</strong> who breaches order, uses a mobile phone or obstructs its work, and tells the LIK at once (Art. 168). The law gives the board this power over observers, not over its own members: a member is dismissed by the commission that appointed them (Art. 14).</li>
+</ul>
+
+<h2 id="brojanje">Closing at 20:00 and the count</h2>
+<ul>
+  <li>Voters at the station or directly in front of it at 20:00 vote. One board member counts them and stands behind the last (Art. 99). No results are announced before 20:00 (Art. 91).</li>
+  <li>Before the room is locked, every member and deputy who will count should be inside.</li>
+</ul>
+<p>The board establishes the results in this order (Art. 102):</p>
+<ol>
+  <li>The number of voters who voted, by counting the signatures in the extract and the notes on voting outside the station.</li>
+  <li>The number of unused ballots.</li>
+  <li>A check that the box stayed sealed and undamaged throughout. Only then is the box opened.</li>
+  <li>The control sheet: whether it's in the box, filled in and signed. It isn't counted as a ballot.</li>
+  <li>The ballots from the box are sorted into valid and invalid, and the invalid ones counted.</li>
+  <li>The valid ballots are sorted by list and counted.</li>
+</ol>
+<ul>
+  <li>The numbers go first into the <strong>control form</strong>, a working sheet that isn't the minutes. They go into the minutes only once the arithmetic is right (RIK's handbook).</li>
+  <li><strong>An invalid ballot</strong> is one left blank, one with the numbers of two or more lists circled, or one from which the list can't be reliably told. <strong>A valid ballot</strong> has one list's number circled, or shows reliably which list the voter chose, for example when only the list's name or the first candidate's name is circled (Art. 103).</li>
+</ul>
+<p><strong>The arithmetic that must hold.</strong> When any of this fails, the law treats it as a serious error (Art. 110). On this site the same checks are <a href="{{ link('about.html') }}#checks">flags</a> on every polling station's page.</p>
+<ul>
+  <li>The votes for all lists add up to the valid ballots.<br><span class="sym-line small muted">{{ mx.sym('sum_mismatch', 'paper') }}{{ check_name('sum_mismatch') }}</span></li>
+  <li>Valid + invalid = the ballots in the box.<br><span class="sym-line small muted">{{ mx.sym('ballot_mismatch', 'paper') }}{{ check_name('ballot_mismatch') }}</span></li>
+  <li>There are no more ballots in the box than voters who voted. If there are, the vote is annulled (Art. 116).<br><span class="sym-line small muted">{{ mx.sym('ballots_over_signed', 'paper') }}{{ check_name('ballots_over_signed') }}</span></li>
+  <li>Voters who voted + unused ballots = ballots received. If the unused ballots and the ballots in the box together exceed those received, the vote is annulled (Art. 116).</li>
+  <li>There are no more voters who voted than registered voters.<br><span class="sym-line small muted">{{ mx.sym('signed_over_registered', 'paper') }}{{ check_name('signed_over_registered') }}</span></li>
+</ul>
+<p>The other way round, a few more signatures than ballots in the box isn't an arithmetic error, but it means some ballots didn't end up in the box. On this site that's <span class="sym-line">{{ mx.sym('signed_over_ballots', 'paper') }}{{ check_name('signed_over_ballots') }}</span>.</p>
+<p>If the numbers don't add up, the board mustn't make them fit. It counts again, establishes what actually happened and writes that down.</p>
+
+<h2 id="zapisnik">The minutes and remarks</h2>
+<ul>
+  <li><strong>The polling board's minutes</strong> (form RG-2) are filled in six copies. The first is for RIK, the second for the LIK, the third is posted at the station at once, and the other three go to the representatives of the lists with the most votes at that station (Art. 104).</li>
+  <li><strong>They contain</strong> (Art. 105): the number registered, the number who voted, the ballots in the box, invalid and valid ballots, each list's votes; the opening and closing times; the checks of the box and the control sheet; suspensions and breaches of order; the board members' remarks.</li>
+  <li>No field is left empty: a list with no votes gets a dash. A wrong number isn't written over: it's struck through, the right one written next to it, and whoever corrected it signs the correction.</li>
+  <li><strong>Remarks.</strong> Board members' remarks are part of the minutes (Art. 105). A longer remark is handed in on a separate sheet: the chair confirms in the minutes that it was received, and the sheet is attached to the minutes. Write what happened, when, and what the board did. Write the remark before you sign the minutes.</li>
+  <li>The minutes are signed by the board members or their deputies (Art. 105).</li>
+  <li>When the minutes are checked, it's recorded whether board members or observers made remarks (Art. 108). RIK publishes every set of minutes on its site (Art. 108), with the remarks on separate sheets and the observers' record. On this site these are the flags <span class="sym-line">{{ mx.sym('remark_filed', 'records') }}{{ check_name('remark_filed') }}</span> and <span class="sym-line">{{ mx.sym('observer_remarks', 'records') }}{{ check_name('observer_remarks') }}</span>.</li>
+  <li><strong>Observers</strong> don't sign the board's minutes. They write their remarks themselves in the observers' record (form RG-11) and sign it (Art. 168; RIK's handbook).</li>
+  <li><strong>If your list isn't among the three with the most votes</strong> at the station, you don't get a copy. Copy the numbers from the control form or the posted minutes.</li>
+</ul>
+
+<h2 id="predaja">Handing over the materials after the vote</h2>
+<ul>
+  <li>Without delay, and within 12 hours of closing at the latest, the materials go to the LIK (Art. 106). The chair or their deputy hands them over, and at least two LIK members nominated by different proposers receive them. Every board member may attend (Art. 106), as may the lists' representatives and observers (Arts. 48, 168).</li>
+  <li>In sealed envelopes, each marked with the municipality, the station's number and what's inside: the control sheet, the unused, invalid and valid ballots, and the certificates for voting outside the station. Also handed over: the first and second copies of the minutes, the observers' record, the extract and the seal from the morning's handover (RIK's instruction on handovers, Arts. 8–10).</li>
+  <li><strong>Checking the minutes.</strong> Representatives of the board and the LIK check the minutes at the handover, note errors and write a report (Art. 108). If the minutes hold gross arithmetic errors, the materials are inspected too, and the LIK may correct the minutes, find that the result can't be determined, or annul the vote (Art. 110).</li>
+  <li>The bag is closed with a new seal in the presence of the LIK and the board members handing over. Its number goes into the handover record, and afterwards the bag is opened only by the LIK's decision (RIK's instruction on handovers, Art. 10).</li>
+  <li>With that, the board member's role ends (Art. 34).</li>
+</ul>
+
+<h2 id="posle">When something is wrong</h2>
+<ul>
+  <li><strong>The LIK annuls the vote at a station</strong> on its own motion if it finds that (Art. 116):
+    <ul>
+      <li>there are more ballots in the box than voters who voted;</li>
+      <li>the board let someone vote who isn't in the extract;</li>
+      <li>the control sheet isn't in the box, or isn't filled in or signed;</li>
+      <li>the unused ballots and the ballots in the box together exceed those received.</li>
+    </ul>
+    RIK decides on the repeat vote within three days, the vote is held within ten days, and the LIK appoints a new polling board (Arts. 117, 118).</li>
+  <li><strong>A request to annul the vote at a polling station</strong> is filed by a list's submitter with the LIK within 72 hours of the station closing. A voter may do so in narrower cases, for example when denied the vote (Art. 148). The LIK decides within 72 hours. The request must give the station, the facts and the evidence (Art. 149). That's why a controller sends their remarks and numbers to their list right after the count.</li>
+  <li><strong>An objection</strong> goes to RIK within 72 hours; one against a decision on an annulment request is filed through the LIK (Arts. 152, 154). <strong>An appeal</strong> to the Administrative Court: within 72 hours of RIK's decision being published, and the court decides within 72 hours (Arts. 156, 157).</li>
+  <li><strong>Sample check.</strong> An opposition list with more than 2% of the votes, or a minority list with more than 1%, may ask within 48 hours of closing for up to 5% of the stations in a LIK's area to be checked (Art. 112).</li>
+  <li><strong>Inspecting the materials.</strong> A representative of a list's submitter and a candidate may inspect them within five days of voting day, at the LIK's premises. Filming, photographing and copying voters' data aren't allowed (Art. 54).</li>
+  <li><strong>A voter</strong> may ask the LIK whether the extract records them as having voted (Art. 55), for example if they suspect someone voted in their name.</li>
+</ul>
+
+<h2 id="kd">Crimes against electoral rights</h2>
+<p>Criminal Code, Articles 154–162. For some of them a polling board member faces a heavier penalty.</p>
+<div class="table-wrap"><table class="compact stack">
+<thead><tr><th scope="col">Crime</th><th scope="col">Article</th><th scope="col">Penalty</th><th scope="col">If a polling board member commits it</th></tr></thead>
+<tbody>
+<tr><td>Forcing someone, by force or threat, to vote, not to vote, or to vote for or against a candidate</td><td data-label="Article">155</td><td data-label="Penalty">3 months to 3 years in prison</td><td data-label="If a polling board member commits it"></td></tr>
+<tr><td>Offering, giving or accepting a gift or other benefit for a vote; the voter who accepts is liable too</td><td data-label="Article">156</td><td data-label="Penalty">a fine or up to 3 years in prison</td><td data-label="If a polling board member commits it">3 months to 5 years in prison</td></tr>
+<tr><td>Voting in someone else's name, more than once, or with more than one ballot</td><td data-label="Article">157</td><td data-label="Penalty">a fine or up to 1 year in prison</td><td data-label="If a polling board member commits it">for enabling it: a fine or up to 2 years in prison</td></tr>
+<tr><td>Preventing voting by force or threat; disorder that interrupts the vote</td><td data-label="Article">159</td><td data-label="Penalty">up to 3 years in prison; a fine or up to 2 years in prison</td><td data-label="If a polling board member commits it"></td></tr>
+<tr><td>Breaking the secrecy of the vote</td><td data-label="Article">160</td><td data-label="Penalty">a fine or up to 6 months in prison</td><td data-label="If a polling board member commits it">a fine or up to 2 years in prison</td></tr>
+<tr><td>Falsifying the result: adding or removing ballots or votes, or announcing a false result</td><td data-label="Article">161</td><td data-label="Penalty"></td><td data-label="If a polling board member commits it">6 months to 5 years in prison</td></tr>
+<tr><td>Destroying, damaging, taking or hiding ballots or other voting documents</td><td data-label="Article">162</td><td data-label="Penalty">a fine or up to 1 year in prison</td><td data-label="If a polling board member commits it">3 months to 3 years in prison</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="praksa">In practice and on this site</h2>
+<h3>Before voting day</h3>
+<ul>
+  <li>Find your polling station with the <a href="{{ link('index.html') }}#pretraga">search on the home page</a>. Its page has the results of every election held there, the flags, the minutes, the observers' records, remarks and the decisions on the polling board, with links to RIK. The site doesn't copy names from those documents.</li>
+  <li>Look at how many voters are registered, what turnout was and how many ballots were invalid. When you know what's usual, it's easier to spot what isn't.</li>
+  <li>{% if latest %}On the <a href="{{ link('r/' ~ latest.id ~ '/index.html') }}#controllers">page of the latest election</a>{% else %}On an election's page{% endif %}, the section "Controllers on polling boards" shows at how many stations each list has a member in the extended composition, according to the decisions RIK publishes.</li>
+  <li>Bring the appointment decision, or the authorisation and badge, your ID, a pen, paper for tally marks, water and food. The day starts before 6:00 and ends after the handover, often after midnight.</li>
+</ul>
+<h3>At the polling station</h3>
+<ul>
   <li>Note the time of everything unusual.</li>
-  <li>At the count, write down the numbers from the minutes: registered, signatures, unused ballots, ballots in the box, invalid, and each contestant's votes.</li>
-  <li>Check that the minutes are posted at the station.</li>
-  <li>Afterwards, compare your numbers with the minutes RIK publishes and with the station's page on this site. If they differ, report it to your organisation.</li>
+  <li>Don't get into a confrontation. Cite the article and ask for the event to be written into the minutes.</li>
+  <li>Don't use your phone at the station.</li>
+  <li>After the count, copy the numbers: registered, voted (signatures), unused ballots, ballots in the box, invalid, valid, each list's votes, voted outside the station and with a helper.</li>
+  <li>Check that the third copy of the minutes is posted at the station. Controllers: go to the handover.</li>
+</ul>
+<h3>Afterwards</h3>
+<ul>
+  <li>The deadlines run from closing: 48 hours for a sample check, 72 hours for a request to annul. Send your remarks and numbers to your list or organisation straight away.</li>
+  <li>When RIK publishes the minutes, they appear on the station's page on this site too. Compare them with your numbers and, if they differ, tell your list or organisation.{% if latest %} Stations whose numbers don't add up are on the <a href="{{ link('r/' ~ latest.id ~ '/check.html') }}">list to check</a>.{% endif %}</li>
 </ul>
 
-<h2>Sources</h2>
+<h2 id="izvori">Sources</h2>
 <ul class="sources">
+  <li><a href="https://www.rik.parlament.gov.rs/extfile/sr/41907/Zakon%20o%20izboru%20narodnih%20poslanika%20lat.pdf">Law on the Election of Members of Parliament, Official Gazette 14/2022 (RIK)</a></li>
+  <li><a href="https://www.rik.parlament.gov.rs/extfile/sr/679013/ZAKON%20O%20IZMENAMA%20I%20DOPUNAMA%20ZAKONA%20O%20IZBORU%20NARODNIH%20POSLANIKA.pdf">Amendments to the Law on the Election of Members of Parliament, Official Gazette 47/2026 (RIK)</a></li>
   <li><a href="https://www.rik.parlament.gov.rs/extfile/sr/41925/Zakon%20o%20izboru%20predsednika%20Republike%20lat.pdf">Law on the Election of the President of the Republic (RIK)</a></li>
-  <li><a href="https://www.paragraf.rs/propisi_download/zakon_o_izboru_narodnih_poslanika.pdf">Law on the Election of Members of Parliament (Paragraf)</a></li>
+  <li><a href="https://www.rik.parlament.gov.rs/extfile/sr/782694/Prirucnik%20za%20rad%20birackih%20odbora%202026.pdf">RIK: Handbook for polling boards, 2026 (in Serbian)</a></li>
+  <li><a href="https://www.rik.parlament.gov.rs/extfile/sr/715317/%D0%A3%D0%BF%D1%83%D1%82%D1%81%D1%82%D0%B2%D0%BE%20%D0%BE%20%D0%BF%D1%80%D0%B8%D0%BC%D0%BE%D0%BF%D1%80%D0%B5%D0%B4%D0%B0%D1%98%D0%B8%20%D0%B8%D0%B7%D0%B1%D0%BE%D1%80%D0%BD%D0%BE%D0%B3%20%D0%BC%D0%B0%D1%82%D0%B5%D1%80%D0%B8%D1%98%D0%B0%D0%BB%D0%B0.pdf">RIK: Instruction on handing over election materials before and after voting (in Serbian)</a></li>
+  <li>Criminal Code, Articles 154–162 (crimes against electoral rights)</li>
   <li><a href="https://odihr.osce.org/sites/default/files/documents/official_documents/2026/10/SRB%20Early%20Parliamentary%202026_PS_26.10.2026.pdf">ODIHR preliminary statement, 26 October 2026</a></li>
 </ul>
 </article>

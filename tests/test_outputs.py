@@ -43,6 +43,14 @@ def test_site(site):
 
     page = (out / "r/680072/check.html").read_text(encoding="utf-8")
     assert "Bosilegrad" in page and "BM 21" in page
+
+    # the guide is for controllers too, links the latest election and names the site's own flags in each language
+    guide = (out / "guide.html").read_text(encoding="utf-8")
+    assert "Vodič za kontrolore i posmatrače" in guide and re.search(r'href="r/\d+/check\.html"', guide)
+    assert 'id="brojanje"' in guide and "Više listića nego potpisa" in guide and "čl. 116" in guide
+    guide_en = (out / "en/guide.html").read_text(encoding="utf-8")
+    assert "Guide for controllers and observers" in guide_en and "More ballots than signatures" in guide_en
+    assert "Водич за контролоре и посматраче" in (out / "cyr/guide.html").read_text(encoding="utf-8")
     # links to RIK documents are percent-encoded, so they survive transliteration
     hrefs = re.findall(r'href="(https://rik[^"]+)"', page)
     assert hrefs and all(not CYRILLIC.search(h) for h in hrefs)
