@@ -3,7 +3,7 @@
 {% block main %}
 <h1 class="page-title">{{ t('nav_municipalities') }}</h1>
 <p class="lede">{{ t('mun_index_lede') }}</p>
-{% if last %}<p class="muted small">{{ t('mun_index_last', title=last) }}</p>{% endif %}
+{% if last %}<p class="muted small">{{ t('mun_index_last', title=last) }} {{ t('mun_index_cm') }} <a href="{{ link('r/' ~ last_rid ~ '/commissions.html') }}">{{ t('cm_heading') }}</a>.</p>{% endif %}
 <label class="filter">{{ t('search_mun') }} <input type="search" data-filter="#mun-index" autocomplete="off"></label>
 <div class="table-wrap">
 <table id="mun-index" class="compact mun-index">

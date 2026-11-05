@@ -41,6 +41,10 @@ _TEXT = {
     "near_unanimity": ("Излазност {turnout}; {contestant}: {share} важећих гласова",
                        "Turnout {turnout}; {contestant}: {share} of valid votes"),
     "high_turnout": ("Излазност {turnout}, уписано {registered}", "Turnout {turnout}, {registered} registered"),
+    "identical_results": ("Исти гласови као на бирачком месту {twins} ({votes} гласова)",
+                          "Same votes as at station {twins} ({votes} votes)"),
+    "identical_results_many": ("Исти гласови као на бирачким местима {twins} ({votes} гласова)",
+                               "Same votes as at stations {twins} ({votes} votes)"),
     "voting_annulled": ("Решење о поништавању гласања{forms}{repeat}, објављено {first}",
                         "Ruling annulling the vote{forms}{repeat}, published {first}"),
     "results_undetermined": ("Решење да се резултати не могу утврдити{forms}{repeat}, објављено {first}",
@@ -72,6 +76,8 @@ def describe(flag: Flag, loc: str, contestant_label=lambda n: str(n), kind: str 
     code = flag.code
     if code == "invalid_spike" and d.get("basis") in ("address", "municipality"):
         code = f"invalid_spike_{d['basis']}"
+    if code == "identical_results" and len(d.get("twins", [])) > 1:
+        code = "identical_results_many"
     sr, en = _TEXT[code]
     text = en if loc == "en" else sr
     values: dict = {}
@@ -105,6 +111,8 @@ def describe(flag: Flag, loc: str, contestant_label=lambda n: str(n), kind: str 
         summary = (d.get("summary_en") or latin(d.get("summary_sr") or "")) if loc == "en" else d.get("summary_sr") or ""
         values = {"checked": t("review_checked", loc, date=fmt_date(d["checked"], loc)) if d.get("checked") else "",
                   "summary": f": {summary}" if summary else ""}
+    elif flag.code == "identical_results":
+        values = {"twins": ", ".join(d["twins"]), "votes": i(d["votes"])}
     elif flag.code == "near_unanimity":
         values = {"turnout": p(d["turnout"]), "contestant": contestant_label(d["contestant"]), "share": p(d["share"])}
     return " ".join(text.format(**values).split())

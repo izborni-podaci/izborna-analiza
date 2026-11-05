@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
+{% block title %}{{ t('nav_commissions') }} · {{ rtitle }}{% endblock %}
+{% block main %}
+{{ mx.round_nav('commissions') }}
+<p class="kicker">{{ rtitle }}</p>
+<h1>{{ t('cm_heading') }}</h1>
+<p>{{ t('cm_lede') }}</p>
+<p class="principle">{{ t('cm_principle') }}</p>
+
+{% macro count(n, of) %}{% if n is none %}—{% else %}{{ i(n) }}{% if of is not none %} / {{ i(of) }}{% endif %}{% endif %}{% endmacro %}
+<ul>
+  <li>{{ t('cm_sum_minutes', minutes=i(total.minutes), stations=i(total.stations), hours=num(total.hours, 1) if total.hours is not none else '—', late=i(total.late)) }}</li>
+  {% if total.standing is not none %}
+  <li>{{ t('cm_sum_boards', standing=i(total.standing), extended=i(total.extended), stations=i(total.stations)) }}</li>
+  {% else %}<li>{{ t('cm_boards_unread') }}</li>{% endif %}
+  {% if total.cdocs is not none %}
+  <li>{{ t('cm_sum_cdocs', n=i(total.cdocs), silent=i(total.silent), municipalities=i(total.municipalities)) }}</li>
+  {% endif %}
+  <li>{{ t('cm_sum_changes', corrections=i(total.corrections), changed=i(total.changed)) }}</li>
+</ul>
+
+<p class="muted small">{{ t('cm_highlight', slow=slow_hours, late=late_hours) }}</p>
+<label class="filter">{{ t('search_mun') }} <input type="search" data-filter="#cm-table" autocomplete="off"></label>
+<div class="table-wrap">
+<table class="compact cm" id="cm-table">
+  <thead><tr>
+    <th>{{ t('municipality') }}</th><th class="num" data-sort>{{ t('stations') }}</th>
+    <th class="num" data-sort>{{ t('cm_minutes') }}</th><th class="num" data-sort>{{ t('cm_hours') }}</th>
+    <th class="num" data-sort>{{ t('cm_late') }}</th><th class="num" data-sort>{{ t('cm_corrections') }}</th>
+    <th class="num" data-sort>{{ t('cm_standing') }}</th><th class="num" data-sort>{{ t('cm_extended') }}</th>
+    <th class="num" data-sort>{{ t('cm_cdocs') }}</th><th class="num" data-sort>{{ t('nav_changes') }}</th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr id="c-{{ r.code }}" data-text="{{ name(r.name) }} {{ name(r.district) }}">
+      <td><a href="{{ link(base + 'm/' ~ r.code ~ '.html') }}">{{ name(r.name) }}</a></td>
+      <td class="num" data-v="{{ r.stations }}">{{ i(r.stations) }}</td>
+      <td class="num{% if 'minutes' in r.warn %} warn{% endif %}" data-v="{{ r.share(r.minutes) }}">{{ i(r.minutes) }}</td>
+      <td class="num{% if 'hours' in r.warn %} warn{% endif %}" data-v="{{ r.hours if r.hours is not none else '' }}">{{ num(r.hours, 1) if r.hours is not none else '—' }}</td>
+      <td class="num{% if 'late' in r.warn %} warn{% endif %}" data-v="{{ r.late }}">{{ i(r.late) }}</td>
+      <td class="num" data-v="{{ r.corrections }}">{{ i(r.corrections) }}</td>
+      <td class="num{% if 'standing' in r.warn %} warn{% endif %}" data-v="{{ r.share(r.standing) if r.standing is not none else '' }}">{{ count(r.standing, none) }}</td>
+      <td class="num{% if 'extended' in r.warn %} warn{% endif %}" data-v="{{ r.share(r.extended) if r.extended is not none else '' }}">{{ count(r.extended, none) }}</td>
+      <td class="num{% if 'cdocs' in r.warn %} warn{% endif %}" data-v="{{ r.cdocs if r.cdocs is not none else '' }}">{% if r.cdocs %}<a href="{{ link(base + 'm/' ~ r.code ~ '.html') }}#commission">{{ i(r.cdocs) }}</a>{% else %}{{ count(r.cdocs, none) }}{% endif %}</td>
+      <td class="num{% if 'changed' in r.warn %} warn{% endif %}" data-v="{{ r.changed }}">{{ i(r.changed) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p><a href="{{ root }}api/r/{{ rnd.id }}/commissions.csv" download>{{ t('cm_csv') }}</a></p>
+
+<h2>{{ t('cm_method') }}</h2>
+<ul>
+  <li>{{ t('cm_m_minutes', late=late_hours) }}</li>
+  <li>{{ t('cm_m_boards') }}{% if total.standing is none %} {{ t('cm_boards_unread') }}{% endif %}</li>
+  <li>{{ t('cm_m_cdocs') }}</li>
+  <li>{{ t('cm_m_changes') }} <a href="{{ link(base + 'changes.html') }}">{{ t('nav_changes') }}</a></li>
+  <li>{{ t('cm_m_scope') }}</li>
+</ul>
+{% endblock %}

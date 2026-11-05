@@ -124,6 +124,36 @@ def test_checks_ignore_who_leads(round2026):
     assert before == after
 
 
+def test_identical_results(round2026):
+    """Two stations of one municipality with the same votes for every list are flagged, each naming the other;
+    the same votes in another municipality, too few votes or too few lists with votes are not. The real file has
+    no such pair."""
+    import copy
+    from izbori.describe import describe
+    assert not any(f.code == "identical_results" for f in station_flags(round2026))
+    rnd = copy.deepcopy(round2026)
+    domestic = [s for s in rnd.stations if s.counted and s.kind == "domestic" and (s.valid or 0) >= 100]
+    a = domestic[0]
+    b = next(s for s in domestic if s.municipality_code == a.municipality_code and s is not a)
+    other = next(s for s in domestic if s.municipality_code != a.municipality_code)
+    b.votes = list(a.votes)
+    other.votes = list(a.votes)
+    found = {f.station: f for f in station_flags(rnd) if f.code == "identical_results"}
+    assert set(found) == {a.key, b.key}
+    assert found[a.key].data["twins"] == [b.number] and found[b.key].data["twins"] == [a.number]
+    assert b.number in describe(found[a.key], "en")
+    # every contestant is treated alike: swapping two lists everywhere changes nothing
+    swapped = copy.deepcopy(rnd)
+    for s in swapped.stations:
+        s.votes[0], s.votes[2] = s.votes[2], s.votes[0]
+    assert {f.station for f in station_flags(swapped) if f.code == "identical_results"} == set(found)
+    # two lists with votes, or fewer than 50 votes, match by chance too easily
+    n = len(a.votes)
+    for votes in ([60, 40] + [0] * (n - 2), [20, 10, 5] + [0] * (n - 3)):
+        a.votes, b.votes = list(votes), list(votes)
+        assert not any(f.code == "identical_results" for f in station_flags(rnd))
+
+
 def test_several_minutes_links(round2026):
     s = next(x for x in round2026.stations if x.key == "70157/25")
     assert len(s.minutes_links) == 3

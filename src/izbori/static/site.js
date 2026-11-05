@@ -12,6 +12,14 @@
   };
   const lang = document.documentElement.lang || 'en';
 
+  // On a phone the navigation rows scroll sideways: start with the current page's link in view.
+  document.querySelectorAll('.round-nav, .main-nav').forEach((nav) => {
+    const here = nav.querySelector('[aria-current]');
+    if (here && nav.scrollWidth > nav.clientWidth) {
+      nav.scrollLeft = Math.max(0, here.offsetLeft - nav.offsetLeft - (nav.clientWidth - here.offsetWidth) / 2);
+    }
+  });
+
   // Light or dark, remembered on this device; until chosen, the system's setting decides.
   const toggle = document.querySelector('[data-theme-toggle]');
   if (toggle) {

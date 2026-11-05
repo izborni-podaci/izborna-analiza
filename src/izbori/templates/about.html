@@ -24,6 +24,7 @@
   <li><strong>Atom feeds</strong> with each batch of new flags: <a href="{{ root }}feed.en.xml">in English</a> and <a href="{{ root }}feed.sr.xml">in Serbian</a>. Every municipality has its own feed too, linked from its page.</li>
   <li><strong>JSON data</strong> behind the pages across elections: <a href="{{ root }}api/index.json">api/index.json</a> lists the elections, municipalities and polling stations; <code>api/m/&lt;code&gt;.json</code> has a municipality across elections and <code>api/s/&lt;place&gt;.json</code> a polling station.</li>
   <li><strong>Every polling station of an election</strong> in one file, <code>api/r/&lt;election&gt;/stations.json</code>, as the <a href="{{ link('explore.html') }}">Explore</a> page uses it. The municipal boundaries for its map are in <code>api/geo/municipalities.json</code> (© OpenStreetMap contributors, ODbL).</li>
+  <li><strong>The municipal commissions' table</strong> of an election as CSV, <code>api/r/&lt;election&gt;/commissions.csv</code>.</li>
   <li><strong>The archive:</strong> RIK's files as they were downloaded, in the <a href="{{ repo_url }}">repository on GitHub</a> under <code>data/rounds</code>. Each file's history shows what RIK published and when.</li>
   <li>None of them holds a name from RIK's documents. They link to the document instead.</li>
 </ul>
@@ -48,6 +49,7 @@
   <li><strong>Атом фид</strong> са сваком новом групом ознака: <a href="{{ root }}feed.sr.xml">на српском</a> и <a href="{{ root }}feed.en.xml">на енглеском</a>. Свака општина има и свој фид, повезан на њеној страни.</li>
   <li><strong>Подаци у JSON-у</strong>, исти као на странама кроз изборе: <a href="{{ root }}api/index.json">api/index.json</a> садржи изборе, општине и бирачка места; <code>api/m/&lt;шифра&gt;.json</code> је општина кроз изборе, а <code>api/s/&lt;место&gt;.json</code> бирачко место.</li>
   <li><strong>Сва бирачка места једних избора</strong> у једној датотеци, <code>api/r/&lt;избори&gt;/stations.json</code>, како их користи страна <a href="{{ link('explore.html') }}">Истражи</a>. Границе општина за њену мапу су у <code>api/geo/municipalities.json</code> (© сарадници OpenStreetMap-а, ODbL).</li>
+  <li><strong>Табела општинских комисија</strong> једних избора као CSV, <code>api/r/&lt;избори&gt;/commissions.csv</code>.</li>
   <li><strong>Архива:</strong> РИК-ове датотеке онакве какве су преузете, у <a href="{{ repo_url }}">репозиторијуму на GitHub-у</a>, у фасцикли <code>data/rounds</code>. Историја сваке датотеке показује шта је РИК објавио и када.</li>
   <li>Ни у једном од њих нема имена из РИК-ових докумената: уместо њих је веза на сам документ.</li>
 </ul>
@@ -74,6 +76,8 @@
 
 <h2>Statistics for the whole round</h2>
 <p>Each round's page also shows tests that look across thousands of polling stations: how evenly the last digits of vote counts are spread, how often results land on round percentages, and how turnout relates to vote share. These are weak signals. Unusual values can have ordinary causes and never point to a particular station.</p>
+<p>Round percentages are compared with the number expected by chance, which depends on each station's denominator: of 500 valid votes every fifth count is a whole percent, of 737 about every tenth. The same tests are run for each municipality with enough data. Among so many municipalities some come out unusual by chance, so each chance is multiplied by the number of municipalities tested (the Bonferroni correction), and only what stays below 0.05 after that is worth a question. Identical results at two stations are different: they are checked station by station, with the other flags.</p>
+<p>The <strong>Commissions</strong> page of each election shows, per municipality, what reached RIK's registers and when: the minutes and how many hours after the polls closed they were uploaded, rulings correcting them, decisions on the polling boards and the commission's own documents. It is not a grade: each column is a fact, and a highlighted cell a question.</p>
 
 <h2>Limits</h2>
 <ul>
@@ -89,6 +93,8 @@
 
 <h2>Статистика за цео изборни круг</h2>
 <p>Страница сваког изборног круга приказује и тестове на хиљадама бирачких места: колико су равномерно распоређене последње цифре бројева гласова, колико често резултати падају на округле проценте и како се излазност односи према уделу гласова. То су слаби сигнали. Необичне вредности могу имати обичне узроке и никада не упућују на одређено бирачко место.</p>
+<p>Округли проценти се пореде са бројем који се очекује случајно, а он зависи од имениоца сваког места: од 500 важећих гласова сваки пети број даје цео проценат, од 737 отприлике сваки десети. Исти тестови раде се и за сваку општину са довољно података. Међу толико општина понека случајно испадне необична, па се свака вероватноћа множи бројем тестираних општина (Бонферонијева корекција), и тек оно што и после тога остане испод 0,05 вреди питања. Исти резултати на два бирачка места су друга ствар: проверавају се место по место, са осталим ознакама.</p>
+<p>Страница <strong>Комисије</strong> за сваке изборе показује, по општини, шта је стигло у РИК-ове регистре и када: записнике и колико сати после затварања бирачких места су отпремљени, решења о њиховој исправци, решења о бирачким одборима и документе саме комисије. То није оцена: свака колона је чињеница, а истакнута ћелија питање.</p>
 
 <h2>Ограничења</h2>
 <ul>

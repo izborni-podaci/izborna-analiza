@@ -15,6 +15,7 @@
 {% elif code == 'turnout_drop' %}<path d="M8 13.4L2 3h12z" fill="currentColor"/>
 {% elif code == 'near_unanimity' %}<path d="M5.6 4.6 8.8 2.6v10.8M5.6 13.4h6.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
 {% elif code == 'high_turnout' %}<path d="M3.6 8.6 8 4.2l4.4 4.4M3.6 12.8 8 8.4l4.4 4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+{% elif code == 'identical_results' %}<path d="M3 5.6h10M3 10.4h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
 {% elif code == 'voting_annulled' %}<circle cx="8" cy="8" r="5.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.2 11.8 11.8 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
 {% elif code == 'results_undetermined' %}<rect x="2.6" y="2.6" width="10.8" height="10.8" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.4 8h5.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
 {% elif code == 'remark_filed' %}<path d="M2.6 3.2h10.8v7.2H7.2l-3.2 2.6v-2.6H2.6z" fill="currentColor"/>
@@ -32,6 +33,7 @@
 {% if current == 'index' %}{% set trail = trail + [(rshort, none)] %}
 {% elif current == 'check' %}{% set trail = trail + [(rshort, link(base + 'index.html')), (t('nav_check'), none)] %}
 {% elif current == 'changes' %}{% set trail = trail + [(rshort, link(base + 'index.html')), (t('nav_changes'), none)] %}
+{% elif current == 'commissions' %}{% set trail = trail + [(rshort, link(base + 'index.html')), (t('nav_commissions'), none)] %}
 {% elif m is defined %}{% set trail = trail + [(rshort, link(base + 'index.html')), (name(m.name), none)] %}
 {% else %}{% set trail = trail + [(rshort, link(base + 'index.html'))] %}{% endif %}
 {{ crumbs(trail) }}
@@ -39,6 +41,7 @@
   <a href="{{ link(base + 'index.html') }}"{% if current == 'index' %} aria-current="page"{% endif %}>{{ t('results_heading') }}</a>
   <a href="{{ link(base + 'check.html') }}"{% if current == 'check' %} aria-current="page"{% endif %}>{{ t('nav_check') }}</a>
   <a href="{{ link(base + 'index.html') }}#municipalities">{{ t('nav_municipalities') }}</a>
+  <a href="{{ link(base + 'commissions.html') }}"{% if current == 'commissions' %} aria-current="page"{% endif %}>{{ t('nav_commissions') }}</a>
   <a href="{{ link(base + 'changes.html') }}"{% if current == 'changes' %} aria-current="page"{% endif %}>{{ t('nav_changes') }}</a>
 </nav>
 {% endmacro %}

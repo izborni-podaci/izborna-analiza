@@ -245,3 +245,19 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   After the re-index, 8,345 of 2026's 8,392 stations have their controllers known (7,642 before); of the 47 left,
   43 have no decision in RIK's register (37 in Kosovo and Metohija) and 4 are unreadable. The 2023 elections were
   re-indexed and re-read too: parliamentary 8,120 of 8,273 (7,269 before), provincial 1,771 of 1,776 (1,621).
+- **5 Nov 2026, new checks and the commissions:** of the projects proposed for the data already archived, the
+  maintainer chose new checks in the numbers and a page on the municipal commissions.
+  - **Same votes as another station** (`identical_results`, unusual, weight 2) is a station flag: every contestant
+    with the same votes at two stations of one municipality, with at least 50 votes and 3 contestants with votes.
+    Two contestants match by chance too often (a two-way race); no archived election has a pair even at 10 votes.
+  - **Round percentages and last digits stay statistics, never station flags:** a test over many stations can't say
+    which one is unusual. Round percentages are now compared with the count expected from each station's
+    denominator, exactly; the old note's "about 10% by chance" was wrong for small ones (of 500 votes, 20%). Per
+    municipality both are tested and corrected for the number of municipalities (Bonferroni); none of the
+    archived elections has one below 0.05.
+  - **The commissions page has no score,** in keeping with "a flag is a question": each column is a fact, and cells
+    are highlighted by absolute rules (something missing, a median over 12 hours, minutes after a day, no document,
+    changes), not by rank, so no municipality is marked only for being slower than others. Hours come from the
+    upload stamp in each document's link: the register of minutes shows the same time for almost every document,
+    but days later for some (Bačka Palanka 2023: register 20 Dec, files 18 Dec). Abroad and prisons are left out
+    (RIK runs them). Explore gained the same hours as a measure, a median per municipality.

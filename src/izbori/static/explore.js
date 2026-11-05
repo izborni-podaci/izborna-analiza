@@ -89,6 +89,7 @@
     flagged: { kind: 'yes' },
     ctrl: { kind: 'yes', list: true },
     obs: { kind: 'yes' },
+    hours: { kind: 'hours' }, // from the polls closing to the upload of the first minutes; a median per group
   };
   const MKEYS = Object.keys(M);
   const unit = (key, lv) => (M[key].kind === 'yes' && lv === 'm' ? 'pct' : M[key].kind);
@@ -120,6 +121,7 @@
         return c == null || !(n > 0 && n <= 31) ? null : [(c >>> (n - 1)) & 1, 1];
       }
       case 'obs': return [s.obs[i] ? 1 : 0, 1];
+      case 'hours': return s.min && s.min[i] != null ? [s.min[i], 0] : null;
       default: return null;
     }
   };
@@ -140,6 +142,7 @@
       }
       return valid ? (100 * Math.max(...tot)) / valid : null;
     }
+    if (M[key].kind === 'hours') return median(idx.map((i) => (parts(key, d, i, li) || [null])[0]));
     let a = 0;
     let b = 0;
     let any = false;
@@ -158,15 +161,16 @@
     if (v == null) return '—';
     if (u === 'pct') return `${num(v, 1)}%`;
     if (u === 'yes') return t(v ? 'ex_true' : 'ex_false');
+    if (u === 'hours') return `${num(v, 1)} h`;
     return num(v, 0);
   };
-  const csvNum = (u, v) => (v == null ? '' : u === 'pct' ? Number(v.toFixed(2)) : v);
+  const csvNum = (u, v) => (v == null ? '' : u === 'pct' ? Number(v.toFixed(2)) : u === 'hours' ? Number(v.toFixed(1)) : v);
   const listName = (rid, n) => {
     const l = ((BY_ID[rid] || {}).lists || []).find((x) => String(x.n) === String(n));
     return l ? `${l.n}. ${l.name}` : '';
   };
   const mlabel = (key, rid, n) => (M[key].list && n ? `${t(`m_${key}`)}: ${listName(rid, n)}` : t(`m_${key}`));
-  const withUnit = (label, u) => (u === 'pct' ? `${label} (%)` : label);
+  const withUnit = (label, u) => (u === 'pct' ? `${label} (%)` : u === 'hours' ? `${label} (h)` : label);
 
   // --- numbers for scales -----------------------------------------------------------------------------------------
   const quantile = (sorted, q) => {
@@ -590,7 +594,7 @@
   };
   const rangeText = (u, a, b, step) => {
     const d = digits(step);
-    return u === 'pct' ? `${num(a, d)}–${num(b, d)}%` : `${num(a, d)}–${num(b, d)}`;
+    return u === 'pct' ? `${num(a, d)}–${num(b, d)}%` : u === 'hours' ? `${num(a, d)}–${num(b, d)} h` : `${num(a, d)}–${num(b, d)}`;
   };
 
   // Two values per row: a heat grid of counts for many stations' shares, otherwise points.
@@ -847,7 +851,8 @@
       });
     }
     const change = (r) => (u === 'count' ? (r.value ? (100 * (r.y - r.value)) / Math.abs(r.value) : null) : r.y - r.value);
-    const chText = (v) => (v == null ? '—' : u === 'count' ? `${signed(v, 1)}%` : `${signed(v, 1)} ${t('ex_pp')}`);
+    const chText = (v) => (v == null ? '—' : u === 'count' ? `${signed(v, 1)}%` : u === 'hours' ? `${signed(v, 1)} h`
+      : `${signed(v, 1)} ${t('ex_pp')}`);
     rows.forEach((r) => {
       r.a = r.value;
       r.ch = change(r);
@@ -957,7 +962,8 @@
     const rows = rowsOf(d, kept(d, st.r), 'm', key, listIx(d, st.lx)).filter(ranged(u));
     const label = mlabel(key, st.r, st.lx);
     const sorted2 = [...rows].sort(byValue(false));
-    summary([countText('m', rows.length), t('ex_median', { v: fmt(u, median(rows.map((r) => r.value))) }), t('ex_map_sums')]);
+    summary([countText('m', rows.length), t('ex_median', { v: fmt(u, median(rows.map((r) => r.value))) }),
+      t(u === 'hours' ? 'ex_map_median' : 'ex_map_sums')]);
     if (!rows.length) return { empty: true };
     const stc = [...stCols(), valCol(label, unit(key, 's')), regCol()];
     const li = listIx(d, st.lx);
@@ -1255,6 +1261,7 @@
       ROUNDS.length > 1 && ['matrix', { v: 'matrix', r: newest.id, x: 'turnout' }],
       withCtrl && ['ctrl_map', { v: 'map', r: withCtrl.id, x: 'ctrl' }],
       ['high', { v: 'table', r: newest.id, lv: 's', x: 'turnout', x0: '90' }],
+      ['hours_map', { v: 'map', r: newest.id, x: 'hours' }],
     ].filter(Boolean);
   };
   presetsEl.innerHTML = presets().map(([k, s]) => `<a class="chip" href="${esc(toHash({ ...DEF, ...s }))}">${esc(t(`preset_${k}`))}</a>`).join('');

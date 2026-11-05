@@ -110,14 +110,17 @@ Every check treats every contestant the same way. A station is followed across e
 | Turnout jump | Turnout changed by at least 20 points more than it did across the stations both elections share. | 2 |
 | Near-unanimity | Turnout at least 90% and one contestant with at least 80% of valid votes, with at least 50 registered. | 1 |
 | Very high turnout | Turnout at least 90% with at least 50 registered, when near-unanimity doesn't apply. | 1 |
+| Same votes as another station | Every contestant got the same votes as at another station of the same municipality, with at least 50 votes and at least 3 contestants with votes. A chance match is then rare (none in any archived election, even at 10 votes and 2 contestants); a copied record or a slip when the numbers were entered gives one. | 2 |
 
 The two turnout checks skip stations flagged as a likely typing error.
 
 **Context statistics.** These cover the whole round and are never station flags. They are computed for the two contestants with the most votes, whoever they are:
 - last-digit test
-- round percentages
+- round percentages: stations where turnout or a share lands within 0.05 points of a whole percent, against the number expected by chance. The expectation depends on each station's denominator (of 500 votes every fifth count is a whole percent, of 737 about every tenth), so it is computed station by station, exactly, leaving out counts within 10 of none or all; p is the Poisson chance of at least that many, a little cautious
 - correlation between turnout and share
 - turnout histogram
+
+**Per municipality** (`stats.py`), on the round's page: round percentages (turnout and the two shares pooled, where at least 5 hits are expected) and last digits (every contestant's counts of at least 100, where there are at least 50). Each p is multiplied by the number of municipalities tested (Bonferroni), and the five smallest are shown; below 0.05 after that, a municipality is worth a question. On the archived elections none is (the smallest: 0.14 for round percentages, Kraljevo 2023; 0.07 for last digits, Smederevo 2022). Like the round's statistics, they are not station flags: a test over many stations can't say which of them is unusual.
 
 ## Documents per polling station
 
@@ -230,12 +233,13 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 - **Municipalities** (`municipalities.html`): every municipality in Serbian alphabetical order (Latin or Cyrillic, by page), with how many elections it took part in, its polling stations at the latest one and a link to its electoral commission's documents; a filter finds one by name.
 - **Explore** (`explore.html`): the reader's own analyses, computed in the browser by `static/explore.js` (no library, nothing from other servers) from `api/r/<id>/stations.json` and `api/geo/municipalities.json`.
   - Views: a map of municipalities with the municipalities ranked beside it; two measures against each other (for many stations' shares, a heat grid of counts: the election fingerprint); two elections (stations matched by place as on the pages across elections, municipalities by code, with the diagonal and the largest changes); a distribution; a table; municipalities across elections.
-  - Measures, the same for every list: turnout, invalid ballots, a chosen list's share, the largest share of any list, registered voters, voters, signatures minus ballots in the box, flagged, whether a chosen list had a controller (member or deputy of the extended composition), the observers' record. No list is ever chosen for the reader; after another election is picked, the reader chooses the list again.
+  - Measures, the same for every list: turnout, invalid ballots, a chosen list's share, the largest share of any list, registered voters, voters, signatures minus ballots in the box, flagged, whether a chosen list had a controller (member or deputy of the extended composition), the observers' record, hours from the polls closing to the upload of the station's first minutes (a median for a municipality). No list is ever chosen for the reader; after another election is picked, the reader chooses the list again.
   - Filters: municipality; stations in the country, abroad or in prisons; at least so many registered voters; flags (any, none, one group); a list's controller; the observers' record; a range of the measure. They apply to each election's own stations; the controller filter only to the chosen election, whose lists it names.
   - Ready-made analyses are plain links. Every analysis is in the address (`#v=…&r=…`), downloads as CSV (UTF-8 with a BOM, a link per row) and, for a chart, as SVG with its title and source. Clicking a cell, bar, point or municipality lists its stations.
   - The map's boundaries are OpenStreetMap's (ODbL, credited on the map), joined to RIK's municipalities by code; a city RIK counts by its city municipalities (Belgrade, Niš and others) isn't drawn over them. Kosovo and Metohija are drawn in RIK's division, which OpenStreetMap doesn't follow there, from Glaurdić et al. (2021, CC BY 4.0, credited on the map when drawn), as of 1999; the province's municipalities with no station in any archived election are grey and say so.
   - The map's seven classes each hold about as many municipalities, at round limits, so a few far values (the province's low turnout) don't squeeze the rest into two colours.
-- **Round:** totals, results, seats or the majority, statistics for the whole round, and municipalities.
+- **Round:** totals, results, seats or the majority, statistics for the whole round and per municipality, and municipalities.
+- **Commissions** (`r/<id>/commissions.html`, `publishing.py`): per municipality in Serbia, what reached RIK for its stations and from its electoral commission, and when — stations whose minutes RIK published and how many hours after the polls closed the first came (median, and how many after 24 hours), rulings correcting the minutes, decisions on the standing and extended composition of the polling boards, the commission's own documents, and stations whose numbers changed after publication. Hours come from the upload stamp RIK writes into every document's link; the register of minutes shows the same time for almost every document and, where it differs, a later one. No score: a cell is highlighted by absolute rules (something missing, a median over 12 hours, minutes after more than a day, no document from the commission, changes), sortable, with the table as CSV (`api/r/<id>/commissions.csv`). Abroad and prisons are left out, as RIK runs those stations.
 - **To check:** every flagged station. Filter by municipality and flag type, or a whole group of flags (`#g-paper` and the like in the address). Each flag shows its rule, its numbers and RIK's minutes.
 - **Municipality:** every station, with its numbers, flags, minutes and notes.
 - **Municipality across elections** (`m/<code>.html`): one row per election it took part in, every election alike: stations, registered voters, turnout, invalid ballots, the top three contestants and the number of stations to check, each linking to that election. Then its polling stations, each linking to its own page.
@@ -364,12 +368,13 @@ src/izbori/
   history.py    the archive: snapshots, change log, first-seen times
   report.py     everything about one round, for the site, feeds and targets
   describe.py   one line per flag with its numbers, in each language
-  stats.py      statistics for the whole round
+  stats.py      statistics for the whole round and per municipality
   places.py     the same polling place across elections: address, then name, then number
   documents.py  RIK's register of minutes: observers' records, remarks, rulings per station
   observers.py  observers' records: reviews by a person, and the OCR score that orders them
   schedule.py   when to ask RIK, by the election calendar
   commission.py the municipal electoral commissions' documents from RIK's register
+  publishing.py what reached RIK for each municipality and when: the facts on the Commissions page
   narrative.py  the sentences at the top of the pages across elections
   geo.py        municipal boundaries for the Explore page's map: OpenStreetMap, and Kosovo and Metohija in RIK's division
   notes.py      news notes

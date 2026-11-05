@@ -29,7 +29,7 @@ from izbori.links import safe_url
 from izbori.model import ABROAD, PRISONS, last_url
 from izbori.i18n import (BELGRADE, LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, collate, fmt_date, fmt_int,
                          fmt_num, fmt_pct, fmt_time, keep, kind_name, latin_page, strip_keep, t)
-from izbori import commission, documents, geo, narrative, schedule
+from izbori import commission, documents, geo, narrative, publishing, schedule
 from izbori.places import RULES_FILE, Place, contradicts, follow
 from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
@@ -81,6 +81,7 @@ class Site:
             "loc": loc, "lang": LANG_ATTR[loc], "root": root, "link": link, "langs": langs, "page": page,
             "t": lambda key, **kw: t(key, loc, **kw), "i": lambda n: fmt_int(n, loc),
             "pct": lambda x, d=1: fmt_pct(x, loc, d), "num": lambda x, d=1: fmt_num(x, loc, d),
+            "pval": lambda x: "< " + fmt_num(0.001, loc, 3) if x < 0.001 else fmt_num(x, loc, 3),
             "time": lambda v: fmt_time(v, loc), "date": lambda v: fmt_date(v, loc), "name": name,
             "kind_name": lambda k: kind_name(k, loc),
             "check_name": lambda c: check_name(c, loc), "check_rule": lambda c: check_rule(c, loc, RULES),
@@ -136,6 +137,25 @@ class Site:
         if rid not in self.commission_cache:
             self.commission_cache[rid] = commission.by_municipality(commission.load_store(self.archive.dir(rid)))
         return self.commission_cache[rid]
+
+    def publishing_of(self, rid: str) -> tuple[list, dict]:
+        """Per municipality in Serbia, what reached RIK's registers for its stations and from its commission, and
+        when (publishing.py); with the whole country's line."""
+        if rid not in self.publishing_cache:
+            a = self.analyses[rid]
+            by_code: dict[str, list] = defaultdict(list)
+            for s in a.round.stations:
+                by_code[s.municipality_code].append(s)
+            close = publishing.closing(self.dates[rid] or "")
+            board = self.board_docs_of(rid)
+            cdocs = None
+            if commission.path(self.archive.dir(rid)).exists():
+                cdocs = {code: sum(len(g["docs"]) for g in groups) for code, groups in self.commission_of(rid).items()}
+            changed = {key for key, flags in self.flagged[rid].items() if any(f.check.group == "change" for f in flags)}
+            rows = publishing.rows(list(self.mun_rows[rid].values()), by_code, a.documents, close, board or None, cdocs,
+                                   changed)
+            self.publishing_cache[rid] = (rows, publishing.summary(rows, a.documents, a.round.stations, close))
+        return self.publishing_cache[rid]
 
     def board_docs_of(self, rid: str) -> dict:
         """Per station key, its decisions on the polling board (appointments and changes), to link."""
@@ -405,6 +425,7 @@ class Site:
         # the Explore page: every polling station of an election, and the municipalities' boundaries for its map
         for rid in self.rids:
             self.put(f"api/r/{rid}/stations.json", dump(self.round_data(rid)))
+            self.put(f"api/r/{rid}/commissions.csv", publishing.to_csv(self.publishing_of(rid)[0]))
         boundaries = geo.load(self.archive.root / "geo" / "municipalities.json")
         if boundaries:
             self.put("api/geo/municipalities.json", json.dumps(self.map_of(boundaries), ensure_ascii=False,
@@ -433,16 +454,19 @@ class Site:
         municipality code, number, name, place across elections, the numbers from the minutes, how many flags and in
         which groups (bits in the order of GROUPS), which lists appointed a member or deputy of the extended
         composition (bit n-1 for ballot number n; null where no decision was read), whether RIK published an
-        observers' record, and each list's votes, by ballot number."""
+        observers' record, the hours from the polls closing to the upload of the station's first minutes (null
+        when none is known), and each list's votes, by ballot number."""
         a = self.analyses[rid]
         ctrl = self.ctrl_of(rid)
         bit = {g: 1 << i for i, g in enumerate(GROUPS)}
         cols: dict[str, list] = {k: [] for k in ("mc", "no", "name", "place", "reg", "voted", "box", "valid", "invalid",
-                                                "flags", "groups", "ctrl", "obs")}
+                                                "flags", "groups", "ctrl", "obs", "min")}
+        close = publishing.closing(self.dates[rid] or "")
         votes: list[list] = [[] for _ in a.round.contestants]
         for s in a.round.stations:
             p = self.places.of(rid, s.key)
             flags = self.flagged[rid].get(s.key, [])
+            hours = publishing.hours_after(publishing.first_minutes(a.documents.get(s.key, [])), close)
             lists = (ctrl.get(s.key) or {}).get("lists")
             mask = None
             if lists is not None:
@@ -453,7 +477,8 @@ class Site:
             row = {"mc": s.municipality_code, "no": s.number, "name": s.name, "place": p.id if p else "",
                    "reg": s.registered, "voted": s.voted, "box": s.ballots, "valid": s.valid, "invalid": s.invalid,
                    "flags": len(flags), "groups": sum({bit[f.check.group] for f in flags}), "ctrl": mask,
-                   "obs": int(any(d.kind == "observers" for d in a.documents.get(s.key, [])))}
+                   "obs": int(any(d.kind == "observers" for d in a.documents.get(s.key, []))),
+                   "min": None if hours is None else round(hours, 1)}
             for k, v in row.items():
                 cols[k].append(v)
             for i in range(len(votes)):
@@ -614,6 +639,7 @@ class Site:
         self.ctrl_cache: dict = {}
         self.board_docs_cache: dict = {}
         self.commission_cache: dict = {}
+        self.publishing_cache: dict = {}
         rids = self.archive.round_ids()
         for rid in rids:
             self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, self.cache)
@@ -671,6 +697,7 @@ class Site:
         for rid in rids:  # loaded once here, before the languages are written side by side
             self.ctrl_of(rid)
             self.commission_of(rid)
+            self.publishing_of(rid)
         home = self.home_data(rounds[0] if rounds else None)
 
         def pages_in(loc: str) -> None:
@@ -687,7 +714,7 @@ class Site:
             self.write(loc, "index.html", "index.html", latest=summaries[0] if summaries else None, overall=overall,
                        checks=CHECKS, groups=GROUPS, home=home)
             self.write(loc, "municipalities.html", "municipalities.html", rows=self.municipality_index(loc),
-                       last=self.shorts[loc][rids[-1]] if rids else "")
+                       last=self.shorts[loc][rids[-1]] if rids else "", last_rid=rids[-1] if rids else "")
             meta = json.dumps(self.explore_meta(loc), ensure_ascii=False, separators=(",", ":"))
             self.write(loc, "explore.html", "explore.html", meta=Markup(meta.replace("</", "<\\/")))
             self.write(loc, "elections.html", "elections.html", rounds=summaries)
@@ -770,7 +797,7 @@ class Site:
     def round_pages(self, a: Analysis, loc: str) -> None:
         rid = a.round.id
         base = f"r/{rid}/"
-        pages = [base + "index.html", base + "check.html", base + "changes.html"] + [
+        pages = [base + "index.html", base + "check.html", base + "changes.html", base + "commissions.html"] + [
             base + f"m/{code}.html" for code in self.mun_rows[rid]]
         if all([self.keep(loc, page, self.round_key(rid)) for page in pages]):  # a list: every page is recorded
             return
@@ -786,6 +813,8 @@ class Site:
             "digits": [(label(i + 1), d, svg.digits(d, loc)) for i in top2
                        if (d := stats.last_digits(a.round, i)) is not None],
             "round": stats.round_percentages(a.round, top2),
+            "local_round": stats.round_percentages_by_municipality(a.round, top2),
+            "local_digits": stats.last_digits_by_municipality(a.round),
             "corr": [(label(i + 1), stats.correlation(a.round, i)) for i in top2],
             "labels": {str(i): label(i + 1) for i in top2},
         }
@@ -841,6 +870,9 @@ class Site:
                             "before_url": safe_url(last_url(e["o"])) if is_link and e["o"] else "",
                             "now_url": safe_url(last_url(e["n"])) if is_link and e["n"] else ""})
         self.write(loc, base + "changes.html", "changes.html", changes=changes, **common)
+        prow, ptotal = self.publishing_of(rid)
+        self.write(loc, base + "commissions.html", "commissions.html", rows=prow, total=ptotal,
+                   slow_hours=publishing.SLOW_HOURS, late_hours=publishing.LATE_HOURS, **common)
 
         by_code: dict[str, list] = defaultdict(list)
         for s in a.round.stations:

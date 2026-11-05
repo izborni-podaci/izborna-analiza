@@ -153,6 +153,7 @@
     </tbody>
   </table>
   </div>
+  <p><a href="{{ link(base + 'commissions.html') }}">{{ t('cm_link') }}</a></p>
 </section>
 
 <section id="stats">
@@ -193,10 +194,10 @@
       <h3>{{ t('round_heading') }}</h3>
       <p class="muted">{{ t('round_note') }}</p>
       <table class="compact">
-        <thead><tr><th>{{ t('measure') }}</th><th class="num">{{ t('stations') }}</th><th class="num">%</th></tr></thead>
+        <thead><tr><th>{{ t('measure') }}</th><th class="num">{{ t('on_whole') }}</th><th class="num">{{ t('expected') }}</th><th class="num">p</th></tr></thead>
         <tbody>
         {% for r in stats.round %}
-          <tr><td>{% if r.measure == 'turnout' %}{{ t('turnout') }}{% else %}{{ t('share_of', name=name(stats.labels[r.measure])) }}{% endif %}</td><td class="num">{{ i(r.hits) }} / {{ i(r.stations) }}</td><td class="num">{{ pct(r.share, 1) }}</td></tr>
+          <tr><td>{% if r.measure == 'turnout' %}{{ t('turnout') }}{% else %}{{ t('share_of', name=name(stats.labels[r.measure])) }}{% endif %}</td><td class="num">{{ i(r.hits) }} / {{ i(r.stations) }}</td><td class="num">{{ num(r.expected, 0) }}</td><td class="num">{{ pval(r.p) }}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -212,5 +213,40 @@
       </table>
     </div>
   </div>
+  {% set lr_n, lr = stats.local_round %}{% set ld_n, ld = stats.local_digits %}
+  {% if lr or ld %}
+  <h3 id="local">{{ t('local_heading') }}</h3>
+  <p class="muted">{{ t('local_note') }}</p>
+  <div class="two-col">
+    {% if lr %}
+    <div>
+      <h4>{{ t('round_heading') }}</h4>
+      <p class="muted small">{{ t('local_round_note', n=i(lr_n), k=i(lr|selectattr('adjusted', 'lt', 0.05)|list|length)) }}</p>
+      <table class="compact">
+        <thead><tr><th>{{ t('municipality') }}</th><th class="num">{{ t('on_whole') }}</th><th class="num">{{ t('expected') }}</th><th class="num">{{ t('p_adjusted') }}</th></tr></thead>
+        <tbody>
+        {% for r in lr[:5] %}
+          <tr{% if r.adjusted < 0.05 %} class="sig"{% endif %}><td><a href="{{ link(base + 'm/' ~ r.code ~ '.html') }}">{{ name(r.name) }}</a></td><td class="num">{{ i(r.observed) }} / {{ i(r.n) }}</td><td class="num">{{ num(r.expected, 1) }}</td><td class="num">{{ pval(r.adjusted) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+    {% if ld %}
+    <div>
+      <h4>{{ t('digits_heading') }}</h4>
+      <p class="muted small">{{ t('local_digits_note', n=i(ld_n), k=i(ld|selectattr('adjusted', 'lt', 0.05)|list|length)) }}</p>
+      <table class="compact">
+        <thead><tr><th>{{ t('municipality') }}</th><th class="num">{{ t('counts') }}</th><th class="num">χ²</th><th class="num">{{ t('p_adjusted') }}</th></tr></thead>
+        <tbody>
+        {% for r in ld[:5] %}
+          <tr{% if r.adjusted < 0.05 %} class="sig"{% endif %}><td><a href="{{ link(base + 'm/' ~ r.code ~ '.html') }}">{{ name(r.name) }}</a></td><td class="num">{{ i(r.n) }}</td><td class="num">{{ num(r.observed, 1) }}</td><td class="num">{{ pval(r.adjusted) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 </section>
 {% endblock %}

@@ -4,7 +4,7 @@ Four groups:
 - paper:   the station's own numbers don't add up (strongest signals)
 - change:  the archive shows numbers, minutes or corrections changing after publication
 - records: RIK published a remark or a decision on the vote with the station's minutes
-- unusual: lopsided or shifting results; often legitimate, so they weigh least
+- unusual: lopsided, shifting or repeated results; often legitimate, so they weigh least
 """
 
 from __future__ import annotations
@@ -44,6 +44,7 @@ CHECKS = [
     Check("turnout_drop", "unusual", 1),
     Check("near_unanimity", "unusual", 1),
     Check("high_turnout", "unusual", 1),
+    Check("identical_results", "unusual", 2),
 ]
 BY_CODE = {c.code: c for c in CHECKS}
 GROUPS = ["paper", "change", "records", "unusual"]
@@ -63,6 +64,8 @@ RULES = {
     "invalid_rel_share": 0.04,
     "turnout_jump": 0.25,
     "jump_min_registered": 100,
+    "identical_min_votes": 50,  # with a few lists and this many votes, two stations rarely match by chance
+    "identical_min_lists": 3,  # two lists with votes match by chance too often (a two-way race)
 }
 
 ARITHMETIC = {"sum_mismatch", "ballot_mismatch", "ballots_over_signed", "signed_over_ballots",
@@ -150,6 +153,25 @@ def unusual_flags(s: Station, mun_peers: list[Station], addr_peers: list[Station
                 if share >= RULES["invalid_rel_factor"] * max(med, 0.005):
                     out.append(Flag(s.key, "invalid_spike",
                                     {"invalid": s.invalid, "share": share, "median": med, "basis": basis}))
+    return out
+
+
+def identical_flags(by_mun: dict[str, list[Station]]) -> list[Flag]:
+    """Stations of one municipality where every contestant got the same votes. Once a few lists have votes, a
+    chance match is rare; a copied record, or a slip when the numbers were entered, gives one."""
+    out = []
+    for stations in by_mun.values():
+        same: dict[tuple, list[Station]] = defaultdict(list)
+        for s in stations:
+            votes = tuple(v or 0 for v in s.votes)
+            lists = sum(1 for v in votes if v)
+            if sum(votes) >= RULES["identical_min_votes"] and lists >= RULES["identical_min_lists"]:
+                same[votes].append(s)
+        for group in same.values():
+            if len(group) > 1:
+                out.extend(Flag(s.key, "identical_results", {"twins": [t.number for t in group if t is not s],
+                                                              "votes": sum(v or 0 for v in s.votes)})
+                           for s in group)
     return out
 
 
@@ -265,6 +287,7 @@ def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[
         if s.kind == "domestic":
             typo = any(f.code == "full_turnout_typo" for f in own)
             flags.extend(unusual_flags(s, by_mun[s.municipality_code], by_addr[_address(s)], typo))
+    flags.extend(identical_flags(by_mun))
     if changes:
         flags.extend(change_flags(changes, {s.key: s for s in rnd.stations}))
     if previous:

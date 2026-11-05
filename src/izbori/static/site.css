@@ -53,6 +53,12 @@ h1, h2 { font-family: var(--serif); font-weight: 600; }
 h1 { font-size: 2.1rem; line-height: 1.12; margin: 0.15em 0 0.5em; }
 h2 { font-size: 1.6rem; line-height: 1.2; margin: 1.6em 0 0.5em; }
 h3 { font-size: 1.05rem; line-height: 1.35; margin: 1.3em 0 0.4em; font-weight: 600; }
+h4 { font-size: 0.95rem; line-height: 1.35; margin: 1.1em 0 0.3em; font-weight: 600; }
+tr.sig td { font-weight: 600; }
+tr.sig td:first-child { box-shadow: inset 3px 0 0 var(--ink); }
+td.warn { background: var(--accent-track); font-weight: 600; }
+table.cm td:first-child { min-width: 11em; }
+table.cm th { white-space: normal; vertical-align: bottom; }
 code { font-size: 0.85em; }
 
 /* header: name, four sections, search and one small menu for language, script and theme */
@@ -316,7 +322,7 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
   .brand { font-size: 1.3rem; }
   .top-row { gap: 0 8px; }
   .main-nav { order: 3; width: 100%; gap: 0 18px; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
-  .round-nav { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
+  .round-nav { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; gap: 0 18px; }
   .band { margin: 0 -16px; padding: 28px 16px 32px; }
   .timeline > li { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .round-nav a { display: inline-flex; align-items: center; min-height: 44px; }

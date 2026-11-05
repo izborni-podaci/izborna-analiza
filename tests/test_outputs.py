@@ -24,7 +24,7 @@ def test_site(site):
     out = site
     for prefix in ("", "cyr/", "en/"):
         for page in ("index.html", "guide.html", "about.html", "r/680072/index.html", "r/680072/check.html",
-                     "r/680072/changes.html"):
+                     "r/680072/changes.html", "r/680072/commissions.html"):
             assert (out / prefix / page).exists(), prefix + page
     assert len(list((out / "r/680072/m").glob("*.html"))) == 191
     # a phone shows each cell's label from one stylesheet, in the page's language
@@ -84,6 +84,40 @@ def test_site(site):
     assert "https://example.org/x/static/site.css" in (out / "404.html").read_text(encoding="utf-8")
 
 
+def test_commissions(site, archive):
+    """Each election's page on the municipal commissions: one row per municipality in Serbia, linked from the
+    round's pages and the municipalities page, with the same table as CSV."""
+    out = site
+    for prefix in ("", "cyr/", "en/"):
+        page = (out / prefix / "r/680072/commissions.html").read_text(encoding="utf-8")
+        assert re.search(r'<a href="[^"]*commissions\.html" aria-current="page">', page)
+        root = "../../../" if prefix else "../../"
+        assert f'href="{root}api/r/680072/commissions.csv"' in page
+    page = (out / "r/680072/commissions.html").read_text(encoding="utf-8")
+    rows = re.findall(r'<tr id="c-(\d+)"', page)
+    rnd = archive.load("680072")
+    domestic = {s.municipality_code for s in rnd.stations if s.kind == "domestic"}
+    assert set(rows) == domestic and "33000" not in rows
+    assert "Opštinske izborne komisije" in page and "Ovo nije ocena." in page
+    assert 'class="num warn"' in page  # something is worth a question, and says so
+    assert 'href="r/680072/commissions.html"' in (out / "municipalities.html").read_text(encoding="utf-8")
+    assert 'href="../../r/680072/commissions.html"' in (out / "r/680072/index.html").read_text(encoding="utf-8")
+    one = next(iter(rows))
+    assert f'href="../../../r/680072/commissions.html#c-{one}"' in (out / f"r/680072/m/{one}.html").read_text(
+        encoding="utf-8")
+    for rid in archive.round_ids():
+        lines = (out / f"api/r/{rid}/commissions.csv").read_text(encoding="utf-8").splitlines()
+        assert lines[0].startswith("code,municipality,district,stations,minutes,median_hours")
+        assert len(lines) > 10
+    # the 2022 election's decisions on polling boards weren't read: unknown, not none
+    old = (out / "api/r/42732/commissions.csv").read_text(encoding="utf-8").splitlines()[1].split(",")
+    assert old[8] == old[9] == ""
+
+    # the round page: round percentages against chance, and the same tests per municipality
+    index = (out / "r/680072/index.html").read_text(encoding="utf-8")
+    assert 'id="local"' in index and "Bonferoni" in index and "Očekivano" in index
+
+
 def test_explore(site, archive):
     """The Explore page: its script draws everything in the browser from api/, with the strings and the lists that
     come with the page in its language, and the boundaries joined to RIK's municipalities by code."""
@@ -119,6 +153,8 @@ def test_explore(site, archive):
         s.municipality_code, s.number, s.registered, s.voted)
     assert [v[i] for v in data["votes"]] == s.votes
     assert data["groups"] == ["paper", "change", "records", "unusual"] and data["controllers"]
+    hours = [h for h in cols["min"] if h is not None]  # from the polls closing to the first minutes in RIK's register
+    assert len(hours) > 8000 and 0 < sorted(hours)[len(hours) // 2] < 24
     assert all(p for p in cols["place"])  # every station leads to its page across elections
     for rid in archive.round_ids():
         assert (out / f"api/r/{rid}/stations.json").exists(), rid
@@ -458,6 +494,9 @@ def test_incremental_build_matches_a_full_build(tmp_path, archive):
     run(tmp_path / "b" / "site", True)
     run(tmp_path / "e" / "site", False)
     assert same(tmp_path / "e" / "site", tmp_path / "b" / "site")
+    # the commissions page counts the commission's new document (its inputs are the round's)
+    table = csv.DictReader(io.StringIO((tmp_path / "b/site/api/r/567956/commissions.csv").read_text(encoding="utf-8")))
+    assert {r["code"]: r["commission_documents"] for r in table}[entry["s"].split("/")[0]] == "1"
 
     # a round leaves the archive: its pages and its places' pages go
     shutil.rmtree(data / "rounds/341143")
