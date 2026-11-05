@@ -164,6 +164,10 @@ def test_a_city_commission_s_decisions_find_their_station():
     assert p.place("Ниш", "7", "ДРУГА ШКОЛА") == (None, "unknown municipality")
     assert p.place("Пожаревац", "", "ДОМ") == (None, "no number")
     assert p.place("Пожаревац", "9", "ДОМ") == (None, "no such station")
+    # a city's commission under the city's name, its city municipalities known only by their district
+    vozdovac = [st("70106", "Градска општина Вождовац", "4", "ОШ „Бранко Ћопић“", "1")]
+    vozdovac[0].district = "Београдски регион"
+    assert Placer({}, vozdovac).place("Београд", "4", 'ОШ "БРАНКО ЋОПИЋ"') == ("70106/4", "named")
     # RIK lists the boards it appoints itself, abroad and in prisons, under its own name
     assert p.place("РИК", "3", "АМБАСАДА РС БЕЧ - КОНЗУЛАРНО ОДЕЉЕЊЕ") == ("33000/3", "named")
     assert p.place("РИК", "3", "КПЗ ПРИМЕР") == ("55001/3", "named")

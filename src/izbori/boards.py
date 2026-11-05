@@ -462,7 +462,8 @@ class Placer:
     (Kostolac's under Požarevac, Sevojno's under Užice in 2026), each numbered within its own municipality, so one
     number can belong to two stations; or under a name the results don't use ("Ниш"). The station's name says
     which: the same number with the same name in a city municipality ("Градска општина") of the same district, or
-    in a municipality whose name, in any election, contains the register's. RIK lists the boards it appoints itself,
+    in a municipality whose name, in any election, or district contains the register's (Belgrade's commission
+    listed its city municipalities under "Београд" in 2024). RIK lists the boards it appoints itself,
     abroad and in prisons, under its own name ("РИК"): among those stations, by number and name. Where nothing else
     fits, the decision stays where the register puts it, as before."""
 
@@ -472,6 +473,7 @@ class Placer:
         self.numbered: dict[str, list[str]] = {}  # station number → station keys
         self.district: dict[str, str] = {}  # municipality code → district code
         self.city_part: set[str] = set()  # codes of city municipalities, which a city's commission may list
+        self.region: dict[str, str] = {}  # municipality code → its district's and region's names, as a key
         self.aliases: dict[str, set] = {}  # municipality code → keys of every name it had
         for key, code in self.codes.items():
             self.aliases.setdefault(code, set()).add(key)
@@ -481,6 +483,7 @@ class Placer:
             self.names[st.key] = st.name
             self.numbered.setdefault(st.number, []).append(st.key)
             self.district[st.municipality_code] = st.district_code
+            self.region[st.municipality_code] = municipality_key(getattr(st, "district", "") or "")
             if latin(st.municipality).upper().startswith("GRADSKA OPŠTINA"):
                 self.city_part.add(st.municipality_code)
 
@@ -505,7 +508,8 @@ class Placer:
                     return c in (ABROAD.strip("/"), PRISONS.strip("/"))
                 if code:
                     return c != code and c in self.city_part and self.district.get(c) == self.district.get(code)
-                return len(mkey) >= 3 and any(mkey in a for a in self.aliases.get(c, ()))
+                return len(mkey) >= 3 and (any(mkey in a for a in self.aliases.get(c, ()))
+                                           or mkey in self.region.get(c, ""))  # "Београд": "Град Београд"
             found = [k for k in self.numbered.get(number, []) if near(k) and same_station(self.names[k], name)]
             if len(found) == 1:
                 return found[0], "moved" if code else "named"
