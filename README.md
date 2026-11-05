@@ -211,7 +211,9 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 **Languages:** Serbian Latin (default), Serbian Cyrillic and English. Serbian text is written once in Cyrillic and converted to Latin automatically, as are RIK's names.
 
 **Pages:**
-- **Overview:** every archived round, with its counting progress.
+- **Home:** the search; beside it the latest election: how many stations are counted, how many are flagged in each group of flags (each linking to the list to check, filtered to that group) and when RIK was last asked; below it the archive in numbers (elections, polling stations across elections, RIK documents the pages link to). When a maintainer has entered the next election in `data/elections.csv`, a strip shows its day, the days left and the deadlines still ahead (polling board nominations and appointments, domestic observers, the handover of materials, campaign silence), counted back from voting day as the law states them and linking to the guide; it disappears once the day has passed. Then six ways in: what's unusual, unusual more than once, a municipality across elections, the guide, controllers by list, and data and alerts.
+- **Elections** (`elections.html`): every archived round, with its counting progress.
+- **Municipalities** (`municipalities.html`): every municipality in Serbian alphabetical order (Latin or Cyrillic, by page), with how many elections it took part in, its polling stations at the latest one and a link to its electoral commission's documents; a filter finds one by name.
 - **Round:** totals, results, seats or the majority, statistics for the whole round, and municipalities.
 - **To check:** every flagged station. Filter by municipality and flag type. Each flag shows its rule, its numbers and RIK's minutes.
 - **Municipality:** every station, with its numbers, flags, minutes and notes.
@@ -222,7 +224,7 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 - **Search** on the home page finds a municipality or a polling station, by its current or a former number, and opens its page across elections.
 - **Changes:** what changed after first publication, and each archived version of the file.
 - **Guide for controllers and observers** (`guide.sr.html`, `guide.en.html`): the rules at a polling station from the handover of the materials before the vote to the handover after it — who is who on the board, the deadlines in one table, opening and the control sheet, the voting steps, voting outside the station, order, the count and the arithmetic that must hold, the minutes and remarks, remedies and their deadlines, what differs at local elections (Law on Local Elections 14/2022, 35/2024, 47/2026: the municipal or city commission instead of RIK, four copies of the minutes for lists, objections to the commission and appeals to the higher court, and the rules when local and national elections fall on the same day), and the crimes with their penalties. Every rule gives its article in the Law on the Election of Members of Parliament (14/2022, 47/2026) or the RIK document it comes from (the 2026 handbook for polling boards, the instruction on handovers). The arithmetic names the site's matching flags, and the practical part points to the station's page, the controllers per list and the list to check. It states the law the same way for every list; a party's own handbook is used only where the law or RIK confirms it.
-- **About:** method, sources, limits.
+- **About:** method, how often RIK is asked, the data and alerts (Atom feeds, the JSON under `api/`, the archive on GitHub), the checks, limits.
 
 ### Places across elections
 
@@ -286,7 +288,7 @@ The archive starts with the three files from 1 November 2026 at 22:19, 23:26 and
   - until 14 days after: every 3 hours, for late results, corrections and repeated votes;
   - a round RIK lists without a known election day: every hour on Sundays, when elections are held.
 
-  Election days come from the archived results and from `data/elections.csv`, where a maintainer enters an election once it is called (`date`, `round` if RIK lists it yet, `kind`, `note`). Each look downloads a file only when the number of counted stations changed, and re-downloads every recent round once a day to catch silent corrections; rounds more than 30 days past their election day are looked at once a week. The time of the last look is kept in `data/looks.json`, so a run GitHub skipped (its schedule drops many hourly runs) doesn't delay the next look. A run started by hand always asks.
+  Election days come from the archived results and from `data/elections.csv`, where a maintainer enters an election once it is called (`date`, `round` if RIK lists it yet, `kind`, `note`; the home page shows the next one, with its kind and note). Each look downloads a file only when the number of counted stations changed, and re-downloads every recent round once a day to catch silent corrections; rounds more than 30 days past their election day are looked at once a week. The time of the last look is kept in `data/looks.json`, so a run GitHub skipped (its schedule drops many hourly runs) doesn't delay the next look. A run started by hand always asks.
 - **While a count is open.** The same run turns into a watch loop:
   - it checks RIK every 3 minutes;
   - it downloads when progress changes, and at least every 15 minutes in any case;

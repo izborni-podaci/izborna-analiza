@@ -47,6 +47,43 @@ def calendar(root: Path) -> list[tuple[date, str]]:
     return out
 
 
+def upcoming(root: Path, today: date) -> list[dict]:
+    """The next election day a maintainer entered (today counts), one row per election held that day, with its
+    kind and note; empty when none is ahead."""
+    p = Path(root) / ELECTIONS
+    if not p.exists():
+        return []
+    rows = []
+    with p.open(encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f):
+            try:
+                day = date.fromisoformat((row.get("date") or "").strip())
+            except ValueError:
+                continue
+            if day >= today:
+                rows.append({"day": day, "kind": (row.get("kind") or "").strip(),
+                             "note": (row.get("note") or "").strip()})
+    if not rows:
+        return []
+    first = min(r["day"] for r in rows)
+    return [r for r in rows if r["day"] == first]
+
+
+# Deadlines counted back from voting day, as the law states them (Law on the Election of Members of Parliament,
+# Arts. 34, 161, 88 and 6; the Law on Local Elections has the same ones for polling boards, Art. 27). A rule of N
+# days ends at midnight N days before; one of hours counts back from midnight starting voting day.
+DEADLINES = [("boards_proposed", 15), ("boards_appointed", 10), ("observers_domestic", 7)]
+
+
+def deadlines(day: date, today: date) -> list[tuple[str, date]]:
+    """The deadlines still ahead for an election on `day`, in order: proposals and appointments of polling boards,
+    domestic observers' registration, the handover of materials (24 hours before voting day, so by the end of the
+    day two days before) and campaign silence (from the start of the day two days before)."""
+    out = [(key, day - timedelta(days=n)) for key, n in DEADLINES]
+    out += [("handover", day - timedelta(days=2)), ("silence", day - timedelta(days=2))]
+    return [(key, d) for key, d in out if d >= today]
+
+
 def election_days(archive) -> list[tuple[date, str]]:
     """Every known election day: the archived rounds' and the calendar's."""
     out = []

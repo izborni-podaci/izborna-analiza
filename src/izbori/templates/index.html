@@ -3,18 +3,55 @@
 {% block title %}{{ t('nav_overview') }}{% endblock %}
 {% block main %}
 <section class="hero">
-  <h1>{{ t('home_title') }}</h1>
-  <p class="deck">{{ t('home_lede') }}</p>
-  <form class="search" role="search" data-search data-index="{{ link('search.json') }}" data-base="{{ link('') }}" action="{{ link('elections.html') }}" data-bm="{{ t('station_no') }}" data-mun-sub="{{ t('search_mun_sub', n='{n}') }}" data-flagged="{{ t('search_flagged', k='{k}', n='{n}') }}" data-clean="{{ t('search_clean', n='{n}') }}" data-former="{{ t('search_former', n='{n}') }}">
-    <label for="pretraga">{{ t('search_field') }}</label>
-    <div class="search-row">
-      <input id="pretraga" type="search" autocomplete="off" placeholder="{{ t('search_placeholder') }}">
-      <button type="submit" class="button">{{ t('search_button') }}</button>
-    </div>
-    <div class="search-out" data-search-results data-none="{{ t('search_none') }}" aria-live="polite"></div>
-    <p class="small muted">{{ t('search_or') }} <a href="{{ link('elections.html') }}">{{ t('search_or_link') }}</a>.</p>
-  </form>
+  <div class="hero-main">
+    <h1>{{ t('home_title') }}</h1>
+    <p class="deck">{{ t('home_lede') }}</p>
+    <form class="search" role="search" data-search data-index="{{ link('search.json') }}" data-base="{{ link('') }}" action="{{ link('elections.html') }}" data-bm="{{ t('station_no') }}" data-mun-sub="{{ t('search_mun_sub', n='{n}') }}" data-flagged="{{ t('search_flagged', k='{k}', n='{n}') }}" data-clean="{{ t('search_clean', n='{n}') }}" data-former="{{ t('search_former', n='{n}') }}">
+      <label for="pretraga">{{ t('search_field') }}</label>
+      <div class="search-row">
+        <input id="pretraga" type="search" autocomplete="off" placeholder="{{ t('search_placeholder') }}">
+        <button type="submit" class="button">{{ t('search_button') }}</button>
+      </div>
+      <div class="search-out" data-search-results data-none="{{ t('search_none') }}" aria-live="polite"></div>
+    </form>
+    <p class="stats"><a href="{{ link('elections.html') }}">{{ t('stats_rounds', n=i(home.rounds)) }}</a>{% if home.first %} ({{ home.first }}{% if home.last != home.first %}–{{ home.last }}{% endif %}){% endif %} · {{ t('stats_places', n=i(home.places)) }} · {{ t('stats_docs', n=i(home.docs)) }}</p>
+  </div>
+  {% if latest %}
+  <aside class="status" aria-labelledby="status-h">
+    <p class="kicker">{{ t('counting') if latest.counting else t('status_latest') }}</p>
+    <h2 id="status-h" class="status-title"><a href="{{ link('r/' ~ latest.id ~ '/index.html') }}">{{ latest.short }}</a></h2>
+    {% if latest.date %}<p class="status-date">{{ latest.date }}</p>{% endif %}
+    <p class="status-line">{{ t('status_counted', counted=i(latest.counted), total=i(latest.total)) }}</p>
+    <div class="meter" role="img" aria-label="{{ t('counted_of', counted=i(latest.counted), total=i(latest.total)) }}"><span style="width: {{ '%.1f'|format(100 * latest.counted / latest.total if latest.total else 0) }}%"></span></div>
+    <p class="status-line"><a href="{{ link('r/' ~ latest.id ~ '/check.html') }}">{{ t('status_flagged', n=i(latest.flagged)) }}</a></p>
+    {% if latest.flagged %}
+    <ul class="status-groups">
+      {% for g in groups if home.groups[g] %}
+      <li class="g-{{ g }}"><a href="{{ link('r/' ~ latest.id ~ '/check.html') }}#g-{{ g }}"><span class="dot" aria-hidden="true"></span>{{ t('group_' ~ g) }}</a><span class="num">{{ i(home.groups[g]) }}</span></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if home.looked %}<p class="status-foot">{{ t('status_looked', time=time(home.looked)) }}</p>{% endif %}
+  </aside>
+  {% endif %}
 </section>
+
+{% if home.next %}
+{% set nx = home.next %}
+<section class="next" data-next aria-labelledby="next-h">
+  <p class="kicker">{{ t('next_kicker') }}</p>
+  <h2 id="next-h">{% for k in nx.kinds %}{{ kind_name(k) }}{% if not loop.last %}{{ t('next_and') }}{% endif %}{% endfor %} · {{ date(nx.day) }} <span class="next-in" data-days-until="{{ nx.day }}" data-in="{{ t('next_in', n='{n}', unit='{unit}') }}" data-one="{{ t('next_day_one') }}" data-many="{{ t('next_day_many') }}" data-today="{{ t('next_today') }}" data-tomorrow="{{ t('next_tomorrow') }}"></span></h2>
+  {% for note in nx.notes %}<p class="next-note">{{ name(note) }}</p>{% endfor %}
+  {% if nx.deadlines %}
+  <ul class="next-deadlines">
+    {% for key, d in nx.deadlines %}
+    <li><span class="next-when">{{ t('next_from' if key == 'silence' else 'next_by_midnight' if key == 'handover' else 'next_by', d=date(d)) }}</span> {{ t('dl_' ~ key) }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <p class="small"><a href="{{ link('guide.html') }}#rokovi">{{ t('next_guide') }}</a>. <span class="muted">{{ t('next_authority') }}</span></p>
+</section>
+{% endif %}
 
 {% if latest %}
 <section class="band">
@@ -32,11 +69,31 @@
       <span class="intent-body">{{ t('intent2_body', n=i(overall.repeated)) }}</span>
       <span class="intent-cta">{{ t('nav_repeat') }}</span>
     </a>
+    <a class="intent" href="{{ link('municipalities.html') }}">
+      <span class="kicker">{{ t('intent5_kicker') }}</span>
+      <span class="intent-title">{{ t('intent5_title') }}</span>
+      <span class="intent-body">{{ t('intent5_body') }}</span>
+      <span class="intent-cta">{{ t('intent5_cta') }}</span>
+    </a>
     <a class="intent" href="{{ link('guide.html') }}">
       <span class="kicker">{{ t('intent3_kicker') }}</span>
       <span class="intent-title">{{ t('intent3_title') }}</span>
       <span class="intent-body">{{ t('intent3_body') }}</span>
       <span class="intent-cta">{{ t('intent3_cta') }}</span>
+    </a>
+    {% if home.ctrl %}
+    <a class="intent" href="{{ link('r/' ~ latest.id ~ '/index.html') }}#controllers">
+      <span class="kicker">{{ t('intent1_kicker', title=latest.short) }}</span>
+      <span class="intent-title">{{ t('intent4_title') }}</span>
+      <span class="intent-body">{{ t('intent4_body') }}</span>
+      <span class="intent-cta">{{ t('intent4_cta') }}</span>
+    </a>
+    {% endif %}
+    <a class="intent" href="{{ link('about.html') }}#podaci">
+      <span class="kicker">{{ t('intent6_kicker') }}</span>
+      <span class="intent-title">{{ t('intent6_title') }}</span>
+      <span class="intent-body">{{ t('intent6_body') }}</span>
+      <span class="intent-cta">{{ t('intent6_cta') }}</span>
     </a>
   </div>
 </section>

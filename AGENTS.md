@@ -198,3 +198,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   within 72 hours of closing (Art. 148). The same day it gained a section on local elections, from the Law on Local
   Elections (14/2022, 35/2024, 47/2026): that law leaves the procedure at the station to the parliamentary law
   (its Art. 8), so the section lists only what differs, each with its article.
+- **5 Nov 2026, home page:** the maintainer chose to add the latest election's state beside the search, the
+  archive in numbers, the next election from `data/elections.csv`, and three cards (controllers by list,
+  municipalities, data and alerts); he passed on a feed of the latest events and on a card for changes after
+  publication. The next election's deadlines are counted back from voting day (N days: that date; 24 and 48
+  hours: two days before) and the strip says the commission's calendar is the authority. The municipalities
+  page is new, sorted in Serbian alphabetical order per script. On phones the nav says only "Guide".

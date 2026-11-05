@@ -16,6 +16,26 @@ def archive_with(tmp_path, rounds: dict, listed: tuple = ()) -> Archive:
     return a
 
 
+def test_next_election_and_its_deadlines(tmp_path):
+    from datetime import date
+
+    (tmp_path / "elections.csv").write_text("date,round,kind,note\n2026-11-01,,local,\n2026-12-14,,local,Пример\n"
+                                            "2026-12-14,,parliamentary,\n2027-03-01,,local,\nnot a date,,local,\n",
+                                            encoding="utf-8")
+    today = date(2026, 11, 5)
+    ahead = schedule.upcoming(tmp_path, today)
+    assert [r["kind"] for r in ahead] == ["local", "parliamentary"] and ahead[0]["note"] == "Пример"
+    # N days before voting day ends that day; 24 and 48 hours before both fall two days before
+    assert dict(schedule.deadlines(date(2026, 12, 14), today)) == {
+        "boards_proposed": date(2026, 11, 29), "boards_appointed": date(2026, 12, 4),
+        "observers_domestic": date(2026, 12, 7), "handover": date(2026, 12, 12), "silence": date(2026, 12, 12)}
+    # only what is still ahead
+    assert [k for k, _ in schedule.deadlines(date(2026, 12, 14), date(2026, 12, 4))] == [
+        "boards_appointed", "observers_domestic", "handover", "silence"]
+    assert schedule.upcoming(tmp_path, date(2027, 3, 2)) == []
+    assert schedule.upcoming(tmp_path / "none", today) == []
+
+
 def test_settled_rounds(tmp_path):
     now = datetime(2027, 3, 3, 12, 17, tzinfo=UTC)
     a = archive_with(tmp_path, {"1": ("2026-10-25", False), "2": ("2027-02-20", False)})

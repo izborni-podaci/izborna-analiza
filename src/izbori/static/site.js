@@ -120,6 +120,22 @@
     if (location.hash === '#pretraga') input.focus();
   }
 
+  // The next election on the home page: how many days are left, by the reader's calendar; gone once it has passed.
+  document.querySelectorAll('[data-days-until]').forEach((el) => {
+    const [y, m, d] = el.dataset.daysUntil.split('-').map(Number);
+    const now = new Date();
+    const days = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+      / 86400000);
+    if (days < 0) {
+      const box = el.closest('[data-next]');
+      if (box) box.hidden = true;
+      return;
+    }
+    const one = lang === 'en' ? days === 1 : days % 10 === 1 && days % 100 !== 11;
+    el.textContent = days === 0 ? el.dataset.today : days === 1 ? el.dataset.tomorrow
+      : el.dataset.in.replace('{n}', days).replace('{unit}', one ? el.dataset.one : el.dataset.many);
+  });
+
   document.querySelectorAll('input[data-filter]').forEach((input) => {
     const table = document.querySelector(input.dataset.filter);
     if (!table) return;
@@ -140,6 +156,16 @@
     const type = form.querySelector('[data-f="type"]');
     const query = form.querySelector('[data-f="q"]');
     const out = form.querySelector('output');
+    // "g-paper" and the like pick every kind of flag in a group: the options listed under it
+    const inGroup = {};
+    type.querySelectorAll('optgroup[data-g]').forEach((og) => {
+      inGroup[`g-${og.dataset.g}`] = [...og.querySelectorAll('option')].map((o) => o.value)
+        .filter((v) => !v.startsWith('g-'));
+    });
+    const has = (card, ty) => {
+      const types = card.dataset.types.split(' ');
+      return inGroup[ty] ? types.some((x) => inGroup[ty].includes(x)) : types.includes(ty);
+    };
     const apply = () => {
       const m = mun.value;
       const ty = type.value;
@@ -147,7 +173,7 @@
       let shown = 0;
       cards.forEach((c, i) => {
         const ok = (!m || c.dataset.mun === m)
-          && (!ty || c.dataset.types.split(' ').includes(ty))
+          && (!ty || has(c, ty))
           && (!q || texts[i].includes(q));
         c.hidden = !ok;
         if (ok) shown += 1;

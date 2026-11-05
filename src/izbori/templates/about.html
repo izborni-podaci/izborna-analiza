@@ -17,7 +17,15 @@
 </ol>
 
 <h2>How the data is collected</h2>
-<p>Every hour the site asks RIK which elections exist and how many polling stations each has counted. It downloads the results file when that number changes and saves it only if the content changed. While a count is open it checks every 3 minutes. Every saved version stays in the <a href="{{ repo_url }}">repository's history</a>, so anyone can see what RIK published and when.</p>
+<p>The site asks RIK which elections exist and how many polling stations each has counted: once a day when no election is under way, more often around election day, every hour for two days after it and every 3 hours until two weeks after. While a count is open it checks every 3 minutes. It downloads the results file when the number of counted stations changes and saves it only if the content changed. Every saved version stays in the <a href="{{ repo_url }}">repository's history</a>, so anyone can see what RIK published and when.</p>
+
+<h2 id="podaci">Data and alerts</h2>
+<ul>
+  <li><strong>Atom feeds</strong> with each batch of new flags: <a href="{{ root }}feed.en.xml">in English</a> and <a href="{{ root }}feed.sr.xml">in Serbian</a>. Every municipality has its own feed too, linked from its page.</li>
+  <li><strong>JSON data</strong> behind the pages across elections: <a href="{{ root }}api/index.json">api/index.json</a> lists the elections, municipalities and polling stations; <code>api/m/&lt;code&gt;.json</code> has a municipality across elections and <code>api/s/&lt;place&gt;.json</code> a polling station.</li>
+  <li><strong>The archive:</strong> RIK's files as they were downloaded, in the <a href="{{ repo_url }}">repository on GitHub</a> under <code>data/rounds</code>. Each file's history shows what RIK published and when.</li>
+  <li>None of them holds a name from RIK's documents. They link to the document instead.</li>
+</ul>
 {% else %}
 <h1>О пројекту</h1>
 <p class="lede">Независна архива изборних резултата које објављује Републичка изборна комисија (РИК), са истим проверама за свако бирачко место, ко год да су учесници.</p>
@@ -32,7 +40,15 @@
 </ol>
 
 <h2>Како се подаци прикупљају</h2>
-<p>Сваког сата сајт пита РИК које изборе има и колико је бирачких места обрађено. Датотеку са резултатима преузима када се тај број промени, а чува је само ако се садржај променио. Док бројање траје, проверава свака 3 минута. Свака сачувана верзија остаје у <a href="{{ repo_url }}">историји репозиторијума</a>, па свако може да види шта је РИК објавио и када.</p>
+<p>Сајт пита РИК које изборе има и колико је бирачких места обрађено: једном дневно кад нема избора, чешће око дана избора, сваког сата два дана после и свака 3 сата до две недеље после. Док бројање траје, проверава свака 3 минута. Датотеку са резултатима преузима када се број обрађених места промени, а чува је само ако се садржај променио. Свака сачувана верзија остаје у <a href="{{ repo_url }}">историји репозиторијума</a>, па свако може да види шта је РИК објавио и када.</p>
+
+<h2 id="podaci">Подаци и обавештења</h2>
+<ul>
+  <li><strong>Атом фид</strong> са сваком новом групом ознака: <a href="{{ root }}feed.sr.xml">на српском</a> и <a href="{{ root }}feed.en.xml">на енглеском</a>. Свака општина има и свој фид, повезан на њеној страни.</li>
+  <li><strong>Подаци у JSON-у</strong>, исти као на странама кроз изборе: <a href="{{ root }}api/index.json">api/index.json</a> садржи изборе, општине и бирачка места; <code>api/m/&lt;шифра&gt;.json</code> је општина кроз изборе, а <code>api/s/&lt;место&gt;.json</code> бирачко место.</li>
+  <li><strong>Архива:</strong> РИК-ове датотеке онакве какве су преузете, у <a href="{{ repo_url }}">репозиторијуму на GitHub-у</a>, у фасцикли <code>data/rounds</code>. Историја сваке датотеке показује шта је РИК објавио и када.</li>
+  <li>Ни у једном од њих нема имена из РИК-ових докумената: уместо њих је веза на сам документ.</li>
+</ul>
 {% endif %}
 
 <h2 id="checks">{{ t('about_checks') }}</h2>

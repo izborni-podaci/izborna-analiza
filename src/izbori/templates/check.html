@@ -20,7 +20,8 @@
     <select data-f="type">
       <option value="">{{ t('filter_all') }}</option>
       {% for g in groups %}
-      <optgroup label="{{ t('group_' ~ g) }}">
+      <optgroup label="{{ t('group_' ~ g) }}" data-g="{{ g }}">
+        {% if group_counts[g] %}<option value="g-{{ g }}">{{ t('filter_group_all') }} ({{ i(group_counts[g]) }})</option>{% endif %}
         {% for c in checks if c.group == g and counts[c.code] %}<option value="{{ c.code }}">{{ check_name(c.code) }} ({{ i(counts[c.code]) }})</option>{% endfor %}
       </optgroup>
       {% endfor %}

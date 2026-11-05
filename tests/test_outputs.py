@@ -53,6 +53,25 @@ def test_site(site):
     guide_en = (out / "en/guide.html").read_text(encoding="utf-8")
     assert "Guide for controllers and observers" in guide_en and "More ballots than signatures" in guide_en
     assert 'id="lokalni"' in guide_en and "<strong>higher court</strong>" in guide_en
+
+    # the home page: the latest election beside the search, by group of flags; the archive in numbers; six ways in
+    home = (out / "index.html").read_text(encoding="utf-8")
+    assert 'class="status"' in home and 'href="r/680072/check.html#g-paper"' in home and "Sa oznakom: " in home
+    assert "Izbora u arhivi: " in home and "dokumenata sa sajta RIK-a: " in home
+    for target in ('href="municipalities.html"', 'href="about.html#podaci"', 'href="r/680072/index.html#controllers"',
+                   'href="guide.html"', 'href="repeat.html"'):
+        assert target in home, target
+    assert "data-next" not in home  # no election ahead in data/elections.csv
+    assert 'id="podaci"' in (out / "about.html").read_text(encoding="utf-8")
+    assert 'value="g-paper"' in (out / "r/680072/check.html").read_text(encoding="utf-8")  # the group's link lands
+    # every municipality, in Serbian alphabetical order: Latin (lj after l, ć after c) and Cyrillic
+    names = re.findall(r'<td><a href="m/\d+\.html">([^<]+)</a>', (out / "municipalities.html").read_text(encoding="utf-8"))
+    assert len(names) > 150 and names.index("Lučani") < names.index("Ljig")
+    assert names.index("Crna Trava") < names.index("Ćićevac")
+    cyr = re.findall(r'<td><a href="\.\./cyr/m/\d+\.html">([^<]+)</a>',
+                     (out / "cyr/municipalities.html").read_text(encoding="utf-8"))
+    assert cyr.index("Тутин") < cyr.index("Ћићевац") < cyr.index("Уб")
+
     assert "Водич за контролоре и посматраче" in (out / "cyr/guide.html").read_text(encoding="utf-8")
     # links to RIK documents are percent-encoded, so they survive transliteration
     hrefs = re.findall(r'href="(https://rik[^"]+)"', page)
@@ -62,6 +81,29 @@ def test_site(site):
         text = path.read_text(encoding="utf-8").replace("https://example.org/x/", "")  # the site's own address
         assert not re.search(r'<(script|link|img)[^>]+(src|href)="https?://', text), path
     assert "https://example.org/x/static/site.css" in (out / "404.html").read_text(encoding="utf-8")
+
+
+def test_home_shows_the_next_election(tmp_path, archive):
+    import shutil
+
+    from izbori.history import Archive
+    from izbori.i18n import BELGRADE
+
+    data = tmp_path / "data"
+    shutil.copytree(archive.dir("567956"), data / "rounds" / "567956")  # a small round keeps the build quick
+    today = datetime.now(BELGRADE).date()
+    day = today + timedelta(days=20)
+    (data / "elections.csv").write_text("date,round,kind,note\n"
+                                        f"{(today - timedelta(days=3)).isoformat()},,parliamentary,\n"
+                                        f"{day.isoformat()},,local,Примерне општине\n", encoding="utf-8")
+    out = build(Archive(data), tmp_path / "site", None, "https://example.org/x/")
+    home = (out / "index.html").read_text(encoding="utf-8")
+    assert "data-next" in home and f'data-days-until="{day.isoformat()}"' in home
+    assert "Lokalni izbori" in home and "Primerne opštine" in home
+    first = day - timedelta(days=15)
+    assert f"do {first.day}.{first.month}.{first.year}." in home and "predlog članova biračkih odbora" in home
+    assert 'href="guide.html#rokovi"' in home
+    assert "Local election" in (out / "en/index.html").read_text(encoding="utf-8")
 
 
 def test_feeds(archive):

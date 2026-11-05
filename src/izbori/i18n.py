@@ -49,6 +49,7 @@ S: dict[str, tuple[str, str]] = {
     "nav_municipalities": ("Општине", "Municipalities"),
     "nav_changes": ("Измене", "Changes"),
     "nav_guide": ("Водич за контролоре и посматраче", "Guide for controllers and observers"),
+    "nav_guide_short": ("Водич", "Guide"),
     "nav_about": ("О пројекту", "About"),
     "footer_data": ("Подаци: Републичка изборна комисија (РИК). Ознаке воде до записника које је објавио РИК.",
                     "Data: Republic Electoral Commission (RIK). Every flag links to the minutes RIK published."),
@@ -142,6 +143,50 @@ S: dict[str, tuple[str, str]] = {
     "intent3_title": ("Пре изборног дана", "Before election day"),
     "intent3_body": ("Права и рокови на бирачком месту, од примопредаје материјала до записника, и шта забележити.", "Rights and deadlines at the polling station, from the handover of materials to the minutes, and what to write down."),
     "intent3_cta": ("Водич за контролоре и посматраче", "Guide for controllers and observers"),
+    "intent4_title": ("Ко је имао контролоре", "Who had controllers"),
+    "intent4_body": ("На колико бирачких места свака листа има члана у проширеном саставу, према решењима изборних комисија.", "At how many polling stations each list has a member in the extended composition, according to the electoral commissions' decisions."),
+    "intent4_cta": ("Контролори по листама", "Controllers by list"),
+    "intent5_kicker": ("Ваша општина", "Your municipality"),
+    "intent5_title": ("Општина кроз све изборе", "A municipality across elections"),
+    "intent5_body": ("Резултати, излазност и бирачка места кроз изборе, и документи изборне комисије.", "Results, turnout and polling stations across elections, and the electoral commission's documents."),
+    "intent5_cta": ("Све општине", "All municipalities"),
+    "intent6_kicker": ("За новинаре и програмере", "For journalists and developers"),
+    "intent6_title": ("Подаци и обавештења", "Data and alerts"),
+    "intent6_body": ("Атом фид за нове ознаке, подаци у JSON-у и цела архива на GitHub-у.", "Atom feeds for new flags, the data as JSON and the whole archive on GitHub."),
+    "intent6_cta": ("Како до података", "How to get the data"),
+    # the latest election beside the search, the archive in numbers, the next election
+    "status_latest": ("Последњи избори", "Latest election"),
+    "status_counted": ("Обрађено: {counted} од {total}", "Counted: {counted} of {total}"),
+    "status_flagged": ("Са ознаком: {n}", "Flagged: {n}"),
+    "status_looked": ("Последња провера РИК-а: {time}", "RIK last checked: {time}"),
+    "stats_rounds": ("Избора у архиви: {n}", "Elections in the archive: {n}"),
+    "stats_places": ("бирачких места кроз изборе: {n}", "polling stations across elections: {n}"),
+    "stats_docs": ("докумената са сајта РИК-а: {n}", "documents on RIK's site, linked: {n}"),
+    "next_kicker": ("Следећи избори", "Next election"),
+    "next_and": (" и ", " and "),
+    "next_in": ("за {n} {unit}", "in {n} {unit}"),
+    "next_day_one": ("дан", "day"),
+    "next_day_many": ("дана", "days"),
+    "next_today": ("данас", "today"),
+    "next_tomorrow": ("сутра", "tomorrow"),
+    "next_by": ("до {d}", "by {d}"),
+    "next_by_midnight": ("до {d} у 24:00", "by {d}, midnight"),
+    "next_from": ("од {d} у 0:00", "from {d}, 0:00"),
+    "dl_boards_proposed": ("предлог чланова бирачких одбора", "nominations for the polling boards"),
+    "dl_boards_appointed": ("решења о именовању бирачких одбора", "polling boards appointed"),
+    "dl_observers_domestic": ("пријава домаћих посматрача", "domestic observers register"),
+    "dl_handover": ("примопредаја материјала бирачким одборима", "materials handed to the polling boards"),
+    "dl_silence": ("изборна тишина", "campaign silence"),
+    "next_guide": ("Рокови и правила у водичу", "Deadlines and rules in the guide"),
+    "next_authority": ("Рачунато уназад од дана гласања; меродаван је роковник изборне комисије.", "Counted back from voting day; the electoral commission's calendar is the authority."),
+    # the list of municipalities
+    "mun_index_lede": ("Свака општина и градска општина кроз изборе у архиви: резултати, излазност и бирачка места, и документи њене изборне комисије.", "Every municipality and city district across the elections in the archive: results, turnout and polling stations, and its electoral commission's documents."),
+    "mun_index_name": ("Општина", "Municipality"),
+    "mun_index_last": ("Где није наведено друго, бројеви и документи су са последњих избора ({title}).", "Unless another election is named, the numbers and documents are from the latest election ({title})."),
+    "mun_index_elections": ("Избори", "Elections"),
+    "mun_index_stations": ("Бирачка места на последњим изборима", "Polling stations at the latest election"),
+    "mun_index_commission": ("Документи изборне комисије", "Electoral commission's documents"),
+    "filter_group_all": ("Све у овој групи", "All in this group"),
     "read_heading": ("Како да читате ознаке", "How to read the flags"),
     "read_note": ("Три ствари које вреди знати пре прве листе.", "Three things worth knowing before the first list."),
     "read1_title": ("Ознака је питање, не закључак", "A flag is a question, not a verdict"),
@@ -590,6 +635,30 @@ def check_name(code: str, loc: str) -> str:
 
 def kind_name(kind: str, loc: str) -> str:
     return t(f"kind_{kind}" if f"kind_{kind}" in S else "kind_unknown", loc)
+
+
+CYR_ORDER = "абвгдђежзијклљмнњопрстћуфхцчџш"
+LAT_ORDER = ["a", "b", "c", "č", "ć", "d", "dž", "đ", "e", "f", "g", "h", "i", "j", "k", "l", "lj", "m", "n", "nj",
+             "o", "p", "r", "s", "š", "t", "u", "v", "z", "ž"]
+
+
+def collate(text: str, loc: str) -> tuple:
+    """A sort key in Serbian alphabetical order: the Cyrillic alphabet's on Cyrillic pages, the Latin one (lj, nj
+    and dž are letters of their own) on the others. Anything that isn't a letter sorts before the letters."""
+    s = text.lower()
+    if loc == "cyr":
+        return tuple((1, CYR_ORDER.index(ch)) if ch in CYR_ORDER else (0, ord(ch)) for ch in s)
+    s = latin(s)
+    out, i = [], 0
+    while i < len(s):
+        two = s[i:i + 2]
+        if two in ("lj", "nj", "dž"):
+            out.append((1, LAT_ORDER.index(two)))
+            i += 2
+            continue
+        out.append((1, LAT_ORDER.index(s[i])) if s[i] in LAT_ORDER else (0, ord(s[i])))
+        i += 1
+    return tuple(out)
 
 
 # --- numbers and times ----------------------------------------------------------------------

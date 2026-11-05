@@ -12,6 +12,7 @@ import shutil
 import hashlib
 import platform
 from collections import Counter, defaultdict
+from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 
@@ -26,9 +27,9 @@ from izbori.describe import describe, field_label
 from izbori.history import Archive
 from izbori.links import safe_url
 from izbori.model import last_url
-from izbori.i18n import (LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, fmt_date, fmt_int, fmt_num, fmt_pct,
-                         fmt_time, keep, kind_name, latin_page, strip_keep, t)
-from izbori import commission, documents, narrative
+from izbori.i18n import (BELGRADE, LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, collate, fmt_date, fmt_int,
+                         fmt_num, fmt_pct, fmt_time, keep, kind_name, latin_page, strip_keep, t)
+from izbori import commission, documents, narrative, schedule
 from izbori.places import RULES_FILE, Place, contradicts, follow
 from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
@@ -140,6 +141,48 @@ class Site:
         """Per station key, its decisions on the polling board (appointments and changes), to link."""
         self.ctrl_of(rid)
         return self.board_docs_cache[rid]
+
+    def linked_docs(self, rid: str) -> int:
+        """How many of RIK's documents a round's pages link to: the stations' documents (minutes, observers' records,
+        remarks, rulings), the decisions on polling boards and the electoral commissions' documents."""
+        return (sum(len(d) for d in self.analyses[rid].documents.values())
+                + sum(len(d) for d in self.board_docs_of(rid).values())
+                + sum(len(g["docs"]) for groups in self.commission_of(rid).values() for g in groups))
+
+    def home_data(self, latest: Analysis | None) -> dict:
+        """What the home page shows besides the cards: the latest election's flagged stations by group, when RIK
+        was last asked, the archive in numbers, and the next election a maintainer entered, with the deadlines
+        still ahead."""
+        years = sorted(d[:4] for d in self.dates.values() if d)
+        home = {"rounds": len(self.rids), "first": years[0] if years else "", "last": years[-1] if years else "",
+                "places": len(self.places.places), "docs": sum(self.linked_docs(rid) for rid in self.rids),
+                "looked": schedule.looks(self.archive.root).get("rik"), "groups": {}, "ctrl": False, "next": None}
+        if latest:
+            home["groups"] = {g: len({f.station for f in latest.flags if f.check.group == g}) for g in GROUPS}
+            home["ctrl"] = bool(self.ctrl_of(latest.round.id))
+        today = datetime.now(BELGRADE).date()
+        ahead = schedule.upcoming(self.archive.root, today)
+        if ahead:
+            day = ahead[0]["day"]
+            home["next"] = {"day": day.isoformat(), "kinds": list(dict.fromkeys(r["kind"] for r in ahead)),
+                            "notes": [r["note"] for r in ahead if r["note"]],
+                            "deadlines": [(key, d.isoformat()) for key, d in schedule.deadlines(day, today)]}
+        return home
+
+    def municipality_index(self, loc: str) -> list[dict]:
+        """Every municipality in the archive, in alphabetical order: how many elections, its polling stations at the
+        latest one, and the newest election whose electoral commission's documents are known, with how many."""
+        rows = []
+        for code, rids in self.mun_rounds.items():
+            newest = self.mun_rows[rids[0]][code]
+            crid = next((r for r in rids if self.commission_of(r).get(code)), None)
+            last = self.rids[-1]  # the archive's newest election: named only where a row refers to another one
+            rows.append({"code": code, "name": newest["name"], "n": len(rids), "stations": newest["stations"],
+                         "latest": self.shorts[loc][rids[0]] if rids[0] != last else "", "crid": crid,
+                         "cdocs": sum(len(g["docs"]) for g in self.commission_of(crid)[code]) if crid else 0,
+                         "cshort": self.shorts[loc][crid] if crid and crid != last else ""})
+        rows.sort(key=lambda r: collate(latin(r["name"]) if loc == "en" else r["name"], loc))
+        return rows
 
     def flagged_in(self, p: Place) -> int:
         """In how many of its elections the place had at least one flag."""
@@ -555,6 +598,7 @@ class Site:
         for rid in rids:  # loaded once here, before the languages are written side by side
             self.ctrl_of(rid)
             self.commission_of(rid)
+        home = self.home_data(rounds[0] if rounds else None)
 
         def pages_in(loc: str) -> None:
             columns = [{"id": a.round.id, "title": self.round_title(a.round, loc), "national": national[a.round.id],
@@ -568,7 +612,9 @@ class Site:
                           "share": share[a.round.id], "bar": 100 * share[a.round.id] / share_top}
                          for a in rounds]
             self.write(loc, "index.html", "index.html", latest=summaries[0] if summaries else None, overall=overall,
-                       checks=CHECKS, groups=GROUPS)
+                       checks=CHECKS, groups=GROUPS, home=home)
+            self.write(loc, "municipalities.html", "municipalities.html", rows=self.municipality_index(loc),
+                       last=self.shorts[loc][rids[-1]] if rids else "")
             self.write(loc, "elections.html", "elections.html", rounds=summaries)
             self.write_search(loc)
             self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html",
@@ -708,7 +754,7 @@ class Site:
         mun_options = sorted({(m["code"], m["name"]) for m in municipalities if m["flagged"]},
                              key=lambda m: latin(m[1]))
         self.write(loc, base + "check.html", "check.html", items=items, mun_options=mun_options, checks=CHECKS,
-                   groups=GROUPS, counts=counts, **common)
+                   groups=GROUPS, counts=counts, group_counts=group_counts, **common)
 
         changes = []
         for e in reversed(a.changes):
