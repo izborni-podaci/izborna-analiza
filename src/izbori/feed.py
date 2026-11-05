@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from xml.sax.saxutils import escape, quoteattr
 
-from izbori.checks import Flag
+from izbori.checks import GROUPS, Flag
 from izbori.describe import describe
 from izbori.history import Archive
 from izbori.i18n import PREFIX, check_name, fmt_int, kind_name, latin_page, t
@@ -43,7 +43,7 @@ def make_entry(analysis, new_ids: list[str], when: str) -> dict:
         flags.append({"id": f.id, "code": f.code, "station": f.station, "data": f.data,
                       "m": s.municipality if s else "", "mc": s.municipality_code if s else "",
                       "no": s.number if s else f.station.split("/")[-1], "name": s.name if s else ""})
-    order = {"paper": 0, "change": 1, "unusual": 2}
+    order = {g: i for i, g in enumerate(GROUPS)}  # every group, the records' too, in the site's order
     flags.sort(key=lambda x: (order[Flag(x["station"], x["code"]).check.group], x["m"], x["no"]))
     return {"t": when, "round": analysis.round.id, "title": analysis.round.title, "kind": analysis.round.kind,
             "counted": analysis.totals.counted, "total": analysis.totals.stations, "flags": flags}

@@ -174,6 +174,23 @@ def test_feeds(archive):
         assert not CYRILLIC.search(xml)
 
 
+def test_feed_entry_orders_every_group():
+    """A remark RIK published with the minutes (the records group) went into a feed entry on 5 Nov 2026 and stopped
+    the documents run: the entry's order knew only three of the four groups."""
+    from types import SimpleNamespace as NS
+
+    from izbori.checks import Flag
+
+    st = [NS(key=f"70017/{n}", municipality="Александровац", municipality_code="70017", number=str(n), name="")
+          for n in (1, 2, 3)]
+    flags = [Flag("70017/3", "turnout_drop", {}), Flag("70017/1", "remark_filed", {}),
+             Flag("70017/2", "signed_over_ballots", {})]
+    a = NS(flags=flags, round=NS(stations=st, id="1", title="", kind="parliamentary"),
+           totals=NS(counted=3, stations=3))
+    entry = feed.make_entry(a, [f.id for f in flags], "2026-11-05T12:33:00+00:00")
+    assert [f["code"] for f in entry["flags"]] == ["signed_over_ballots", "remark_filed", "turnout_drop"]
+
+
 def test_mail_digest(tmp_path, archive):
     entry = feed.load_entries(archive.root)[-1]
     mail.queue(tmp_path, entry=entry)
