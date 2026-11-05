@@ -23,6 +23,7 @@
 <ul>
   <li><strong>Atom feeds</strong> with each batch of new flags: <a href="{{ root }}feed.en.xml">in English</a> and <a href="{{ root }}feed.sr.xml">in Serbian</a>. Every municipality has its own feed too, linked from its page.</li>
   <li><strong>JSON data</strong> behind the pages across elections: <a href="{{ root }}api/index.json">api/index.json</a> lists the elections, municipalities and polling stations; <code>api/m/&lt;code&gt;.json</code> has a municipality across elections and <code>api/s/&lt;place&gt;.json</code> a polling station.</li>
+  <li><strong>Every polling station of an election</strong> in one file, <code>api/r/&lt;election&gt;/stations.json</code>, as the <a href="{{ link('explore.html') }}">Explore</a> page uses it. The municipal boundaries for its map are in <code>api/geo/municipalities.json</code> (© OpenStreetMap contributors, ODbL).</li>
   <li><strong>The archive:</strong> RIK's files as they were downloaded, in the <a href="{{ repo_url }}">repository on GitHub</a> under <code>data/rounds</code>. Each file's history shows what RIK published and when.</li>
   <li>None of them holds a name from RIK's documents. They link to the document instead.</li>
 </ul>
@@ -46,6 +47,7 @@
 <ul>
   <li><strong>Атом фид</strong> са сваком новом групом ознака: <a href="{{ root }}feed.sr.xml">на српском</a> и <a href="{{ root }}feed.en.xml">на енглеском</a>. Свака општина има и свој фид, повезан на њеној страни.</li>
   <li><strong>Подаци у JSON-у</strong>, исти као на странама кроз изборе: <a href="{{ root }}api/index.json">api/index.json</a> садржи изборе, општине и бирачка места; <code>api/m/&lt;шифра&gt;.json</code> је општина кроз изборе, а <code>api/s/&lt;место&gt;.json</code> бирачко место.</li>
+  <li><strong>Сва бирачка места једних избора</strong> у једној датотеци, <code>api/r/&lt;избори&gt;/stations.json</code>, како их користи страна <a href="{{ link('explore.html') }}">Истражи</a>. Границе општина за њену мапу су у <code>api/geo/municipalities.json</code> (© сарадници OpenStreetMap-а, ODbL).</li>
   <li><strong>Архива:</strong> РИК-ове датотеке онакве какве су преузете, у <a href="{{ repo_url }}">репозиторијуму на GitHub-у</a>, у фасцикли <code>data/rounds</code>. Историја сваке датотеке показује шта је РИК објавио и када.</li>
   <li>Ни у једном од њих нема имена из РИК-ових докумената: уместо њих је веза на сам документ.</li>
 </ul>

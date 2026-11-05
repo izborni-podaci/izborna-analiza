@@ -122,7 +122,14 @@ These are the project's promises to its readers. Never change them without the m
 - **Static pages in three languages:** Latin (the default), Cyrillic and English.
   - Serbian text is written once in Cyrillic; the Latin pages are the whole page transliterated.
   - Links to RIK are percent-encoded, so transliteration can't break them.
-  - There is no JavaScript framework. Charts are SVG drawn when the site is built.
+  - There is no JavaScript framework. Charts are SVG drawn when the site is built, except on the Explore page:
+    its own script (`static/explore.js`, no library) draws in the browser from `api/r/<id>/stations.json` and
+    `api/geo/municipalities.json`, with the strings and lists the page carries in its language. The stations'
+    names in `api/` are as RIK wrote them, so the script transliterates them as `translit.py` does.
+  - **Explore never chooses a list.** A measure that needs one waits for the reader, and picking another election
+    clears the choice (ballot numbers belong to one election). Measures and filters are the same for every list.
+    Unknown is not zero: a station whose board decision wasn't read has no controller value, and an election
+    whose observers' records weren't read has none for them.
 - **Incremental build:** each page's inputs are fingerprinted in `_site.state.json`.
   - **Every input of a page must be in its fingerprint.** On 3 Nov 2026 the place pages missed their board
     decisions, so the 2026 pages kept the old version.
@@ -152,6 +159,7 @@ These are the project's promises to its readers. Never change them without the m
 | boards | daily, until 14 days after election day | decisions on polling boards: plan, four OCR jobs, merge (one commit) |
 | observers | daily, until 60 days after election day | OCR score of observers' records |
 | pages | on push | incremental site build and deploy |
+| geo | by hand | municipal boundaries from OpenStreetMap (Overpass), for the Explore map |
 | test | on push | the whole test suite |
 
 A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow run`). That is how data runs start
@@ -171,6 +179,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 - **Belgrade 2024 decisions on polling boards (round 567956):** 127 of 129 are listed under "Београд" with a station
   number, while the results number stations within each city municipality, so they can't be placed. All 17
   decisions on the extended composition are unreadable by the current parser. The round is small and in the past.
+- **Kosovo and Metohija on the Explore map:** the maintainer wants them by RIK's municipalities. OpenStreetMap
+  doesn't follow that division there; RGZ's register of spatial units does (opendata.geosrbija.rs, free
+  account), so it waits for a maintainer to download the layer. Until then the map names them below it.
 
 ## Decisions log
 
@@ -208,3 +219,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
     only when one is entered, and stays empty otherwise. The phones' short "Guide" comes from a `data-short`
     attribute through CSS, so the link's text is the whole name everywhere else (copying, reader views, a stale
     stylesheet): two spans in one link showed both names when the CSS didn't apply.
+- **5 Nov 2026, Explore page:** the maintainer asked for a tab where visitors run their own analyses and chose,
+  for the first version: the election fingerprint (turnout against the largest share of any list), two elections
+  compared, municipalities across elections as a heat table, filters with a CSV download, and a map of
+  municipalities; ready-made analyses as well as free choice; controllers and observers' records as criteria for
+  every list alike; OpenStreetMap's boundaries; Kosovo and Metohija by RIK's municipalities (pending RGZ's data).
+  An earlier session had started a "Compare" page (the `geo` command and its data); the work continued as this
+  page, and that session's unfinished strings and nav link were replaced.

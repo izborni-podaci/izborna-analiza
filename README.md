@@ -214,6 +214,12 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 - **Home:** the search, and under it the archive in numbers (elections, polling stations across elections, RIK documents the pages link to). Beside the search, only when a maintainer has entered the next election in `data/elections.csv`: its day, the days left and the deadlines still ahead (polling board nominations and appointments, domestic observers, the handover of materials, campaign silence), counted back from voting day as the law states them and linking to the guide; it disappears once the day has passed, and with no election ahead the space stays empty. Then six ways in: what's unusual, unusual more than once, a municipality across elections, the guide, controllers by list, and data and alerts.
 - **Elections** (`elections.html`): every archived round, with its counting progress.
 - **Municipalities** (`municipalities.html`): every municipality in Serbian alphabetical order (Latin or Cyrillic, by page), with how many elections it took part in, its polling stations at the latest one and a link to its electoral commission's documents; a filter finds one by name.
+- **Explore** (`explore.html`): the reader's own analyses, computed in the browser by `static/explore.js` (no library, nothing from other servers) from `api/r/<id>/stations.json` and `api/geo/municipalities.json`.
+  - Views: a map of municipalities with the municipalities ranked beside it; two measures against each other (for many stations' shares, a heat grid of counts: the election fingerprint); two elections (stations matched by place as on the pages across elections, municipalities by code, with the diagonal and the largest changes); a distribution; a table; municipalities across elections.
+  - Measures, the same for every list: turnout, invalid ballots, a chosen list's share, the largest share of any list, registered voters, voters, signatures minus ballots in the box, flagged, whether a chosen list had a controller (member or deputy of the extended composition), the observers' record. No list is ever chosen for the reader; after another election is picked, the reader chooses the list again.
+  - Filters: municipality; stations in the country, abroad or in prisons; at least so many registered voters; flags (any, none, one group); a list's controller; the observers' record; a range of the measure. They apply to each election's own stations; the controller filter only to the chosen election, whose lists it names.
+  - Ready-made analyses are plain links. Every analysis is in the address (`#v=…&r=…`), downloads as CSV (UTF-8 with a BOM, a link per row) and, for a chart, as SVG with its title and source. Clicking a cell, bar, point or municipality lists its stations.
+  - The map's boundaries are OpenStreetMap's (ODbL, credited on the map), joined to RIK's municipalities by code; a city RIK counts by its city municipalities (Belgrade, Niš and others) isn't drawn over them. Kosovo and Metohija aren't on the map yet (see Open items), but they are in the tables and the CSV.
 - **Round:** totals, results, seats or the majority, statistics for the whole round, and municipalities.
 - **To check:** every flagged station. Filter by municipality and flag type, or a whole group of flags (`#g-paper` and the like in the address). Each flag shows its rule, its numbers and RIK's minutes.
 - **Municipality:** every station, with its numbers, flags, minutes and notes.
@@ -224,7 +230,7 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 - **Search** on the home page finds a municipality or a polling station, by its current or a former number, and opens its page across elections.
 - **Changes:** what changed after first publication, and each archived version of the file.
 - **Guide for controllers and observers** (`guide.sr.html`, `guide.en.html`): the rules at a polling station from the handover of the materials before the vote to the handover after it — who is who on the board, the deadlines in one table, opening and the control sheet, the voting steps, voting outside the station, order, the count and the arithmetic that must hold, the minutes and remarks, remedies and their deadlines, what differs at local elections (Law on Local Elections 14/2022, 35/2024, 47/2026: the municipal or city commission instead of RIK, four copies of the minutes for lists, objections to the commission and appeals to the higher court, and the rules when local and national elections fall on the same day), and the crimes with their penalties. Every rule gives its article in the Law on the Election of Members of Parliament (14/2022, 47/2026) or the RIK document it comes from (the 2026 handbook for polling boards, the instruction on handovers). The arithmetic names the site's matching flags, and the practical part points to the station's page, the controllers per list and the list to check. It states the law the same way for every list; a party's own handbook is used only where the law or RIK confirms it.
-- **About:** method, how often RIK is asked, the data and alerts (Atom feeds, the JSON under `api/`, the archive on GitHub), the checks, limits.
+- **About:** method, how often RIK is asked, the data and alerts (Atom feeds, the JSON under `api/` including each election's stations and the boundaries, the archive on GitHub), the checks, limits.
 
 ### Places across elections
 
@@ -260,6 +266,7 @@ data/places.csv                   manual corrections to how stations are followe
 data/elections.csv                election days entered by hand once an election is called
 data/looks.json                   when RIK was last asked (results, settled rounds, daily re-download)
 data/mail.json                    email state: pending flags, time of the last message
+data/geo/municipalities.json      municipal boundaries from OpenStreetMap (ODbL), by RIK's municipality code
 data/rounds/<id>/meta.json        type, title, English title, election day, contestants (name, short
                                   name, minority status), seat rules
 data/rounds/<id>/results.csv      latest file exactly as downloaded; git history keeps every version
@@ -317,6 +324,7 @@ uv run izbori observers --merge observers-review.csv  # the rows filled in there
 uv run izbori observers --station 70017/50 --diagnose 1 --layout   # what OCR found in one record, names masked
 uv run izbori site --out _site            # build the site
 uv run izbori site --out _site --incremental   # render only what changed since the last build
+uv run --with shapely izbori geo          # municipal boundaries from OpenStreetMap (the geo workflow, by hand)
 uv run izbori targets --out targets.csv --html targets.html   # private: never commit or post
 uv run pytest
 ```
@@ -345,6 +353,7 @@ src/izbori/
   schedule.py   when to ask RIK, by the election calendar
   commission.py the municipal electoral commissions' documents from RIK's register
   narrative.py  the sentences at the top of the pages across elections
+  geo.py        municipal boundaries from OpenStreetMap, for the Explore page's map
   notes.py      news notes
   targets.py    private ranking
   feed.py       Atom feeds
@@ -404,6 +413,9 @@ The tests use the archived 2026 files and small made-up files. They check that t
   - RIK's system carried Belgrade's 2024 city vote. Other towns publish through their own commissions.
   - Next steps: check how Novi Sad, Niš and Kragujevac published in 2024, write readers for those towns first, then add the towns observer groups ask for.
   - Assembly sizes and seat rules go in each round's `meta.json`.
+- **Kosovo and Metohija on the Explore map.** OpenStreetMap has no boundaries there in RIK's division. The
+  cadastre's (RGZ) register of spatial units has them, on opendata.geosrbija.rs, behind a free account: a
+  maintainer downloads the municipalities layer once, and `izbori geo` is extended to add those 22 codes.
 - **Older station data (2022–2024)** to compare the same stations across elections. RIK no longer serves 2023; the national open-data portal is next to check.
 
 ## License

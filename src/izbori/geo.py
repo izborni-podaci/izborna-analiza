@@ -1,4 +1,4 @@
-"""Municipal boundaries for the map on the Compare page, from OpenStreetMap.
+"""Municipal boundaries for the map on the Explore page, from OpenStreetMap.
 
 OpenStreetMap's Serbian boundaries came from the cadastre's open register of spatial units, and they carry its
 municipality and city codes (`ref:RS:opstina`, `ref:RS:grad`): the same matični broj RIK uses, so each boundary

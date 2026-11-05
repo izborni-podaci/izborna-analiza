@@ -26,10 +26,10 @@ from izbori.contests import Presidential, Proportional, contest_rules
 from izbori.describe import describe, field_label
 from izbori.history import Archive
 from izbori.links import safe_url
-from izbori.model import last_url
+from izbori.model import ABROAD, PRISONS, last_url
 from izbori.i18n import (BELGRADE, LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, collate, fmt_date, fmt_int,
                          fmt_num, fmt_pct, fmt_time, keep, kind_name, latin_page, strip_keep, t)
-from izbori import commission, documents, narrative, schedule
+from izbori import commission, documents, geo, narrative, schedule
 from izbori.places import RULES_FILE, Place, contradicts, follow
 from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
@@ -164,6 +164,22 @@ class Site:
                             "notes": [r["note"] for r in ahead if r["note"]],
                             "deadlines": [(key, d.isoformat()) for key, d in schedule.deadlines(day, today)]}
         return home
+
+    def explore_meta(self, loc: str) -> dict:
+        """What the Explore page's script needs besides the stations' files: the elections, newest first, with their
+        lists in ballot order and whether controllers and observers' records are known; the municipalities' names;
+        and the page's strings, all in the page's language. The stations themselves are in api/r/<id>/stations.json."""
+        name = latin if loc == "en" else (lambda x: x)  # the Latin page is transliterated whole
+        rounds = [{"id": rid, "short": self.shorts[loc][rid], "date": self.dates[rid] or "",
+                   "kind": self.analyses[rid].round.kind, "ctrl": bool(self.ctrl_of(rid)), "obs": self.docs_known[rid],
+                   "lists": [{"n": c.number, "name": name(c.short or c.name)}
+                             for c in self.analyses[rid].round.contestants]}
+                  for rid in reversed(self.rids)]
+        muns = {code: name(self.mun_rows[rids[0]][code]["name"]) for code, rids in self.mun_rounds.items()}  # newest
+        strings = {k: t(k, loc) for k in S if k.startswith(("ex_", "m_", "view_", "level_", "preset_"))}
+        strings.update({f"group_{g}": t(f"group_{g}", loc) for g in GROUPS})
+        return {"loc": loc, "rounds": rounds, "muns": muns, "groups": GROUPS, "t": strings,
+                "abroad": ABROAD.strip("/"), "prisons": PRISONS.strip("/")}
 
     def municipality_index(self, loc: str) -> list[dict]:
         """Every municipality in the archive, in alphabetical order: how many elections, its polling stations at the
@@ -386,6 +402,58 @@ class Site:
             text = dump(data)
             if not self.keep("lat", f"api/m/{code}.json", text):
                 self.put(f"api/m/{code}.json", text)
+        # the Explore page: every polling station of an election, and the municipalities' boundaries for its map
+        for rid in self.rids:
+            self.put(f"api/r/{rid}/stations.json", dump(self.round_data(rid)))
+        boundaries = geo.load(self.archive.root / "geo" / "municipalities.json")
+        if boundaries:
+            self.put("api/geo/municipalities.json", json.dumps(self.map_of(boundaries), ensure_ascii=False,
+                                                               separators=(",", ":")))
+
+    def map_of(self, boundaries: dict) -> dict:
+        """The boundaries of the municipalities RIK counts by, joined by code. A city whose city municipalities RIK
+        counts one by one (Belgrade, Niš and others) has its own boundary in OpenStreetMap too; RIK never uses its
+        code, so it is left out rather than drawn over its parts. Names come from RIK, in the page's language."""
+        feats = [{"type": "Feature", "properties": {"code": f["properties"]["code"]}, "geometry": f["geometry"]}
+                 for f in boundaries.get("features", []) if f["properties"].get("code") in self.mun_rounds]
+        return {"type": "FeatureCollection", "attribution": boundaries.get("attribution", ""),
+                "license": boundaries.get("license", ""), "source": boundaries.get("source", ""), "features": feats}
+
+    def round_data(self, rid: str) -> dict:
+        """One election's polling stations for the Explore page, as columns of equal length so the file stays small:
+        municipality code, number, name, place across elections, the numbers from the minutes, how many flags and in
+        which groups (bits in the order of GROUPS), which lists appointed a member or deputy of the extended
+        composition (bit n-1 for ballot number n; null where no decision was read), whether RIK published an
+        observers' record, and each list's votes, by ballot number."""
+        a = self.analyses[rid]
+        ctrl = self.ctrl_of(rid)
+        bit = {g: 1 << i for i, g in enumerate(GROUPS)}
+        cols: dict[str, list] = {k: [] for k in ("mc", "no", "name", "place", "reg", "voted", "box", "valid", "invalid",
+                                                "flags", "groups", "ctrl", "obs")}
+        votes: list[list] = [[] for _ in a.round.contestants]
+        for s in a.round.stations:
+            p = self.places.of(rid, s.key)
+            flags = self.flagged[rid].get(s.key, [])
+            lists = (ctrl.get(s.key) or {}).get("lists")
+            mask = None
+            if lists is not None:
+                mask = 0
+                for n, v in lists.items():
+                    if n.isdigit() and 0 < int(n) <= 31 and (v.get("member") or v.get("deputy")):
+                        mask |= 1 << (int(n) - 1)
+            row = {"mc": s.municipality_code, "no": s.number, "name": s.name, "place": p.id if p else "",
+                   "reg": s.registered, "voted": s.voted, "box": s.ballots, "valid": s.valid, "invalid": s.invalid,
+                   "flags": len(flags), "groups": sum({bit[f.check.group] for f in flags}), "ctrl": mask,
+                   "obs": int(any(d.kind == "observers" for d in a.documents.get(s.key, [])))}
+            for k, v in row.items():
+                cols[k].append(v)
+            for i in range(len(votes)):
+                votes[i].append(s.votes[i] if i < len(s.votes) else None)
+        return {"id": rid, "kind": a.round.kind, "date": self.dates[rid], "title": a.round.title,
+                "contestants": [{"n": c.number, "name": c.name, "short": c.short} for c in a.round.contestants],
+                "municipalities": {code: m["name"] for code, m in self.mun_rows[rid].items()},
+                "controllers": bool(ctrl), "observers": self.docs_known[rid], "groups": GROUPS, "stations": cols,
+                "votes": votes}
 
     def place_json(self, p: Place) -> dict:
         elections = []
@@ -611,6 +679,8 @@ class Site:
                        checks=CHECKS, groups=GROUPS, home=home)
             self.write(loc, "municipalities.html", "municipalities.html", rows=self.municipality_index(loc),
                        last=self.shorts[loc][rids[-1]] if rids else "")
+            meta = json.dumps(self.explore_meta(loc), ensure_ascii=False, separators=(",", ":"))
+            self.write(loc, "explore.html", "explore.html", meta=Markup(meta.replace("</", "<\\/")))
             self.write(loc, "elections.html", "elections.html", rounds=summaries)
             self.write_search(loc)
             self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html",

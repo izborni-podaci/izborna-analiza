@@ -1,4 +1,4 @@
-# Geo: municipal boundaries for the map on the Compare page, from OpenStreetMap (ODbL), joined to RIK's
+# Geo: municipal boundaries for the map on the Explore page, from OpenStreetMap (ODbL), joined to RIK's
 # municipalities by the cadastre's municipality code that OpenStreetMap carries. Boundaries rarely change, so this
 # runs only when started by hand; it commits data/geo/municipalities.json and starts the pages workflow.
 name: geo

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_explore') }}{% endblock %}
+{% block main %}
+<h1 class="page-title">{{ t('nav_explore') }}</h1>
+<p class="lede">{{ t('ex_lede') }}</p>
+
+<noscript><p class="callout">{{ t('ex_noscript') }}</p></noscript>
+
+<div class="ex" data-explore data-root="{{ root }}" data-site="{{ link('') }}" hidden>
+  <section class="ex-presets" aria-labelledby="ex-presets-h">
+    <h2 id="ex-presets-h" class="kicker">{{ t('ex_presets') }}</h2>
+    <div class="ex-preset-list" data-presets></div>
+  </section>
+
+  <form class="ex-form" data-form onsubmit="return false">
+    <div class="ex-row">
+      <label>{{ t('ex_view') }}<select name="v"></select></label>
+      <label data-for="r">{{ t('ex_round') }}<select name="r"></select></label>
+      <label data-for="r2">{{ t('ex_round2') }}<select name="r2"></select></label>
+      <label data-for="lv">{{ t('ex_level') }}<select name="lv"></select></label>
+    </div>
+    <div class="ex-row">
+      <label>{{ t('ex_x') }}<select name="x"></select></label>
+      <label data-for="lx">{{ t('ex_list') }}<select name="lx"></select></label>
+      <label data-for="y">{{ t('ex_y') }}<select name="y"></select></label>
+      <label data-for="ly">{{ t('ex_list') }}<select name="ly"></select></label>
+    </div>
+    <details class="ex-filters" data-filters>
+      <summary>{{ t('ex_filters') }}</summary>
+      <div class="ex-row">
+        <label>{{ t('ex_mun') }}<select name="mun"></select></label>
+        <label>{{ t('ex_kind') }}<select name="k"></select></label>
+        <label>{{ t('ex_min') }}<input name="min" type="number" min="0" step="10" inputmode="numeric"></label>
+        <label>{{ t('ex_flags') }}<select name="fl"></select></label>
+      </div>
+      <div class="ex-row">
+        <label data-for="cl">{{ t('ex_ctrl') }}<select name="cl"></select></label>
+        <label data-for="cv"><span class="visually-hidden">{{ t('ex_ctrl') }}</span><select name="cv"></select></label>
+        <label>{{ t('ex_obs') }}<select name="ob"></select></label>
+        <span class="ex-range" data-for="x0">
+          <label>{{ t('ex_from') }}<input name="x0" type="number" step="any" inputmode="decimal"></label>
+          <label>{{ t('ex_to') }}<input name="x1" type="number" step="any" inputmode="decimal"></label>
+        </span>
+      </div>
+    </details>
+  </form>
+
+  <p class="ex-msg" data-msg aria-live="polite"></p>
+  <div class="ex-bar">
+    <p class="ex-sum" data-sum aria-live="polite"></p>
+    <div class="ex-actions">
+      <button type="button" class="button secondary" data-copy>{{ t('ex_copy_link') }}</button>
+      <button type="button" class="button secondary" data-csv>{{ t('ex_csv') }}</button>
+      <button type="button" class="button secondary" data-svg>{{ t('ex_svg') }}</button>
+      <span class="small muted" data-copied aria-live="polite"></span>
+    </div>
+  </div>
+  <div class="ex-out" data-out></div>
+  <div class="ex-list" data-list></div>
+  <div class="ex-more" data-more></div>
+
+  <details class="ex-notes">
+    <summary>{{ t('ex_notes') }}</summary>
+    <ul>
+      <li>{{ t('ex_note_same') }}</li>
+      <li>{{ t('ex_note_question') }}</li>
+      <li>{{ t('ex_note_fingerprint') }}</li>
+      <li>{{ t('ex_note_places') }}</li>
+      <li>{{ t('ex_note_change') }}</li>
+      <li>{{ t('ex_note_ctrl') }}</li>
+      <li>{{ t('ex_note_map') }}</li>
+    </ul>
+  </details>
+</div>
+<script type="application/json" id="ex-meta">{{ meta }}</script>
+{% endblock %}
+{% block scripts %}<script src="{{ root }}static/explore.js" defer></script>{% endblock %}

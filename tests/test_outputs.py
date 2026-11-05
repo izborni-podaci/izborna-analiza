@@ -84,6 +84,64 @@ def test_site(site):
     assert "https://example.org/x/static/site.css" in (out / "404.html").read_text(encoding="utf-8")
 
 
+def test_explore(site, archive):
+    """The Explore page: its script draws everything in the browser from api/, with the strings and the lists that
+    come with the page in its language, and the boundaries joined to RIK's municipalities by code."""
+    out = site
+    for prefix in ("", "cyr/", "en/"):
+        page = (out / prefix / "explore.html").read_text(encoding="utf-8")
+        assert re.search(r'<a href="[^"]*explore\.html" aria-current="page">', page)
+        assert "static/explore.js" in page and "<noscript>" in page
+        meta = json.loads(re.search(r'<script type="application/json" id="ex-meta">(.*?)</script>', page, re.S).group(1))
+        assert meta["loc"] == {"": "lat", "cyr/": "cyr", "en/": "en"}[prefix]
+        assert [r["id"] for r in meta["rounds"]][0] == "680072"  # newest first
+        # every list of every election, in ballot order: the reader chooses one, the page never does
+        assert all([x["n"] for x in r["lists"]] == sorted(x["n"] for x in r["lists"]) for r in meta["rounds"])
+        assert all(k.startswith(("ex_", "m_", "view_", "level_", "preset_", "group_")) for k in meta["t"])
+        assert meta["abroad"] == "33000" and meta["prisons"] == "55001"
+    lat = json.loads(re.search(r'id="ex-meta">(.*?)</script>', (out / "explore.html").read_text(encoding="utf-8"),
+                               re.S).group(1))
+    assert lat["muns"]["80438"] == "Grad Subotica" and lat["t"]["ex_msg_list"].startswith("Izaberite listu")
+    cyr = json.loads(re.search(r'id="ex-meta">(.*?)</script>', (out / "cyr/explore.html").read_text(encoding="utf-8"),
+                               re.S).group(1))
+    assert cyr["muns"]["80438"] == "Град Суботица"
+    assert 'href="explore.html"' in (out / "index.html").read_text(encoding="utf-8")  # in the nav of every page
+
+    # one election's stations as columns of equal length, each list's votes in ballot order
+    rnd = archive.load("680072")
+    data = json.loads((out / "api/r/680072/stations.json").read_text(encoding="utf-8"))
+    cols = data["stations"]
+    assert {len(v) for v in cols.values()} == {len(rnd.stations)}
+    assert len(data["votes"]) == len(rnd.contestants) == len(data["contestants"])
+    i = next(k for k, s in enumerate(rnd.stations) if s.registered)
+    s = rnd.stations[i]
+    assert (cols["mc"][i], cols["no"][i], cols["reg"][i], cols["voted"][i]) == (
+        s.municipality_code, s.number, s.registered, s.voted)
+    assert [v[i] for v in data["votes"]] == s.votes
+    assert data["groups"] == ["paper", "change", "records", "unusual"] and data["controllers"]
+    assert all(p for p in cols["place"])  # every station leads to its page across elections
+    for rid in archive.round_ids():
+        assert (out / f"api/r/{rid}/stations.json").exists(), rid
+
+    # the boundaries of RIK's municipalities only: a city counted by its city municipalities isn't drawn over them
+    geo = json.loads((out / "api/geo/municipalities.json").read_text(encoding="utf-8"))
+    codes = {f["properties"]["code"] for f in geo["features"]}
+    assert codes and codes <= set(lat["muns"]) and "79014" not in codes and "70181" in codes  # not Belgrade, New Belgrade
+    assert "OpenStreetMap" in geo["attribution"] and "ODbL" in geo["license"]
+
+
+def test_explore_script_parses():
+    import shutil
+    import subprocess
+    from pathlib import Path
+
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("no node")
+    script = Path(__file__).parents[1] / "src/izbori/static/explore.js"
+    subprocess.run([node, "--check", str(script)], check=True)
+
+
 def test_home_shows_the_next_election(tmp_path, archive):
     import shutil
 
@@ -233,6 +291,11 @@ def test_site_shows_controllers(tmp_path, archive):
     assert "Zapisano na biračkom mestu" in (out / "about.html").read_text(encoding="utf-8")
     order = [round_page.index(f'id="{x}"') for x in ("check", "results", "controllers", "municipalities", "stats")]
     assert order == sorted(order)
+    # the Explore page's data: lists 1 and 3 appointed a member or deputy (bits 0 and 2), and an observers' record
+    cols = json.loads((out / "api/r/680072/stations.json").read_text(encoding="utf-8"))["stations"]
+    i = next(k for k in range(len(cols["mc"])) if cols["mc"][k] == s.municipality_code and cols["no"][k] == "23")
+    assert cols["ctrl"][i] == 0b101 and cols["obs"][i] == 1
+    assert cols["ctrl"][i - 1] is None  # no decision read: unknown, not "no controller"
 
 
 def test_site_station_pages_and_breadcrumbs(site):

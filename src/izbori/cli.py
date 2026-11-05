@@ -393,7 +393,7 @@ def show_boards(archive: Archive, rid: str, contestants: list, n: int) -> None:
 
 
 def cmd_geo(args) -> int:
-    """Municipal boundaries from OpenStreetMap for the map on the Compare page (data/geo/municipalities.json)."""
+    """Municipal boundaries from OpenStreetMap for the map on the Explore page (data/geo/municipalities.json)."""
     from izbori import geo
     archive = Archive(args.data)
     out = Path(args.out) if args.out else Path(args.data) / "geo" / "municipalities.json"
@@ -705,7 +705,7 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--dispatch-pages", action="store_true")
     d.set_defaults(fn=cmd_documents)
 
-    g = sub.add_parser("geo", help="municipal boundaries from OpenStreetMap, for the map on the Compare page")
+    g = sub.add_parser("geo", help="municipal boundaries from OpenStreetMap, for the map on the Explore page")
     g.add_argument("--out", help="default: <data>/geo/municipalities.json")
     g.add_argument("--commit", action="store_true")
     g.add_argument("--push", action="store_true")
