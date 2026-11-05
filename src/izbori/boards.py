@@ -146,7 +146,7 @@ def last_page(pagination_html: str) -> int:
 # --- reading a decision ------------------------------------------------------------------------
 
 LETTERS = re.compile(r"[A-Za-zА-Яа-яЂђЈјЉљЊњЋћЏџČčĆćŠšŽžĐđ]")
-SLOT = re.compile(r"(?:^|\n)[\s\-–—~+•]*(\d{1,2})\s*[.,)]\s*(?:члан|clan|član)\b\s*:?", re.IGNORECASE)  # 1. or 1)
+SLOT = re.compile(r"(?:^|\n)[\s\-–—~+•]*(\d{1,2})\s*[.,)][\s\-–—_|]*(?:члан|clan|član)\b\s*:?", re.IGNORECASE)  # 1) - члан
 # Every member's or deputy's role, and every proposal, wherever they stand: for the layouts that don't number
 # each member ("- члан: …", or each list first and its people under it). "члана" alone (genitive, as in "на основу
 # члана 32") is never a role.
@@ -163,6 +163,39 @@ class Slot:
     member: bool
     deputy: bool
     list_text: str
+    number: int | None = None  # the slot's own number, where a decision numbers its slots by ballot number
+    counted: bool = False  # list_text holds the whole slot, people included: its list is the one named most
+
+
+# Where a person's part of a row ends: their home place ("из …"), a proposal, a quoted list, a deputy, a new line
+PERSON_END = re.compile(r"\bиз\b|\biz\b|на\s+предлог|na\s+predlog|[\"„“”«»]|заменик|zamenik|\n", re.I)
+DEPUTY_ROLE = re.compile(r"заменик\s+члана|zamenik\s+[čc]lana", re.I)
+# A page read column by column: a slot's number or a role alone on its line
+COLUMN_LINE = re.compile(r"^\s*(?:\d{1,2}\s*[.)]|члан|заменик\s+члана|clan|član|zamenik\s+[čc]lana)\s*$",
+                         re.I | re.M)
+
+
+def _person(text: str) -> bool:
+    """Whether the person's part at the start of text is filled in: a name, before their place or proposal."""
+    end = PERSON_END.search(text)
+    return _filled(text[:end.start()] if end else text)
+
+
+def _per_role(number: int, chunk: str) -> list[Slot]:
+    """A numbered slot whose member and deputy each have their own proposal, as rows of a table read line by line
+    ("1) - члан <name> из <place> <list> / заменик члана <name> из <place> на предлог <list>"). Where the list's
+    name falls around the role's line depends on the row's height, so the slot's list is the one its text names
+    most, the slot's own number first when it names that one (Ub numbers its slots by ballot). A second list named
+    as often, with a second deputy, is a slot whose own number OCR lost."""
+    deputies = list(DEPUTY_ROLE.finditer(chunk))
+    first = Slot(member=_person(chunk), deputy=bool(deputies) and _person(chunk[deputies[0].end():]),
+                 list_text=chunk, number=number, counted=True)
+    out = [first]
+    if len(deputies) > 1:
+        rest = chunk[deputies[0].end():]
+        out.append(Slot(member=False, deputy=_person(chunk[deputies[1].end():]), list_text=rest, number=None,
+                        counted=True))
+    return out
 
 
 @dataclass
@@ -217,10 +250,16 @@ def parse_decision(text: str) -> Decision:
     if end:
         body = text[:end.start()]
     starts = list(SLOT.finditer(body))
+    raws = [body[sm.end(): starts[k + 1].start() if k + 1 < len(starts) else len(body)] for k, sm in enumerate(starts)]
+    # each role with its own proposal, the deputy's not introduced by "заменик члана:" as in other layouts; a row's
+    # proposal may stand on the line above its slot's number, so the decision's layout is told by any slot
+    per_role = any(len(PROPOSER.findall(r)) > 1 and DEPUTY_ROLE.search(r) and not DEPUTY.search(r) for r in raws)
     slots = []
-    for k, sm in enumerate(starts):
-        chunk = body[sm.end(): starts[k + 1].start() if k + 1 < len(starts) else len(body)]
-        chunk = " ".join(chunk.split())
+    for sm, raw in zip(starts, raws):
+        chunk = " ".join(raw.split())
+        if per_role and DEPUTY_ROLE.search(chunk) and not DEPUTY.search(chunk):
+            slots.extend(_per_role(int(sm.group(1)), raw))
+            continue
         prop = PROPOSER.search(chunk)
         if not prop:
             continue
@@ -287,6 +326,31 @@ def tokens(name: str) -> set[str]:
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
     words = re.findall(r"[A-Z]{3,}", s)
     return {w for w in words if w not in STOP}
+
+
+def _words(text: str) -> list[str]:
+    s = latin(text).upper().replace("Đ", "DJ")
+    s = "".join(ch for ch in unicodedata.normalize("NFD", s) if not unicodedata.combining(ch))
+    return [w for w in re.findall(r"[A-Z]{3,}", s) if w not in STOP]
+
+
+def named_most(text: str, contestants: list[dict], number: int | None = None) -> int | None:
+    """The ballot number of the list a slot's text names most often: each person's row repeats their list's name,
+    so the slot's own list comes up at least twice, a neighbour's first line or a surname once or twice. The slot's
+    own number wins when its list is named at least twice; otherwise the one named most, clearly ahead."""
+    words = _words(text)
+    counts = {}
+    for n, c in enumerate(contestants, start=1):
+        own = set().union(*(tokens(x) for x in (c.get("name", ""), c.get("rik_name", ""), c.get("short", "")) if x))
+        hits = sum(1 for w in words if w in own)
+        if hits:
+            counts[n] = hits
+    if number is not None and counts.get(number, 0) >= 2:
+        return number
+    ranked = sorted(counts.items(), key=lambda kv: -kv[1])
+    if not ranked or ranked[0][1] < 2 or (len(ranked) > 1 and ranked[1][1] * 1.5 > ranked[0][1]):
+        return None
+    return ranked[0][0]
 
 
 def match_list(text: str, contestants: list[dict]) -> int | None:
@@ -392,10 +456,11 @@ def diagnose(pdf: bytes, contestants: list[dict], log=print, label: str = "") ->
     itself and line by line (psm 6). Only keywords, numbers and the lists' ballot numbers are shown."""
     ways = [("text layer", {})] if has_text_layer(pdf) else []
     ways += [("OCR", {"ocr": True}), ("OCR line by line", {"ocr": True, "psm": 6})]
+    log(f"{label}: as read now, {'line by line' if read_columns(pdf_text(pdf)) else 'as before'}")
     for way, kw in ways:
         text = pdf_text(pdf, **kw)
         decision = parse_decision(text)
-        slots = [[match_list(s.list_text, contestants), s.member, s.deputy] for s in decision.slots]
+        slots = [[slot_list(s, contestants), s.member, s.deputy] for s in decision.slots]
         m = STATION.search(_normalize(text))
         log(f"{label} {way}: station {decision.station}, slots {slots}, layout with names masked:\n"
             f"{shape(_normalize(text)[m.start() if m else 0:], 3000)}")
@@ -412,15 +477,35 @@ def shape(text: str, limit: int = 1500) -> str:
 LETTERS_WORD = re.compile(r"[A-Za-zА-Яа-яЂђЈјЉљЊњЋћЏџČčĆćŠšŽžĐđ]+")
 
 
+def read_columns(text: str) -> bool:
+    """OCR read a table column by column: slots' numbers and roles stand alone on their lines."""
+    return len(COLUMN_LINE.findall(text)) >= 4
+
+
+def decision_text(pdf: bytes) -> str:
+    """The decision's text; a scan of a table that OCR read column by column is read again line by line."""
+    text = pdf_text(pdf)
+    if read_columns(text):
+        rows = pdf_text(pdf, ocr=True, psm=6)
+        if rows.strip():
+            return rows
+    return text
+
+
+def slot_list(slot: Slot, contestants: list[dict]) -> int | None:
+    return named_most(slot.list_text, contestants, slot.number) if slot.counted else match_list(slot.list_text,
+                                                                                                contestants)
+
+
 def read_doc(doc: BoardDoc, pdf: bytes, contestants: list[dict], station_key: str | None,
              diagnose: bool = False) -> dict:
     """What the store keeps about one decision: no names, only lists, yes/no and the address."""
-    text = pdf_text(pdf)
+    text = decision_text(pdf)
     decision = parse_decision(text)
     slots = []
     unmatched = 0
     for s in decision.slots:
-        number = match_list(s.list_text, contestants)
+        number = slot_list(s, contestants)
         if number is None:
             unmatched += 1
         slots.append([number, s.member, s.deputy])
@@ -605,15 +690,17 @@ def fetch_index(client, round_id: str, rik_type: int, known: frozenset = frozens
 
 
 def plan(round_dir: Path, round_id: str, rik_type: int, stations, client, log=print,
-         retry_unparsed: bool = False, reindex: bool = False, only: frozenset = frozenset()) -> dict:
+         retry_unparsed: bool = False, reindex: bool = False, only: frozenset = frozenset(),
+         reread: bool = False) -> dict:
     """Index the round's board decisions and say which to read: {"round", "whole", "index", "todo"}.
 
     The whole register is paged through unless the last run read everything and kept every decision's link, or
     with reindex (after the rules for placing decisions changed); otherwise older unread decisions (or links) deep
     in the register would be missed. `stations` is a Placer, or a dict from a municipality key (see
     municipality_key) to its code in the results file. `only` (municipality codes) keeps to those municipalities'
-    decisions what is read, as for a look at one commission's layout. Nothing here holds a name of a person: the
-    log names municipalities only."""
+    decisions what is read, as for a look at one commission's layout; with reread, their decisions already read are
+    read again (after the reading learnt their layout). Nothing here holds a name of a person: the log names
+    municipalities only."""
     from collections import Counter
     placer = stations if isinstance(stations, Placer) else Placer(stations)
     store = load_store(round_dir)
@@ -634,7 +721,8 @@ def plan(round_dir: Path, round_id: str, rik_type: int, stations, client, log=pr
             moved[(d.municipality, why, key.split("/")[0])] += 1
         index.append({"id": d.id, "s": key, "k": d.kind, "r": d.repeat, "t": d.published, "u": link_path(d.url)})
         entry = known.get(d.id)
-        if d.kind == "extended" and (entry is None or entry.get("slots") is None
+        again = reread and bool(only) and bool(key) and key.split("/")[0] in only
+        if d.kind == "extended" and (entry is None or entry.get("slots") is None or again
                                      or (retry_unparsed and entry.get("unparsed"))):
             todo.append({"id": d.id, "s": key, "station": d.station, "kind": d.kind, "repeat": d.repeat,
                          "published": d.published, "url": d.url})

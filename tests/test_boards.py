@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from izbori.boards import (classify, coverage, match_list, municipality_key, parse_decision, parse_index_records,
-                           pdf_text)
+from izbori.boards import (classify, coverage, match_list, municipality_key, named_most, parse_decision,
+                           parse_index_records, pdf_text, read_columns, slot_list)
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -101,6 +101,28 @@ def test_ocr_of_a_scan():
     d = parse_decision(pdf_text((FIX / "board_decision.pdf").read_bytes()))
     assert d.station == "12"
     assert [(s.member, s.deputy) for s in d.slots] == [(True, True), (False, False), (True, False), (True, False)]
+
+
+def test_table_rows_each_role_with_its_own_proposal():
+    """A scan of a table read line by line (Ub, 2026; made-up names): each row is a member or a deputy with their own
+    proposal, the slots numbered by ballot, and a row's proposal often on the line above its slot's number. Each
+    slot's list is the one it names most; a slot whose number OCR lost still gives its deputy."""
+    import json
+    contestants = json.loads((Path(__file__).parents[1] / "data/rounds/680072/meta.json").read_text(
+        encoding="utf-8"))["contestants"]
+    d = parse_decision((FIX / "board_table_rows.txt").read_text(encoding="utf-8"))
+    assert d.station == "2"
+    assert [[slot_list(s, contestants), s.member, s.deputy] for s in d.slots] == [
+        [1, True, True], [2, False, True], [3, True, True], [7, True, True], [15, True, True]]
+    # a member's surname that is also a list's leader's (7: Nikolić) doesn't move the slot to that list
+    assert named_most("члан Петар Николић из Села АЛЕКСАНДАР ВУЧИЋ - УЈЕДИЊЕНА СРБИЈА заменик члана на предлог "
+                      "АЛЕКСАНДАР ВУЧИЋ - УЈЕДИЊЕНА СРБИЈА", contestants) == 1
+
+
+def test_a_table_read_by_columns_is_told():
+    by_columns = "1) члан x\n9)\n\n12)\n\nчлан\n\nзаменик члана\n\nчлан\n\nзаменик члана\n"
+    assert read_columns(by_columns)
+    assert not read_columns("1. члан: Петар Петровић, на предлог подносиоца изборне листе X;\n2. члан: ...")
 
 
 def test_classify():
@@ -354,6 +376,16 @@ def test_reading_split_across_jobs_ends_like_one_run(tmp_path, monkeypatch):
     assert cli.main(["--data", str(data), "boards", "--round", "680072", "--plan", str(only), "--only", "71218"]) == 0
     assert json.loads(only.read_text(encoding="utf-8"))["todo"] == []
     assert json.loads(only.read_text(encoding="utf-8"))["partial"]
+    # a municipality's decisions already read are read again, once the reading learnt their layout
+    (rnd / "boards.json").write_text(json.dumps({"complete": True, "docs": {
+        "819801": {"s": "70017/30", "k": "extended", "slots": [[1, True, False]], "u": "/x"}}}), encoding="utf-8")
+    again = tmp_path / "again.json"
+    assert cli.main(["--data", str(data), "boards", "--round", "680072", "--plan", str(again), "--only", "70017"]) == 0
+    assert [d["id"] for d in json.loads(again.read_text(encoding="utf-8"))["todo"]] == ["819802"]
+    assert cli.main(["--data", str(data), "boards", "--round", "680072", "--plan", str(again), "--only", "70017",
+                     "--reread"]) == 0
+    assert [d["id"] for d in json.loads(again.read_text(encoding="utf-8"))["todo"]] == ["819801", "819802"]
+    (rnd / "boards.json").unlink()
     # a job reads its share of the plan (none here, with --limit 0) and writes what it read
     out = tmp_path / "part-x.json"
     assert cli.main(["--data", str(data), "boards", "--read", str(plan), "--shard", "1/2", "--out", str(out),

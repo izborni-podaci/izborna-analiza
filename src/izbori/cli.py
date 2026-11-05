@@ -375,7 +375,7 @@ def cmd_boards(args) -> int:
     archive.dir(rid).mkdir(parents=True, exist_ok=True)
     if args.plan:
         planned = boards.plan(archive.dir(rid), rid, int(info["type"]), stations, client, log, args.retry_unparsed,
-                              args.reindex, frozenset(c for c in (args.only or "").split(",") if c))
+                              args.reindex, frozenset(c for c in (args.only or "").split(",") if c), args.reread)
         planned["contestants"] = contestants
         Path(args.plan).write_text(json.dumps(planned, ensure_ascii=False), encoding="utf-8")
         return 0
@@ -727,6 +727,8 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--diagnose", type=int, default=0, help="log the masked layout of this many unreadable decisions")
     b.add_argument("--retry-unparsed", action="store_true", help="read unreadable decisions again")
     b.add_argument("--only", metavar="CODES", help="read only these municipalities' decisions (codes, comma-separated)")
+    b.add_argument("--reread", action="store_true",
+                   help="with --only: read those municipalities' decisions again, even those already read")
     b.add_argument("--diagnose-ids", metavar="IDS",
                    help="with --round: log how these decisions read, every way, names masked; nothing is kept")
     b.add_argument("--reindex", action="store_true",

@@ -35,6 +35,10 @@ on:
       only:
         description: "Read only these municipalities' decisions (codes, comma-separated), e.g. to see a layout"
         default: ""
+      reread:
+        description: "With only: read those municipalities' decisions again, even those already read"
+        type: boolean
+        default: false
       ids:
         description: "Only log how these decisions read (ids, comma-separated, with round), names masked; nothing is kept"
         default: ""
@@ -90,12 +94,14 @@ jobs:
           RETRY: ${{ inputs.retry }}
           REINDEX: ${{ inputs.reindex }}
           ONLY: ${{ inputs.only }}
+          REREAD: ${{ inputs.reread }}
         run: |
           args=(--plan plan.json)
           [ -n "$ROUND" ] && args+=(--round "$ROUND")
           [ "$RETRY" = "true" ] && args+=(--retry-unparsed)
           [ "$REINDEX" = "true" ] && args+=(--reindex)
           [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          [ "$REREAD" = "true" ] && args+=(--reread)
           uv run izbori boards "${args[@]}"
           if [ -f plan.json ]; then
             echo "planned=true" >> "$GITHUB_OUTPUT"
