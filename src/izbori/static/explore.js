@@ -227,6 +227,11 @@
     };
   };
   const rgb = (h) => [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16));
+  // no data on the map: diagonal hatching over the page's colour, which no colour of the scale resembles
+  const NODATA = 'url(#ex-hatch)';
+  const hatch = () => '<defs><pattern id="ex-hatch" width="5" height="5" patternUnits="userSpaceOnUse" '
+    + `patternTransform="rotate(45)"><rect width="5" height="5" fill="${C.page}"/>`
+    + `<line x1="0" y1="0" x2="0" y2="5" stroke="${C.ink2}" stroke-opacity="0.55" stroke-width="1.6"/></pattern></defs>`;
   const mix = (f) => { // from the page's colour (0) to the accent (1)
     const a = rgb(C.page);
     const b = rgb(C.accent);
@@ -250,7 +255,7 @@
   // colours; with too few distinct values for that, equal steps across the 2nd to 98th percentile.
   const classes = (vals) => {
     const s = sorted(vals);
-    const flat = { breaks: [], step: 1, color: (v) => (v == null ? C.grid : mix(0.6)) };
+    const flat = { breaks: [], step: 1, color: (v) => (v == null ? NODATA : mix(0.6)) };
     if (!s.length) return flat;
     let lo = quantile(s, 0.02);
     let hi = quantile(s, 0.98);
@@ -270,10 +275,10 @@
       for (let k = 1; k < n; k += 1) breaks.push(Number((start + k * step).toFixed(10)));
     }
     const color = (v) => {
-      if (v == null) return C.grid;
+      if (v == null) return NODATA;
       let c = 0;
       while (c < breaks.length && v >= breaks[c]) c += 1;
-      return mix(0.14 + (0.86 * c) / breaks.length);
+      return mix(0.22 + (0.78 * c) / breaks.length); // the lightest class still stands out from the page
     };
     return { breaks, step, color };
   };
@@ -982,7 +987,7 @@
         const dd = pr.path(f.geometry);
         if (!r) { // no data; a municipality where no election in the archive had a station says so
           const tip = f.properties.none ? ` data-tip="${esc(`${own(f.properties.name)}: ${t('ex_no_stations')}`)}"` : '';
-          paths += `<path d="${dd}" fill="${C.grid}" stroke="${C.page}" stroke-width="0.7" fill-rule="evenodd"${tip}/>`;
+          paths += `<path d="${dd}" fill="${NODATA}" stroke="${C.page}" stroke-width="0.7" fill-rule="evenodd"${tip}/>`;
           return;
         }
         const tip = `${munName(r.code, d)}: ${fmt(u, r.value)} · ${countText('s', r.idx.length)}`;
@@ -999,13 +1004,14 @@
         leg += `<rect x="${c * bw}" y="${y0 + 18}" width="${bw - 2}" height="12" fill="${sc.color(v === -Infinity ? (sc.breaks[0] ?? 0) - 1 : v)}"/>`;
         if (c > 0) leg += text(c * bw - 1, y0 + 44, num(sc.breaks[c - 1], digits(sc.step)), `text-anchor="middle" fill="${C.ink2}" font-size="11"`);
       }
-      leg += `<rect x="${nb * bw + 14}" y="${y0 + 18}" width="${bw - 2}" height="12" fill="${C.grid}"/>`
+      leg += `<rect x="${nb * bw + 14}" y="${y0 + 18}" width="${bw - 2}" height="12" fill="${NODATA}" stroke="${C.axis}" `
+        + 'stroke-width="0.8"/>'
         + text(nb * bw + 14, y0 + 44, t('ex_nodata'), `fill="${C.ink2}" font-size="11"`);
       // the sources of what is drawn, so a downloaded map credits them; the second only when it draws from it
       const kim = shown.some((f) => f.properties.kim);
       const attr = text(W, y0 + 66, t('ex_attribution'), `text-anchor="end" fill="${C.ink2}" font-size="10"`)
         + (kim ? text(W, y0 + 80, t('ex_attribution_kim'), `text-anchor="end" fill="${C.ink2}" font-size="10"`) : '');
-      fig.innerHTML = `${svgOpen(W, y0 + (kim ? 86 : 72), title)}<g>${paths}</g>${leg}${attr}</svg>`;
+      fig.innerHTML = `${svgOpen(W, y0 + (kim ? 86 : 72), title)}${hatch()}<g>${paths}</g>${leg}${attr}</svg>`;
       svg = true;
       const off = rows.filter((r) => !shown.some((f) => f.properties.code === r.code)).map((r) => munName(r.code, d));
       if (off.length) {
