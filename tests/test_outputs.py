@@ -48,8 +48,11 @@ def test_site(site):
     guide = (out / "guide.html").read_text(encoding="utf-8")
     assert "Vodič za kontrolore i posmatrače" in guide and re.search(r'href="r/\d+/check\.html"', guide)
     assert 'id="brojanje"' in guide and "Više listića nego potpisa" in guide and "čl. 116" in guide
+    # local elections: the differences, with the higher court for appeals and four copies of the minutes for lists
+    assert 'id="lokalni"' in guide and "višem sudu" in guide and "<strong>četiri</strong>" in guide
     guide_en = (out / "en/guide.html").read_text(encoding="utf-8")
     assert "Guide for controllers and observers" in guide_en and "More ballots than signatures" in guide_en
+    assert 'id="lokalni"' in guide_en and "<strong>higher court</strong>" in guide_en
     assert "Водич за контролоре и посматраче" in (out / "cyr/guide.html").read_text(encoding="utf-8")
     # links to RIK documents are percent-encoded, so they survive transliteration
     hrefs = re.findall(r'href="(https://rik[^"]+)"', page)

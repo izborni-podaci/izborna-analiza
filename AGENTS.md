@@ -195,4 +195,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   written from the law (14/2022 and the 2026 amendments) and RIK's 2026 handbook for polling boards and instruction
   on handovers, with the topics of a controllers' handbook he shared. That handbook's partisan advice is left out,
   and the old guide's objection rule is corrected: a request to annul a station's vote goes to the local commission
-  within 72 hours of closing (Art. 148).
+  within 72 hours of closing (Art. 148). The same day it gained a section on local elections, from the Law on Local
+  Elections (14/2022, 35/2024, 47/2026): that law leaves the procedure at the station to the parliamentary law
+  (its Art. 8), so the section lists only what differs, each with its article.
