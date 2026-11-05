@@ -148,13 +148,16 @@ class Site:
                 by_code[s.municipality_code].append(s)
             close = publishing.closing(self.dates[rid] or "")
             board = self.board_docs_of(rid)
-            cdocs = None
+            cdocs, unplaced = None, 0
             if commission.path(self.archive.dir(rid)).exists():
                 cdocs = {code: sum(len(g["docs"]) for g in groups) for code, groups in self.commission_of(rid).items()}
+                unplaced = sum(1 for d in commission.load_store(self.archive.dir(rid)).get("docs", {}).values()
+                               if d.get("m") not in self.mun_rows[rid])
             changed = {key for key, flags in self.flagged[rid].items() if any(f.check.group == "change" for f in flags)}
             rows = publishing.rows(list(self.mun_rows[rid].values()), by_code, a.documents, close, board or None, cdocs,
                                    changed)
-            self.publishing_cache[rid] = (rows, publishing.summary(rows, a.documents, a.round.stations, close))
+            self.publishing_cache[rid] = (rows, publishing.summary(rows, a.documents, a.round.stations, close,
+                                                                   unplaced))
         return self.publishing_cache[rid]
 
     def board_docs_of(self, rid: str) -> dict:

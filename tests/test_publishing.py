@@ -42,9 +42,9 @@ def test_rows():
     assert (a.standing, a.extended, a.cdocs) == (3, 2, 4)
     assert a.warn == {"minutes", "extended"}
     assert b.hours == 60 and b.late == 1 and b.cdocs == 0 and b.changed == 1
-    assert b.warn == {"hours", "late", "extended", "cdocs", "changed"}
-    total = publishing.summary(rows, docs, [a1, a2, a3, b1, abroad], close)
-    assert (total["stations"], total["minutes"], total["late"], total["silent"]) == (4, 3, 1, 1)
+    assert b.warn == {"hours", "late", "extended", "changed"}  # none from the commission: maybe filed under a city
+    total = publishing.summary(rows, docs, [a1, a2, a3, b1, abroad], close, unplaced=7)
+    assert (total["stations"], total["minutes"], total["late"], total["cdocs"], total["unplaced"]) == (4, 3, 1, 4, 7)
     assert total["hours"] == 3  # the median of every station in Serbia: 2, 3 and 60 hours
 
     # decisions or the commission's register not read: unknown, never zero

@@ -105,8 +105,10 @@ def rows(municipalities: list[dict], stations_by_code: dict[str, list], document
 
 def _highlight(out: list[Row]) -> None:
     """Mark the cells worth a question: minutes or board decisions missing from RIK's registers, most minutes only
-    the next day, some later than a day, no document from the commission, numbers changed after publication.
-    The rules are absolute, so a municipality isn't marked only for being slower than others."""
+    the next day, some later than a day, numbers changed after publication. The rules are absolute, so a
+    municipality isn't marked only for being slower than others. No document from the commission isn't marked:
+    where a city's commission runs the vote in all its city municipalities (Niš), RIK lists its documents under the
+    city, which the results don't have, so its city municipalities show none."""
     for r in out:
         if r.minutes < r.stations:
             r.warn.add("minutes")
@@ -118,15 +120,14 @@ def _highlight(out: list[Row]) -> None:
             n = getattr(r, col)
             if n is not None and n < r.stations:
                 r.warn.add(col)
-        if r.cdocs == 0:
-            r.warn.add("cdocs")
         if r.changed:
             r.warn.add("changed")
 
 
-def summary(out: list[Row], documents: dict, stations: list, close: datetime | None) -> dict:
+def summary(out: list[Row], documents: dict, stations: list, close: datetime | None, unplaced: int = 0) -> dict:
     """The whole country in one line per column: totals, and the median over every station, not over the
-    municipalities."""
+    municipalities. unplaced: the commissions' documents RIK lists under a city or municipality the results don't
+    have."""
     hours = [h for s in stations if s.kind == "domestic"
              and (h := hours_after(first_minutes(documents.get(s.key, [])), close)) is not None]
     known = lambda col: [getattr(r, col) for r in out if getattr(r, col) is not None]  # noqa: E731
@@ -136,7 +137,7 @@ def summary(out: list[Row], documents: dict, stations: list, close: datetime | N
             "standing": sum(known("standing")) if known("standing") else None,
             "extended": sum(known("extended")) if known("extended") else None,
             "cdocs": sum(known("cdocs")) if known("cdocs") else None,
-            "silent": sum(1 for r in out if r.cdocs == 0), "changed": sum(r.changed for r in out)}
+            "unplaced": unplaced, "changed": sum(r.changed for r in out)}
 
 
 COLUMNS = ["code", "municipality", "district", "stations", "minutes", "median_hours", "late", "corrections",

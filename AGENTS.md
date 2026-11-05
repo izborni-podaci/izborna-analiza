@@ -256,8 +256,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
     municipality both are tested and corrected for the number of municipalities (Bonferroni); none of the
     archived elections has one below 0.05.
   - **The commissions page has no score,** in keeping with "a flag is a question": each column is a fact, and cells
-    are highlighted by absolute rules (something missing, a median over 12 hours, minutes after a day, no document,
-    changes), not by rank, so no municipality is marked only for being slower than others. Hours come from the
+    are highlighted by absolute rules (something missing, a median over 12 hours, minutes after a day, changes), not
+    by rank, so no municipality is marked only for being slower than others. A commission with no document isn't
+    marked: RIK lists a city commission's documents under the city (Niš's, for its five city municipalities; the
+    Belgrade city election of 2024), which the results don't have, so they are counted apart. Hours come from the
     upload stamp in each document's link: the register of minutes shows the same time for almost every document,
     but days later for some (Bačka Palanka 2023: register 20 Dec, files 18 Dec). Abroad and prisons are left out
     (RIK runs them). Explore gained the same hours as a measure, a median per municipality.
