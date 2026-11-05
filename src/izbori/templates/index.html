@@ -2,7 +2,8 @@
 {% import "_macros.html" as mx with context %}
 {% block title %}{{ t('nav_overview') }}{% endblock %}
 {% block main %}
-<section class="hero">
+{% set nx = home.next %}
+<section class="hero{% if nx %} with-next{% endif %}">
   <div class="hero-main">
     <h1>{{ t('home_title') }}</h1>
     <p class="deck">{{ t('home_lede') }}</p>
@@ -16,42 +17,24 @@
     </form>
     <p class="stats"><a href="{{ link('elections.html') }}">{{ t('stats_rounds', n=i(home.rounds)) }}</a>{% if home.first %} ({{ home.first }}{% if home.last != home.first %}–{{ home.last }}{% endif %}){% endif %} · {{ t('stats_places', n=i(home.places)) }} · {{ t('stats_docs', n=i(home.docs)) }}</p>
   </div>
-  {% if latest %}
-  <aside class="status" aria-labelledby="status-h">
-    <p class="kicker">{{ t('counting') if latest.counting else t('status_latest') }}</p>
-    <h2 id="status-h" class="status-title"><a href="{{ link('r/' ~ latest.id ~ '/index.html') }}">{{ latest.short }}</a></h2>
-    {% if latest.date %}<p class="status-date">{{ latest.date }}</p>{% endif %}
-    <p class="status-line">{{ t('status_counted', counted=i(latest.counted), total=i(latest.total)) }}</p>
-    <div class="meter" role="img" aria-label="{{ t('counted_of', counted=i(latest.counted), total=i(latest.total)) }}"><span style="width: {{ '%.1f'|format(100 * latest.counted / latest.total if latest.total else 0) }}%"></span></div>
-    <p class="status-line"><a href="{{ link('r/' ~ latest.id ~ '/check.html') }}">{{ t('status_flagged', n=i(latest.flagged)) }}</a></p>
-    {% if latest.flagged %}
-    <ul class="status-groups">
-      {% for g in groups if home.groups[g] %}
-      <li class="g-{{ g }}"><a href="{{ link('r/' ~ latest.id ~ '/check.html') }}#g-{{ g }}"><span class="dot" aria-hidden="true"></span>{{ t('group_' ~ g) }}</a><span class="num">{{ i(home.groups[g]) }}</span></li>
+  {% if nx %}
+  <aside class="next" data-next aria-labelledby="next-h">
+    <p class="kicker">{{ t('next_kicker') }}</p>
+    <h2 id="next-h">{% for k in nx.kinds %}{{ kind_name(k) }}{% if not loop.last %}{{ t('next_and') }}{% endif %}{% endfor %}</h2>
+    <p class="next-date">{{ date(nx.day) }} <span class="next-in" data-days-until="{{ nx.day }}" data-in="{{ t('next_in', n='{n}', unit='{unit}') }}" data-one="{{ t('next_day_one') }}" data-many="{{ t('next_day_many') }}" data-today="{{ t('next_today') }}" data-tomorrow="{{ t('next_tomorrow') }}"></span></p>
+    {% for note in nx.notes %}<p class="next-note">{{ name(note) }}</p>{% endfor %}
+    {% if nx.deadlines %}
+    <ul class="next-deadlines">
+      {% for key, d in nx.deadlines %}
+      <li><span class="next-when">{{ t('next_from' if key == 'silence' else 'next_by_midnight' if key == 'handover' else 'next_by', d=date(d)) }}</span> {{ t('dl_' ~ key) }}</li>
       {% endfor %}
     </ul>
     {% endif %}
-    {% if home.looked %}<p class="status-foot">{{ t('status_looked', time=time(home.looked)) }}</p>{% endif %}
+    <p class="next-guide"><a href="{{ link('guide.html') }}#rokovi">{{ t('next_guide') }}</a></p>
+    <p class="next-foot">{{ t('next_authority') }}</p>
   </aside>
   {% endif %}
 </section>
-
-{% if home.next %}
-{% set nx = home.next %}
-<section class="next" data-next aria-labelledby="next-h">
-  <p class="kicker">{{ t('next_kicker') }}</p>
-  <h2 id="next-h">{% for k in nx.kinds %}{{ kind_name(k) }}{% if not loop.last %}{{ t('next_and') }}{% endif %}{% endfor %} · {{ date(nx.day) }} <span class="next-in" data-days-until="{{ nx.day }}" data-in="{{ t('next_in', n='{n}', unit='{unit}') }}" data-one="{{ t('next_day_one') }}" data-many="{{ t('next_day_many') }}" data-today="{{ t('next_today') }}" data-tomorrow="{{ t('next_tomorrow') }}"></span></h2>
-  {% for note in nx.notes %}<p class="next-note">{{ name(note) }}</p>{% endfor %}
-  {% if nx.deadlines %}
-  <ul class="next-deadlines">
-    {% for key, d in nx.deadlines %}
-    <li><span class="next-when">{{ t('next_from' if key == 'silence' else 'next_by_midnight' if key == 'handover' else 'next_by', d=date(d)) }}</span> {{ t('dl_' ~ key) }}</li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-  <p class="small"><a href="{{ link('guide.html') }}#rokovi">{{ t('next_guide') }}</a>. <span class="muted">{{ t('next_authority') }}</span></p>
-</section>
-{% endif %}
 
 {% if latest %}
 <section class="band">

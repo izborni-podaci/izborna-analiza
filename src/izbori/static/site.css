@@ -232,36 +232,25 @@ select, input[type="search"] { font: inherit; font-size: 0.95rem; min-height: 40
 .search-out p { margin: 6px 0 0; color: var(--ink-2); }
 .stats { margin: 14px 0 0; max-width: 680px; font-size: 0.9rem; color: var(--ink-2); }
 .stats a { color: var(--ink-2); }
-/* the latest election beside the search: progress, flagged stations by group, the last look at RIK */
-.status { background: var(--surface); border: 1px solid var(--border); padding: 20px 22px; margin-top: 28px; }
-.status .kicker { margin: 0; }
-.status-title { font-size: 1.45rem; margin: 6px 0 0; }
-.status-title a { text-decoration: none; }
-.status-title a:hover { text-decoration: underline; }
-.status-date { margin: 2px 0 0; color: var(--ink-2); font-size: 0.9rem; }
-.status-line { margin: 14px 0 0; }
-.status .meter { max-width: none; }
-.status-groups { list-style: none; margin: 10px 0 0; padding: 0; }
-.status-groups li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; border-top: 1px solid var(--grid); font-size: 0.95rem; }
-.status-groups a { color: var(--ink); text-decoration: none; }
-.status-groups a:hover { text-decoration: underline; }
-.status-groups .num { font-variant-numeric: tabular-nums; font-weight: 600; }
-.status-foot { margin: 14px 0 0; font-size: 0.82rem; color: var(--ink-2); }
-@media (min-width: 960px) {
-  .hero { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 0 56px; align-items: start; }
-  .hero h1 { font-size: clamp(2.1rem, 4vw, 3rem); }
-  .status { margin-top: 8px; }
-}
-/* the next election, once a maintainer has entered it: the day, the days left, the deadlines still ahead */
-.next { border-left: 4px solid var(--accent); background: var(--surface); padding: 18px 22px; margin: 0 0 36px; }
+/* the next election beside the search, once a maintainer has entered it: the day, the days left, the deadlines
+   still ahead; with none ahead the space stays empty */
+.next { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 20px 22px; margin-top: 28px; }
 .next .kicker { margin: 0; }
-.next h2 { margin: 4px 0 0; font-size: 1.45rem; }
-.next-in { font-family: var(--sans); font-size: 1rem; font-weight: 400; color: var(--ink-2); }
+.next h2 { margin: 6px 0 0; font-size: 1.45rem; }
+.next-date { margin: 2px 0 0; font-weight: 600; }
+.next-in { font-weight: 400; color: var(--ink-2); }
 .next-in:not(:empty)::before { content: "· "; }
-.next-note { margin: 6px 0 0; }
-.next-deadlines { list-style: none; padding: 0; margin: 12px 0 10px; display: grid; gap: 4px; }
-.next-when { display: inline-block; min-width: 11.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.nav-short { display: none; }
+.next-note { margin: 8px 0 0; }
+.next-deadlines { list-style: none; padding: 0; margin: 12px 0 0; }
+.next-deadlines li { padding: 7px 0; border-top: 1px solid var(--grid); }
+.next-when { display: block; font-weight: 600; font-variant-numeric: tabular-nums; }
+.next-guide { margin: 12px 0 0; }
+.next-foot { margin: 8px 0 0; font-size: 0.82rem; color: var(--ink-2); }
+@media (min-width: 960px) {
+  .hero.with-next { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 0 56px; align-items: start; }
+  .hero.with-next h1 { font-size: clamp(2.1rem, 4vw, 3rem); }
+  .hero.with-next .next { margin-top: 8px; }
+}
 .band { background: var(--surface); border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); padding: 36px 28px 40px; margin: 0 -28px; }
 .band h2 { margin-top: 0; }
 .intents { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
@@ -334,9 +323,9 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
   .langs a, .theme-toggle, .menu summary { min-height: 44px; }
   .key { columns: 1; }
   .guide-toc ol { columns: 1; }
-  .nav-long { display: none; }
-  .nav-short { display: inline; }
-  .next-when { display: block; min-width: 0; }
+  /* the guide's long name doesn't fit beside the others: the link keeps it, the screen shows the short one */
+  .main-nav a[data-short] { font-size: 0; }
+  .main-nav a[data-short]::after { content: attr(data-short); font-size: 0.95rem; }
   /* the guide's tables become one block per row, each cell under its column's name */
   .guide table.stack thead { display: none; }
   .guide table.stack tr { display: block; padding: 10px 12px; border-bottom: 1px solid var(--grid); }

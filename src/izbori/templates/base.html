@@ -21,7 +21,7 @@
     <nav class="main-nav" aria-label="{{ t('nav_main') }}">
       <a href="{{ link('elections.html') }}"{% if page == 'elections.html' or page.startswith('r/') %} aria-current="page"{% endif %}>{{ t('nav_elections') }}</a>
       <a href="{{ link('repeat.html') }}"{% if page == 'repeat.html' %} aria-current="page"{% endif %}>{{ t('nav_repeat') }}</a>
-      <a href="{{ link('guide.html') }}"{% if page == 'guide.html' %} aria-current="page"{% endif %}><span class="nav-long">{{ t('nav_guide') }}</span><span class="nav-short">{{ t('nav_guide_short') }}</span></a>
+      <a href="{{ link('guide.html') }}" data-short="{{ t('nav_guide_short') }}"{% if page == 'guide.html' %} aria-current="page"{% endif %}>{{ t('nav_guide') }}</a>
       <a href="{{ link('about.html') }}"{% if page == 'about.html' %} aria-current="page"{% endif %}>{{ t('nav_about') }}</a>
     </nav>
     <div class="top-tools">

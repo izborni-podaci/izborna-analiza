@@ -54,14 +54,15 @@ def test_site(site):
     assert "Guide for controllers and observers" in guide_en and "More ballots than signatures" in guide_en
     assert 'id="lokalni"' in guide_en and "<strong>higher court</strong>" in guide_en
 
-    # the home page: the latest election beside the search, by group of flags; the archive in numbers; six ways in
+    # the home page: the archive in numbers under the search, nothing beside it with no election ahead, six ways in
     home = (out / "index.html").read_text(encoding="utf-8")
-    assert 'class="status"' in home and 'href="r/680072/check.html#g-paper"' in home and "Sa oznakom: " in home
     assert "Izbora u arhivi: " in home and "dokumenata sa sajta RIK-a: " in home
+    assert 'class="hero"' in home and "data-next" not in home  # no election ahead in data/elections.csv
+    # the guide's link reads its whole name; phones show the short one from the attribute, not a second text
+    assert '<a href="guide.html" data-short="Vodič">Vodič za kontrolore i posmatrače</a>' in home
     for target in ('href="municipalities.html"', 'href="about.html#podaci"', 'href="r/680072/index.html#controllers"',
                    'href="guide.html"', 'href="repeat.html"'):
         assert target in home, target
-    assert "data-next" not in home  # no election ahead in data/elections.csv
     assert 'id="podaci"' in (out / "about.html").read_text(encoding="utf-8")
     assert 'value="g-paper"' in (out / "r/680072/check.html").read_text(encoding="utf-8")  # the group's link lands
     # every municipality, in Serbian alphabetical order: Latin (lj after l, ć after c) and Cyrillic
@@ -98,7 +99,7 @@ def test_home_shows_the_next_election(tmp_path, archive):
                                         f"{day.isoformat()},,local,Примерне општине\n", encoding="utf-8")
     out = build(Archive(data), tmp_path / "site", None, "https://example.org/x/")
     home = (out / "index.html").read_text(encoding="utf-8")
-    assert "data-next" in home and f'data-days-until="{day.isoformat()}"' in home
+    assert 'class="hero with-next"' in home and f'data-days-until="{day.isoformat()}"' in home
     assert "Lokalni izbori" in home and "Primerne opštine" in home
     first = day - timedelta(days=15)
     assert f"do {first.day}.{first.month}.{first.year}." in home and "predlog članova biračkih odbora" in home

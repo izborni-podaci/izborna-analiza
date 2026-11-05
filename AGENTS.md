@@ -204,3 +204,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   publication. The next election's deadlines are counted back from voting day (N days: that date; 24 and 48
   hours: two days before) and the strip says the commission's calendar is the authority. The municipalities
   page is new, sorted in Serbian alphabetical order per script. On phones the nav says only "Guide".
+  - Later that day he removed the latest election's state: the space beside the search shows the next election
+    only when one is entered, and stays empty otherwise. The phones' short "Guide" comes from a `data-short`
+    attribute through CSS, so the link's text is the whole name everywhere else (copying, reader views, a stale
+    stylesheet): two spans in one link showed both names when the CSS didn't apply.

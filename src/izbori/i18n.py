@@ -154,11 +154,7 @@ S: dict[str, tuple[str, str]] = {
     "intent6_title": ("Подаци и обавештења", "Data and alerts"),
     "intent6_body": ("Атом фид за нове ознаке, подаци у JSON-у и цела архива на GitHub-у.", "Atom feeds for new flags, the data as JSON and the whole archive on GitHub."),
     "intent6_cta": ("Како до података", "How to get the data"),
-    # the latest election beside the search, the archive in numbers, the next election
-    "status_latest": ("Последњи избори", "Latest election"),
-    "status_counted": ("Обрађено: {counted} од {total}", "Counted: {counted} of {total}"),
-    "status_flagged": ("Са ознаком: {n}", "Flagged: {n}"),
-    "status_looked": ("Последња провера РИК-а: {time}", "RIK last checked: {time}"),
+    # the archive in numbers and the next election beside the search
     "stats_rounds": ("Избора у архиви: {n}", "Elections in the archive: {n}"),
     "stats_places": ("бирачких места кроз изборе: {n}", "polling stations across elections: {n}"),
     "stats_docs": ("докумената са сајта РИК-а: {n}", "documents on RIK's site, linked: {n}"),

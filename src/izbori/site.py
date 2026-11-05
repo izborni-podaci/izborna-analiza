@@ -150,16 +150,12 @@ class Site:
                 + sum(len(g["docs"]) for groups in self.commission_of(rid).values() for g in groups))
 
     def home_data(self, latest: Analysis | None) -> dict:
-        """What the home page shows besides the cards: the latest election's flagged stations by group, when RIK
-        was last asked, the archive in numbers, and the next election a maintainer entered, with the deadlines
-        still ahead."""
+        """What the home page shows besides the cards: the archive in numbers, whether the latest election has
+        controllers to show, and the next election a maintainer entered, with the deadlines still ahead."""
         years = sorted(d[:4] for d in self.dates.values() if d)
         home = {"rounds": len(self.rids), "first": years[0] if years else "", "last": years[-1] if years else "",
                 "places": len(self.places.places), "docs": sum(self.linked_docs(rid) for rid in self.rids),
-                "looked": schedule.looks(self.archive.root).get("rik"), "groups": {}, "ctrl": False, "next": None}
-        if latest:
-            home["groups"] = {g: len({f.station for f in latest.flags if f.check.group == g}) for g in GROUPS}
-            home["ctrl"] = bool(self.ctrl_of(latest.round.id))
+                "ctrl": bool(latest and self.ctrl_of(latest.round.id)), "next": None}
         today = datetime.now(BELGRADE).date()
         ahead = schedule.upcoming(self.archive.root, today)
         if ahead:
