@@ -234,8 +234,9 @@ def _key(name: str) -> str:
     return "".join(ch for ch in s if ch.isalnum() and not unicodedata.combining(ch))
 
 
-# RIK's name → the dataset's, where they differ (filled in from the dataset's own names, as logged)
-KIM_ALIASES: dict[str, str] = {}
+# RIK's name → the dataset's, where they differ beyond the dataset's two names ("Gjilan/Gnjilane"). Serbia's Gora,
+# merged with Opolje in 1992, is the municipality seated in Dragaš; Kosovska Kamenica is plain Kamenica there.
+KIM_ALIASES: dict[str, str] = {"Гора": "Dragaš", "Косовска Каменица": "Kamenica"}
 
 
 def kim_features(data: bytes, wanted: dict[str, str], years=("1999", "1998"), log=print) -> list[dict]:
@@ -267,7 +268,8 @@ def kim_features(data: bytes, wanted: dict[str, str], years=("1999", "1998"), lo
             name_field = next((f for f in fields if f.upper().startswith("MUNIC")), fields[-1])
             found: dict[str, list] = {}
             for sr in rdr.iterShapeRecords():
-                code = want.get(_key(str(sr.record[name_field])))
+                name = str(sr.record[name_field])  # Kosovo's in both languages: "Gjilan/Gnjilane"
+                code = next((want[k] for k in [_key(name)] + [_key(p) for p in name.split("/")] if k in want), None)
                 if code:
                     found.setdefault(code, []).append(shape(sr.shape.__geo_interface__))
             log(f"{base}: {len(rdr)} municipalities, {len(found)} of the {len(want)} wanted")

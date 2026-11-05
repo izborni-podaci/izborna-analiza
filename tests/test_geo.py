@@ -66,13 +66,16 @@ def test_kosovo_in_rik_s_division_by_name(tmp_path):
 
     archive = io.BytesIO()
     with zipfile.ZipFile(archive, "w") as z:
-        for year, names in (("1999", ["Gora", "Kosovska Mitrovica", "Peć"]), ("2001", ["Dragash", "Mitrovicë"])):
+        for year, names in (("1999", ["Dragash/Dragaš", "Mitrovica/Kosovska Mitrovica", "Peć/Peja", "Kamenica"]),
+                            ("2001", ["Dragash/Dragaš", "Mitrovicë"])):
             shp, shx, dbf = layer(names)
             for ext, body in (("shp", shp), ("shx", shx), ("dbf", dbf), ("cpg", b"UTF-8")):
                 z.writestr(f"ELWar_GESIS/KOS_1992-2020/{year}.{ext}", body)
-    wanted = {"90336": "Гора", "90298": "Косовска Митровица", "90239": "Пећ", "90263": "Приштина"}
+    wanted = {"90336": "Гора", "90298": "Косовска Митровица", "90239": "Пећ", "90140": "Косовска Каменица",
+              "90263": "Приштина"}
     feats = geo.kim_features(archive.getvalue(), wanted, log=lambda m: None)
-    assert [f["properties"]["code"] for f in feats] == ["90239", "90298", "90336"]  # Priština isn't in the layer
+    # either of the two names, and Serbia's Gora as the municipality seated in Dragaš; Priština isn't in the layer
+    assert [f["properties"]["code"] for f in feats] == ["90140", "90239", "90298", "90336"]
     assert all(f["properties"]["source"] == "ELWar" for f in feats)
     out = tmp_path / "municipalities.json"
     geo.write(out, feats, source="kept")
