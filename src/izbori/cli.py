@@ -421,7 +421,8 @@ def cmd_geo(args) -> int:
             return 1
         new = {f["properties"]["code"] for f in kim}
         current = geo.load(out) or {}
-        geo.write(out, [f for f in old if f["properties"]["code"] not in new] + kim, source=current.get("source", ""))
+        keep = [f for f in old if f["properties"]["code"] not in new and f["properties"].get("source") != "ELWar"]
+        geo.write(out, keep + kim, source=current.get("source", ""))
         if args.commit and commit([str(out)], "Data: Kosovo and Metohija's municipal boundaries, in RIK's division"):
             if args.push and push() and args.dispatch_pages:
                 dispatch_pages()

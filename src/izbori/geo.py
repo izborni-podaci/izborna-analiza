@@ -234,6 +234,28 @@ def _key(name: str) -> str:
     return "".join(ch for ch in s if ch.isalnum() and not unicodedata.combining(ch))
 
 
+_CYR = {"lj": "љ", "nj": "њ", "dž": "џ", "a": "а", "b": "б", "v": "в", "g": "г", "d": "д", "đ": "ђ", "e": "е",
+        "ž": "ж", "z": "з", "i": "и", "j": "ј", "k": "к", "l": "л", "m": "м", "n": "н", "o": "о", "p": "п", "r": "р",
+        "s": "с", "t": "т", "ć": "ћ", "u": "у", "f": "ф", "h": "х", "c": "ц", "č": "ч", "š": "ш"}
+
+
+def cyrillic(name: str) -> str:
+    """Serbian Latin to Cyrillic, for the names of Kosovo's municipalities RIK has no station in: the site writes
+    Serbian in Cyrillic and transliterates it for the Latin pages."""
+    out, i = [], 0
+    while i < len(name):
+        two = name[i:i + 2]
+        if two.lower() in _CYR:
+            c = _CYR[two.lower()]
+            out.append(c.upper() if two[0].isupper() else c)
+            i += 2
+            continue
+        c = _CYR.get(name[i].lower())
+        out.append((c.upper() if name[i].isupper() else c) if c else name[i])
+        i += 1
+    return "".join(out)
+
+
 # RIK's name → the dataset's, where they differ beyond the dataset's two names ("Gjilan/Gnjilane"). Serbia's Gora,
 # merged with Opolje in 1992, is the municipality seated in Dragaš; Kosovska Kamenica is plain Kamenica there.
 KIM_ALIASES: dict[str, str] = {"Гора": "Dragaš", "Косовска Каменица": "Kamenica"}
@@ -253,7 +275,7 @@ def kim_features(data: bytes, wanted: dict[str, str], years=("1999", "1998"), lo
 
     zf = zipfile.ZipFile(io.BytesIO(data))
     want = {_key(KIM_ALIASES.get(name, name)): code for code, name in wanted.items()}
-    best: tuple[int, str, dict] = (-1, "", {})
+    best: tuple = (-1, False, "", {}, {})  # matches, Kosovo's own layer, layer, {code: shapes}, {name: shape}
     for year in years:
         for n in zf.namelist():
             m = re.match(r"(.*/(?:KOS|XK|SRB|SCG|YUG)[^/]*)/" + year + r"\.dbf$", n, re.I)
@@ -273,9 +295,14 @@ def kim_features(data: bytes, wanted: dict[str, str], years=("1999", "1998"), lo
                 if code:
                     found.setdefault(code, []).append(shape(sr.shape.__geo_interface__))
             log(f"{base}: {len(rdr)} municipalities, {len(found)} of the {len(want)} wanted")
-            if len(found) > best[0]:
-                best = (len(found), base, found)
-    count, base, found = best
+            kosovo = bool(re.search(r"/(?:KOS|XKX?)[^/]*$", base.rsplit("/", 1)[0], re.I))
+            others = {} if not kosovo else {str(sr.record[name_field]): shape(sr.shape.__geo_interface__)
+                                             for sr in rdr.iterShapeRecords()
+                                             if not any(k in want for k in [_key(str(sr.record[name_field]))]
+                                                        + [_key(p) for p in str(sr.record[name_field]).split("/")])}
+            if (len(found), kosovo) > best[:2]:  # on a tie, Kosovo's own layer, which also has the rest of it
+                best = (len(found), kosovo, base, found, others)
+    count, _, base, found, others = best
     if count <= 0:
         return []
     rdr_names = []
@@ -296,5 +323,17 @@ def kim_features(data: bytes, wanted: dict[str, str], years=("1999", "1998"), lo
         feats.append({"type": "Feature", "properties": {"code": code, "name": wanted[code], "level": "",
                                                          "source": "ELWar"},
                       "geometry": {"type": g["type"], "coordinates": _round(g["coordinates"])}})
-    log(f"{len(feats)} boundaries in RIK's division from {base}")
+    # the province's other municipalities in RIK's division, where no election in the archive had a station: drawn,
+    # so the province has no holes, but with no code and nothing to colour
+    for name, area in sorted(others.items()):
+        area = set_precision(area.simplify(TOLERANCE, preserve_topology=True), 10 ** -DIGITS)
+        if area.is_empty:
+            continue
+        g = mapping(area)
+        serbian = name.split("/")[-1].strip()  # "Gjakova/Đakovica": the second name is the Serbian one
+        feats.append({"type": "Feature", "properties": {"code": "", "name": cyrillic(serbian), "level": "",
+                                                         "source": "ELWar", "none": 1},
+                      "geometry": {"type": g["type"], "coordinates": _round(g["coordinates"])}})
+    log(f"{len(feats)} boundaries in RIK's division from {base}"
+        + (f", {len(others)} of them with no station" if others else ""))
     return feats

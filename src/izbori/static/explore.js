@@ -245,20 +245,30 @@
       return mix(0.06 + strength * Math.max(0, Math.min(1, f)));
     };
   };
-  // classes for the map: equal steps at round numbers across the 2nd to 98th percentile of the municipalities drawn,
-  // five to eight of them; the end ones are open
+  // classes for the map: seven, each holding about as many of the municipalities drawn, with limits rounded so they
+  // read easily. Equal steps would let a few far values (Kosovo and Metohija's turnout) squeeze the rest into two
+  // colours; with too few distinct values for that, equal steps across the 2nd to 98th percentile.
   const classes = (vals) => {
     const s = sorted(vals);
-    if (!s.length) return { breaks: [], step: 1, color: (v) => (v == null ? C.grid : mix(0.6)) };
+    const flat = { breaks: [], step: 1, color: (v) => (v == null ? C.grid : mix(0.6)) };
+    if (!s.length) return flat;
     let lo = quantile(s, 0.02);
     let hi = quantile(s, 0.98);
     if (!(hi - lo > 1e-9)) { lo = s[0]; hi = s[s.length - 1]; }
-    if (!(hi - lo > 1e-9)) return { breaks: [], step: 1, color: (v) => (v == null ? C.grid : mix(0.6)) };
-    const step = niceStep((hi - lo) / 7);
-    const start = Math.floor(lo / step + 1e-9) * step;
-    const n = Math.max(5, Math.min(8, Math.ceil((hi - start) / step - 1e-9)));
-    const breaks = [];
-    for (let k = 1; k < n; k++) breaks.push(Number((start + k * step).toFixed(10)));
+    if (!(hi - lo > 1e-9)) return flat;
+    let step = niceStep((hi - lo) / 40);
+    let breaks = [];
+    for (let k = 1; k < 7; k += 1) {
+      const b = Number((Math.round(quantile(s, k / 7) / step) * step).toFixed(10));
+      if (b > s[0] && b <= s[s.length - 1] && !breaks.includes(b)) breaks.push(b);
+    }
+    if (breaks.length < 3) {
+      step = niceStep((hi - lo) / 7);
+      const start = Math.floor(lo / step + 1e-9) * step;
+      const n = Math.max(5, Math.min(8, Math.ceil((hi - start) / step - 1e-9)));
+      breaks = [];
+      for (let k = 1; k < n; k += 1) breaks.push(Number((start + k * step).toFixed(10)));
+    }
     const color = (v) => {
       if (v == null) return C.grid;
       let c = 0;
@@ -970,8 +980,9 @@
       feats.forEach((f) => {
         const r = byCode.get(f.properties.code);
         const dd = pr.path(f.geometry);
-        if (!r) {
-          paths += `<path d="${dd}" fill="${C.grid}" stroke="${C.page}" stroke-width="0.7" fill-rule="evenodd"/>`;
+        if (!r) { // no data; a municipality where no election in the archive had a station says so
+          const tip = f.properties.none ? ` data-tip="${esc(`${own(f.properties.name)}: ${t('ex_no_stations')}`)}"` : '';
+          paths += `<path d="${dd}" fill="${C.grid}" stroke="${C.page}" stroke-width="0.7" fill-rule="evenodd"${tip}/>`;
           return;
         }
         const tip = `${munName(r.code, d)}: ${fmt(u, r.value)} · ${countText('s', r.idx.length)}`;

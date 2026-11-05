@@ -250,6 +250,7 @@ S: dict[str, tuple[str, str]] = {
     "ex_true": ("да", "yes"),
     "ex_false": ("не", "no"),
     "ex_nodata": ("нема података", "no data"),
+    "ex_no_stations": ("нема бирачких места ни на једним изборима у архиви", "no polling station in any election in the archive"),
     "ex_source": ("Подаци: Републичка изборна комисија (РИК)", "Data: Republic Electoral Commission (RIK)"),
     "ex_msg_list": ("Изаберите листу. Сајт сам не бира ниједну листу.", "Choose a list. The site doesn't pick a list by itself."),
     "ex_msg_round2": ("Изаберите друге изборе за поређење.", "Choose a second election to compare with."),

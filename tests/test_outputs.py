@@ -125,9 +125,14 @@ def test_explore(site, archive):
 
     # the boundaries of RIK's municipalities only: a city counted by its city municipalities isn't drawn over them
     geo = json.loads((out / "api/geo/municipalities.json").read_text(encoding="utf-8"))
-    codes = {f["properties"]["code"] for f in geo["features"]}
+    codes = {f["properties"]["code"] for f in geo["features"] if not f["properties"].get("none")}
     assert codes and codes <= set(lat["muns"]) and "79014" not in codes and "70181" in codes  # not Belgrade, New Belgrade
     assert "OpenStreetMap" in geo["attribution"] and "ODbL" in geo["license"]
+    # Kosovo and Metohija in RIK's division, credited; its municipalities with no station are named, with no code
+    assert {"90263", "90336"} <= codes and "Glaurdić" in geo["attribution"] and "CC BY 4.0" in geo["license"]
+    assert all(f["properties"]["kim"] for f in geo["features"] if f["properties"]["code"].startswith("9"))
+    assert all(f["properties"]["name"] and not f["properties"]["code"] for f in geo["features"]
+               if f["properties"].get("none"))
 
 
 def test_explore_script_parses():

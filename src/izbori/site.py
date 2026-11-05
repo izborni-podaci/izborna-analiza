@@ -415,10 +415,16 @@ class Site:
         counts one by one (Belgrade, Niš and others) has its own boundary in OpenStreetMap too; RIK never uses its
         code, so it is left out rather than drawn over its parts. Kosovo and Metohija's, in RIK's division, come from
         another dataset, which the map then credits too (kim). Names come from RIK, in the page's language."""
-        feats = [{"type": "Feature", "properties": {"code": f["properties"]["code"],
-                                                    **({"kim": 1} if f["properties"].get("source") == "ELWar" else {})},
-                  "geometry": f["geometry"]}
-                 for f in boundaries.get("features", []) if f["properties"].get("code") in self.mun_rounds]
+        def props(p: dict) -> dict:
+            out = {"code": p["code"]}
+            if p.get("source") == "ELWar":
+                out["kim"] = 1
+            if p.get("none"):  # in Kosovo and Metohija, with no station in any election here: drawn grey, named
+                out.update({"none": 1, "name": p.get("name", "")})
+            return out
+        feats = [{"type": "Feature", "properties": props(f["properties"]), "geometry": f["geometry"]}
+                 for f in boundaries.get("features", [])
+                 if f["properties"].get("code") in self.mun_rounds or f["properties"].get("none")]
         return {"type": "FeatureCollection", "attribution": boundaries.get("attribution", ""),
                 "license": boundaries.get("license", ""), "source": boundaries.get("source", ""), "features": feats}
 
