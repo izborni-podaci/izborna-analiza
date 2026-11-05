@@ -85,6 +85,8 @@ def test_site(site):
 
 
 def test_commissions(site, archive):
+    import csv
+    import io
     """Each election's page on the municipal commissions: one row per municipality in Serbia, linked from the
     round's pages and the municipalities page, with the same table as CSV."""
     out = site
@@ -109,6 +111,12 @@ def test_commissions(site, archive):
         lines = (out / f"api/r/{rid}/commissions.csv").read_text(encoding="utf-8").splitlines()
         assert lines[0].startswith("code,municipality,district,stations,minutes,median_hours")
         assert len(lines) > 10
+    # Kostolac's vote is run by Požarevac's commission: its documents are shown with Kostolac, apart from its own
+    rows26 = {r["code"]: r for r in csv.DictReader(io.StringIO(
+        (out / "api/r/680072/commissions.csv").read_text(encoding="utf-8")))}
+    assert rows26["71340"]["commission_documents"] == "0" and int(rows26["71340"]["city_commission_documents"]) > 0
+    kostolac = (out / "r/680072/m/71340.html").read_text(encoding="utf-8")
+    assert 'id="city-commission"' in kostolac and "Požarevac" in kostolac
     # the 2022 election's decisions on polling boards weren't read: unknown, not none
     old = (out / "api/r/42732/commissions.csv").read_text(encoding="utf-8").splitlines()[1].split(",")
     assert old[8] == old[9] == ""
@@ -430,7 +438,7 @@ def test_place_across_elections(site):
     assert "IZBORNA LISTA KANDIDATA" not in page.split('title="')[0]
 
 
-def test_incremental_build_matches_a_full_build(tmp_path, archive):
+def test_incremental_build_matches_a_full_build(tmp_path, archive, monkeypatch):
     """An incremental build renders only pages whose data changed, and ends up byte for byte like a full build:
     with no change, after a station's numbers change, and after a whole round is removed."""
     import csv
@@ -497,6 +505,25 @@ def test_incremental_build_matches_a_full_build(tmp_path, archive):
     # the commissions page counts the commission's new document (its inputs are the round's)
     table = csv.DictReader(io.StringIO((tmp_path / "b/site/api/r/567956/commissions.csv").read_text(encoding="utf-8")))
     assert {r["code"]: r["commission_documents"] for r in table}[entry["s"].split("/")[0]] == "1"
+
+    # a document of Belgrade's city commission, which RIK lists under the city: shown with every city municipality.
+    # These two elections don't say which municipalities are Belgrade's (2022 and 2026 do), so the test says it;
+    # the pages made from that knowledge are built again, as it may come from any election
+    from izbori import commission
+    codes = {row["sifra_opstine"] for row in csv.DictReader(io.StringIO(
+        (data / "rounds/567956/results.csv").read_bytes().decode("utf-8-sig")))}
+    monkeypatch.setattr(commission, "city_parts", lambda stations: {c: ("name", "BEOGRAD") for c in codes})
+    cdocs["docs"]["10"] = {"m": "", "n": "Град Београд", "c": "decision", "t": "1793700100",
+                           "u": "/extfile/sr/files/additionalDocuments/1/4/Р.pdf"}
+    (data / "rounds/567956/commission.json").write_text(json.dumps(cdocs, ensure_ascii=False), encoding="utf-8")
+    run(tmp_path / "b" / "site", True)
+    run(tmp_path / "f" / "site", False)
+    assert same(tmp_path / "f" / "site", tmp_path / "b" / "site")
+    table = list(csv.DictReader(io.StringIO((tmp_path / "b/site/api/r/567956/commissions.csv").read_text(
+        encoding="utf-8"))))
+    assert {r["city_commission_documents"] for r in table} == {"1"}
+    page = (tmp_path / "b/site/r/567956/m/70092.html").read_text(encoding="utf-8")
+    assert 'id="city-commission"' in page and "additionalDocuments/1/4/" in page
 
     # a round leaves the archive: its pages and its places' pages go
     shutil.rmtree(data / "rounds/341143")

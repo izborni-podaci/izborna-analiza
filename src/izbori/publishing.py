@@ -11,7 +11,9 @@ grade: municipalities differ in size and in how far their materials travel.
 - Corrections: stations with a ruling correcting the minutes (RG-7).
 - Polling boards: stations whose decision on the standing, or the extended, composition is in RIK's register of
   additional documents, as placed by `boards.Placer`.
-- The commission's own documents (minutes of its sessions, reports, decisions) in the same register.
+- The commission's own documents (minutes of its sessions, reports, decisions) in the same register, and apart
+  from them its city's commission's (commission.city_parts): Niš's for its city municipalities, Požarevac's for
+  Kostolac.
 - Changes: stations with a flag of the "change" group (numbers, minutes or corrections changed after publication).
 """
 
@@ -43,6 +45,7 @@ class Row:
     standing: int | None = None  # stations with a decision on the standing composition; None if not read
     extended: int | None = None  # the same for the extended composition
     cdocs: int | None = None  # the commission's own documents; None if the register wasn't read
+    city: int = 0  # its city's commission's documents, shared by the city's municipalities
     changed: int = 0  # stations with a flag of the change group
     warn: set[str] = field(default_factory=set)  # columns to highlight
 
@@ -69,10 +72,12 @@ def hours_after(uploaded: str, close: datetime | None) -> float | None:
 
 
 def rows(municipalities: list[dict], stations_by_code: dict[str, list], documents: dict, close: datetime | None,
-         board_docs: dict | None, commission_docs: dict[str, int] | None, changed: set[str]) -> list[Row]:
+         board_docs: dict | None, commission_docs: dict[str, int] | None, changed: set[str],
+         city_docs: dict[str, int] | None = None) -> list[Row]:
     """One row per municipality in Serbia (abroad and prisons are RIK's own). board_docs: station key → its
     decisions (documents.Doc), None when the round's decisions weren't read; commission_docs: municipality code →
-    its commission's documents, None when that register wasn't read; changed: station keys with a change flag."""
+    its commission's documents, None when that register wasn't read; changed: station keys with a change flag;
+    city_docs: city municipality code → its city's commission's documents."""
     out = []
     for m in municipalities:
         if m["kind"] != "domestic":
@@ -98,6 +103,7 @@ def rows(municipalities: list[dict], stations_by_code: dict[str, list], document
             row.extended = sum("board_extended" in k for k in kinds)
         if commission_docs is not None:
             row.cdocs = commission_docs.get(m["code"], 0)
+            row.city = (city_docs or {}).get(m["code"], 0)
         out.append(row)
     _highlight(out)
     return out
@@ -107,8 +113,7 @@ def _highlight(out: list[Row]) -> None:
     """Mark the cells worth a question: minutes or board decisions missing from RIK's registers, most minutes only
     the next day, some later than a day, numbers changed after publication. The rules are absolute, so a
     municipality isn't marked only for being slower than others. No document from the commission isn't marked:
-    where a city's commission runs the vote in all its city municipalities (Niš), RIK lists its documents under the
-    city, which the results don't have, so its city municipalities show none."""
+    a city municipality may have none of its own where its city's commission runs the vote."""
     for r in out:
         if r.minutes < r.stations:
             r.warn.add("minutes")
@@ -124,10 +129,11 @@ def _highlight(out: list[Row]) -> None:
             r.warn.add("changed")
 
 
-def summary(out: list[Row], documents: dict, stations: list, close: datetime | None, unplaced: int = 0) -> dict:
+def summary(out: list[Row], documents: dict, stations: list, close: datetime | None, unplaced: int = 0,
+            city: int = 0) -> dict:
     """The whole country in one line per column: totals, and the median over every station, not over the
-    municipalities. unplaced: the commissions' documents RIK lists under a city or municipality the results don't
-    have."""
+    municipalities. city: the documents RIK lists under a city the results don't have, each once (Niš's); unplaced:
+    those under a name no municipality takes."""
     hours = [h for s in stations if s.kind == "domestic"
              and (h := hours_after(first_minutes(documents.get(s.key, [])), close)) is not None]
     known = lambda col: [getattr(r, col) for r in out if getattr(r, col) is not None]  # noqa: E731
@@ -137,11 +143,11 @@ def summary(out: list[Row], documents: dict, stations: list, close: datetime | N
             "standing": sum(known("standing")) if known("standing") else None,
             "extended": sum(known("extended")) if known("extended") else None,
             "cdocs": sum(known("cdocs")) if known("cdocs") else None,
-            "unplaced": unplaced, "changed": sum(r.changed for r in out)}
+            "city": city, "unplaced": unplaced, "changed": sum(r.changed for r in out)}
 
 
 COLUMNS = ["code", "municipality", "district", "stations", "minutes", "median_hours", "late", "corrections",
-           "standing", "extended", "commission_documents", "changed"]
+           "standing", "extended", "commission_documents", "city_commission_documents", "changed"]
 
 
 def to_csv(out: list[Row]) -> str:
@@ -153,5 +159,5 @@ def to_csv(out: list[Row]) -> str:
     for r in out:
         w.writerow([r.code, r.name, r.district, r.stations, r.minutes,
                     "" if r.hours is None else f"{r.hours:.1f}", r.late, r.corrections, blank(r.standing),
-                    blank(r.extended), blank(r.cdocs), r.changed])
+                    blank(r.extended), blank(r.cdocs), "" if r.cdocs is None else r.city, r.changed])
     return buf.getvalue()

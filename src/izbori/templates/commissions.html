@@ -15,7 +15,7 @@
   <li>{{ t('cm_sum_boards', standing=i(total.standing), extended=i(total.extended), stations=i(total.stations)) }}</li>
   {% else %}<li>{{ t('cm_boards_unread') }}</li>{% endif %}
   {% if total.cdocs is not none %}
-  <li>{{ t('cm_sum_cdocs', n=i(total.cdocs), unplaced=i(total.unplaced)) }}</li>
+  <li>{{ t('cm_sum_cdocs', n=i(total.cdocs)) }}{% if total.city %} {{ t('cm_sum_city', n=i(total.city)) }}{% endif %}{% if total.unplaced %} {{ t('cm_sum_unplaced', n=i(total.unplaced)) }}{% endif %}</li>
   {% endif %}
   <li>{{ t('cm_sum_changes', corrections=i(total.corrections), changed=i(total.changed)) }}</li>
 </ul>
@@ -42,7 +42,7 @@
       <td class="num" data-v="{{ r.corrections }}">{{ i(r.corrections) }}</td>
       <td class="num{% if 'standing' in r.warn %} warn{% endif %}" data-v="{{ r.share(r.standing) if r.standing is not none else '' }}">{{ count(r.standing, none) }}</td>
       <td class="num{% if 'extended' in r.warn %} warn{% endif %}" data-v="{{ r.share(r.extended) if r.extended is not none else '' }}">{{ count(r.extended, none) }}</td>
-      <td class="num" data-v="{{ r.cdocs if r.cdocs is not none else '' }}">{% if r.cdocs %}<a href="{{ link(base + 'm/' ~ r.code ~ '.html') }}#commission">{{ i(r.cdocs) }}</a>{% else %}{{ count(r.cdocs, none) }}{% endif %}</td>
+      <td class="num" data-v="{{ r.cdocs + r.city if r.cdocs is not none else '' }}">{% if r.cdocs %}<a href="{{ link(base + 'm/' ~ r.code ~ '.html') }}#commission">{{ i(r.cdocs) }}</a>{% else %}{{ count(r.cdocs, none) }}{% endif %}{% if r.city %}<div class="small"><a href="{{ link(base + 'm/' ~ r.code ~ '.html') }}#city-commission">+{{ i(r.city) }} {{ t('cm_city_short') }}</a></div>{% endif %}</td>
       <td class="num{% if 'changed' in r.warn %} warn{% endif %}" data-v="{{ r.changed }}">{{ i(r.changed) }}</td>
     </tr>
   {% endfor %}

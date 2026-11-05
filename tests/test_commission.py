@@ -24,7 +24,9 @@ def test_records_keep_no_title_and_leave_out_riks_own():
         record(1000, "Непозната", "ОДЛУКА")], CODES)
     assert [(i, d["m"], d["c"]) for i, d in got] == [("820997", "70254", "report"), ("820998", "70092", "session"),
                                                      ("8201000", "", "resolution")]
-    assert all(set(d) == {"m", "c", "t", "u"} for _, d in got)  # no title is kept
+    assert all(set(d) == {"m", "c", "t", "u"} for _, d in got[:2])  # no title is kept
+    assert got[2][1] == {"m": "", "n": "Непозната", "c": "resolution", "t": "1793715861",
+                         "u": "/extfile/sr/files/additionalDocuments/820/1000/Записник 1000.pdf"}  # RIK's name, no code
     assert got[0][1]["u"] == "/extfile/sr/files/additionalDocuments/820/997/Записник 997.pdf"
 
 
@@ -52,7 +54,14 @@ def test_update_reads_everything_once_then_only_whats_new(tmp_path):
     assert commission.update(Client(), tmp_path, "680072", 2, CODES, log=lambda m: None) == 0
     assert Client.calls == [1]  # nothing new: one request
     store = json.loads((tmp_path / commission.FILE).read_text(encoding="utf-8"))
-    assert store["complete"] and len(store["docs"]) == 4
+    assert store["complete"] and store["named"] and len(store["docs"]) == 4
+    # a store read before the cities' names were kept is read whole once more
+    del store["named"]
+    (tmp_path / commission.FILE).write_text(json.dumps(store, ensure_ascii=False), encoding="utf-8")
+    assert commission.needs_reading(tmp_path)
+    Client.calls = []
+    assert commission.update(Client(), tmp_path, "680072", 2, CODES, log=lambda m: None) == 0
+    assert sorted(Client.calls) == [1, 2] and not commission.needs_reading(tmp_path)
 
 
 def test_by_municipality_groups_by_kind_and_numbers_a_day_with_several():
@@ -68,3 +77,22 @@ def test_by_municipality_groups_by_kind_and_numbers_a_day_with_several():
     assert [(d["day"], d["n"]) for d in got["70092"][0]["docs"]] == [("2026-10-03", 0), ("2026-11-03", 1),
                                                                      ("2026-11-03", 2)]
     assert got["70092"][0]["docs"][0]["url"] == "https://www.rik.parlament.gov.rs/x/c.pdf"
+
+
+def test_documents_under_a_city_go_to_its_city_municipalities(archive):
+    """RIK lists the documents of a city's commission under the city: Niš and Belgrade have no code in the results,
+    so their city municipalities are found by the names and districts of every election; Kostolac's and Sevojno's
+    cities have a code, the only city in their district."""
+    store = {"docs": {
+        "a": {"m": "", "n": "Град Ниш", "c": "session", "t": "1793700000", "u": "/x/a.pdf"},
+        "b": {"m": "", "n": "Ниш", "c": "decision", "t": "1793700100", "u": "/x/b.pdf"},
+        "c": {"m": "70092", "c": "session", "t": "1791000000", "u": "/x/c.pdf"},
+        "d": {"m": "", "c": "notice", "t": "1792000000", "u": "/x/d.pdf"}}}
+    got = commission.by_city(store)
+    assert list(got) == [municipality_key("Ниш")] and got["NIS"]["name"] in ("Град Ниш", "Ниш")
+    assert commission.count(got["NIS"]["groups"]) == 2
+    parts = commission.city_parts(s for rid in archive.round_ids() for s in archive.load(rid).stations)
+    assert {c for c, v in parts.items() if v == ("name", "NIS")} == {"71285", "71307", "71315", "71323", "71331"}
+    assert len([c for c, v in parts.items() if v == ("name", "BEOGRAD")]) == 17
+    assert parts["71340"] == ("code", "70947") and parts["71366"] == ("code", "71145")  # Kostolac, Sevojno
+    assert "70947" not in parts and "80438" not in parts  # a city itself, a municipality of its own

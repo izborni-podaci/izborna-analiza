@@ -112,12 +112,18 @@
   </div>
 </details>
 
-{% if cdocs %}
+{% macro doc_groups(groups) %}<ul class="commission">
+{% for g in groups %}  <li><span class="muted">{{ t('commission_' ~ g.kind) }}:</span> {% for d in g.docs %}<a class="doc" href="{{ d.url|url }}" target="_blank">{{ date(d.day) if d.day else t('doc_other') }}{% if d.n %} ({{ d.n }}){% endif %}</a> {% endfor %}</li>
+{% endfor %}</ul>{% endmacro %}
+{% if cdocs or citydocs %}
 <h2 id="commission">{{ t('commission_heading') }}</h2>
 <p class="rule">{{ t('commission_note') }}</p>
-<ul class="commission">
-{% for g in cdocs %}  <li><span class="muted">{{ t('commission_' ~ g.kind) }}:</span> {% for d in g.docs %}<a class="doc" href="{{ d.url|url }}" target="_blank">{{ date(d.day) if d.day else t('doc_other') }}{% if d.n %} ({{ d.n }}){% endif %}</a> {% endfor %}</li>
-{% endfor %}</ul>
+{% if cdocs %}{{ doc_groups(cdocs) }}{% endif %}
+{% if citydocs %}
+<h3 id="city-commission">{{ t('city_commission_heading', city=name(citydocs.name)) }}</h3>
+<p class="muted small">{{ t('city_commission_note', city=name(citydocs.name)) }}</p>
+{{ doc_groups(citydocs.groups) }}
+{% endif %}
 {% endif %}
 {% if m.kind == 'domestic' %}<p class="muted small"><a href="{{ link(base + 'commissions.html') }}#c-{{ m.code }}">{{ t('cm_row_link') }}</a></p>{% endif %}
 {% endblock %}

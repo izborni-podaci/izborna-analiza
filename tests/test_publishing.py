@@ -34,17 +34,18 @@ def test_rows():
     by_code = {"1": [a1, a2, a3], "2": [b1], "33000": [abroad]}
     close = publishing.closing("2026-10-25")
     rows = publishing.rows([_mun("1"), _mun("2"), _mun("33000", "abroad")], by_code, docs, close, boards,
-                           {"1": 4}, {b1.key})
+                           {"1": 4}, {b1.key}, {"2": 3})
     assert [r.code for r in rows] == ["1", "2"]  # abroad is RIK's own
     a, b = rows
     assert (a.stations, a.minutes, a.corrections, a.late, a.changed) == (3, 2, 1, 0, 0)
     assert a.hours == 2.5  # the first minutes of each station: 2 h and 3 h after 20:00
     assert (a.standing, a.extended, a.cdocs) == (3, 2, 4)
     assert a.warn == {"minutes", "extended"}
-    assert b.hours == 60 and b.late == 1 and b.cdocs == 0 and b.changed == 1
+    assert b.hours == 60 and b.late == 1 and (b.cdocs, b.city) == (0, 3) and b.changed == 1
     assert b.warn == {"hours", "late", "extended", "changed"}  # none from the commission: maybe filed under a city
-    total = publishing.summary(rows, docs, [a1, a2, a3, b1, abroad], close, unplaced=7)
-    assert (total["stations"], total["minutes"], total["late"], total["cdocs"], total["unplaced"]) == (4, 3, 1, 4, 7)
+    total = publishing.summary(rows, docs, [a1, a2, a3, b1, abroad], close, unplaced=7, city=3)
+    assert (total["stations"], total["minutes"], total["late"], total["cdocs"], total["city"], total["unplaced"]) == (
+        4, 3, 1, 4, 3, 7)
     assert total["hours"] == 3  # the median of every station in Serbia: 2, 3 and 60 hours
 
     # decisions or the commission's register not read: unknown, never zero
@@ -52,7 +53,7 @@ def test_rows():
     assert rows[0].standing is None and rows[0].cdocs is None and not {"standing", "cdocs"} & rows[0].warn
     csv = publishing.to_csv(rows).splitlines()
     assert csv[0] == ",".join(publishing.COLUMNS)
-    assert csv[1] == "1,Општина 1,Округ,3,2,2.5,0,1,,,,0"
+    assert csv[1] == "1,Општина 1,Округ,3,2,2.5,0,1,,,,,0"
 
 
 def test_minutes_timed_by_the_stamp_in_their_link():

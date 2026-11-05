@@ -5,8 +5,13 @@ Source: RIK's register of additional documents, type 1, for the round. Each docu
 kind RIK gives it and its upload time, never by its title: commissions write the titles, and a title may name a
 person. RIK's own documents (listed under "РИК") are left out; they belong to no municipality.
 
+A city whose commission runs the vote in all its city municipalities has no code in the results (Niš, and Belgrade
+at its city election): RIK lists that commission's documents under the city, so they are kept with the name RIK
+gives ("n"), and the pages show them with the city's municipalities (`city_parts`).
+
 Kept per round in data/rounds/<id>/commission.json:
-    {"docs": {"<id>": {"m": municipality code, "c": kind, "t": upload time (unix), "u": path}}, "complete": bool}"""
+    {"docs": {"<id>": {"m": municipality code or "", "n": RIK's name when no code, "c": kind, "t": upload time
+    (unix), "u": path}}, "complete": bool, "named": bool}"""
 
 from __future__ import annotations
 
@@ -19,6 +24,7 @@ from izbori import jsonfile
 from izbori.boards import doc_id, last_page, link_path, municipality_key
 from izbori.config import RIK_PUBLIC
 from izbori.i18n import BELGRADE
+from izbori.translit import latin
 
 FILE = "commission.json"
 DOC_TYPE = 1  # RIK's number for the commissions' documents in its register of additional documents
@@ -41,8 +47,11 @@ def parse_records(records: list[dict], codes: dict[str, str]) -> list[tuple[str,
         name = (r.get("municipality_display_name") or "").strip()
         if not links or name.upper() in ("РИК", "RIK"):
             continue
-        out.append((doc_id(links[0]), {"m": codes.get(municipality_key(name), ""), "c": kind(r.get("decision_type")),
-                                       "t": str(r.get("datetime") or ""), "u": link_path(links[0])}))
+        kept = {"m": codes.get(municipality_key(name), ""), "c": kind(r.get("decision_type")),
+                "t": str(r.get("datetime") or ""), "u": link_path(links[0])}
+        if not kept["m"] and name:
+            kept["n"] = name  # a municipality's name, as RIK writes it: a city the results don't have
+        out.append((doc_id(links[0]), kept))
     return out
 
 
@@ -94,31 +103,96 @@ def save_store(round_dir: Path, store: dict) -> bool:
     return True
 
 
+def needs_reading(round_dir: Path) -> bool:
+    """The round's register was never read whole, or before the names of cities were kept: one full pass."""
+    store = load_store(round_dir)
+    return not (store.get("complete") and store.get("named"))
+
+
 def update(client, round_dir: Path, round_id: str, rik_type: int, codes: dict[str, str], log=print) -> int:
-    """Read what is new in the register; how many documents were added."""
+    """Read what is new in the register (everything, once, when `needs_reading`); how many documents were added."""
+    full = needs_reading(round_dir)
     store = load_store(round_dir)
     known = store.setdefault("docs", {})
-    found = fetch(client, round_id, rik_type, codes, frozenset(known) if store.get("complete") else frozenset(), log)
+    found = fetch(client, round_id, rik_type, codes, frozenset() if full else frozenset(known), log)
     added = 0
     for i, d in found:
         if i not in known:
             added += 1
         known[i] = d
-    store["complete"] = True
+    store["complete"] = store["named"] = True
     save_store(round_dir, store)
+    names = sorted({d["n"] for _, d in found if d.get("n")})
+    if names:
+        log(f"{round_id}: documents under a name the results don't have: {', '.join(names)}")
     return added
 
 
 def by_municipality(store: dict) -> dict[str, list[dict]]:
     """Per municipality code, its documents grouped by kind: [{"kind", "docs": [{"url", "day", "n"}]}], each kind's
     documents oldest first, numbered when several share a day."""
+    return _grouped(store, lambda d: d.get("m"))
+
+
+def by_city(store: dict) -> dict[str, dict]:
+    """Per city key (municipality_key of RIK's name), the documents RIK lists under a city the results don't have:
+    {"name": the name as RIK writes it, "groups": as by_municipality}."""
+    names: dict[str, str] = {}
+    for d in store.get("docs", {}).values():
+        if not d.get("m") and d.get("n"):
+            names.setdefault(municipality_key(d["n"]), d["n"])
+    groups = _grouped(store, lambda d: "" if d.get("m") or not d.get("n") else municipality_key(d["n"]))
+    return {key: {"name": names[key], "groups": rows} for key, rows in groups.items()}
+
+
+def count(groups: list[dict]) -> int:
+    return sum(len(g["docs"]) for g in groups)
+
+
+def city_parts(stations) -> dict[str, tuple[str, str]]:
+    """City municipality code → its city: ("name", key) when the city has no code in the results and its city
+    municipalities are named "<City>-<Part>" in some election (Niš's, in 2022) or lie in the district "Град <City>"
+    (Belgrade's); ("code", city's code) when the city has one, as the only city ("Град …") in the same district
+    (Kostolac and Požarevac, Sevojno and Užice). stations: every archived station, of every election."""
+    part, city, district = set(), set(), {}
+    by_name: dict[str, str] = {}
+    for s in stations:
+        name = latin(s.municipality).upper()
+        if name.startswith("GRADSKA OPŠTINA"):
+            part.add(s.municipality_code)
+        elif name.startswith("GRAD "):
+            city.add(s.municipality_code)
+        m = re.match(r"^(\S+)-\S", s.municipality)
+        if m:
+            by_name[s.municipality_code] = municipality_key(m.group(1))
+            part.add(s.municipality_code)
+        last = (s.district or "").split("/")[-1]
+        if latin(last).upper().startswith("GRAD "):
+            by_name.setdefault(s.municipality_code, municipality_key(last))
+            part.add(s.municipality_code)
+        if "/" in (s.district_code or ""):  # an administrative district, not only a region
+            district[s.municipality_code] = s.district_code
+    out: dict[str, tuple[str, str]] = {code: ("name", key) for code, key in by_name.items()}
+    cities_in: dict[str, list[str]] = {}
+    for code in city:
+        if code in district:
+            cities_in.setdefault(district[code], []).append(code)
+    for code in part - set(out) - city:
+        found = cities_in.get(district.get(code, ""), [])
+        if len(found) == 1:
+            out[code] = ("code", found[0])
+    return out
+
+
+def _grouped(store: dict, key_of) -> dict[str, list[dict]]:
     grouped: dict[str, dict[str, list]] = {}
     for d in store.get("docs", {}).values():
-        if not d.get("m") or not d.get("u"):
+        key = key_of(d)
+        if not key or not d.get("u"):
             continue
         when = datetime.fromtimestamp(int(d["t"]), tz=BELGRADE) if (d.get("t") or "").isdigit() else None
         url = d["u"] if d["u"].startswith("http") else RIK_PUBLIC.rstrip("/") + d["u"]
-        grouped.setdefault(d["m"], {}).setdefault(d.get("c") or "other", []).append((when, url))
+        grouped.setdefault(key, {}).setdefault(d.get("c") or "other", []).append((when, url))
     out = {}
     for code, kinds in grouped.items():
         rows = []

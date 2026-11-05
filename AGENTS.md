@@ -59,7 +59,8 @@ These are the project's promises to its readers. Never change them without the m
 - **Each derived store keeps only what a page needs.** None of them holds a name:
   - `boards.json`: per decision, the station, kind, link, address, and whether each list appointed a member.
   - `documents.json`: label, link and upload time of every station document in RIK's register of minutes.
-  - `commission.json`: link, RIK's kind and the day, for the municipal commissions' documents.
+  - `commission.json`: link, RIK's kind and the day, for the municipal commissions' documents; for a document RIK
+    lists under a city the results don't have (Niš, Belgrade), RIK's name of that city.
   - `observers.json`: the OCR numbers only.
   - `observer_reviews.csv`: what a person found in an observers' record.
 - **Stations are keyed `municipality code/number` per round.** Municipality codes are stable across elections,
@@ -95,7 +96,8 @@ These are the project's promises to its readers. Never change them without the m
 - **Registers are read incrementally:**
   - The register of minutes is re-read only when a cheap count per document kind changed.
   - The register of additional documents is read newest first, stopping at the first page with nothing new.
-  - A full pass happens only when a store lacks something, for example the decisions' links.
+  - A full pass happens only when a store lacks something, for example the decisions' links, or the cities' names
+    in the commissions' store (`commission.needs_reading`).
 - **Time windows after election day:**
   - The register of minutes: daily for 14 days, then on Mondays until 60 days.
   - Board decisions: until 14 days, since they are appointed before election day.
@@ -259,7 +261,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
     are highlighted by absolute rules (something missing, a median over 12 hours, minutes after a day, changes), not
     by rank, so no municipality is marked only for being slower than others. A commission with no document isn't
     marked: RIK lists a city commission's documents under the city (Niš's, for its five city municipalities; the
-    Belgrade city election of 2024), which the results don't have, so they are counted apart. Hours come from the
+    Belgrade city election of 2024), which the results don't have. At the maintainer's request they are shown with
+    the city's municipalities ("+ city's"), apart from their own: the store keeps RIK's name of such a city, after
+    one full pass of the register per election, and `commission.city_parts` joins a city to its city
+    municipalities by every election's names ("Ниш-Медијана") and districts ("Град Београд"), or, where the city
+    has a code, to the city municipality of its district (Kostolac to Požarevac, Sevojno to Užice). Vranjska Banja
+    (2023 only, with no district in that file) stays alone. Hours come from the
     upload stamp in each document's link: the register of minutes shows the same time for almost every document,
     but days later for some (Bačka Palanka 2023: register 20 Dec, files 18 Dec). Abroad and prisons are left out
     (RIK runs them). Explore gained the same hours as a measure, a median per municipality.

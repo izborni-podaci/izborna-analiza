@@ -148,17 +148,42 @@ class Site:
                 by_code[s.municipality_code].append(s)
             close = publishing.closing(self.dates[rid] or "")
             board = self.board_docs_of(rid)
-            cdocs, unplaced = None, 0
+            cdocs = city = None
+            city_n = unplaced = 0
             if commission.path(self.archive.dir(rid)).exists():
                 cdocs = {code: sum(len(g["docs"]) for g in groups) for code, groups in self.commission_of(rid).items()}
-                unplaced = sum(1 for d in commission.load_store(self.archive.dir(rid)).get("docs", {}).values()
-                               if d.get("m") not in self.mun_rows[rid])
+                by_city, city_n, unplaced = self.city_docs_of(rid)
+                city = {code: v["n"] for code, v in by_city.items()}
             changed = {key for key, flags in self.flagged[rid].items() if any(f.check.group == "change" for f in flags)}
             rows = publishing.rows(list(self.mun_rows[rid].values()), by_code, a.documents, close, board or None, cdocs,
-                                   changed)
+                                   changed, city)
             self.publishing_cache[rid] = (rows, publishing.summary(rows, a.documents, a.round.stations, close,
-                                                                   unplaced))
+                                                                   unplaced, city_n))
         return self.publishing_cache[rid]
+
+    def city_docs_of(self, rid: str) -> tuple[dict, int, int]:
+        """Per city municipality, its city's commission's documents in this round (commission.city_parts): those RIK
+        lists under a city the results don't have (Niš), or the city's own (Požarevac's for Kostolac); then how many
+        documents RIK lists under such cities, each once, and how many under a name no municipality takes."""
+        if rid not in self.city_cache:
+            store = commission.load_store(self.archive.dir(rid))
+            cities, own = commission.by_city(store), self.commission_of(rid)
+            out, used = {}, set()
+            for code in self.mun_rows[rid]:
+                kind, key = self.city_parts.get(code, ("", ""))
+                if kind == "name" and key in cities:
+                    out[code] = {"name": cities[key]["name"], "groups": cities[key]["groups"]}
+                    used.add(key)
+                elif kind == "code" and own.get(key):
+                    newest = self.mun_rows[self.mun_rounds[key][0]][key]["name"] if self.mun_rounds.get(key) else key
+                    out[code] = {"name": self.mun_rows[rid].get(key, {}).get("name") or newest, "groups": own[key]}
+            for v in out.values():
+                v["name"] = re.sub(r"^Град\s+", "", v["name"])
+                v["n"] = commission.count(v["groups"])
+            unplaced = sum(1 for d in store.get("docs", {}).values() if d.get("m") not in self.mun_rows[rid]
+                           and not (not d.get("m") and d.get("n") and boards.municipality_key(d["n"]) in used))
+            self.city_cache[rid] = (out, sum(commission.count(cities[k]["groups"]) for k in used), unplaced)
+        return self.city_cache[rid]
 
     def board_docs_of(self, rid: str) -> dict:
         """Per station key, its decisions on the polling board (appointments and changes), to link."""
@@ -170,7 +195,8 @@ class Site:
         remarks, rulings), the decisions on polling boards and the electoral commissions' documents."""
         return (sum(len(d) for d in self.analyses[rid].documents.values())
                 + sum(len(d) for d in self.board_docs_of(rid).values())
-                + sum(len(g["docs"]) for groups in self.commission_of(rid).values() for g in groups))
+                + sum(len(g["docs"]) for groups in self.commission_of(rid).values() for g in groups)
+                + self.city_docs_of(rid)[1])
 
     def home_data(self, latest: Analysis | None) -> dict:
         """What the home page shows besides the cards: the archive in numbers, whether the latest election has
@@ -210,11 +236,14 @@ class Site:
         rows = []
         for code, rids in self.mun_rounds.items():
             newest = self.mun_rows[rids[0]][code]
-            crid = next((r for r in rids if self.commission_of(r).get(code)), None)
+            def docs_in(r: str) -> int:  # its commission's, or its city's commission's, documents
+                return (commission.count(self.commission_of(r).get(code, []))
+                        + self.city_docs_of(r)[0].get(code, {}).get("n", 0))
+            crid = next((r for r in rids if docs_in(r)), None)
             last = self.rids[-1]  # the archive's newest election: named only where a row refers to another one
             rows.append({"code": code, "name": newest["name"], "n": len(rids), "stations": newest["stations"],
                          "latest": self.shorts[loc][rids[0]] if rids[0] != last else "", "crid": crid,
-                         "cdocs": sum(len(g["docs"]) for g in self.commission_of(crid)[code]) if crid else 0,
+                         "cdocs": docs_in(crid) if crid else 0,
                          "cshort": self.shorts[loc][crid] if crid and crid != last else ""})
         rows.sort(key=lambda r: collate(latin(r["name"]) if loc == "en" else r["name"], loc))
         return rows
@@ -290,6 +319,7 @@ class Site:
                 if self.notes_dir:
                     files.append(Path(self.notes_dir) / f"{r}.csv")
             links = hashlib.sha256("|".join(self.st_path(rid, s.key) for s in self.analyses[rid].round.stations).encode())
+            links.update(repr(sorted(self.city_parts.items())).encode())  # from every election, later ones too
             self.round_keys[rid] = file_digest(*files) + links.hexdigest()
         return self.round_keys[rid]
 
@@ -643,6 +673,8 @@ class Site:
         self.board_docs_cache: dict = {}
         self.commission_cache: dict = {}
         self.publishing_cache: dict = {}
+        self.city_cache: dict = {}
+        self.city_parts: dict = {}
         rids = self.archive.round_ids()
         for rid in rids:
             self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, self.cache)
@@ -690,6 +722,8 @@ class Site:
             for code in self.mun_rows[rid]:
                 self.mun_rounds[code].append(rid)
             self.peers[rid] = peer_values(a.round, self.mun_rows[rid])
+        # which city municipalities belong to a city, from every election's names and districts
+        self.city_parts = commission.city_parts(s for a in rounds for s in a.round.stations)
         top = max(overall["counts"].values(), default=0) or 1
         appear = [{"code": c.code, "group": c.group, "n": overall["counts"][c.code],
                    "w": 100 * overall["counts"][c.code] / top}
@@ -700,6 +734,7 @@ class Site:
         for rid in rids:  # loaded once here, before the languages are written side by side
             self.ctrl_of(rid)
             self.commission_of(rid)
+            self.city_docs_of(rid)
             self.publishing_of(rid)
         home = self.home_data(rounds[0] if rounds else None)
 
@@ -889,7 +924,8 @@ class Site:
             mres, top, by_st = vote_view(a.round.contestants, votes, a.totals, [s for s in sts if s.counted])
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
                        mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st,
-                       cdocs=self.commission_of(rid).get(m["code"], []), **common)
+                       cdocs=self.commission_of(rid).get(m["code"], []),
+                       citydocs=self.city_docs_of(rid)[0].get(m["code"]), **common)
 
 
 def _write_pages(site: Site, job, send) -> None:

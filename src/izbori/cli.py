@@ -463,8 +463,9 @@ def cmd_documents(args) -> int:
         return age <= 14 or (date >= recent and now.weekday() == 0)
 
     ids = [args.round] if args.round else [r for r in archive.round_ids() if args.all or due(r)]
-    # the commissions' documents of a round never read (once each, also for older rounds)
-    missing = [r for r in archive.round_ids() if r not in ids and not commission.path(archive.dir(r)).exists()]
+    # the commissions' documents of a round never read whole, or read before the cities' names were kept (once each,
+    # also for older rounds)
+    missing = [r for r in archive.round_ids() if r not in ids and commission.needs_reading(archive.dir(r))]
     if not ids and not missing:
         log("no round due: nothing is asked of RIK")
     changed = []
