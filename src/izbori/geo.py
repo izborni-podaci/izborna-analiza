@@ -108,10 +108,14 @@ def features(data: dict) -> list[dict]:
     return [best[code][1] for code in sorted(best)]
 
 
-def write(path: Path, feats: list[dict], fetched: str) -> None:
-    """The boundaries as GeoJSON, one feature per line so git keeps a small diff when a few change."""
-    head = {"type": "FeatureCollection", "attribution": ATTRIBUTION, "license": LICENSE,
-            "source": f"OpenStreetMap through the Overpass API, {fetched}"}
+def write(path: Path, feats: list[dict], fetched: str = "", source: str = "") -> None:
+    """The boundaries as GeoJSON, one feature per line so git keeps a small diff when a few change. Those of
+    Kosovo and Metohija come from another dataset, which the attribution and licence then name too."""
+    kim = any(f["properties"].get("source") == "ELWar" for f in feats)
+    head = {"type": "FeatureCollection",
+            "attribution": ATTRIBUTION + (f"; Kosovo and Metohija: {KIM_SOURCE}" if kim else ""),
+            "license": LICENSE + (f"; Kosovo and Metohija: {KIM_LICENSE}" if kim else ""),
+            "source": source or f"OpenStreetMap through the Overpass API, {fetched}"}
     lines = [json.dumps(f, ensure_ascii=False, separators=(",", ":")) for f in feats]
     text = json.dumps(head, ensure_ascii=False)[:-1] + ', "features": [\n' + ",\n".join(lines) + "\n]}\n"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -181,7 +185,7 @@ def kim_archive(log=print) -> bytes:
     raise RuntimeError("the dataset's zip wasn't found on its page")
 
 
-def inspect(data: bytes, log=print, pattern: str = r"(199[0-9]|kos|ks|srb|ser|scg|fry|yug)") -> None:
+def inspect(data: bytes, log=print, pattern: str = r"(KOS|XK|SRB|SCG|YUG)[^/]*/(1991|1998|1999|2000|2020)\.dbf$") -> None:
     """What the archive holds: every file, and for the layers that may cover Kosovo in the 1990s, their fields,
     coordinate system and the first records (municipality names only, which are public)."""
     import io
@@ -198,8 +202,13 @@ def inspect(data: bytes, log=print, pattern: str = r"(199[0-9]|kos|ks|srb|ser|sc
                 yield name, info.file_size, (lambda zf=zf, info=info: zf.read(info))
     files = list(walk(zipfile.ZipFile(io.BytesIO(data))))
     log(f"{len(files)} files")
-    for name, size, _ in files[:400]:
-        log(f"  {size:>10} {name}")
+    folders: dict[str, list[str]] = {}
+    for name, size, _ in files:
+        folder, _, leaf = name.rpartition("/")
+        folders.setdefault(folder, []).append(leaf)
+    for folder, leaves in sorted(folders.items()):
+        layers = sorted({leaf.rsplit(".", 1)[0] for leaf in leaves if leaf})
+        log(f"  {folder}: {len(leaves)} files, layers {layers[:3]} … {layers[-3:]}")
     read = {name: get_ for name, _, get_ in files}
     shown = 0
     for name, _, get_ in files:
@@ -214,3 +223,76 @@ def inspect(data: bytes, log=print, pattern: str = r"(199[0-9]|kos|ks|srb|ser|sc
         log(f"  prj: {prj[:300]!r}")
         for rec in rdr.records()[:400]:
             log("  | " + " | ".join(str(v) for v in rec))
+
+
+def _key(name: str) -> str:
+    """A municipality's name for comparing across spellings and scripts."""
+    import unicodedata
+
+    from izbori.translit import latin
+    s = unicodedata.normalize("NFD", latin(name).upper().replace("Đ", "DJ"))
+    return "".join(ch for ch in s if ch.isalnum() and not unicodedata.combining(ch))
+
+
+# RIK's name → the dataset's, where they differ (filled in from the dataset's own names, as logged)
+KIM_ALIASES: dict[str, str] = {}
+
+
+def kim_features(data: bytes, wanted: dict[str, str], years=("1999", "1998"), log=print) -> list[dict]:
+    """Boundaries for the wanted municipalities ({code: RIK's name}) from the dataset's layers of Kosovo or Serbia
+    for the last years before 1 July 2000, when Kosovo's municipalities were redrawn: RIK's division. Matched by
+    name; each kept with its RIK code, simplified as the OpenStreetMap ones are."""
+    import io
+    import zipfile
+
+    import shapefile  # pyshp, only for this command
+    from shapely import set_precision
+    from shapely.geometry import mapping, shape
+    from shapely.ops import unary_union
+
+    zf = zipfile.ZipFile(io.BytesIO(data))
+    want = {_key(KIM_ALIASES.get(name, name)): code for code, name in wanted.items()}
+    best: tuple[int, str, dict] = (-1, "", {})
+    for year in years:
+        for n in zf.namelist():
+            m = re.match(r"(.*/(?:KOS|XK|SRB|SCG|YUG)[^/]*)/" + year + r"\.dbf$", n, re.I)
+            if not m:
+                continue
+            base = n[:-4]
+            cpg = next((zf.read(x).decode().strip() for x in zf.namelist() if x.lower() == (base + ".cpg").lower()),
+                       "utf-8")
+            rdr = shapefile.Reader(shp=io.BytesIO(zf.read(base + ".shp")), shx=io.BytesIO(zf.read(base + ".shx")),
+                                   dbf=io.BytesIO(zf.read(n)), encoding=cpg or "utf-8")
+            fields = [f[0] for f in rdr.fields[1:]]
+            name_field = next((f for f in fields if f.upper().startswith("MUNIC")), fields[-1])
+            found: dict[str, list] = {}
+            for sr in rdr.iterShapeRecords():
+                code = want.get(_key(str(sr.record[name_field])))
+                if code:
+                    found.setdefault(code, []).append(shape(sr.shape.__geo_interface__))
+            log(f"{base}: {len(rdr)} municipalities, {len(found)} of the {len(want)} wanted")
+            if len(found) > best[0]:
+                best = (len(found), base, found)
+    count, base, found = best
+    if count <= 0:
+        return []
+    rdr_names = []
+    missing = sorted(name for code, name in wanted.items() if code not in found)
+    if missing:
+        log(f"not in {base}: {missing}")
+        zfn = base + ".dbf"
+        rdr = shapefile.Reader(dbf=io.BytesIO(zf.read(zfn)))
+        rdr_names = sorted(str(r[-1]) for r in rdr.records())
+        log(f"the layer's names: {rdr_names}")
+    feats = []
+    for code in sorted(found):
+        area = unary_union(found[code])
+        area = set_precision(area.simplify(TOLERANCE, preserve_topology=True), 10 ** -DIGITS)
+        if area.is_empty:
+            continue
+        g = mapping(area)
+        feats.append({"type": "Feature", "properties": {"code": code, "name": wanted[code], "level": "",
+                                                         "source": "ELWar"},
+                      "geometry": {"type": g["type"], "coordinates": _round(g["coordinates"])}})
+    log(f"{len(feats)} boundaries in RIK's division from {base}")
+    return feats

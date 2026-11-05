@@ -409,14 +409,29 @@ def cmd_geo(args) -> int:
         return 0
     archive = Archive(args.data)
     out = Path(args.out) if args.out else Path(args.data) / "geo" / "municipalities.json"
-    data = geo.fetch()
-    feats = geo.features(data)
-    geo.write(out, feats, now_iso()[:10])
-    have = {f["properties"]["code"] for f in feats}
     names: dict[str, str] = {}
-    for rid in archive.round_ids():
+    for rid in reversed(archive.round_ids()):  # each municipality by its newest name
         for s in archive.load(rid).stations:
             names.setdefault(s.municipality_code, s.municipality)
+    old = (geo.load(out) or {}).get("features", [])
+    if args.kim:  # Kosovo and Metohija in RIK's division (codes 9xxxx), into the boundaries already kept
+        kim = geo.kim_features(geo.kim_archive(log), {c: n for c, n in names.items() if c.startswith("9")}, log=log)
+        if not kim:
+            log("no boundaries for Kosovo and Metohija: nothing written")
+            return 1
+        new = {f["properties"]["code"] for f in kim}
+        current = geo.load(out) or {}
+        geo.write(out, [f for f in old if f["properties"]["code"] not in new] + kim, source=current.get("source", ""))
+        if args.commit and commit([str(out)], "Data: Kosovo and Metohija's municipal boundaries, in RIK's division"):
+            if args.push and push() and args.dispatch_pages:
+                dispatch_pages()
+        return 0
+    data = geo.fetch()
+    feats = geo.features(data)
+    have = {f["properties"]["code"] for f in feats}
+    kept = [f for f in old if f["properties"].get("source") == "ELWar" and f["properties"]["code"] not in have]
+    geo.write(out, feats + kept, now_iso()[:10])  # an OpenStreetMap refresh keeps Kosovo and Metohija's
+    have |= {f["properties"]["code"] for f in kept}
     missing = sorted(code for code in names if code not in have)
     log(f"{len(feats)} boundaries; {len(names) - len(missing)} of the archive's {len(names)} municipalities have one")
     for code in missing:
@@ -724,6 +739,8 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--commit", action="store_true")
     g.add_argument("--push", action="store_true")
     g.add_argument("--dispatch-pages", action="store_true")
+    g.add_argument("--kim", action="store_true",
+                   help="add Kosovo and Metohija's municipalities in RIK's division (needs pyshp and shapely)")
     g.add_argument("--kim-inspect", action="store_true",
                    help="list what the dataset of Kosovo's municipalities in RIK's division holds (needs pyshp)")
     g.set_defaults(fn=cmd_geo)

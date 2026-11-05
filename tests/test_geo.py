@@ -42,3 +42,39 @@ def test_relations_become_areas_by_code(tmp_path):
     assert back["attribution"] == "© OpenStreetMap contributors" and "ODbL" in back["license"]
     assert [f["properties"]["code"] for f in back["features"]] == ["71242", "80012"]
     assert out.read_text(encoding="utf-8").count("\n") == len(feats) + 2  # one feature per line
+
+
+def test_kosovo_in_rik_s_division_by_name(tmp_path):
+    """Kosovo and Metohija's municipalities come from a dataset of the municipalities of Yugoslavia's successor
+    states, by year: the layer of the last year before they were redrawn, joined to RIK's codes by name."""
+    import io
+    import zipfile
+
+    shapefile = pytest.importorskip("shapefile")
+
+    def layer(names):
+        shp, shx, dbf = io.BytesIO(), io.BytesIO(), io.BytesIO()
+        w = shapefile.Writer(shp=shp, shx=shx, dbf=dbf, shapeType=shapefile.POLYGON)
+        w.field("CODE", "C")
+        w.field("MUNICIPALI", "C")
+        for k, name in enumerate(names):
+            x = 20 + k * 0.2
+            w.poly([[[x, 42], [x, 42.1], [x + 0.1, 42.1], [x + 0.1, 42], [x, 42]]])
+            w.record(f"KOS_{k:03}", name)
+        w.close()
+        return shp.getvalue(), shx.getvalue(), dbf.getvalue()
+
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, "w") as z:
+        for year, names in (("1999", ["Gora", "Kosovska Mitrovica", "Peć"]), ("2001", ["Dragash", "Mitrovicë"])):
+            shp, shx, dbf = layer(names)
+            for ext, body in (("shp", shp), ("shx", shx), ("dbf", dbf), ("cpg", b"UTF-8")):
+                z.writestr(f"ELWar_GESIS/KOS_1992-2020/{year}.{ext}", body)
+    wanted = {"90336": "Гора", "90298": "Косовска Митровица", "90239": "Пећ", "90263": "Приштина"}
+    feats = geo.kim_features(archive.getvalue(), wanted, log=lambda m: None)
+    assert [f["properties"]["code"] for f in feats] == ["90239", "90298", "90336"]  # Priština isn't in the layer
+    assert all(f["properties"]["source"] == "ELWar" for f in feats)
+    out = tmp_path / "municipalities.json"
+    geo.write(out, feats, source="kept")
+    back = json.loads(out.read_text(encoding="utf-8"))
+    assert "Glaurdić" in back["attribution"] and "CC BY 4.0" in back["license"] and back["source"] == "kept"

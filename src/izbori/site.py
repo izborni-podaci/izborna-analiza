@@ -413,8 +413,11 @@ class Site:
     def map_of(self, boundaries: dict) -> dict:
         """The boundaries of the municipalities RIK counts by, joined by code. A city whose city municipalities RIK
         counts one by one (Belgrade, Niš and others) has its own boundary in OpenStreetMap too; RIK never uses its
-        code, so it is left out rather than drawn over its parts. Names come from RIK, in the page's language."""
-        feats = [{"type": "Feature", "properties": {"code": f["properties"]["code"]}, "geometry": f["geometry"]}
+        code, so it is left out rather than drawn over its parts. Kosovo and Metohija's, in RIK's division, come from
+        another dataset, which the map then credits too (kim). Names come from RIK, in the page's language."""
+        feats = [{"type": "Feature", "properties": {"code": f["properties"]["code"],
+                                                    **({"kim": 1} if f["properties"].get("source") == "ELWar" else {})},
+                  "geometry": f["geometry"]}
                  for f in boundaries.get("features", []) if f["properties"].get("code") in self.mun_rounds]
         return {"type": "FeatureCollection", "attribution": boundaries.get("attribution", ""),
                 "license": boundaries.get("license", ""), "source": boundaries.get("source", ""), "features": feats}

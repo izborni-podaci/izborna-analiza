@@ -990,8 +990,11 @@
       }
       leg += `<rect x="${nb * bw + 14}" y="${y0 + 18}" width="${bw - 2}" height="12" fill="${C.grid}"/>`
         + text(nb * bw + 14, y0 + 44, t('ex_nodata'), `fill="${C.ink2}" font-size="11"`);
-      const attr = text(W, y0 + 66, t('ex_attribution'), `text-anchor="end" fill="${C.ink2}" font-size="10"`);
-      fig.innerHTML = `${svgOpen(W, y0 + 72, title)}<g>${paths}</g>${leg}${attr}</svg>`;
+      // the sources of what is drawn, so a downloaded map credits them; the second only when it draws from it
+      const kim = shown.some((f) => f.properties.kim);
+      const attr = text(W, y0 + 66, t('ex_attribution'), `text-anchor="end" fill="${C.ink2}" font-size="10"`)
+        + (kim ? text(W, y0 + 80, t('ex_attribution_kim'), `text-anchor="end" fill="${C.ink2}" font-size="10"`) : '');
+      fig.innerHTML = `${svgOpen(W, y0 + (kim ? 86 : 72), title)}<g>${paths}</g>${leg}${attr}</svg>`;
       svg = true;
       const off = rows.filter((r) => !shown.some((f) => f.properties.code === r.code)).map((r) => munName(r.code, d));
       if (off.length) {
