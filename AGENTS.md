@@ -183,10 +183,13 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 ## Known issues and open decisions
 
 - **Custom domain and hosting:** set aside until it is clear how useful the site is; GitHub Pages meanwhile.
-- **Belgrade 2024 decisions on polling boards (round 567956):** 127 of 129 are listed under "Београд" with a station
-  number, while the results number stations within each city municipality. Since 5 Nov 2026 the station's name
-  places them (by district), but the round hasn't been re-indexed yet (`boards --round 567956 --reindex
-  --retry-unparsed`); its 17 decisions on the extended composition were unreadable by the earlier parser.
+- **Belgrade 2024 decisions on polling boards (round 567956):** RIK's register holds only 129 decisions for its
+  1,265 stations, listed under "Београд"; the station's name places them by district since 5 Nov 2026, and its 17
+  decisions on the extended composition now read. The rest were never published there.
+- **Despotovac and Ub 2023 (round 341140):** their decisions on the extended composition (44 and 51) are tables,
+  people in one column and lists in the other, which OCR interleaves line by line. Ub's rows give the list's
+  ballot number ("члан 6"), but no rule tells an empty name cell from a filled one, and Despotovac's don't even say
+  which list a member belongs to: they stay unread rather than guessed (masked layouts in boards run 42106667607).
 
 ## Decisions log
 
@@ -240,4 +243,5 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   of Kostolac and Sevojno added to Požarevac and Užice by number (a bug), and 43 never published. The parser
   learnt three layouts and decisions are placed by the station's name; `--reindex` applies it to what was read.
   After the re-index, 8,345 of 2026's 8,392 stations have their controllers known (7,642 before); of the 47 left,
-  43 have no decision in RIK's register (37 in Kosovo and Metohija) and 4 are unreadable.
+  43 have no decision in RIK's register (37 in Kosovo and Metohija) and 4 are unreadable. The 2023 elections were
+  re-indexed and re-read too: parliamentary 8,120 of 8,273 (7,269 before), provincial 1,771 of 1,776 (1,621).
