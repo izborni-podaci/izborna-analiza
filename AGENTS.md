@@ -111,6 +111,12 @@ These are the project's promises to its readers. Never change them without the m
   - The workflow reads in four jobs at once (about 1,600 decisions an hour each): `--plan` lists what to read,
     `--read --shard I/4` reads one share, `--merge` keeps everything and commits once. The plan and the parts are
     workflow artifacts, so they hold no names either.
+  - Layouts: the numbered parser ("1. члан:", "1) члан:") goes first, so nothing that read before changes; the
+    unnumbered one (`_unnumbered`) takes over only where it finds no slot. A new layout comes from the masked
+    layouts the read jobs log (`--diagnose`), never from a decision's text with names.
+  - Placement (`Placer`): by municipality and number, and where the register's station name disagrees with the
+    results, by that name among the city municipalities of the same district, or among municipalities whose name
+    in any election contains the register's. Nothing placed under its own name moves (checked on all of 2026).
 - **Observers' records (RG-11)** are read by a person. OCR only orders the review list:
   - The score is the ink and words between "… су следеће:" and "(примедбе уписује …)". Each column of a landscape
     page is read on its own, and printed rules are left out by the length of their dark runs.
@@ -159,7 +165,7 @@ These are the project's promises to its readers. Never change them without the m
 | boards | daily, until 14 days after election day | decisions on polling boards: plan, four OCR jobs, merge (one commit) |
 | observers | daily, until 60 days after election day | OCR score of observers' records |
 | pages | on push | incremental site build and deploy |
-| geo | by hand | municipal boundaries from OpenStreetMap (Overpass), for the Explore map |
+| geo | by hand | municipal boundaries from OpenStreetMap (Overpass); with kim, Kosovo and Metohija in RIK's division |
 | test | on push | the whole test suite |
 
 A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow run`). That is how data runs start
@@ -179,9 +185,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 - **Belgrade 2024 decisions on polling boards (round 567956):** 127 of 129 are listed under "Београд" with a station
   number, while the results number stations within each city municipality, so they can't be placed. All 17
   decisions on the extended composition are unreadable by the current parser. The round is small and in the past.
-- **Kosovo and Metohija on the Explore map:** the maintainer wants them by RIK's municipalities. OpenStreetMap
-  doesn't follow that division there; RGZ's register of spatial units does (opendata.geosrbija.rs, free
-  account), so it waits for a maintainer to download the layer. Until then the map names them below it.
 
 ## Decisions log
 
@@ -226,3 +229,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   every list alike; OpenStreetMap's boundaries; Kosovo and Metohija by RIK's municipalities (pending RGZ's data).
   An earlier session had started a "Compare" page (the `geo` command and its data); the work continued as this
   page, and that session's unfinished strings and nav link were replaced.
+- **5 Nov 2026, later:** Kosovo and Metohija are on the map in RIK's division, from Glaurdić et al. (2021, CC BY
+  4.0), the 1999 layer, joined by name (either of the dataset's two names; Gora is the municipality seated in
+  Dragaš). RGZ's register would have needed an account, and OpenStreetMap follows Kosovo's division since 2000.
+  The map's classes hold equal numbers of municipalities, as the province's turnout squeezed equal steps.
+  The maintainer asked why so many board decisions were missing (750 of 8,392 stations in 2026): unreadable
+  layouts (371), decisions listed under a city or a name the results don't use (319: Niš, abroad, prisons), 17
+  of Kostolac and Sevojno added to Požarevac and Užice by number (a bug), and 43 never published. The parser
+  learnt three layouts and decisions are placed by the station's name; `--reindex` applies it to what was read.

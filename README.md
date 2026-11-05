@@ -157,6 +157,18 @@ the names or left blank. RIK publishes them in its register of decisions on poll
 3. keeps, for each polling station, the address and, for each list, whether it appointed a member and a deputy;
 4. never stores or logs names. An address is checked before it is kept: a member's line read where the address should be is dropped.
 
+How a decision is read: members numbered "1. члан:" or "1) члан:" first; failing that, the layouts some whole
+municipalities use: unnumbered entries, each role naming its list ("- члан: … на предлог … листе X"), or each list
+first with its people under it ("На предлог … листе X: члан: …, заменик члана: …"). Only filled in or empty is
+kept for each list.
+
+Where a decision goes: the register names the municipality and gives the station's number and name. A city's
+commission may list its city municipalities' stations under the city (Kostolac's under Požarevac and Sevojno's
+under Užice in 2026), each numbered within its own municipality, or under a name the results don't use (Niš). The
+station's name then says which: the same number and name in a city municipality of the same district, or in a
+municipality whose name in any archived election contains the register's. `--reindex` places every decision
+again after these rules change; the plan logs what was placed how and what wasn't, naming municipalities only.
+
 The workflow splits the reading so that four jobs read at once, about four times faster (a whole election's 8,700 decisions in about an hour and a half instead of five and a half): `--plan plan.json` indexes the register and lists what to read; four jobs each run `--read plan.json --shard I/4 --out part-I.json`; `--merge plan.json part-*.json` keeps the index and every part in the round's store and commits once. Run without these, `izbori boards` does all three in one process.
 
 The site then shows, for each list, at how many stations it has a member, and on each station's row which
@@ -219,7 +231,8 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
   - Measures, the same for every list: turnout, invalid ballots, a chosen list's share, the largest share of any list, registered voters, voters, signatures minus ballots in the box, flagged, whether a chosen list had a controller (member or deputy of the extended composition), the observers' record. No list is ever chosen for the reader; after another election is picked, the reader chooses the list again.
   - Filters: municipality; stations in the country, abroad or in prisons; at least so many registered voters; flags (any, none, one group); a list's controller; the observers' record; a range of the measure. They apply to each election's own stations; the controller filter only to the chosen election, whose lists it names.
   - Ready-made analyses are plain links. Every analysis is in the address (`#v=…&r=…`), downloads as CSV (UTF-8 with a BOM, a link per row) and, for a chart, as SVG with its title and source. Clicking a cell, bar, point or municipality lists its stations.
-  - The map's boundaries are OpenStreetMap's (ODbL, credited on the map), joined to RIK's municipalities by code; a city RIK counts by its city municipalities (Belgrade, Niš and others) isn't drawn over them. Kosovo and Metohija aren't on the map yet (see Open items), but they are in the tables and the CSV.
+  - The map's boundaries are OpenStreetMap's (ODbL, credited on the map), joined to RIK's municipalities by code; a city RIK counts by its city municipalities (Belgrade, Niš and others) isn't drawn over them. Kosovo and Metohija are drawn in RIK's division, which OpenStreetMap doesn't follow there, from Glaurdić et al. (2021, CC BY 4.0, credited on the map when drawn), as of 1999; the province's municipalities with no station in any archived election are grey and say so.
+  - The map's seven classes each hold about as many municipalities, at round limits, so a few far values (the province's low turnout) don't squeeze the rest into two colours.
 - **Round:** totals, results, seats or the majority, statistics for the whole round, and municipalities.
 - **To check:** every flagged station. Filter by municipality and flag type, or a whole group of flags (`#g-paper` and the like in the address). Each flag shows its rule, its numbers and RIK's minutes.
 - **Municipality:** every station, with its numbers, flags, minutes and notes.
@@ -266,7 +279,8 @@ data/places.csv                   manual corrections to how stations are followe
 data/elections.csv                election days entered by hand once an election is called
 data/looks.json                   when RIK was last asked (results, settled rounds, daily re-download)
 data/mail.json                    email state: pending flags, time of the last message
-data/geo/municipalities.json      municipal boundaries from OpenStreetMap (ODbL), by RIK's municipality code
+data/geo/municipalities.json      municipal boundaries by RIK's municipality code: OpenStreetMap (ODbL); Kosovo and
+                                  Metohija in RIK's division from Glaurdić et al. 2021 (CC BY 4.0)
 data/rounds/<id>/meta.json        type, title, English title, election day, contestants (name, short
                                   name, minority status), seat rules
 data/rounds/<id>/results.csv      latest file exactly as downloaded; git history keeps every version
@@ -325,6 +339,8 @@ uv run izbori observers --station 70017/50 --diagnose 1 --layout   # what OCR fo
 uv run izbori site --out _site            # build the site
 uv run izbori site --out _site --incremental   # render only what changed since the last build
 uv run --with shapely izbori geo          # municipal boundaries from OpenStreetMap (the geo workflow, by hand)
+uv run --with shapely --with pyshp izbori geo --kim   # Kosovo and Metohija in RIK's division, into the same file
+uv run izbori boards --round 680072 --reindex --retry-unparsed   # place and read every decision again
 uv run izbori targets --out targets.csv --html targets.html   # private: never commit or post
 uv run pytest
 ```
@@ -353,7 +369,7 @@ src/izbori/
   schedule.py   when to ask RIK, by the election calendar
   commission.py the municipal electoral commissions' documents from RIK's register
   narrative.py  the sentences at the top of the pages across elections
-  geo.py        municipal boundaries from OpenStreetMap, for the Explore page's map
+  geo.py        municipal boundaries for the Explore page's map: OpenStreetMap, and Kosovo and Metohija in RIK's division
   notes.py      news notes
   targets.py    private ranking
   feed.py       Atom feeds
@@ -413,9 +429,6 @@ The tests use the archived 2026 files and small made-up files. They check that t
   - RIK's system carried Belgrade's 2024 city vote. Other towns publish through their own commissions.
   - Next steps: check how Novi Sad, Niš and Kragujevac published in 2024, write readers for those towns first, then add the towns observer groups ask for.
   - Assembly sizes and seat rules go in each round's `meta.json`.
-- **Kosovo and Metohija on the Explore map.** OpenStreetMap has no boundaries there in RIK's division. The
-  cadastre's (RGZ) register of spatial units has them, on opendata.geosrbija.rs, behind a free account: a
-  maintainer downloads the municipalities layer once, and `izbori geo` is extended to add those 22 codes.
 - **Older station data (2022–2024)** to compare the same stations across elections. RIK no longer serves 2023; the national open-data portal is next to check.
 
 ## License

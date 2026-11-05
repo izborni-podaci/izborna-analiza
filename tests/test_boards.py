@@ -150,7 +150,9 @@ def test_a_city_commission_s_decisions_find_their_station():
                 st("71340", "Градска општина Костолац", "1", "ДОМ КУЛТУРЕ"),
                 st("70100", "Голубац", "1", "ДОМ КУЛТУРЕ"),  # same district, not a city municipality
                 st("71331", "Градска општина Медијана", "7", 'ОШ "ЦАР КОНСТАНТИН"', "12"),
-                st("71307", "Градска општина Пантелеј", "7", 'ОШ "ЧЕГАР"', "12")]
+                st("71307", "Градска општина Пантелеј", "7", 'ОШ "ЧЕГАР"', "12"),
+                st("33000", "Иностранство", "3", "АМБАСАДА РС БЕЧ – КОНЗУЛАРНО ОДЕЉЕЊЕ", "33000"),
+                st("55001", "Заводи за извршење кривичних санкција", "3", "КПЗ ПРИМЕР", "55001")]
     codes = {municipality_key(s.municipality): s.municipality_code for s in stations}
     names = {"71331": {municipality_key("Ниш-Медијана")}, "71307": {municipality_key("Ниш-Пантелеј")}}  # 2022
     p = Placer(codes, stations, names)
@@ -162,6 +164,9 @@ def test_a_city_commission_s_decisions_find_their_station():
     assert p.place("Ниш", "7", "ДРУГА ШКОЛА") == (None, "unknown municipality")
     assert p.place("Пожаревац", "", "ДОМ") == (None, "no number")
     assert p.place("Пожаревац", "9", "ДОМ") == (None, "no such station")
+    # RIK lists the boards it appoints itself, abroad and in prisons, under its own name
+    assert p.place("РИК", "3", "АМБАСАДА РС БЕЧ - КОНЗУЛАРНО ОДЕЉЕЊЕ") == ("33000/3", "named")
+    assert p.place("РИК", "3", "КПЗ ПРИМЕР") == ("55001/3", "named")
     assert Placer(codes).place("Пожаревац", "9") == ("70947/9", "direct")  # without the results' stations, as before
 
 

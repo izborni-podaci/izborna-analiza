@@ -462,8 +462,9 @@ class Placer:
     (Kostolac's under Požarevac, Sevojno's under Užice in 2026), each numbered within its own municipality, so one
     number can belong to two stations; or under a name the results don't use ("Ниш"). The station's name says
     which: the same number with the same name in a city municipality ("Градска општина") of the same district, or
-    in a municipality whose name, in any election, contains the register's. Where nothing else fits, the decision
-    stays where the register puts it, as before."""
+    in a municipality whose name, in any election, contains the register's. RIK lists the boards it appoints itself,
+    abroad and in prisons, under its own name ("РИК"): among those stations, by number and name. Where nothing else
+    fits, the decision stays where the register puts it, as before."""
 
     def __init__(self, codes: dict[str, str], stations=(), names: dict[str, set] | None = None):
         self.codes = dict(codes)  # municipality key → code
@@ -487,8 +488,10 @@ class Placer:
         """(station key or None, how): direct, moved (to another municipality of the district), named (found by
         the register's municipality name in another one's), as listed (the names differ and nothing else fits),
         or why not: no number, no such station, unknown municipality."""
+        from izbori.model import ABROAD, PRISONS
         mkey = municipality_key(municipality)
         code = self.codes.get(mkey)
+        rik = mkey == "RIK"  # RIK's own: the boards abroad and in prisons
         if not number:
             return None, "no number"
         own = f"{code}/{number}" if code else None
@@ -498,6 +501,8 @@ class Placer:
         if name:
             def near(key: str) -> bool:
                 c = key.split("/", 1)[0]
+                if rik:
+                    return c in (ABROAD.strip("/"), PRISONS.strip("/"))
                 if code:
                     return c != code and c in self.city_part and self.district.get(c) == self.district.get(code)
                 return len(mkey) >= 3 and any(mkey in a for a in self.aliases.get(c, ()))
