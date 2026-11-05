@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import json
 import re
+import ssl
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -131,10 +133,32 @@ KIM_SOURCE = ("Glaurdić, Kaniški, Budimir, Ondrejka (2021): Spatial data of mu
 KIM_LICENSE = "CC BY 4.0, https://creativecommons.org/licenses/by/4.0/"
 
 
-def get(url: str, timeout: int = 900) -> bytes:
+def get(url: str, timeout: int = 900, context=None) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": AGENT})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=context) as r:
+            return r.read()
+    except urllib.error.URLError as e:
+        if context is not None or not isinstance(getattr(e, "reason", None), ssl.SSLCertVerificationError):
+            raise
+    return get(url, timeout, completed_chain(urllib.parse.urlsplit(url).hostname))
+
+
+def completed_chain(host: str) -> ssl.SSLContext:
+    """A context that also knows the intermediate certificate a server leaves out of its chain, fetched from the
+    address its own certificate names, as browsers do. The chain must still end at a root this system trusts:
+    partial chains stay off, so the fetched certificate is only a missing link, never a trust anchor."""
+    import tempfile
+    leaf = ssl.get_server_certificate((host, 443))
+    with tempfile.NamedTemporaryFile("w", suffix=".pem", delete=False) as f:
+        f.write(leaf)
+    issuers = ssl._ssl._test_decode_cert(f.name).get("caIssuers", ())  # noqa: SLF001 - the only decoder in ssl
+    ctx = ssl.create_default_context()
+    ctx.verify_flags &= ~getattr(ssl, "VERIFY_X509_PARTIAL_CHAIN", 0)
+    for url in issuers:
+        der = urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": AGENT}), timeout=60).read()
+        ctx.load_verify_locations(cadata=der.decode() if der.startswith(b"-----") else ssl.DER_cert_to_PEM_cert(der))
+    return ctx
 
 
 def kim_archive(log=print) -> bytes:
