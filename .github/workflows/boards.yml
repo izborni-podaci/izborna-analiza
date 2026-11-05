@@ -32,6 +32,9 @@ on:
         description: "Page through the whole register again, to place every decision by the current rules"
         type: boolean
         default: false
+      only:
+        description: "Read only these municipalities' decisions (codes, comma-separated), e.g. to see a layout"
+        default: ""
 
 permissions:
   contents: write
@@ -61,11 +64,13 @@ jobs:
           ROUND: ${{ inputs.round }}
           RETRY: ${{ inputs.retry }}
           REINDEX: ${{ inputs.reindex }}
+          ONLY: ${{ inputs.only }}
         run: |
           args=(--plan plan.json)
           [ -n "$ROUND" ] && args+=(--round "$ROUND")
           [ "$RETRY" = "true" ] && args+=(--retry-unparsed)
           [ "$REINDEX" = "true" ] && args+=(--reindex)
+          [ -n "$ONLY" ] && args+=(--only "$ONLY")
           uv run izbori boards "${args[@]}"
           if [ -f plan.json ]; then
             echo "planned=true" >> "$GITHUB_OUTPUT"

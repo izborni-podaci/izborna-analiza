@@ -316,7 +316,8 @@ def cmd_boards(args) -> int:
             boards.apply_results(store, part["results"])
             read, failed, left = read + len(part["results"]), failed + len(part["failed"]), left + part["left"]
         done = {d for part in parts for d in part["results"]}
-        store["complete"] = not failed and not left and all(d["id"] in done for d in planned["todo"])
+        store["complete"] = (not failed and not left and all(d["id"] in done for d in planned["todo"])
+                             and not planned.get("partial"))
         boards.save_store(archive.dir(rid), store)
         log(f"{rid}: {len(parts)} parts merged, {read} decisions read, failed {failed}, left {left}")
         show_boards(archive, rid, planned["contestants"], args.show)
@@ -361,7 +362,7 @@ def cmd_boards(args) -> int:
     archive.dir(rid).mkdir(parents=True, exist_ok=True)
     if args.plan:
         planned = boards.plan(archive.dir(rid), rid, int(info["type"]), stations, client, log, args.retry_unparsed,
-                              args.reindex)
+                              args.reindex, frozenset(c for c in (args.only or "").split(",") if c))
         planned["contestants"] = contestants
         Path(args.plan).write_text(json.dumps(planned, ensure_ascii=False), encoding="utf-8")
         return 0
@@ -711,6 +712,7 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--show", type=int, default=0, help="print this many station summaries (no names)")
     b.add_argument("--diagnose", type=int, default=0, help="log the masked layout of this many unreadable decisions")
     b.add_argument("--retry-unparsed", action="store_true", help="read unreadable decisions again")
+    b.add_argument("--only", metavar="CODES", help="read only these municipalities' decisions (codes, comma-separated)")
     b.add_argument("--reindex", action="store_true",
                    help="page through the whole register again, to place decisions by the current rules")
     b.add_argument("--plan", metavar="FILE", help="index the register and write what to read to FILE, then stop")

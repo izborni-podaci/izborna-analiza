@@ -565,14 +565,15 @@ def fetch_index(client, round_id: str, rik_type: int, known: frozenset = frozens
 
 
 def plan(round_dir: Path, round_id: str, rik_type: int, stations, client, log=print,
-         retry_unparsed: bool = False, reindex: bool = False) -> dict:
+         retry_unparsed: bool = False, reindex: bool = False, only: frozenset = frozenset()) -> dict:
     """Index the round's board decisions and say which to read: {"round", "whole", "index", "todo"}.
 
     The whole register is paged through unless the last run read everything and kept every decision's link, or
     with reindex (after the rules for placing decisions changed); otherwise older unread decisions (or links) deep
     in the register would be missed. `stations` is a Placer, or a dict from a municipality key (see
-    municipality_key) to its code in the results file. Nothing here holds a name of a person: the log names
-    municipalities only."""
+    municipality_key) to its code in the results file. `only` (municipality codes) keeps to those municipalities'
+    decisions what is read, as for a look at one commission's layout. Nothing here holds a name of a person: the
+    log names municipalities only."""
     from collections import Counter
     placer = stations if isinstance(stations, Placer) else Placer(stations)
     store = load_store(round_dir)
@@ -604,13 +605,16 @@ def plan(round_dir: Path, round_id: str, rik_type: int, stations, client, log=pr
                 todo.append({"id": i, "s": entry.get("s"), "station": (entry.get("s") or "/").split("/")[1],
                              "kind": "extended", "repeat": bool(entry.get("r")), "published": entry.get("t") or "",
                              "url": RIK_PUBLIC.rstrip("/") + entry["u"]})
+    if only:
+        todo = [d for d in todo if (d["s"] or "/").split("/")[0] in only]
     log(f"{len(docs)} decisions indexed, {len(todo)} to read; placed: "
         + ", ".join(f"{why} {n}" for why, n in how.most_common()))
     for (municipality, why, code), n in moved.most_common(30):  # e.g. a city's commission listing its parts
         log(f"  {why}: {municipality!r} → {code}: {n}")
     for (municipality, why, title), n in unplaced.most_common(30):  # titles with every word masked
         log(f"  not placed ({why}): {municipality!r}, title like {title!r}: {n}")
-    return {"round": round_id, "whole": whole, "index": index, "todo": todo}
+    # a run kept to some municipalities hasn't read everything: the store mustn't say it has
+    return {"round": round_id, "whole": whole, "index": index, "todo": todo, "partial": bool(only)}
 
 
 def apply_index(store: dict, planned: dict) -> None:
@@ -703,7 +707,7 @@ def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], 
 
     got = read(todo, contestants, client.base, workers, budget_seconds, log, diagnose, save_every, progress)
     apply_results(store, got["results"])
-    store["complete"] = limit is None and not got["failed"] and not got["left"]
+    store["complete"] = limit is None and not got["failed"] and not got["left"] and not planned.get("partial")
     save_store(round_dir, store)
     return {"indexed": len(planned["index"]), "read": len(got["results"]), "failed": len(got["failed"]),
             "unparsed": got["unparsed"], "left": got["left"]}

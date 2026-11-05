@@ -336,6 +336,12 @@ def test_reading_split_across_jobs_ends_like_one_run(tmp_path, monkeypatch):
     planned = json.loads(plan.read_text(encoding="utf-8"))
     assert [d["id"] for d in planned["todo"]] == ["819801", "819802"] and planned["contestants"]
     assert not (rnd / "boards.json").exists()  # a plan changes no store
+    assert not planned["partial"]
+    # kept to some municipalities, as to look at one commission's layout: none of theirs here, and partial
+    only = tmp_path / "only.json"
+    assert cli.main(["--data", str(data), "boards", "--round", "680072", "--plan", str(only), "--only", "71218"]) == 0
+    assert json.loads(only.read_text(encoding="utf-8"))["todo"] == []
+    assert json.loads(only.read_text(encoding="utf-8"))["partial"]
     # a job reads its share of the plan (none here, with --limit 0) and writes what it read
     out = tmp_path / "part-x.json"
     assert cli.main(["--data", str(data), "boards", "--read", str(plan), "--shard", "1/2", "--out", str(out),
