@@ -404,6 +404,9 @@ def show_boards(archive: Archive, rid: str, contestants: list, n: int) -> None:
 def cmd_geo(args) -> int:
     """Municipal boundaries from OpenStreetMap for the map on the Explore page (data/geo/municipalities.json)."""
     from izbori import geo
+    if args.kim_inspect:  # what the dataset with Kosovo's municipalities in RIK's division holds; changes nothing
+        geo.inspect(geo.kim_archive(log), log)
+        return 0
     archive = Archive(args.data)
     out = Path(args.out) if args.out else Path(args.data) / "geo" / "municipalities.json"
     data = geo.fetch()
@@ -721,6 +724,8 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--commit", action="store_true")
     g.add_argument("--push", action="store_true")
     g.add_argument("--dispatch-pages", action="store_true")
+    g.add_argument("--kim-inspect", action="store_true",
+                   help="list what the dataset of Kosovo's municipalities in RIK's division holds (needs pyshp)")
     g.set_defaults(fn=cmd_geo)
 
     o = sub.add_parser("observers", help="observers' records: score them with OCR, or list them to review")

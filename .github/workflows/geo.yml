@@ -10,6 +10,10 @@ on:
         description: "Commit the boundaries"
         type: boolean
         default: true
+      inspect:
+        description: "Only list what the dataset of Kosovo's municipalities holds"
+        type: boolean
+        default: false
 
 permissions:
   contents: write  # commit the boundaries
@@ -34,7 +38,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           COMMIT: ${{ inputs.commit }}
+          INSPECT: ${{ inputs.inspect }}
         run: |
+          if [ "$INSPECT" = "true" ]; then
+            uv run --with "pyshp>=2.3" izbori geo --kim-inspect
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           args=()

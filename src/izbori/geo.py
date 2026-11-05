@@ -12,6 +12,7 @@ a dependency of the package: the workflow runs `uv run --with shapely izbori geo
 from __future__ import annotations
 
 import json
+import re
 import time
 import urllib.parse
 import urllib.request
@@ -117,3 +118,75 @@ def write(path: Path, feats: list[dict], fetched: str) -> None:
 
 def load(path: Path) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
+# --- Kosovo and Metohija, in RIK's division ------------------------------------------------------------------------
+# OpenStreetMap maps Kosovo's municipalities as Kosovo divides them since 2000, which isn't how RIK counts there.
+# RIK keeps the earlier division; its boundaries are in Glaurdić et al., a CC BY 4.0 dataset of the municipalities of
+# Yugoslavia and its successor states, 1970-2020, deposited at the University of Luxembourg.
+
+KIM_PAGE = "https://orbilu.uni.lu/handle/10993/58375"
+KIM_SOURCE = ("Glaurdić, Kaniški, Budimir, Ondrejka (2021): Spatial data of municipalities in Yugoslavia and its "
+              "successor states, 1970-2020. GESIS, https://doi.org/10.7802/2358")
+KIM_LICENSE = "CC BY 4.0, https://creativecommons.org/licenses/by/4.0/"
+
+
+def get(url: str, timeout: int = 900) -> bytes:
+    req = urllib.request.Request(url, headers={"User-Agent": AGENT})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read()
+
+
+def kim_archive(log=print) -> bytes:
+    """The dataset's zip, from the link on its repository page."""
+    import html as html_lib
+    page = get(KIM_PAGE, 120).decode("utf-8", "replace")
+    links = sorted({html_lib.unescape(h) for h in re.findall(r'href="([^"]+?\.zip[^"]*)"', page)})
+    links += sorted({html_lib.unescape(h) for h in re.findall(r'href="([^"]*bitstream[^"]*)"', page)} - set(links))
+    log(f"links on the page: {links}")
+    for href in links:
+        url = urllib.parse.urljoin(KIM_PAGE, href)
+        try:
+            data = get(url)
+        except Exception as e:  # noqa: BLE001 - try the next link
+            log(f"  {url}: {e}")
+            continue
+        log(f"  {url}: {len(data)} bytes, starts {data[:4]!r}")
+        if data[:2] == b"PK":
+            return data
+    raise RuntimeError("the dataset's zip wasn't found on its page")
+
+
+def inspect(data: bytes, log=print, pattern: str = r"(199[0-9]|kos|ks|srb|ser|scg|fry|yug)") -> None:
+    """What the archive holds: every file, and for the layers that may cover Kosovo in the 1990s, their fields,
+    coordinate system and the first records (municipality names only, which are public)."""
+    import io
+    import zipfile
+
+    import shapefile  # pyshp, only for this command
+
+    def walk(zf: zipfile.ZipFile, prefix: str = ""):
+        for info in zf.infolist():
+            name = prefix + info.filename
+            if info.filename.lower().endswith(".zip"):
+                yield from walk(zipfile.ZipFile(io.BytesIO(zf.read(info))), name + "!")
+            else:
+                yield name, info.file_size, (lambda zf=zf, info=info: zf.read(info))
+    files = list(walk(zipfile.ZipFile(io.BytesIO(data))))
+    log(f"{len(files)} files")
+    for name, size, _ in files[:400]:
+        log(f"  {size:>10} {name}")
+    read = {name: get_ for name, _, get_ in files}
+    shown = 0
+    for name, _, get_ in files:
+        if not name.lower().endswith(".dbf") or not re.search(pattern, name, re.I) or shown >= 12:
+            continue
+        shown += 1
+        base = name[:-4]
+        prj = next((read[n]() for n in read if n.lower() == (base + ".prj").lower()), b"")
+        rdr = shapefile.Reader(dbf=io.BytesIO(get_()))
+        fields = [f[0] for f in rdr.fields[1:]]
+        log(f"layer {name}: {len(rdr)} records, fields {fields}")
+        log(f"  prj: {prj[:300]!r}")
+        for rec in rdr.records()[:400]:
+            log("  | " + " | ".join(str(v) for v in rec))
