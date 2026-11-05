@@ -25,6 +25,49 @@ def test_parse_decision_text():
     assert [(s.member, s.deputy) for s in d.slots] == [(True, True), (False, False), (True, False), (True, False)]
 
 
+LISTS = ("АЛЕКСАНДАР ВУЧИЋ – УЈЕДИЊЕНА СРБИЈА", "ИВИЦА ДАЧИЋ – ФАКТОР СТАБИЛНОСТИ!",
+         "„Студентска листа - Студенти побеђују“")
+HEAD = ("На основу члана 32. тачка 2) Закона, Општинска изборна комисија, на предлог секретара, донела је\nРЕШЕЊЕ\n"
+        "ЗА БИРАЧКО МЕСТО БРОЈ 21 У ОПШТИНИ ПРИМЕР\nОШ „ПРИМЕР“, ГЛАВНА 1\n1. У бирачки одбор у проширеном саставу "
+        "за бирачко место број 21 у општини Пример именују се:\n")
+TAIL = "2. Ово решење објављује се на веб-презентацији Републичке изборне комисије.\n"
+
+
+def lists_of(d, contestants):
+    """Per ballot number, (member, deputy), the slots of one list added up as the coverage does."""
+    out = {}
+    for s in d.slots:
+        n = match_list(s.list_text, contestants)
+        m, dep = out.get(n, (False, False))
+        out[n] = (m or s.member, dep or s.deputy)
+    return out
+
+
+def test_decisions_in_other_layouts(contestants):
+    """Layouts of whole municipalities that weren't read on 5 Nov 2026 (as their masked layouts showed): members
+    numbered "1)"; unnumbered, each role with its own list; and each list first with its people under it."""
+    a, b, c = LISTS
+    numbered = HEAD + (f"1) ЧЛАН: Петар Петровић и\n\n- ЗАМЕНИК ЧЛАНА: Марко Марковић, на предлог подносиоца изборне "
+                       f"листе: {a}\n2) ЧЛАН: и\n- ЗАМЕНИК ЧЛАНА: , на предлог подносиоца изборне листе: {b}\n"
+                       f"3) ЧЛАН: Ана Анић, на предлог подносиоца изборне листе: {c}\n") + TAIL
+    assert lists_of(parse_decision(numbered), contestants) == {1: (True, True), 2: (False, False), 3: (True, False)}
+    each_role = HEAD + (f"- члан: Петар Петровић и на предлог подносиоца Изборне листе {a};\n\n- заменик члана: Марко "
+                        f"Марковић, на предлог подносиоца Изборне листе {a};\n\n- члан: Ана Анић на предлог "
+                        f"подносиоца Изборне листе {c};\n") + TAIL
+    assert lists_of(parse_decision(each_role), contestants) == {1: (True, True), 3: (True, False)}
+    pairs = HEAD + (f"- Члан: Петар Петровић и\n\n– Заменик члана: Марко Марковић , на предлог подносиоца\nИзборне "
+                    f"листе: {a};\n\n- Члан: и\n\n– Заменик члана: Јован Јовић, на предлог подносиоца\nИзборне листе: "
+                    f"{b};\n") + TAIL
+    assert lists_of(parse_decision(pairs), contestants) == {1: (True, True), 2: (False, True)}
+    list_first = HEAD + (f"|. На предлог подносиоца изборне листе {a}:\nчлан: Петар Петровић\n\n- заменик члана Марко "
+                         f"Марковић\n\n2. На предлог подносиоца изборне листе {c}:\nчлан: Ана Анић\n\n- заменик члана\n"
+                         ) + TAIL
+    assert lists_of(parse_decision(list_first), contestants) == {1: (True, True), 3: (True, False)}
+    # the address and the station are read as before
+    d = parse_decision(list_first)
+    assert (d.station, d.address) == ("21", "ОШ \"ПРИМЕР\", ГЛАВНА 1")
+
+
 def test_lists_match_despite_ocr_noise(contestants):
     # strings as OCR returned them from real decisions, including garbled Latin parts
     cases = {
@@ -90,6 +133,47 @@ def test_municipality_names_match_the_results_file(round2026):
         s.municipality_code for s in round2026.stations if s.municipality == "Градска општина Палилула (Београд)")
     assert municipality_key("Земун ") in keys
     assert municipality_key("Нови Сад") in keys
+
+
+def test_a_city_commission_s_decisions_find_their_station():
+    """In 2026 Požarevac's commission listed Kostolac's decisions under Požarevac with Kostolac's own numbers, and
+    Niš's were listed under a name the results don't use: the station's name in the register says which station
+    it is. Nothing else moves: a generic name, or one that fits two stations, stays where the register puts it."""
+    from types import SimpleNamespace as NS
+
+    from izbori.boards import Placer
+
+    def st(code, mun, number, name, district="11"):
+        return NS(key=f"{code}/{number}", municipality_code=code, municipality=mun, number=number, name=name,
+                  district_code=district)
+    stations = [st("70947", "Град Пожаревац", "1", "ОСНОВНА ШКОЛА"), st("70947", "Град Пожаревац", "2", "ДОМ"),
+                st("71340", "Градска општина Костолац", "1", "ДОМ КУЛТУРЕ"),
+                st("70100", "Голубац", "1", "ДОМ КУЛТУРЕ"),  # same district, not a city municipality
+                st("71331", "Градска општина Медијана", "7", 'ОШ "ЦАР КОНСТАНТИН"', "12"),
+                st("71307", "Градска општина Пантелеј", "7", 'ОШ "ЧЕГАР"', "12")]
+    codes = {municipality_key(s.municipality): s.municipality_code for s in stations}
+    names = {"71331": {municipality_key("Ниш-Медијана")}, "71307": {municipality_key("Ниш-Пантелеј")}}  # 2022
+    p = Placer(codes, stations, names)
+    assert p.place("Пожаревац", "1", "ОСНОВНА ШКОЛА") == ("70947/1", "direct")
+    assert p.place("Пожаревац", "1", "ДОМ КУЛТУРЕ") == ("71340/1", "moved")
+    assert p.place("Пожаревац", "2", "ДОМ КУЛТУРЕ") == ("70947/2", "as listed")  # Kostolac has no station 2
+    assert p.place("Пожаревац", "1", "") == ("70947/1", "direct")
+    assert p.place("Ниш", "7", "ОШ „Чегар“") == ("71307/7", "named")
+    assert p.place("Ниш", "7", "ДРУГА ШКОЛА") == (None, "unknown municipality")
+    assert p.place("Пожаревац", "", "ДОМ") == (None, "no number")
+    assert p.place("Пожаревац", "9", "ДОМ") == (None, "no such station")
+    assert Placer(codes).place("Пожаревац", "9") == ("70947/9", "direct")  # without the results' stations, as before
+
+
+def test_a_better_placement_reaches_decisions_already_read():
+    from izbori.boards import apply_index
+    store = {"docs": {"1": {"s": "70947/1", "k": "extended", "slots": [[1, True, False]], "u": "/a"},
+                      "2": {"s": None, "k": "extended", "slots": [[2, True, True]], "u": "/b"}}}
+    apply_index(store, {"whole": True, "index": [
+        {"id": "1", "s": "71340/1", "k": "extended", "r": False, "t": "", "u": "/a"},
+        {"id": "2", "s": "71307/7", "k": "extended", "r": False, "t": "", "u": "/b"}]})
+    assert store["docs"]["1"]["s"] == "71340/1" and store["docs"]["1"]["slots"] == [[1, True, False]]
+    assert store["docs"]["2"]["s"] == "71307/7"
 
 
 def test_coverage_combines_and_prefers_repeat_votes():
@@ -235,7 +319,8 @@ def test_reading_split_across_jobs_ends_like_one_run(tmp_path, monkeypatch):
     monkeypatch.setattr(cli.Archive, "round_ids", lambda self: ["680072"])
 
     class Rnd:
-        stations = [type("S", (), {"municipality": "Куршумлија", "municipality_code": "70017"})()]
+        stations = [type("S", (), {"municipality": "Куршумлија", "municipality_code": "70017", "key": f"70017/{n}",
+                                   "number": str(n), "name": "ОШ", "district_code": "1"})() for n in (30, 31)]
     monkeypatch.setattr(cli.Archive, "load", lambda self, rid: Rnd())
     plan = tmp_path / "plan.json"
     assert cli.main(["--data", str(data), "boards", "--round", "680072", "--plan", str(plan)]) == 0

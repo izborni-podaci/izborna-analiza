@@ -28,6 +28,10 @@ on:
         description: "Read again the decisions that couldn't be read"
         type: boolean
         default: false
+      reindex:
+        description: "Page through the whole register again, to place every decision by the current rules"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -56,10 +60,12 @@ jobs:
         env:
           ROUND: ${{ inputs.round }}
           RETRY: ${{ inputs.retry }}
+          REINDEX: ${{ inputs.reindex }}
         run: |
           args=(--plan plan.json)
           [ -n "$ROUND" ] && args+=(--round "$ROUND")
           [ "$RETRY" = "true" ] && args+=(--retry-unparsed)
+          [ "$REINDEX" = "true" ] && args+=(--reindex)
           uv run izbori boards "${args[@]}"
           if [ -f plan.json ]; then
             echo "planned=true" >> "$GITHUB_OUTPUT"

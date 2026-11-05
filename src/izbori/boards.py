@@ -37,6 +37,7 @@ class BoardDoc:
     url: str
     kind: str = ""
     repeat: bool = False
+    station_name: str = ""  # the station's name in the register's title; only to place the decision, never kept
 
 
 def classify(title: str, decision: str) -> tuple[str, bool]:
@@ -102,12 +103,13 @@ def parse_index_records(records: list[dict]) -> list[BoardDoc]:
         if not links:
             continue
         url = links[0]
-        station = (r.get("election_station_title") or "").split("-", 1)[0].strip()
+        number, _, name = (r.get("election_station_title") or "").partition("-")
         kind, repeat = classify(r.get("document_name") or "", r.get("election_board_decision") or "")
         docs.append(BoardDoc(id=doc_id(url), municipality=(r.get("municipality_display_name") or "").strip(),
-                             station=station, title=(r.get("document_name") or "").strip(),
+                             station=number.strip(), title=(r.get("document_name") or "").strip(),
                              decision=(r.get("election_board_decision") or "").strip(),
-                             published=str(r.get("datetime") or ""), url=url, kind=kind, repeat=repeat))
+                             published=str(r.get("datetime") or ""), url=url, kind=kind, repeat=repeat,
+                             station_name=name.strip()))
     return docs
 
 
@@ -128,7 +130,12 @@ def last_page(pagination_html: str) -> int:
 # --- reading a decision ------------------------------------------------------------------------
 
 LETTERS = re.compile(r"[A-Za-zА-Яа-яЂђЈјЉљЊњЋћЏџČčĆćŠšŽžĐđ]")
-SLOT = re.compile(r"(?:^|\n)[\s\-–—~+•]*(\d{1,2})\s*[.,]\s*(?:члан|clan|član)\b\s*:?", re.IGNORECASE)
+SLOT = re.compile(r"(?:^|\n)[\s\-–—~+•]*(\d{1,2})\s*[.,)]\s*(?:члан|clan|član)\b\s*:?", re.IGNORECASE)  # 1. or 1)
+# Every member's or deputy's role, and every proposal, wherever they stand: for the layouts that don't number
+# each member ("- члан: …", or each list first and its people under it). "члана" alone (genitive, as in "на основу
+# члана 32") is never a role.
+ROLE = re.compile(r"\b(заменик\s+члана|zamenik\s+[čc]lana|члан|[čc]lan)\b\s*[:;,.]?", re.IGNORECASE)
+
 STATION = re.compile(r"(?:БИРАЧКО\s+МЕСТО\s+БРОЈ|BIRAČKO\s+MESTO\s+BROJ|BIRACKO\s+MESTO\s+BROJ)\s*[:.]?\s*(\d+)", re.I)
 END = re.compile(r"\n\s*(?:2\s*[.,]\s*Ово\s+решење|2\s*[.,]\s*Ovo\s+rešenje|Образложење|Obrazloženje)", re.I)
 DEPUTY = re.compile(r"заменик[^:]{0,20}:|zamenik[^:]{0,20}:", re.I)
@@ -210,7 +217,46 @@ def parse_decision(text: str) -> Decision:
                            r"\s*", "", tail.strip(), flags=re.I)
         list_text = re.sub(r"^\s*(изборне листе|izborne liste)\s*", "", list_text, flags=re.I).strip(" ;.")
         slots.append(Slot(member=_filled(member_part), deputy=_filled(deputy_part), list_text=list_text))
-    return Decision(station=station, address=address, slots=slots)
+    return Decision(station=station, address=address, slots=slots or _unnumbered(body))
+
+
+def _list_text(text: str) -> str:
+    text = " ".join(text.split())
+    text = re.sub(r"^\s*(подносиоца|podnosioca|посланичке групе|poslaničke grupe|групе грађана|grupe građana)\s*", "",
+                  text, flags=re.I)
+    return re.sub(r"^\s*(изборне листе|izborne liste)\s*", "", text, flags=re.I).strip(" ;.:")
+
+
+def _unnumbered(body: str) -> list[Slot]:
+    """Slots from a decision that doesn't number its members. Two layouts:
+    - people first: "члан: <name> и заменик члана: <name>, на предлог подносиоца изборне листе <list>;", or each
+      role on its own line with its own list ("- члан: <name> на предлог …"; "- заменик члана: <name>, на предлог …");
+    - each list first: "На предлог подносиоца изборне листе <list>: члан: <name>, заменик члана: <name>".
+    Which one it is follows from what comes first, a role or a proposal. Only filled-in or empty is kept."""
+    places = list(STATION.finditer(body))
+    if places:  # the members follow the last mention of the station; a proposal in the preamble isn't one of them
+        body = body[places[-1].end():]
+    events = sorted([(m.start(), m.end(), "deputy" if m.group(1).lower().startswith(("заменик", "zamenik")) else "member")
+                     for m in ROLE.finditer(body)] + [(m.start(), m.end(), "list") for m in PROPOSER.finditer(body)])
+    if not any(e[2] == "list" for e in events) or not any(e[2] != "list" for e in events):
+        return []
+    people_first = events[0][2] != "list"
+    groups: list[tuple[str, list]] = []  # (list text, [(role, filled)])
+    pending: list = []
+    for k, (start, end, what) in enumerate(events):
+        text = body[end: events[k + 1][0] if k + 1 < len(events) else len(body)]
+        if what == "list":
+            if people_first:
+                groups.append((_list_text(text), pending))
+                pending = []
+            else:
+                groups.append((_list_text(text), []))
+        elif people_first:
+            pending.append((what, _filled(text)))
+        elif groups:
+            groups[-1][1].append((what, _filled(text)))
+    return [Slot(member=any(f for r, f in roles if r == "member"), deputy=any(f for r, f in roles if r == "deputy"),
+                 list_text=lst) for lst, roles in groups if roles]
 
 
 # --- matching a list's name to the ballot ----------------------------------------------------------
@@ -398,6 +444,71 @@ def municipality_key(name: str) -> str:
     return "".join(ch for ch in s if ch.isalnum() and not unicodedata.combining(ch))
 
 
+def name_words(text: str) -> frozenset:
+    s = latin(text or "").upper().replace("Đ", "DJ")
+    s = "".join(ch for ch in unicodedata.normalize("NFD", s) if not unicodedata.combining(ch))
+    return frozenset(re.findall(r"[A-Z0-9]+", s))
+
+
+def same_station(a: str, b: str) -> bool:
+    """Two names of one polling station: the same words, give or take a quarter (quotes, abbreviations)."""
+    wa, wb = name_words(a), name_words(b)
+    return bool(wa and wb) and len(wa & wb) / len(wa | wb) >= 0.75
+
+
+class Placer:
+    """Which polling station a decision in RIK's register belongs to. The register names the municipality and gives
+    the station's number and name. A city's commission may list its city municipalities' stations under the city
+    (Kostolac's under Požarevac, Sevojno's under Užice in 2026), each numbered within its own municipality, so one
+    number can belong to two stations; or under a name the results don't use ("Ниш"). The station's name says
+    which: the same number with the same name in a city municipality ("Градска општина") of the same district, or
+    in a municipality whose name, in any election, contains the register's. Where nothing else fits, the decision
+    stays where the register puts it, as before."""
+
+    def __init__(self, codes: dict[str, str], stations=(), names: dict[str, set] | None = None):
+        self.codes = dict(codes)  # municipality key → code
+        self.names: dict[str, str] = {}  # station key → its name in the results
+        self.numbered: dict[str, list[str]] = {}  # station number → station keys
+        self.district: dict[str, str] = {}  # municipality code → district code
+        self.city_part: set[str] = set()  # codes of city municipalities, which a city's commission may list
+        self.aliases: dict[str, set] = {}  # municipality code → keys of every name it had
+        for key, code in self.codes.items():
+            self.aliases.setdefault(code, set()).add(key)
+        for code, keys in (names or {}).items():
+            self.aliases.setdefault(code, set()).update(keys)
+        for st in stations:
+            self.names[st.key] = st.name
+            self.numbered.setdefault(st.number, []).append(st.key)
+            self.district[st.municipality_code] = st.district_code
+            if latin(st.municipality).upper().startswith("GRADSKA OPŠTINA"):
+                self.city_part.add(st.municipality_code)
+
+    def place(self, municipality: str, number: str, name: str = "") -> tuple[str | None, str]:
+        """(station key or None, how): direct, moved (to another municipality of the district), named (found by
+        the register's municipality name in another one's), as listed (the names differ and nothing else fits),
+        or why not: no number, no such station, unknown municipality."""
+        mkey = municipality_key(municipality)
+        code = self.codes.get(mkey)
+        if not number:
+            return None, "no number"
+        own = f"{code}/{number}" if code else None
+        known = own is not None and (not self.names or own in self.names)  # a station of this election
+        if known and (not name or not self.names or same_station(self.names[own], name)):
+            return own, "direct"
+        if name:
+            def near(key: str) -> bool:
+                c = key.split("/", 1)[0]
+                if code:
+                    return c != code and c in self.city_part and self.district.get(c) == self.district.get(code)
+                return len(mkey) >= 3 and any(mkey in a for a in self.aliases.get(c, ()))
+            found = [k for k in self.numbered.get(number, []) if near(k) and same_station(self.names[k], name)]
+            if len(found) == 1:
+                return found[0], "moved" if code else "named"
+        if known:
+            return own, "as listed"  # the names differ, and no other station fits
+        return None, "no such station" if code else "unknown municipality"
+
+
 # --- running it --------------------------------------------------------------------------------
 
 
@@ -444,21 +555,33 @@ def fetch_index(client, round_id: str, rik_type: int, known: frozenset = frozens
     return unique
 
 
-def plan(round_dir: Path, round_id: str, rik_type: int, stations: dict[str, str], client, log=print,
-         retry_unparsed: bool = False) -> dict:
+def plan(round_dir: Path, round_id: str, rik_type: int, stations, client, log=print,
+         retry_unparsed: bool = False, reindex: bool = False) -> dict:
     """Index the round's board decisions and say which to read: {"round", "whole", "index", "todo"}.
 
-    The whole register is paged through unless the last run read everything and kept every decision's link;
-    otherwise older unread decisions (or links) deep in the register would be missed. `stations` maps a
-    municipality key (see municipality_key) to its code in the results file. Nothing here holds a name."""
+    The whole register is paged through unless the last run read everything and kept every decision's link, or
+    with reindex (after the rules for placing decisions changed); otherwise older unread decisions (or links) deep
+    in the register would be missed. `stations` is a Placer, or a dict from a municipality key (see
+    municipality_key) to its code in the results file. Nothing here holds a name of a person: the log names
+    municipalities only."""
+    from collections import Counter
+    placer = stations if isinstance(stations, Placer) else Placer(stations)
     store = load_store(round_dir)
     known = store.get("docs", {})
-    whole = not store.get("complete") or any("u" not in d for d in known.values())
+    whole = reindex or not store.get("complete") or any("u" not in d for d in known.values())
     docs = fetch_index(client, round_id, rik_type, frozenset() if whole else frozenset(known), log)
     index, todo = [], []
+    how: Counter = Counter()
+    unplaced: Counter = Counter()
+    moved: Counter = Counter()
     for d in docs:
-        code = stations.get(municipality_key(d.municipality))
-        key = f"{code}/{d.station}" if code and d.station else None
+        key, why = placer.place(d.municipality, d.station, d.station_name)
+        how[why] += 1
+        if key is None:
+            unplaced[(d.municipality, why, "empty" if not d.station_name and not d.station else
+                      re.sub(r"[^\W\d_]+", "x", f"{d.station} - {d.station_name}")[:40])] += 1
+        elif why in ("moved", "named", "as listed"):
+            moved[(d.municipality, why, key.split("/")[0])] += 1
         index.append({"id": d.id, "s": key, "k": d.kind, "r": d.repeat, "t": d.published, "u": link_path(d.url)})
         entry = known.get(d.id)
         if d.kind == "extended" and (entry is None or entry.get("slots") is None
@@ -472,7 +595,12 @@ def plan(round_dir: Path, round_id: str, rik_type: int, stations: dict[str, str]
                 todo.append({"id": i, "s": entry.get("s"), "station": (entry.get("s") or "/").split("/")[1],
                              "kind": "extended", "repeat": bool(entry.get("r")), "published": entry.get("t") or "",
                              "url": RIK_PUBLIC.rstrip("/") + entry["u"]})
-    log(f"{len(docs)} decisions indexed, {len(todo)} to read")
+    log(f"{len(docs)} decisions indexed, {len(todo)} to read; placed: "
+        + ", ".join(f"{why} {n}" for why, n in how.most_common()))
+    for (municipality, why, code), n in moved.most_common(30):  # e.g. a city's commission listing its parts
+        log(f"  {why}: {municipality!r} → {code}: {n}")
+    for (municipality, why, title), n in unplaced.most_common(30):  # titles with every word masked
+        log(f"  not placed ({why}): {municipality!r}, title like {title!r}: {n}")
     return {"round": round_id, "whole": whole, "index": index, "todo": todo}
 
 
@@ -483,8 +611,10 @@ def apply_index(store: dict, planned: dict) -> None:
         entry = known.get(e["id"])
         if entry is not None:
             entry["u"] = e["u"]
+            if e["s"]:  # where the register puts it, as the current rules place it; read with OCR or not
+                entry["s"] = e["s"]
             if entry.get("slots") is None:  # not read with OCR: the register's listing is all that is kept
-                entry.update({"k": e["k"], "r": e["r"], **({"s": e["s"]} if e["s"] else {})})
+                entry.update({"k": e["k"], "r": e["r"]})
         elif e["k"] != "extended":
             known[e["id"]] = {"s": e["s"], "k": e["k"], "r": e["r"], "t": e["t"], "u": e["u"]}
     if planned["whole"]:
@@ -545,12 +675,13 @@ def apply_results(store: dict, results: dict) -> None:
     store.setdefault("docs", {}).update(results)
 
 
-def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], stations: dict[str, str], client,
+def run(round_dir: Path, round_id: str, rik_type: int, contestants: list[dict], stations, client,
         workers: int = 4, budget_seconds: float = 5 * 3600, limit: int | None = None, log=print,
-        save_every: int = 200, checkpoint=None, diagnose: int = 0, retry_unparsed: bool = False) -> dict:
+        save_every: int = 200, checkpoint=None, diagnose: int = 0, retry_unparsed: bool = False,
+        reindex: bool = False) -> dict:
     """Index the round's board decisions and read the ones not yet read, in this process's workers (the boards
     workflow splits the reading across several jobs instead: plan, read, merge)."""
-    planned = plan(round_dir, round_id, rik_type, stations, client, log, retry_unparsed)
+    planned = plan(round_dir, round_id, rik_type, stations, client, log, retry_unparsed, reindex)
     store = load_store(round_dir)
     apply_index(store, planned)
     todo = planned["todo"] if limit is None else planned["todo"][:limit]

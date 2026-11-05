@@ -350,10 +350,18 @@ def cmd_boards(args) -> int:
     if source is None:
         log("no archived results to map municipalities from")
         return 1
-    stations = {boards.municipality_key(s.municipality): s.municipality_code for s in archive.load(source).stations}
+    # The register names municipalities as RIK does today; an older results file may not ("Ниш-Медијана" for
+    # "Градска општина Медијана"). Codes don't change, so names from every archived election map to them, the
+    # round's own first. The stations' names and districts place what a city's commission lists under the city.
+    rounds = [archive.load(r) for r in archive.round_ids() if r != source] + [archive.load(source)]
+    every: dict[str, str] = {}
+    for rnd in rounds:
+        every.update({boards.municipality_key(s.municipality): s.municipality_code for s in rnd.stations})
+    stations = boards.Placer(every, rounds[-1].stations)
     archive.dir(rid).mkdir(parents=True, exist_ok=True)
     if args.plan:
-        planned = boards.plan(archive.dir(rid), rid, int(info["type"]), stations, client, log, args.retry_unparsed)
+        planned = boards.plan(archive.dir(rid), rid, int(info["type"]), stations, client, log, args.retry_unparsed,
+                              args.reindex)
         planned["contestants"] = contestants
         Path(args.plan).write_text(json.dumps(planned, ensure_ascii=False), encoding="utf-8")
         return 0
@@ -367,7 +375,8 @@ def cmd_boards(args) -> int:
 
     result = boards.run(archive.dir(rid), rid, int(info["type"]), contestants, stations, client,
                         workers=workers, budget_seconds=args.budget_minutes * 60, limit=args.limit, log=log,
-                        checkpoint=checkpoint, diagnose=args.diagnose, retry_unparsed=args.retry_unparsed)
+                        checkpoint=checkpoint, diagnose=args.diagnose, retry_unparsed=args.retry_unparsed,
+                        reindex=args.reindex)
     show_boards(archive, rid, contestants, args.show)
     if args.commit and commit([str(args.data)], f"Boards: {rid}, {result['read']} decisions read ({now_iso()})"):
         if args.push and push() and args.dispatch_pages:
@@ -683,6 +692,8 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--show", type=int, default=0, help="print this many station summaries (no names)")
     b.add_argument("--diagnose", type=int, default=0, help="log the masked layout of this many unreadable decisions")
     b.add_argument("--retry-unparsed", action="store_true", help="read unreadable decisions again")
+    b.add_argument("--reindex", action="store_true",
+                   help="page through the whole register again, to place decisions by the current rules")
     b.add_argument("--plan", metavar="FILE", help="index the register and write what to read to FILE, then stop")
     b.add_argument("--read", metavar="FILE", help="read one part (--shard) of a plan's decisions into --out")
     b.add_argument("--shard", default="0/1", help="which part of the plan to read, as I/N")
