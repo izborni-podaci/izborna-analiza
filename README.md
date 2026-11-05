@@ -166,8 +166,10 @@ Where a decision goes: the register names the municipality and gives the station
 commission may list its city municipalities' stations under the city (Kostolac's under Požarevac and Sevojno's
 under Užice in 2026), each numbered within its own municipality, or under a name the results don't use (Niš). The
 station's name then says which: the same number and name in a city municipality of the same district, or in a
-municipality whose name in any archived election contains the register's. `--reindex` places every decision
-again after these rules change; the plan logs what was placed how and what wasn't, naming municipalities only.
+municipality whose name in any archived election, or whose district, contains the register's (Belgrade's 2024
+decisions are under "Београд"). RIK lists the boards it appoints itself, abroad and in prisons, under "РИК": they
+are placed among those stations the same way. `--reindex` places every decision again after these rules change;
+the plan logs what was placed how and what wasn't, naming municipalities only.
 
 The workflow splits the reading so that four jobs read at once, about four times faster (a whole election's 8,700 decisions in about an hour and a half instead of five and a half): `--plan plan.json` indexes the register and lists what to read; four jobs each run `--read plan.json --shard I/4 --out part-I.json`; `--merge plan.json part-*.json` keeps the index and every part in the round's store and commits once. Run without these, `izbori boards` does all three in one process.
 

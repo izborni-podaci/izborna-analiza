@@ -116,7 +116,8 @@ These are the project's promises to its readers. Never change them without the m
     layouts the read jobs log (`--diagnose`), never from a decision's text with names.
   - Placement (`Placer`): by municipality and number, and where the register's station name disagrees with the
     results, by that name among the city municipalities of the same district, or among municipalities whose name
-    in any election contains the register's. Nothing placed under its own name moves (checked on all of 2026).
+    in any election, or district, contains the register's; "РИК" (RIK's own boards) among the stations abroad and
+    in prisons. Nothing placed under its own name moves (checked on every archived election).
 - **Observers' records (RG-11)** are read by a person. OCR only orders the review list:
   - The score is the ink and words between "… су следеће:" and "(примедбе уписује …)". Each column of a landscape
     page is read on its own, and printed rules are left out by the length of their dark runs.
@@ -183,8 +184,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 
 - **Custom domain and hosting:** set aside until it is clear how useful the site is; GitHub Pages meanwhile.
 - **Belgrade 2024 decisions on polling boards (round 567956):** 127 of 129 are listed under "Београд" with a station
-  number, while the results number stations within each city municipality, so they can't be placed. All 17
-  decisions on the extended composition are unreadable by the current parser. The round is small and in the past.
+  number, while the results number stations within each city municipality. Since 5 Nov 2026 the station's name
+  places them (by district), but the round hasn't been re-indexed yet (`boards --round 567956 --reindex
+  --retry-unparsed`); its 17 decisions on the extended composition were unreadable by the earlier parser.
 
 ## Decisions log
 
@@ -237,3 +239,5 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   layouts (371), decisions listed under a city or a name the results don't use (319: Niš, abroad, prisons), 17
   of Kostolac and Sevojno added to Požarevac and Užice by number (a bug), and 43 never published. The parser
   learnt three layouts and decisions are placed by the station's name; `--reindex` applies it to what was read.
+  After the re-index, 8,345 of 2026's 8,392 stations have their controllers known (7,642 before); of the 47 left,
+  43 have no decision in RIK's register (37 in Kosovo and Metohija) and 4 are unreadable.
