@@ -392,6 +392,29 @@ def show_boards(archive: Archive, rid: str, contestants: list, n: int) -> None:
     log(f"stations with a decision read: {len(cov)}")
 
 
+def cmd_geo(args) -> int:
+    """Municipal boundaries from OpenStreetMap for the map on the Compare page (data/geo/municipalities.json)."""
+    from izbori import geo
+    archive = Archive(args.data)
+    out = Path(args.out) if args.out else Path(args.data) / "geo" / "municipalities.json"
+    data = geo.fetch()
+    feats = geo.features(data)
+    geo.write(out, feats, now_iso()[:10])
+    have = {f["properties"]["code"] for f in feats}
+    names: dict[str, str] = {}
+    for rid in archive.round_ids():
+        for s in archive.load(rid).stations:
+            names.setdefault(s.municipality_code, s.municipality)
+    missing = sorted(code for code in names if code not in have)
+    log(f"{len(feats)} boundaries; {len(names) - len(missing)} of the archive's {len(names)} municipalities have one")
+    for code in missing:
+        log(f"  no boundary: {code} {latin(names[code])}")
+    if args.commit and commit([str(out)], "Data: municipal boundaries from OpenStreetMap"):
+        if args.push and push() and args.dispatch_pages:
+            dispatch_pages()
+    return 0
+
+
 def cmd_documents(args) -> int:
     """Read RIK's register of minutes: every document published for each polling station (minutes, observers'
     records, remarks, corrections, rulings). Keeps labels, links and upload times; no names."""
@@ -681,6 +704,13 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--push", action="store_true")
     d.add_argument("--dispatch-pages", action="store_true")
     d.set_defaults(fn=cmd_documents)
+
+    g = sub.add_parser("geo", help="municipal boundaries from OpenStreetMap, for the map on the Compare page")
+    g.add_argument("--out", help="default: <data>/geo/municipalities.json")
+    g.add_argument("--commit", action="store_true")
+    g.add_argument("--push", action="store_true")
+    g.add_argument("--dispatch-pages", action="store_true")
+    g.set_defaults(fn=cmd_geo)
 
     o = sub.add_parser("observers", help="observers' records: score them with OCR, or list them to review")
     o.add_argument("--round", help="round id (default: the newest)")
