@@ -40,11 +40,27 @@ class BoardDoc:
     station_name: str = ""  # the station's name in the register's title; only to place the decision, never kept
 
 
+EXTENDED_WORDS = ("ПРОШИРЕН", "PROŠIREN", "PROSIREN")
+STANDING_WORDS = ("СТАЛН", "STALN")
+# The president is in the standing composition only ("председника", also misspelt "преседника" in a title)
+PRESIDENT = re.compile(r"ПРЕД?СЕДНИ|PRED?SEDNI")
+
+
 def classify(title: str, decision: str) -> tuple[str, bool]:
-    """Kind of decision, from RIK's label and the commission's own title (commissions sometimes mislabel)."""
+    """Kind of decision, from RIK's label and the commission's own title. The commission chooses the label when it
+    uploads, and sometimes picks the wrong one (Ub, 2026: the standing composition, "председника и члана", under
+    the extended's label), so the title decides when it names the composition, or the president, whom only the
+    standing composition has; otherwise the label does."""
     text = f"{title} {decision}".upper()
+    head = (title or "").upper()
     repeat = "ПОНОВН" in text or "PONOVN" in text
-    extended = "ПРОШИРЕН" in text or "PROŠIREN" in text or "PROSIREN" in text
+    if any(w in head for w in EXTENDED_WORDS):
+        extended = True
+    elif any(w in head for w in STANDING_WORDS) or PRESIDENT.search(head):
+        extended = False
+        text = f"{text} СТАЛНИ"
+    else:
+        extended = any(w in text for w in EXTENDED_WORDS)
     if not extended:
         if "СТАЛН" not in text and "STALN" not in text:
             return "other", repeat
@@ -300,12 +316,14 @@ def match_list(text: str, contestants: list[dict]) -> int | None:
 # --- getting text out of a PDF -----------------------------------------------------------------
 
 
-def pdf_text(pdf: bytes, max_pages: int = 3, lang: str = "srp+srp_latn", dpi: int = 200) -> str:
-    """The decision's text: the PDF's own text layer when it has one, otherwise OCR of the first pages."""
+def pdf_text(pdf: bytes, max_pages: int = 3, lang: str = "srp+srp_latn", dpi: int = 200, psm: int | None = None,
+             ocr: bool = False) -> str:
+    """The decision's text: the PDF's own text layer when it has one (unless ocr), otherwise OCR of the first pages
+    (psm: Tesseract's page segmentation, its default when None)."""
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "doc.pdf"
         path.write_bytes(pdf)
-        if shutil.which("pdftotext"):
+        if shutil.which("pdftotext") and not ocr:
             r = subprocess.run(["pdftotext", "-layout", "-l", str(max_pages), str(path), "-"], capture_output=True,
                                text=True)
             if r.returncode == 0 and len(LETTERS.findall(r.stdout)) > 200 and SLOT.search(r.stdout):
@@ -318,11 +336,11 @@ def pdf_text(pdf: bytes, max_pages: int = 3, lang: str = "srp+srp_latn", dpi: in
             images = sorted(Path(tmp).glob(f"p{page}*.png"))
             if r.returncode != 0 or not images:
                 break
-            ocr = subprocess.run(["tesseract", str(images[0]), "-", "-l", lang], capture_output=True, text=True,
-                                 env={**os.environ, "OMP_THREAD_LIMIT": "1"})
-            out.append(ocr.stdout)
+            read = subprocess.run(["tesseract", str(images[0]), "-", "-l", lang] + (["--psm", str(psm)] if psm else []),
+                                  capture_output=True, text=True, env={**os.environ, "OMP_THREAD_LIMIT": "1"})
+            out.append(read.stdout)
             images[0].unlink()
-            if END.search("\n" + ocr.stdout):
+            if END.search("\n" + read.stdout):
                 break
         return "\n".join(out)
 
@@ -359,6 +377,28 @@ def save_store(round_dir: Path, store: dict) -> None:
 KEEP_WORDS = {"члан", "члана", "заменик", "на", "предлог", "подносиоца", "изборне", "листе", "посланичке", "групе",
               "бирачко", "место", "број", "бм", "и", "решење", "проширеном", "саставу", "сталном", "clan", "član",
               "zamenik", "predlog", "podnosioca", "izborne", "liste", "biračko", "mesto", "broj", "rešenje"}
+
+
+def has_text_layer(pdf: bytes) -> bool:
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "doc.pdf"
+        path.write_bytes(pdf)
+        r = subprocess.run(["pdftotext", "-layout", "-l", "3", str(path), "-"], capture_output=True, text=True)
+        return r.returncode == 0 and len(LETTERS.findall(r.stdout)) > 200 and bool(SLOT.search(r.stdout))
+
+
+def diagnose(pdf: bytes, contestants: list[dict], log=print, label: str = "") -> None:
+    """Log how a decision reads, every way it can be read: the text layer, and OCR as Tesseract segments the page by
+    itself and line by line (psm 6). Only keywords, numbers and the lists' ballot numbers are shown."""
+    ways = [("text layer", {})] if has_text_layer(pdf) else []
+    ways += [("OCR", {"ocr": True}), ("OCR line by line", {"ocr": True, "psm": 6})]
+    for way, kw in ways:
+        text = pdf_text(pdf, **kw)
+        decision = parse_decision(text)
+        slots = [[match_list(s.list_text, contestants), s.member, s.deputy] for s in decision.slots]
+        m = STATION.search(_normalize(text))
+        log(f"{label} {way}: station {decision.station}, slots {slots}, layout with names masked:\n"
+            f"{shape(_normalize(text)[m.start() if m else 0:], 3000)}")
 
 
 def shape(text: str, limit: int = 1500) -> str:
@@ -626,8 +666,9 @@ def apply_index(store: dict, planned: dict) -> None:
             entry["u"] = e["u"]
             if e["s"]:  # where the register puts it, as the current rules place it; read with OCR or not
                 entry["s"] = e["s"]
-            if entry.get("slots") is None:  # not read with OCR: the register's listing is all that is kept
-                entry.update({"k": e["k"], "r": e["r"]})
+            # the kind as the current rules give it: a standing composition read as the extended one no longer
+            # counts its members as controllers (its slots stay, unused)
+            entry.update({"k": e["k"], "r": e["r"]})
         elif e["k"] != "extended":
             known[e["id"]] = {"s": e["s"], "k": e["k"], "r": e["r"], "t": e["t"], "u": e["u"]}
     if planned["whole"]:

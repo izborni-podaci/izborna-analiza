@@ -108,8 +108,16 @@ def test_classify():
     assert classify("БМ 11", "Решење о именовању члана и заменика члана бирачког одбора у проширеном саставу") \
         == ("extended", False)
     assert classify("РЕШЕЊЕ", "Решење о именовању члана ... у проширеном саставу – поновно гласање") == ("extended", True)
-    assert classify("РЕШЕЊЕ О ИМЕНОВАЊУ ... У СТАЛНОМ САСТАВУ", "Решење ... у проширеном саставу")[0] == "extended"
     assert classify("РЕШЕЊЕ О ИМЕНОВАЊУ ПРЕДСЕДНИКА ... У СТАЛНОМ САСТАВУ", "")[0] == "standing"
+    # the commission picks RIK's label when it uploads, and sometimes the wrong one: its own title decides when it
+    # names the composition, or the president, whom only the standing composition has (Ub, 2026, station 2)
+    assert classify("Решење о именовању преседника и члана бирачког одбора и њихових заменика за бирачко место број 2",
+                    "Решење о именовању члана и заменика члана бирачког одбора у проширеном саставу") \
+        == ("standing", False)
+    assert classify("РЕШЕЊЕ О ИМЕНОВАЊУ ... У СТАЛНОМ САСТАВУ", "Решење ... у проширеном саставу")[0] == "standing"
+    assert classify("Решење о именовању чланова у проширеном саставу", "Решење ... у сталном саставу")[0] == "extended"
+    assert classify("Решење о измени решења о именовању председника", "Решење ... у проширеном саставу")[0] \
+        == "standing_change"
     assert classify("", "Решење о одбијању предлога ... у проширеном саставу")[0] == "extended_rejected"
     assert classify("", "Решење о измени решења ... у проширеном саставу")[0] == "extended_change"
     assert classify("РЕШЕЊЕ О ИЗМЕНИ РЕШЕЊА БО - БМ 25", "Решење о измени решења о именовању члана / заменика члана "
@@ -183,6 +191,10 @@ def test_a_better_placement_reaches_decisions_already_read():
         {"id": "2", "s": "71307/7", "k": "extended", "r": False, "t": "", "u": "/b"}]})
     assert store["docs"]["1"]["s"] == "71340/1" and store["docs"]["1"]["slots"] == [[1, True, False]]
     assert store["docs"]["2"]["s"] == "71307/7"
+    # a decision read as the extended composition that the current rules call the standing one: no controllers
+    apply_index(store, {"whole": True, "index": [
+        {"id": "1", "s": "71340/1", "k": "standing", "r": False, "t": "", "u": "/a"}]})
+    assert store["docs"]["1"]["k"] == "standing" and "71340/1" not in coverage(store)
 
 
 def test_coverage_combines_and_prefers_repeat_votes():

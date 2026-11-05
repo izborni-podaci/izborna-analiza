@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from izbori import feed, mail, schedule
-from izbori.config import SITE_URL
+from izbori.config import RIK_PUBLIC, SITE_URL
 from izbori.history import Archive, now_iso
 from izbori.i18n import BELGRADE, check_name, parse_time
 from izbori.notes import write_template
@@ -304,6 +304,19 @@ def cmd_boards(args) -> int:
         got = boards.read(todo, planned["contestants"], Client().base, workers, args.budget_minutes * 60, log,
                           args.diagnose)
         Path(args.out).write_text(json.dumps(got, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+        return 0
+    if args.diagnose_ids:  # how some decisions read, every way, logged with names masked; nothing is kept
+        rid = args.round
+        store = boards.load_store(archive.dir(rid))
+        contestants = archive.meta(rid).get("contestants") or []
+        client = Client()
+        for i in (x.strip() for x in args.diagnose_ids.split(",") if x.strip()):
+            entry = store.get("docs", {}).get(i)
+            if not entry or not entry.get("u"):
+                log(f"{i}: not in the store, or no link")
+                continue
+            log(f"{i}: station {entry.get('s')}, kind {entry.get('k')}, kept slots {entry.get('slots')}")
+            boards.diagnose(client.get_bytes(RIK_PUBLIC.rstrip("/") + entry["u"]), contestants, log, i)
         return 0
     if args.merge:
         planned = json.loads(Path(args.merge).read_text(encoding="utf-8"))
@@ -714,6 +727,8 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--diagnose", type=int, default=0, help="log the masked layout of this many unreadable decisions")
     b.add_argument("--retry-unparsed", action="store_true", help="read unreadable decisions again")
     b.add_argument("--only", metavar="CODES", help="read only these municipalities' decisions (codes, comma-separated)")
+    b.add_argument("--diagnose-ids", metavar="IDS",
+                   help="with --round: log how these decisions read, every way, names masked; nothing is kept")
     b.add_argument("--reindex", action="store_true",
                    help="page through the whole register again, to place decisions by the current rules")
     b.add_argument("--plan", metavar="FILE", help="index the register and write what to read to FILE, then stop")
