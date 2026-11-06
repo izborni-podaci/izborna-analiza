@@ -63,8 +63,8 @@ These are the project's promises to its readers. Never change them without the m
     lists under a city the results don't have (Niš, Belgrade), RIK's name of that city.
   - `observers.json`: the OCR numbers only.
   - `observer_reviews.csv`: what a person found in an observers' record.
-  - `settlements.json`: per station, its census municipality and settlement and the rule that found them (for the
-    analysis; no page shows it yet).
+  - `settlements.json`: per station, its census municipality and settlement and the rule that found them (each
+    election's Settlements page and Explore's census measures use it).
 - **Stations are keyed `municipality code/number` per round.** Municipality codes are stable across elections,
   but names differ ("Ниш-Медијана" in 2022, "Градска општина Медијана" in RIK's registers). Names map to codes
   with `boards.municipality_key`, using every archived round.
@@ -163,6 +163,14 @@ These are the project's promises to its readers. Never change them without the m
     clears the choice (ballot numbers belong to one election). Measures and filters are the same for every list.
     Unknown is not zero: a station whose board decision wasn't read has no controller value, and an election
     whose observers' records weren't read has none for them.
+- **Results by kind of settlement** (`bysettlement.py`, `r/<id>/settlements.html`): every contestant's share and
+  controllers by the class of its stations' settlements (type, population, change since 2011), in the order of
+  their votes, nothing ranked or flagged. The census's figures are read from the archived tables when the site is
+  built (`settlements.load_figures`), so the tables and each round's `settlements.json` are inputs of the round's
+  pages. Explore's filters use the same classes (`bysettlement.CLASSES`); for a municipality a census measure counts
+  each of its settlements with stations once, and census measures aren't compared between elections. Controllers
+  are shown for a class only where at least half of its stations' decisions (and at least 10) were read: Belgrade's
+  2024 decisions were mostly never published.
 - **Incremental build:** each page's inputs are fingerprinted in `_site.state.json`.
   - **Every input of a page must be in its fingerprint.** On 3 Nov 2026 the place pages missed their board
     decisions, so the 2026 pages kept the old version.
@@ -337,3 +345,13 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   widens the page (municipality and round pages scrolled sideways at 390 px, by up to 124 px), the
   round page's statistics tables scroll inside their own box, and the vote list's national share has the width
   of the votes and the share.
+- **6 Nov 2026, analyses on the site:** of four analyses offered for the site (controllers against votes by list,
+  the settlement on the station's page, results and controllers by kind of settlement, the census on Explore), the
+  maintainer chose the last two first. Each election has a Settlements page: shares and controllers by the
+  settlement's type, population and change since 2011, with the urban-other difference within municipalities,
+  which keeps a list strong in rural municipalities from looking strong in villages everywhere, and the other way
+  round: in 2026 two lists' controllers covered about as many village stations as town stations in the country's
+  totals, yet 10 to 12 points fewer of the village stations than of the town stations within the same
+  municipality. Explore gained the census's measures (an
+  urban settlement, its people, its change since 2011, its share aged 65 or more) and filters by the same classes.
+  The research dashboard of the same day is not kept up: the site is where the analyses go.

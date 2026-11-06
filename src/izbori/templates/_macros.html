@@ -34,6 +34,7 @@
 {% elif current == 'check' %}{% set trail = trail + [(rshort, link(base + 'index.html')), (t('nav_check'), none)] %}
 {% elif current == 'changes' %}{% set trail = trail + [(rshort, link(base + 'index.html')), (t('nav_changes'), none)] %}
 {% elif current == 'commissions' %}{% set trail = trail + [(rshort, link(base + 'index.html')), (t('nav_commissions'), none)] %}
+{% elif current == 'settlements' %}{% set trail = trail + [(rshort, link(base + 'index.html')), (t('nav_settlements'), none)] %}
 {% elif m is defined %}{% set trail = trail + [(rshort, link(base + 'index.html')), (name(m.name), none)] %}
 {% else %}{% set trail = trail + [(rshort, link(base + 'index.html'))] %}{% endif %}
 {{ crumbs(trail) }}
@@ -42,6 +43,7 @@
   <a href="{{ link(base + 'check.html') }}"{% if current == 'check' %} aria-current="page"{% endif %}>{{ t('nav_check') }}</a>
   <a href="{{ link(base + 'index.html') }}#municipalities">{{ t('nav_municipalities') }}</a>
   <a href="{{ link(base + 'commissions.html') }}"{% if current == 'commissions' %} aria-current="page"{% endif %}>{{ t('nav_commissions') }}</a>
+  <a href="{{ link(base + 'settlements.html') }}"{% if current == 'settlements' %} aria-current="page"{% endif %}>{{ t('nav_settlements') }}</a>
   <a href="{{ link(base + 'changes.html') }}"{% if current == 'changes' %} aria-current="page"{% endif %}>{{ t('nav_changes') }}</a>
 </nav>
 {% endmacro %}

@@ -162,3 +162,63 @@ def test_the_2026_stations_have_their_settlements(archive, round2026):
     assert sum(s.key in store for s in home) / len(home) > 0.85
     vracar = [s for s in rnd.stations if s.municipality_code == "70114"]
     assert vracar and all(store[s.key]["s"] == "Београд (Врачар)" for s in vracar)
+
+
+def figure_tables(data_dir):
+    """The two tables the figures come from, in the Office's layout: B "г" for urban, J and K the 2011 and 2022
+    population; and by age, three rows per place (both sexes first), 65-69 to 85+ in R to V."""
+    base = data_dir / S.TABLES
+    base.mkdir(parents=True)
+    rows = [("Сремска област", 2, "", None, None), ("Стара Пазова", 2, "", 66000, 63000),
+            ("Стара Пазова", 4, "г", 18000, 19000), ("Голубинци", 4, "", 5000, 4000), ("Нови Бановци", 4, "", "-", 300),
+            ("Пчињска област", 2, "", None, None), ("Бујановац", 2, "", None, None), ("Биљача", 4, "", "...", 1976)]
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Упоредни преглед броја становника"])
+    for i, (name, indent, urban, p11, p22) in enumerate(rows, start=2):
+        ws.cell(row=i, column=1, value=name).alignment = Alignment(indent=indent)
+        ws.cell(row=i, column=2, value=urban)
+        ws.cell(row=i, column=10, value=p11)
+        ws.cell(row=i, column=11, value=p22)
+    wb.save(base / S.POPULATION.name)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Становништво према старости и полу"])
+    r = 2
+    for name, indent, _, _, p22 in rows:
+        for sex in ("С", "М", "Ж"):
+            if sex == "С":
+                ws.cell(row=r, column=1, value=name).alignment = Alignment(indent=indent)
+            ws.cell(row=r, column=3, value=sex)
+            for col in range(18, 23):  # 65-69 … 85 and more
+                ws.cell(row=r, column=col, value="-" if name == "Нови Бановци" else 100)
+            r += 1
+    wb.save(base / S.AGES.name)
+
+
+def test_the_figures_of_each_settlement(tmp_path):
+    figure_tables(tmp_path)
+    fig = S.load_figures(tmp_path)
+    assert set(fig) == {("Стара Пазова", "Стара Пазова"), ("Стара Пазова", "Голубинци"),
+                        ("Стара Пазова", "Нови Бановци"), ("Бујановац", "Биљача")}
+    town = fig[("Стара Пазова", "Стара Пазова")]
+    assert town.urban and town.pop2022 == 19000 and town.old == 500
+    assert abs(town.change - (19000 / 18000 - 1)) < 1e-12 and abs(town.share_old - 500 / 19000) < 1e-12
+    assert not fig[("Стара Пазова", "Голубинци")].urban and abs(fig[("Стара Пазова", "Голубинци")].change + 0.2) < 1e-12
+    # "-" is none, "..." unknown: no change from no one, nor from a figure the 2011 census doesn't give
+    assert fig[("Стара Пазова", "Нови Бановци")].pop2011 == 0 and fig[("Стара Пазова", "Нови Бановци")].change is None
+    assert fig[("Стара Пазова", "Нови Бановци")].old == 0
+    assert fig[("Бујановац", "Биљача")].pop2011 is None and fig[("Бујановац", "Биљача")].change is None
+    assert S.load_figures(tmp_path / "nothing") == {}
+
+
+def test_the_archived_census_names_every_joined_settlement(archive):
+    fig = S.load_figures(archive.root)
+    assert len(fig) == 4721 and sum(f.urban for f in fig.values()) == 179
+    units = S.load_units(archive.root / S.TABLE)
+    assert set(fig) == {(u.key, s) for u in units for s in u.settlements}  # the tables agree on the hierarchy
+    for rid in archive.round_ids():
+        joined = S.load_store(archive.dir(rid)).get("stations", {})
+        assert {(e["u"], e["s"]) for e in joined.values()} <= set(fig), rid
+    # Preševo and Bujanovac: the 2011 census counted them only as municipalities
+    assert all(f.pop2011 is None for (u, _), f in fig.items() if u == "Бујановац")

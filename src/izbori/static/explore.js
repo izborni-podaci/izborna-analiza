@@ -77,7 +77,9 @@
   // --- measures ---------------------------------------------------------------------------------------------------
   // pct: a share, shown in per cent; for a municipality its stations' numerators over their denominators. count: a
   // number, added up. yes: a station has it or hasn't; for a municipality, the per cent of its stations that have it.
-  // list: the measure needs a list, which the reader chooses.
+  // list: the measure needs a list, which the reader chooses. census: a figure of the station's settlement in the
+  // 2022 census; for a municipality, of its settlements with stations, each once (pop: people, never added up over
+  // stations; chg: a change in per cent, which may be below zero).
   const M = {
     turnout: { kind: 'pct' },
     invalid: { kind: 'pct' },
@@ -91,7 +93,20 @@
     ctrl: { kind: 'yes', list: true },
     obs: { kind: 'yes' },
     hours: { kind: 'hours' }, // from the polls closing to the upload of the first minutes; a median per group
+    urban: { kind: 'yes', census: true },
+    pop: { kind: 'pop', census: true },
+    growth: { kind: 'chg', census: true },
+    old: { kind: 'pct', census: true },
   };
+  // the settlements' classes, the same as on each election's page by kind of settlement
+  const CL = META.classes || { size: [], change: [], old: [] };
+  const klass = (v, bounds) => (v == null ? null : bounds.filter((b) => v >= b).length);
+  const settlementOf = (d, i) => {
+    const k = d.stations.set ? d.stations.set[i] : null;
+    return k == null || !d.settlements ? null : d.settlements[k];
+  };
+  const change = (p) => (p[2] && p[3] != null ? p[3] / p[2] - 1 : null);
+  const share65 = (p) => (p[4] != null && p[3] ? p[4] / p[3] : null);
   const MKEYS = Object.keys(M);
   const unit = (key, lv) => (M[key].kind === 'yes' && lv === 'm' ? 'pct' : M[key].kind);
   const listIx = (d, n) => (n === '' || n == null || !d ? -1 : d.contestants.findIndex((c) => String(c.n) === String(n)));
@@ -124,13 +139,17 @@
       }
       case 'obs': return [s.obs[i] ? 1 : 0, 1];
       case 'hours': return s.min && s.min[i] != null ? [s.min[i], 0] : null;
+      case 'urban': { const p = settlementOf(d, i); return p ? [p[1] ? 1 : 0, 1] : null; }
+      case 'pop': { const p = settlementOf(d, i); return p && p[3] != null ? [p[3], 0] : null; }
+      case 'growth': { const p = settlementOf(d, i); return p && change(p) != null ? [p[3] - p[2], p[2]] : null; }
+      case 'old': { const p = settlementOf(d, i); return p && share65(p) != null ? [p[4], p[3]] : null; }
       default: return null;
     }
   };
   const sval = (key, d, i, li) => {
     const p = parts(key, d, i, li);
     if (!p) return null;
-    if (M[key].kind !== 'pct') return p[0];
+    if (M[key].kind !== 'pct' && M[key].kind !== 'chg') return p[0];
     return p[1] ? (100 * p[0]) / p[1] : null;
   };
   const gval = (key, d, idx, li) => {
@@ -145,10 +164,16 @@
       return valid ? (100 * Math.max(...tot)) / valid : null;
     }
     if (M[key].kind === 'hours') return median(idx.map((i) => (parts(key, d, i, li) || [null])[0]));
+    const seen = new Set(); // a settlement's figures count once, however many stations it has
     let a = 0;
     let b = 0;
     let any = false;
     for (const i of idx) {
+      if (M[key].census && M[key].kind !== 'yes') {
+        const k = d.stations.set ? d.stations.set[i] : null;
+        if (k == null || seen.has(k)) continue;
+        seen.add(k);
+      }
       const p = parts(key, d, i, li);
       if (!p) continue;
       any = true;
@@ -156,23 +181,25 @@
       b += p[1];
     }
     if (!any) return null;
-    if (M[key].kind === 'count') return a;
+    if (M[key].kind === 'count' || M[key].kind === 'pop') return a;
     return b ? (100 * a) / b : null;
   };
   const fmt = (u, v) => {
     if (v == null) return '—';
     if (u === 'pct') return `${num(v, 1)}%`;
+    if (u === 'chg') return `${signed(v, 1)}%`;
     if (u === 'yes') return t(v ? 'ex_true' : 'ex_false');
     if (u === 'hours') return `${num(v, 1)} h`;
     return num(v, 0);
   };
-  const csvNum = (u, v) => (v == null ? '' : u === 'pct' ? Number(v.toFixed(2)) : u === 'hours' ? Number(v.toFixed(1)) : v);
+  const csvNum = (u, v) => (v == null ? '' : u === 'pct' || u === 'chg' ? Number(v.toFixed(2))
+    : u === 'hours' ? Number(v.toFixed(1)) : v);
   const listName = (rid, n) => {
     const l = ((BY_ID[rid] || {}).lists || []).find((x) => String(x.n) === String(n));
     return l ? `${l.n}. ${l.name}` : '';
   };
   const mlabel = (key, rid, n) => (M[key].list && n ? `${t(`m_${key}`)}: ${listName(rid, n)}` : t(`m_${key}`));
-  const withUnit = (label, u) => (u === 'pct' ? `${label} (%)` : u === 'hours' ? `${label} (h)` : label);
+  const withUnit = (label, u) => (u === 'pct' || u === 'chg' ? `${label} (%)` : u === 'hours' ? `${label} (h)` : label);
 
   // --- numbers for scales -----------------------------------------------------------------------------------------
   const quantile = (sorted, q) => {
@@ -292,7 +319,7 @@
   // --- the state, in the address ----------------------------------------------------------------------------------
   const DEF = {
     v: 'map', r: ROUNDS[0].id, r2: '', lv: 's', x: 'turnout', lx: '', y: 'top', ly: '', mun: '', k: 'd', min: '',
-    fl: '', cl: '', cv: 'yes', ob: '', x0: '', x1: '', o: '',
+    fl: '', cl: '', cv: 'yes', ob: '', x0: '', x1: '', o: '', nt: '', ns: '', nc: '', na: '',
   };
   const KEYS = Object.keys(DEF);
   const ALWAYS = ['v', 'r', 'x'];
@@ -307,6 +334,10 @@
     if (!['', 'any', 'none', ...GROUPS.map((g) => `g:${g}`)].includes(s.fl)) s.fl = '';
     if (!['yes', 'no'].includes(s.cv)) s.cv = DEF.cv;
     if (!['', 'yes', 'no'].includes(s.ob)) s.ob = '';
+    if (!['', 'u', 'o'].includes(s.nt)) s.nt = '';
+    [['ns', CL.size], ['nc', CL.change], ['na', CL.old]].forEach(([k, b]) => {
+      if (s[k] !== '' && !(/^\d$/.test(s[k]) && Number(s[k]) <= b.length)) s[k] = '';
+    });
     ['min', 'x0', 'x1'].forEach((k) => { if (s[k] !== '' && !Number.isFinite(Number(s[k]))) s[k] = ''; });
     return s;
   };
@@ -352,6 +383,7 @@
   const listItems = (rid) => [['', t('ex_pick_list')],
     ...((BY_ID[rid] || {}).lists || []).map((l) => [String(l.n), cut(`${l.n}. ${l.name}`), `${l.n}. ${l.name}`])];
   const allowed = (v, lv) => MKEYS.filter((k) => {
+    if (M[k].census && (v === 'compare' || v === 'matrix')) return false; // one census for every election
     if (v === 'matrix') return !M[k].list; // lists change from one election to the next
     if (v === 'map' || v === 'table' || lv === 'm') return true;
     return M[k].kind !== 'yes'; // a station has it or hasn't: nothing to spread along an axis
@@ -398,11 +430,17 @@
     show('cv', !!st.cl && v !== 'matrix');
     fill('cv', [['yes', t('ex_ctrl_yes')], ['no', t('ex_ctrl_no')]], st.cv);
     fill('ob', [['', t('ex_all')], ['yes', t('ex_yes')], ['no', t('ex_no')]], st.ob);
+    fill('nt', [['', t('ex_all')], ['u', t('ex_sx_type_0')], ['o', t('ex_sx_type_1')]], st.nt);
+    fill('ns', [['', t('ex_all')], ...CL.size.concat([null]).map((b, k) => [String(k), t(`ex_sx_size_${k}`)])], st.ns);
+    fill('nc', [['', t('ex_all')], ...CL.change.concat([null]).map((b, k) => [String(k), t(`ex_sx_change_${k}`)])], st.nc);
+    fill('na', [['', t('ex_all')], ...CL.old.concat([null]).map((b, k) => [String(k), t(`ex_old_${k}`)])], st.na);
     field('min').value = st.min;
     show('x0', v !== 'compare' && v !== 'matrix' && unit(st.x, lv) !== 'yes');
     field('x0').value = st.x0;
     field('x1').value = st.x1;
-    if (st.mun || st.k !== 'd' || st.min || st.fl || st.cl || st.ob || st.x0 || st.x1) filtersEl.open = true;
+    if (st.mun || st.k !== 'd' || st.min || st.fl || st.cl || st.ob || st.x0 || st.x1 || bySettlement()) {
+      filtersEl.open = true;
+    }
   };
 
   // --- the data ---------------------------------------------------------------------------------------------------
@@ -437,8 +475,10 @@
 
   // Which stations: the filters apply to each election's own stations; the controller filter only to the chosen
   // election, whose lists it names.
+  const bySettlement = () => Boolean(st.nt || st.ns || st.nc || st.na);
   const keeper = (d, rid) => {
     const s = d.stations;
+    const census = bySettlement();
     const minReg = Number(st.min) || 0;
     const gi = st.fl.startsWith('g:') ? GROUPS.indexOf(st.fl.slice(2)) : -1;
     const gbit = gi >= 0 ? 1 << gi : 0;
@@ -461,6 +501,14 @@
       }
       if (st.ob === 'yes' && !s.obs[i]) return false;
       if (st.ob === 'no' && s.obs[i]) return false;
+      if (census) { // a station whose settlement isn't known is in no class
+        const p = settlementOf(d, i);
+        if (!p) return false;
+        if (st.nt && (st.nt === 'u') !== Boolean(p[1])) return false;
+        if (st.ns !== '' && klass(p[3], CL.size) !== Number(st.ns)) return false;
+        if (st.nc !== '' && klass(change(p), CL.change) !== Number(st.nc)) return false;
+        if (st.na !== '' && klass(share65(p), CL.old) !== Number(st.na)) return false;
+      }
       return true;
     };
   };
@@ -523,10 +571,13 @@
     });
     return wrap;
   };
+  const placeName = (d, i) => { const p = settlementOf(d, i); return p ? own(p[0]) : ''; };
+  const censusUsed = () => M[st.x].census || (st.v === 'density' && M[st.y].census) || bySettlement();
   const stCols = () => [
     { h: t('ex_col_mun'), get: (r) => munName(r.d.stations.mc[r.i], r.d) },
     { h: t('ex_col_no'), num: true, get: (r) => r.d.stations.no[r.i] },
     { h: t('ex_col_name'), get: (r) => ({ t: stName(r.d, r.i), href: stHref(r.d, r.i) }) },
+    ...(censusUsed() ? [{ h: t('ex_col_place'), get: (r) => placeName(r.d, r.i) }] : []),
   ];
   const munCols = () => [
     { h: t('ex_col_mun'), get: (r) => ({ t: munName(r.code, r.d), href: munHref(r.code) }) },
@@ -596,7 +647,8 @@
   };
   const rangeText = (u, a, b, step) => {
     const d = digits(step);
-    return u === 'pct' ? `${num(a, d)}–${num(b, d)}%` : u === 'hours' ? `${num(a, d)}–${num(b, d)} h` : `${num(a, d)}–${num(b, d)}`;
+    return u === 'pct' || u === 'chg' ? `${num(a, d)}–${num(b, d)}%` : u === 'hours' ? `${num(a, d)}–${num(b, d)} h`
+      : `${num(a, d)}–${num(b, d)}`;
   };
 
   // Two values per row: a heat grid of counts for many stations' shares, otherwise points.
@@ -686,8 +738,9 @@
     return known.length ? `${num((100 * known.filter((r) => r.value).length) / known.length, 1)}%` : '—';
   };
   const stCsv = (d, i) => [d.stations.mc[i], munName(d.stations.mc[i], d), d.stations.no[i], own(d.stations.name[i]),
-    d.stations.reg[i], d.stations.voted[i]];
-  const stHead = () => [t('ex_col_code'), t('ex_col_mun'), t('ex_col_no'), t('ex_col_name'), t('m_reg'), t('m_voted')];
+    placeName(d, i), d.stations.reg[i], d.stations.voted[i]];
+  const stHead = () => [t('ex_col_code'), t('ex_col_mun'), t('ex_col_no'), t('ex_col_name'), t('ex_col_place'), t('m_reg'),
+    t('m_voted')];
   const munCsv = (r) => [r.code, munName(r.code, r.d), r.idx.length, gval('reg', r.d, r.idx, -1), gval('voted', r.d, r.idx, -1)];
   const munHead = () => [t('ex_col_code'), t('ex_col_mun'), t('ex_col_n'), t('m_reg'), t('m_voted')];
   const absUrl = (href) => new URL(href, location.href).href;
@@ -1005,7 +1058,7 @@
     const label = mlabel(key, st.r, st.lx);
     const sorted2 = [...rows].sort(byValue(false));
     summary([countText('m', rows.length), totalText(u, rows), t('ex_median', { v: fmt(u, median(rows.map((r) => r.value))) }),
-      t(u === 'hours' ? 'ex_map_median' : 'ex_map_sums')]);
+      t(u === 'hours' ? 'ex_map_median' : M[key].census && M[key].kind !== 'yes' ? 'ex_map_places' : 'ex_map_sums')]);
     if (!rows.length) return { empty: true };
     const stc = [...stCols(), valCol(label, unit(key, 's')), regCol()];
     const li = listIx(d, st.lx);
@@ -1098,10 +1151,12 @@
     for (const [key, rid, n] of used) {
       if (key === 'ctrl' && !BY_ID[rid].ctrl) return 'ex_msg_ctrl';
       if (key === 'obs' && !BY_ID[rid].obs) return 'ex_msg_obs';
+      if (M[key].census && !BY_ID[rid].census) return 'ex_msg_census';
       if (M[key].list && listIx(DATA[rid], n) < 0) return 'ex_msg_list';
     }
     if (st.cl && !BY_ID[st.r].ctrl) return 'ex_msg_ctrl';
     if (st.ob && !BY_ID[st.r].obs) return 'ex_msg_obs';
+    if (bySettlement() && !BY_ID[st.r].census) return 'ex_msg_census';
     return null;
   };
   const fillMun = (ds) => {
@@ -1305,6 +1360,8 @@
       withCtrl && ['ctrl_map', { v: 'map', r: withCtrl.id, x: 'ctrl' }],
       ['high', { v: 'table', r: newest.id, lv: 's', x: 'turnout', x0: '90' }],
       ['hours_map', { v: 'map', r: newest.id, x: 'hours' }],
+      newest.census && ['old_turnout', { v: 'density', r: newest.id, lv: 's', x: 'old', y: 'turnout' }],
+      newest.census && ['growth_map', { v: 'map', r: newest.id, x: 'growth' }],
     ].filter(Boolean);
   };
   presetsEl.innerHTML = presets().map(([k, s]) => `<a class="chip" href="${esc(toHash({ ...DEF, ...s }))}">${esc(t(`preset_${k}`))}</a>`).join('');

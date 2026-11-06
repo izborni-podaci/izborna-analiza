@@ -164,6 +164,17 @@ def test_explore(site, archive):
     hours = [h for h in cols["min"] if h is not None]  # from the polls closing to the first minutes in RIK's register
     assert len(hours) > 8000 and 0 < sorted(hours)[len(hours) // 2] < 24
     assert all(p for p in cols["place"])  # every station leads to its page across elections
+    # each station's settlement, by its index in the election's settlements, with the census's figures
+    from izbori import bysettlement, settlements
+    joined = settlements.load_store(archive.dir("680072"))["stations"]
+    fig = settlements.load_figures(archive.root)
+    assert sum(k is not None for k in cols["set"]) == len(joined)
+    k = next(j for j, s in enumerate(rnd.stations) if s.key in joined)
+    e = joined[rnd.stations[k].key]
+    f = fig[(e["u"], e["s"])]
+    assert data["settlements"][cols["set"][k]] == [e["s"], int(f.urban), f.pop2011, f.pop2022, f.old]
+    assert lat["classes"] == {k: list(v) for k, v in bysettlement.CLASSES.items()}
+    assert all(r["census"] for r in lat["rounds"]) and lat["t"]["ex_sx_size_0"] == "do 499"
     for rid in archive.round_ids():
         assert (out / f"api/r/{rid}/stations.json").exists(), rid
 
@@ -409,6 +420,38 @@ def test_municipality_across_elections(site):
     assert 'href="../../../m/89010.html"' in mun and 'href="../../../s/89010-1.html"' in mun
 
 
+def test_results_by_settlement(site, archive):
+    """Each election's page by kind of settlement: in the round's navigation, every list's share and controllers by
+    class as bysettlement computes them, and the tables as CSV."""
+    from izbori import boards, bysettlement, settlements
+    from izbori.i18n import fmt_pct
+
+    for prefix in ("", "cyr/", "en/"):
+        for rid in archive.round_ids():
+            assert (site / prefix / f"r/{rid}/settlements.html").exists(), prefix + rid
+    page = (site / "r/680072/settlements.html").read_text(encoding="utf-8")
+    assert re.search(r'<a href="[^"]*settlements\.html" aria-current="page">Naselja</a>', page)
+    assert 'href="../../r/680072/settlements.html"' in (site / "r/680072/index.html").read_text(encoding="utf-8")
+    heads = re.findall(r"<h2[^>]*>([^<]+)</h2>", page)
+    assert heads == ["Gradska i ostala naselja", "Naselja po broju stanovnika", "Naselja po promeni broja stanovnika",
+                     "Kako je napravljeno"]
+    rnd = archive.load("680072")
+    r = bysettlement.analyse(rnd.stations, rnd.contestants, settlements.load_store(archive.dir("680072"))["stations"],
+                             settlements.load_figures(archive.root),
+                             boards.coverage(boards.load_store(archive.dir("680072"))))
+    first = r["rows"][0]
+    row = re.search(rf"<tr><th scope=\"row\">{first['number']}\. [^<]+</th>(.*?)</tr>", page).group(1)
+    cells = re.findall(r">([^<]+)</td>", row)
+    assert cells[:3] == [fmt_pct(v, "lat") for v in [first["votes_all"], *first["votes"]["type"]]]
+    assert "Biračka mesta na kojima je lista imala kontrolora" in page and "Unutar opština" in page
+    assert f"Naselje je poznato za {r['used']:,}".replace(",", ".") in page
+    lines = (site / "api/r/680072/settlements.csv").read_text(encoding="utf-8").splitlines()
+    assert lines[0].startswith("dimension,class,number,contestant") and len(lines) == 1 + 11 * len(rnd.contestants)
+    # no decisions on polling boards were read for the presidential election of 2022: its votes only
+    pres = (site / "en/r/42732/settlements.html").read_text(encoding="utf-8")
+    assert "Share of valid votes" in pres and "had a controller" not in pres and "No controllers here" in pres
+
+
 def test_municipality_page_order(site, archive):
     """A municipality in one election, in the order the maintainer chose: the result in per cent first, then the
     stations (site.js shows the first ten and a button for the rest), the votes of the three lists with most votes
@@ -443,7 +486,7 @@ def test_municipality_page_order(site, archive):
     assert shown == [fmt_int(totals[i], "lat") for i in top] + [fmt_int(rest, "lat"), fmt_int(sum(totals), "lat")]
     # the whole table behind a button that says what it is, and a CSV made from it in the browser
     assert '<details class="all-votes">\n  <summary class="button secondary">Cela tabela</summary>' in page
-    assert 'data-csv="#all-votes-table"' in page and 'data-file="680072-70351.csv"' in page
+    assert 'data-table-csv="#all-votes-table"' in page and 'data-file="680072-70351.csv"' in page
 
     en = (site / "en/r/680072/m/70351.html").read_text(encoding="utf-8")
     assert "Show all polling stations (" in en and "Every list at every polling station" in en
@@ -496,6 +539,10 @@ def test_incremental_build_matches_a_full_build(tmp_path, archive, monkeypatch):
     data = tmp_path / "data"
     for rid in ("341143", "567956"):  # two small rounds keep the test quick
         shutil.copytree(archive.dir(rid), data / "rounds" / rid)
+    from izbori import settlements
+    for f in settlements.FIGURE_TABLES:  # the census, for the pages by kind of settlement
+        (data / f).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(archive.root / f, data / f)
 
     def same(a, b):
         cmp = filecmp.dircmp(a, b)
@@ -549,6 +596,18 @@ def test_incremental_build_matches_a_full_build(tmp_path, archive, monkeypatch):
     # the commissions page counts the commission's new document (its inputs are the round's)
     table = csv.DictReader(io.StringIO((tmp_path / "b/site/api/r/567956/commissions.csv").read_text(encoding="utf-8")))
     assert {r["code"]: r["commission_documents"] for r in table}[entry["s"].split("/")[0]] == "1"
+
+    # a station's settlement is corrected: the page by kind of settlement is built again
+    s = data / "rounds/567956/settlements.json"
+    store = json.loads(s.read_text(encoding="utf-8"))
+    key, e = next((k, v) for k, v in store["stations"].items() if v["s"] != "Борча")
+    store["stations"][key] = {"u": "Палилула", "s": "Борча", "m": "manual"}
+    s.write_text(json.dumps(store, ensure_ascii=False), encoding="utf-8")
+    before = (tmp_path / "b/site/r/567956/settlements.html").read_text(encoding="utf-8")
+    run(tmp_path / "b" / "site", True)
+    assert (tmp_path / "b/site/r/567956/settlements.html").read_text(encoding="utf-8") != before
+    run(tmp_path / "g" / "site", False)
+    assert same(tmp_path / "g" / "site", tmp_path / "b" / "site")
 
     # a document of Belgrade's city commission, which RIK lists under the city: shown with every city municipality.
     # These two elections don't say which municipalities are Belgrade's (2022 and 2026 do), so the test says it;

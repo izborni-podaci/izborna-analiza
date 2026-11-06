@@ -29,7 +29,7 @@ from izbori.links import safe_url
 from izbori.model import ABROAD, PRISONS, last_url
 from izbori.i18n import (BELGRADE, LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, collate, fmt_date, fmt_int,
                          fmt_num, fmt_pct, fmt_time, keep, kind_name, latin_page, strip_keep, t)
-from izbori import commission, documents, geo, narrative, publishing, schedule
+from izbori import bysettlement, commission, documents, geo, narrative, publishing, schedule, settlements
 from izbori.places import RULES_FILE, Place, contradicts, follow
 from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
@@ -138,6 +138,28 @@ class Site:
             self.commission_cache[rid] = commission.by_municipality(commission.load_store(self.archive.dir(rid)))
         return self.commission_cache[rid]
 
+    @property
+    def figures(self) -> dict:
+        """Each census settlement's figures (settlements.load_figures), read once."""
+        if self.figures_cache is None:
+            self.figures_cache = settlements.load_figures(self.archive.root)
+        return self.figures_cache
+
+    def settlements_of(self, rid: str) -> dict[str, dict]:
+        """The round's stations' settlements (settlements.json): station key → census municipality, settlement, rule."""
+        return settlements.load_store(self.archive.dir(rid)).get("stations", {})
+
+    def by_settlement_of(self, rid: str) -> dict:
+        """Results and controllers by kind of settlement (bysettlement.py), with the contestants' display labels."""
+        if rid not in self.settlement_cache:
+            a = self.analyses[rid]
+            result = bysettlement.analyse(a.round.stations, a.round.contestants, self.settlements_of(rid),
+                                          self.figures, self.ctrl_of(rid))
+            for row in result["rows"]:
+                row["label"] = self.labels[rid][row["index"]]
+            self.settlement_cache[rid] = result
+        return self.settlement_cache[rid]
+
     def publishing_of(self, rid: str) -> tuple[list, dict]:
         """Per municipality in Serbia, what reached RIK's registers for its stations and from its commission, and
         when (publishing.py); with the whole country's line."""
@@ -221,14 +243,17 @@ class Site:
         name = latin if loc == "en" else (lambda x: x)  # the Latin page is transliterated whole
         rounds = [{"id": rid, "short": self.shorts[loc][rid], "date": self.dates[rid] or "",
                    "kind": self.analyses[rid].round.kind, "ctrl": bool(self.ctrl_of(rid)), "obs": self.docs_known[rid],
+                   "census": bool(self.by_settlement_of(rid)["used"]),
                    "lists": [{"n": c.number, "name": name(c.short or c.name)}
                              for c in self.analyses[rid].round.contestants]}
                   for rid in reversed(self.rids)]
         muns = {code: name(self.mun_rows[rids[0]][code]["name"]) for code, rids in self.mun_rounds.items()}  # newest
         strings = {k: t(k, loc) for k in S if k.startswith(("ex_", "m_", "view_", "level_", "preset_"))}
         strings.update({f"group_{g}": t(f"group_{g}", loc) for g in GROUPS})
+        # the settlements' classes, named as on the round's page by kind of settlement
+        strings.update({f"ex_{k}": t(k, loc) for k in S if k.startswith(("sx_type_", "sx_size_", "sx_change_"))})
         return {"loc": loc, "rounds": rounds, "muns": muns, "groups": GROUPS, "t": strings,
-                "abroad": ABROAD.strip("/"), "prisons": PRISONS.strip("/")}
+                "abroad": ABROAD.strip("/"), "prisons": PRISONS.strip("/"), "classes": bysettlement.CLASSES}
 
     def municipality_index(self, loc: str) -> list[dict]:
         """Every municipality in the archive, in alphabetical order: how many elections, its polling stations at the
@@ -318,6 +343,7 @@ class Site:
                                           "observer_reviews.csv", "commission.json")]
                 if self.notes_dir:
                     files.append(Path(self.notes_dir) / f"{r}.csv")
+            files += [self.archive.dir(rid) / settlements.STORE] + [self.archive.root / f for f in settlements.FIGURE_TABLES]
             links = hashlib.sha256("|".join(self.st_path(rid, s.key) for s in self.analyses[rid].round.stations).encode())
             links.update(repr(sorted(self.city_parts.items())).encode())  # from every election, later ones too
             self.round_keys[rid] = file_digest(*files) + links.hexdigest()
@@ -459,6 +485,8 @@ class Site:
         for rid in self.rids:
             self.put(f"api/r/{rid}/stations.json", dump(self.round_data(rid)))
             self.put(f"api/r/{rid}/commissions.csv", publishing.to_csv(self.publishing_of(rid)[0]))
+            self.put(f"api/r/{rid}/settlements.csv", bysettlement.to_csv(self.by_settlement_of(rid),
+                                                                      self.analyses[rid].round.contestants))
         boundaries = geo.load(self.archive.root / "geo" / "municipalities.json")
         if boundaries:
             self.put("api/geo/municipalities.json", json.dumps(self.map_of(boundaries), ensure_ascii=False,
@@ -488,12 +516,18 @@ class Site:
         which groups (bits in the order of GROUPS), which lists appointed a member or deputy of the extended
         composition (bit n-1 for ballot number n; null where no decision was read), whether RIK published an
         observers' record, the hours from the polls closing to the upload of the station's first minutes (null
-        when none is known), and each list's votes, by ballot number."""
+        when none is known), each list's votes, by ballot number, and the station's settlement ("set": its index in
+        "settlements", null where it isn't known) with the census's figures for it: [name as the census prints it,
+        1 for urban, population in 2011, in 2022, people aged 65 or more], null where the census gives none."""
         a = self.analyses[rid]
         ctrl = self.ctrl_of(rid)
         bit = {g: 1 << i for i, g in enumerate(GROUPS)}
         cols: dict[str, list] = {k: [] for k in ("mc", "no", "name", "place", "reg", "voted", "box", "valid", "invalid",
-                                                "flags", "groups", "ctrl", "obs", "min")}
+                                                "flags", "groups", "ctrl", "obs", "min", "set")}
+        joined, figures = self.settlements_of(rid), self.figures
+        places: dict[tuple[str, str], int] = {}
+        for key in sorted({(e["u"], e["s"]) for e in joined.values() if (e["u"], e["s"]) in figures}):
+            places[key] = len(places)
         close = publishing.closing(self.dates[rid] or "")
         votes: list[list] = [[] for _ in a.round.contestants]
         for s in a.round.stations:
@@ -512,6 +546,8 @@ class Site:
                    "flags": len(flags), "groups": sum({bit[f.check.group] for f in flags}), "ctrl": mask,
                    "obs": int(any(d.kind == "observers" for d in a.documents.get(s.key, []))),
                    "min": None if hours is None else round(hours, 1)}
+            e = joined.get(s.key)
+            row["set"] = places.get((e["u"], e["s"])) if e else None
             for k, v in row.items():
                 cols[k].append(v)
             for i in range(len(votes)):
@@ -520,7 +556,8 @@ class Site:
                 "contestants": [{"n": c.number, "name": c.name, "short": c.short} for c in a.round.contestants],
                 "municipalities": {code: m["name"] for code, m in self.mun_rows[rid].items()},
                 "controllers": bool(ctrl), "observers": self.docs_known[rid], "groups": GROUPS, "stations": cols,
-                "votes": votes}
+                "votes": votes, "settlements": [[place, int(f.urban), f.pop2011, f.pop2022, f.old]
+                                                for (unit, place), f in ((k, figures[k]) for k in places)]}
 
     def place_json(self, p: Place) -> dict:
         elections = []
@@ -675,6 +712,8 @@ class Site:
         self.publishing_cache: dict = {}
         self.city_cache: dict = {}
         self.city_parts: dict = {}
+        self.settlement_cache: dict = {}
+        self.figures_cache: dict | None = None
         rids = self.archive.round_ids()
         for rid in rids:
             self.analyses[rid] = analyze(self.archive, rid, self.notes_dir, self.cache)
@@ -736,6 +775,7 @@ class Site:
             self.commission_of(rid)
             self.city_docs_of(rid)
             self.publishing_of(rid)
+            self.by_settlement_of(rid)
         home = self.home_data(rounds[0] if rounds else None)
 
         def pages_in(loc: str) -> None:
@@ -835,7 +875,8 @@ class Site:
     def round_pages(self, a: Analysis, loc: str) -> None:
         rid = a.round.id
         base = f"r/{rid}/"
-        pages = [base + "index.html", base + "check.html", base + "changes.html", base + "commissions.html"] + [
+        pages = [base + "index.html", base + "check.html", base + "changes.html", base + "commissions.html",
+                 base + "settlements.html"] + [
             base + f"m/{code}.html" for code in self.mun_rows[rid]]
         if all([self.keep(loc, page, self.round_key(rid)) for page in pages]):  # a list: every page is recorded
             return
@@ -911,6 +952,8 @@ class Site:
         prow, ptotal = self.publishing_of(rid)
         self.write(loc, base + "commissions.html", "commissions.html", rows=prow, total=ptotal,
                    slow_hours=publishing.SLOW_HOURS, late_hours=publishing.LATE_HOURS, **common)
+        self.write(loc, base + "settlements.html", "settlements.html", sx=self.by_settlement_of(rid),
+                   dims=bysettlement.DIMENSIONS, **common)
 
         by_code: dict[str, list] = defaultdict(list)
         for s in a.round.stations:

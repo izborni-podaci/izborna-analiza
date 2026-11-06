@@ -31,7 +31,11 @@ in a round belongs to the city's own (Vranjska Banja to Vranje in 2026). Kosovo 
 
 data/rounds/<id>/settlements.json keeps, per station, the census municipality ("u", with its city before a colon
 for a city municipality: "Град Ниш: Палилула"), the settlement as the census prints it ("s"), and the rule that
-found it ("m"). data/settlements.csv has the columns round, municipality_code, number, settlement, note."""
+found it ("m"). data/settlements.csv has the columns round, municipality_code, number, settlement, note.
+
+The pages compare places by a few of the census's figures for each settlement (load_figures): RZS's type, urban
+or other; the population in 2011 and 2022; and the people aged 65 or more. They are read from the archived tables
+when the site is built, keyed as settlements.json names a settlement."""
 
 from __future__ import annotations
 
@@ -40,7 +44,7 @@ import json
 import re
 import unicodedata
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from izbori import jsonfile
@@ -48,7 +52,11 @@ from izbori.model import Station
 from izbori.places import Places, contradicts
 from izbori.translit import latin
 
-TABLE = Path("census") / "2022" / "settlements" / "0_ukupan-broj-stanovnika-naselja.xlsx"  # under the data dir
+TABLES = Path("census") / "2022" / "settlements"  # under the data dir
+TABLE = TABLES / "0_ukupan-broj-stanovnika-naselja.xlsx"
+POPULATION = TABLES / "4_uporedni-pregled-broja-stanovnika-1948-2022.xlsx"  # every census from 1948
+AGES = TABLES / "1_stanovnistvo-prema-starosti-i-polu.xlsx"
+FIGURE_TABLES = (POPULATION, AGES)
 STORE = "settlements.json"
 RULES_FILE = "settlements.csv"
 HOW = ("manual", "address", "building", "station", "single", "place", "seat")
@@ -80,11 +88,13 @@ class Unit:
         return f"{self.city}: {self.name}" if self.city else self.name
 
 
-def load_units(path: Path) -> list[Unit]:
-    """The census's municipalities with their settlements, from a table by settlement (the total population)."""
+def _walk(path: Path):
+    """(census municipality, settlement, the settlement's row) for every settlement of a table by settlement. The
+    hierarchy is the first column's indentation: areas and municipalities at 2 (a city printed with settlements of
+    its own is a municipality too), a city's city municipalities at 3, settlements at 4; 1 marks the urban and
+    other subtotals. A table with several rows per place (by sex) names the place in the first only."""
     import openpyxl
     ws = openpyxl.load_workbook(path, data_only=True).active
-    units: list[Unit] = []
     area = city = ""
     cur: Unit | None = None
     for row in ws.iter_rows(min_row=2):
@@ -99,15 +109,82 @@ def load_units(path: Path) -> list[Unit]:
                 area, cur = name, None
                 continue
             if name.startswith("Град "):
-                city = name  # its city municipalities follow; a city printed with settlements of its own is a unit
+                city = name  # its city municipalities follow
             cur = Unit(name, "", area)
-            units.append(cur)
         elif level == 3:
             cur = Unit(name, city, area)
-            units.append(cur)
         elif level == 4 and cur is not None:
-            cur.settlements.append(name)
-    return [u for u in units if u.settlements]
+            yield cur, name, row
+
+
+def load_units(path: Path) -> list[Unit]:
+    """The census's municipalities with their settlements, from a table by settlement (the total population)."""
+    units: list[Unit] = []
+    for u, name, _ in _walk(path):
+        if not u.settlements:
+            units.append(u)
+        u.settlements.append(name)
+    return units
+
+
+@dataclass(frozen=True)
+class Figures:
+    """A settlement in the 2022 census: RZS's type and the figures the pages compare places by."""
+    urban: bool  # "г" in the census: RZS's urban settlement; the rest are "other"
+    pop2011: int | None  # None where the 2011 census gives none (Preševo and Bujanovac, by settlement)
+    pop2022: int | None
+    old: int | None = None  # people aged 65 or more in 2022
+
+    @property
+    def change(self) -> float | None:
+        """The population's change from 2011 to 2022, as a fraction: -0.12 is 12% fewer people."""
+        if not self.pop2011 or self.pop2022 is None:
+            return None
+        return self.pop2022 / self.pop2011 - 1
+
+    @property
+    def share_old(self) -> float | None:
+        """The share of the people aged 65 or more."""
+        return self.old / self.pop2022 if self.old is not None and self.pop2022 else None
+
+
+def _count(value) -> int | None:
+    """A count as RZS prints it: "-" is none, "..." (or anything else that isn't a number) unknown."""
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return int(value)
+    return 0 if str(value or "").strip() == "-" else None
+
+
+_FIGURES: dict[tuple, dict] = {}  # read once per process for the same files: tests build the site many times
+
+
+def load_figures(data_dir: Path) -> dict[tuple[str, str], Figures]:
+    """Per (census municipality, settlement), named as in settlements.json: the settlement's type, its population in
+    2011 and 2022, and its people aged 65 or more. Empty when the census isn't archived."""
+    data_dir = Path(data_dir)
+    if not (data_dir / POPULATION).exists():
+        return {}
+    files = [data_dir / f for f in FIGURE_TABLES]
+    key = tuple((str(f.resolve()), f.stat().st_mtime_ns, f.stat().st_size) if f.exists() else (str(f), 0, 0)
+                for f in files)
+    if key not in _FIGURES:
+        _FIGURES.clear()
+        _FIGURES[key] = _read_figures(data_dir)
+    return _FIGURES[key]
+
+
+def _read_figures(data_dir: Path) -> dict[tuple[str, str], Figures]:
+    out: dict[tuple[str, str], Figures] = {}
+    for u, name, row in _walk(data_dir / POPULATION):  # B: "г" for urban; C to K: 1948, 1953, … 2011, 2022
+        out[(u.key, name)] = Figures(urban=str(row[1].value or "").strip() == "г", pop2011=_count(row[9].value),
+                                     pop2022=_count(row[10].value))
+    if (data_dir / AGES).exists():
+        for u, name, row in _walk(data_dir / AGES):  # D: everyone; E to V: 0-4, 5-9, … 80-84, 85 and more
+            f = out.get((u.key, name))
+            ages = [_count(c.value) for c in row[17:22]]  # 65-69 to 85 and more
+            if f is not None:
+                out[(u.key, name)] = replace(f, old=None if None in ages else sum(ages))
+    return out
 
 
 def rik_name(name: str) -> tuple[list[str], list[str]]:

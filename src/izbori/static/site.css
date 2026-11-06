@@ -471,7 +471,18 @@ table.places td:nth-child(2) { min-width: 14rem; }
 .vl-bar { grid-area: bar; height: 6px; background: var(--grid); }
 .vl-bar span { display: block; height: 6px; background: var(--accent); }
 .vl-ref { grid-area: ref; text-align: right; white-space: nowrap; }
-table.by-station td.heat { background: color-mix(in srgb, var(--accent) calc(var(--h) * 0.55), transparent); }
+table.by-station td.heat, table.sx td.heat { background: color-mix(in srgb, var(--accent) calc(var(--h) * 0.55), transparent); }
+
+/* results and controllers by kind of settlement: a row per list, its name kept in view while the classes scroll */
+.sx-toc ul { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.sx-dim h3 { margin-top: 1.4em; }
+table.sx tbody th { color: var(--ink); font-size: inherit; font-weight: 400; white-space: normal; min-width: 11rem; }
+table.sx th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: inset -1px 0 var(--grid); }
+table.sx .sx-info td, table.sx .sx-info th { color: var(--ink-2); }
+table.sx .sx-info tr:last-child td, table.sx .sx-info tr:last-child th { border-bottom: 2px solid var(--border); }
+.sx-sub { display: block; font-weight: 400; }
+td.sx-diff { font-weight: 600; }
+@media (max-width: 600px) { table.sx tbody th { min-width: 8rem; } }
 .data-notes summary { cursor: pointer; color: var(--ink-2); min-height: 32px; }
 
 /* the municipality page: a line of figures under a heading, the button that opens the rest of the stations, and

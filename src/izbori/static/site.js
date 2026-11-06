@@ -290,10 +290,10 @@
 
   // The whole table of votes as a CSV file, made here from the table on the page: plain numbers, the lists' names
   // in the header, and each station's name from the list of stations.
-  document.querySelectorAll('button[data-csv]').forEach((button) => {
-    const table = document.querySelector(button.dataset.csv);
+  document.querySelectorAll('button[data-table-csv]').forEach((button) => {
+    const table = document.querySelector(button.dataset.tableCsv);
     if (!table || typeof Blob === 'undefined') return;
-    const names = document.querySelector(button.dataset.names);
+    const names = button.dataset.names ? document.querySelector(button.dataset.names) : null;
     button.hidden = false;
     const quote = (v) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
     const number = (v) => v.replace(/[^\d-]/g, '');

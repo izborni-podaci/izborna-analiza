@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
+{% block title %}{{ t('nav_settlements') }} · {{ rtitle }}{% endblock %}
+{% block main %}
+{{ mx.round_nav('settlements') }}
+{% set pres = rnd.kind == 'presidential' %}
+<p class="kicker">{{ rtitle }}</p>
+<h1>{{ t('sx_heading') }}</h1>
+<p class="lede">{{ t('sx_lede') }} {{ t(('sx_lede_ctrl' if sx.controllers else 'sx_lede_votes') ~ ('_pres' if pres else '')) }}</p>
+<p class="principle">{{ t('sx_principle') }}</p>
+{% set without = sx.without.values()|sum %}
+{% if not sx.used %}
+<p>{{ t('sx_none') }}</p>
+{% else %}
+<p>{{ t('sx_used', used=i(sx.used), total=i(sx.used + without), without=i(without)) }}</p>
+<nav class="sx-toc" aria-label="{{ t('sx_toc') }}"><ul>
+{% for d in dims %}  <li><a href="#{{ d }}">{{ t('sx_dim_' ~ d) }}</a></li>
+{% endfor %}  <li><a href="#method">{{ t('sx_method_h') }}</a></li>
+</ul></nav>
+
+{# One table per dimension and measure: a column per class, after all the stations with a settlement; the rows of
+   figures about the classes first, then every contestant, in the order of its votes in the whole election. #}
+{% macro cell(v) %}{% if v is none %}<td class="num muted">—</td>{% else %}<td class="num heat" style="--h: {{ '%.0f'|format(100 * v) }}%">{{ pct(v, 1) }}</td>{% endif %}{% endmacro %}
+{% macro diff(v) %}{% if v is none %}<td class="num muted">—</td>{% else %}<td class="num sx-diff">{{ '+' if v >= 0.0005 else '−' if v <= -0.0005 else '' }}{{ num(100 * (v|abs), 1) }}</td>{% endif %}{% endmacro %}
+{% macro head(d, classes) %}
+  <thead><tr>
+    <th>{{ t('candidate') if pres else t('list') }}</th><th class="num">{{ t('sx_all') }}</th>
+    {% for c in classes %}<th class="num">{{ t('sx_' ~ d ~ '_' ~ loop.index0) }}</th>{% endfor %}
+    {% if d == 'type' %}<th class="num">{{ t('sx_within') }}<span class="sx-sub">{{ t('sx_within_sub') }}</span></th>{% endif %}
+  </tr></thead>
+{% endmacro %}
+
+{% for d in dims %}
+{% set classes = sx.classes[d] %}
+<section class="sx-dim" aria-labelledby="{{ d }}">
+<h2 id="{{ d }}">{{ t('sx_dim_' ~ d) }}</h2>
+<p class="rule">{{ t('sx_dim_' ~ d ~ '_note') }}</p>
+
+<h3>{{ t('sx_votes_h') }}</h3>
+<div class="table-wrap">
+<table class="compact sx">
+  {{ head(d, classes) }}
+  <tbody class="sx-info">
+    <tr><th scope="row">{{ t('sx_row_stations') }}</th><td class="num">{{ i(sx.all.stations) }}</td>{% for c in classes %}<td class="num">{{ i(c.stations) }}</td>{% endfor %}{% if d == 'type' %}<td></td>{% endif %}</tr>
+    <tr><th scope="row">{{ t('sx_row_settlements') }}</th><td class="num">{{ i(sx.all.settlements) }}</td>{% for c in classes %}<td class="num">{{ i(c.settlements) }}</td>{% endfor %}{% if d == 'type' %}<td></td>{% endif %}</tr>
+    <tr><th scope="row">{{ t('registered') }}</th><td class="num">{{ i(sx.all.registered) }}</td>{% for c in classes %}<td class="num">{{ i(c.registered) }}</td>{% endfor %}{% if d == 'type' %}<td></td>{% endif %}</tr>
+    <tr><th scope="row">{{ t('turnout') }}</th><td class="num">{{ pct(sx.all.turnout, 1) }}</td>{% for c in classes %}<td class="num">{{ pct(c.turnout, 1) }}</td>{% endfor %}{% if d == 'type' %}<td></td>{% endif %}</tr>
+  </tbody>
+  <tbody>
+  {% for r in sx.rows %}
+    <tr><th scope="row">{{ r.number }}. {{ name(r.label) }}</th>{{ cell(r.votes_all) }}{% for v in r.votes[d] %}{{ cell(v) }}{% endfor %}{% if d == 'type' %}{{ diff(r.votes_within) }}{% endif %}</tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if sx.controllers %}
+<h3>{{ t('sx_ctrl_h_pres' if pres else 'sx_ctrl_h') }}</h3>
+<div class="table-wrap">
+<table class="compact sx">
+  {{ head(d, classes) }}
+  <tbody class="sx-info">
+    <tr><th scope="row">{{ t('sx_row_read') }}</th><td class="num">{{ i(sx.all.read) }}</td>{% for c in classes %}<td class="num">{{ i(c.read) }}</td>{% endfor %}{% if d == 'type' %}<td></td>{% endif %}</tr>
+  </tbody>
+  <tbody>
+  {% for r in sx.rows %}
+    <tr><th scope="row">{{ r.number }}. {{ name(r.label) }}</th>{{ cell(r.ctrl_all) }}{% for v in r.ctrl[d] %}{{ cell(v) }}{% endfor %}{% if d == 'type' %}{{ diff(r.ctrl_within) }}{% endif %}</tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% if d == 'type' %}<p class="muted small">{{ t('sx_within_note', n=i(sx.municipalities_both)) }}</p>{% endif %}
+</section>
+{% endfor %}
+{% if sx.controllers %}<p class="muted small">{{ t('sx_ctrl_note') }}</p>{% else %}<p class="muted small">{{ t('sx_ctrl_none') }}</p>{% endif %}
+<p><a href="{{ root }}api/r/{{ rnd.id }}/settlements.csv" download>{{ t('sx_csv') }}</a></p>
+
+<section aria-labelledby="method">
+<h2 id="method">{{ t('sx_method_h') }}</h2>
+<ul class="prose">
+  <li>{{ t('sx_method_census') }}</li>
+  <li>{{ t('sx_method_join', manual=i(sx.how.get('manual', 0)), address=i(sx.how.get('address', 0)), building=i(sx.how.get('building', 0)), station=i(sx.how.get('station', 0)), single=i(sx.how.get('single', 0)), place=i(sx.how.get('place', 0)), seat=i(sx.how.get('seat', 0))) }}</li>
+  <li>{{ t('sx_method_votes') }}</li>
+</ul>
+</section>
+{% endif %}
+{% endblock %}
