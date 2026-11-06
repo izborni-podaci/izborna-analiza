@@ -179,7 +179,8 @@ def test_explore(site, archive):
                if f["properties"].get("none"))
 
 
-def test_explore_script_parses():
+@pytest.mark.parametrize("name", ["explore.js", "site.js"])
+def test_scripts_parse(name):
     import shutil
     import subprocess
     from pathlib import Path
@@ -187,7 +188,7 @@ def test_explore_script_parses():
     node = shutil.which("node")
     if not node:
         pytest.skip("no node")
-    script = Path(__file__).parents[1] / "src/izbori/static/explore.js"
+    script = Path(__file__).parents[1] / "src/izbori/static" / name
     subprocess.run([node, "--check", str(script)], check=True)
 
 
@@ -406,6 +407,49 @@ def test_municipality_across_elections(site):
     # round pages link to it, and their stations to their own pages
     mun = (site / "r/680072/m/89010.html").read_text(encoding="utf-8")
     assert 'href="../../../m/89010.html"' in mun and 'href="../../../s/89010-1.html"' in mun
+
+
+def test_municipality_page_order(site, archive):
+    """A municipality in one election, in the order the maintainer chose: the result in per cent first, then the
+    stations (site.js shows the first ten and a button for the rest), the votes of the three lists with most votes
+    at each station with a total, every list at every station behind a button, and everything else."""
+    from izbori.i18n import fmt_int, fmt_pct
+
+    page = (site / "r/680072/m/70351.html").read_text(encoding="utf-8")
+    heads = re.findall(r"<h2[^>]*>([^<]+)</h2>", page)
+    assert heads[:4] == ["Rezultat u opštini", "Biračka mesta", "Glasovi po biračkim mestima",
+                         "Sve liste na svim biračkim mestima"]
+    assert heads.index("Kontrolori u biračkim odborima") == 4
+    assert 'class="tiles"' not in page  # the tiles' figures are lines under the result and the stations
+    assert "Glasalo je " in page and " · izlaznost " in page
+
+    rnd = archive.load("680072")
+    sts = sorted((s for s in rnd.stations if s.municipality_code == "70351"), key=lambda s: int(s.number))
+    assert f'data-first="10" data-more="Prikaži sva biračka mesta ({len(sts)})"' in page
+    counted = [s for s in sts if s.counted]
+    totals = [sum(s.votes[i] or 0 for s in counted) for i in range(len(rnd.contestants))]
+    top = sorted(range(len(totals)), key=lambda i: -totals[i])[:3]
+    table = page[page.index('<table class="compact by-station">'):]
+    table = table[:table.index("</table>")]
+    # each station's votes for the three, shaded and titled by the share
+    first = counted[0]
+    valid = sum(v or 0 for v in first.votes)
+    cells = re.findall(r'<td class="num heat" style="--h: \d+%" title="([^"]+)">([^<]+)</td>', table)[:3]
+    assert cells == [(fmt_pct(first.votes[i] / valid, "lat"), fmt_int(first.votes[i], "lat")) for i in top]
+    # the total row adds up to the municipality
+    total = re.search(r'<tr class="total">(.*?)</tr>', table).group(1)
+    shown = re.findall(r'<td class="num"[^>]*>([^<]+)</td>', total)
+    rest = sum(totals) - sum(totals[i] for i in top)
+    assert shown == [fmt_int(totals[i], "lat") for i in top] + [fmt_int(rest, "lat"), fmt_int(sum(totals), "lat")]
+    # the whole table behind a button that says what it is, and a CSV made from it in the browser
+    assert '<details class="all-votes">\n  <summary class="button secondary">Cela tabela</summary>' in page
+    assert 'data-csv="#all-votes-table"' in page and 'data-file="680072-70351.csv"' in page
+
+    en = (site / "en/r/680072/m/70351.html").read_text(encoding="utf-8")
+    assert "Show all polling stations (" in en and "Every list at every polling station" in en
+    assert "registered voters voted · turnout" in en
+    pres = (site / "r/42732/m/70351.html").read_text(encoding="utf-8")
+    assert "Svi kandidati na svim biračkim mestima" in pres and "tri kandidata sa najviše glasova" in pres
 
 
 def test_place_across_elections(site):

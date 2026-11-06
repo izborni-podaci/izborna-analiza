@@ -8,21 +8,32 @@
 <p class="across-link"><a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ t('mun_across_link') }}</a></p>
 {{ mx.data_note() }}
 
-<section class="tiles">
-  <div class="tile"><p class="tile-label">{{ t('stations') }}</p><p class="tile-value">{{ i(m.counted) }}{% if m.counted != m.stations %} / {{ i(m.stations) }}{% endif %}</p></div>
-  <div class="tile"><p class="tile-label">{{ t('voted') }}</p><p class="tile-value">{{ i(m.voted) }}</p><p class="tile-sub">{{ t('turnout') }} {{ pct(m.turnout, 1) }}</p></div>
-  <div class="tile"><p class="tile-label">{{ t('invalid') }}</p><p class="tile-value">{{ pct(m.invalid, 1) }}</p></div>
-  <div class="tile"><p class="tile-label">{{ t('flagged') }}</p><p class="tile-value">{{ i(m.flagged) }}</p></div>
-</section>
+{# The page in the order the maintainer chose (6 Nov 2026): the result first, then the stations (the first ones, a
+   button for the rest), the votes of the three largest at each station, the whole table, and everything else. #}
+<h2>{{ t('mun_result_heading') }}</h2>
+<p class="mun-line">{{ t('mun_turnout_line', voted=i(m.voted), registered=i(m.registered), turnout=pct(m.turnout, 1), invalid=pct(m.invalid, 1)) }}</p>
+<p class="rule">{{ t('mun_result_note') }}</p>
+<ul class="vote-list">
+{% for r in mres if not r.minor %}
+  <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
+    <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
+    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
+{% endfor %}
+</ul>
+{% set minor = mres|selectattr('minor')|list %}
+{% if minor %}<details class="minor-votes"><summary>{{ t('minor_candidates' if rnd.kind == 'presidential' else 'minor_lists', n=minor|length) }}</summary>
+<ul class="vote-list">
+{% for r in minor %}
+  <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
+    <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
+    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
+{% endfor %}
+</ul></details>{% endif %}
 
-{% if ctrl_known and mreadable %}
-<h2>{{ t('ctrl_heading') }}</h2>
-{{ mx.ctrl_summary(mctrl, mreadable, m.stations) }}
-{% endif %}
-
-<h2>{{ t('stations_heading') }}</h2>
+<h2 id="stations">{{ t('stations_heading') }}</h2>
+<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }}{% if m.flagged %} · <a href="{{ link(base + 'check.html') }}#m-{{ m.code }}">{{ t('mun_flagged', n=i(m.flagged)) }}</a>{% endif %}</p>
 <div class="table-wrap">
-<table class="stations">
+<table class="stations" id="station-list" data-first="10" data-more="{{ t('stations_more', n=i(rows|length)) }}" data-less="{{ t('stations_less') }}">
   <thead><tr>
     <th class="num">{{ t('station_no') }}</th><th>{{ t('station') }}</th>
     <th class="num">{{ t('registered') }}</th><th class="num">{{ t('voted') }}</th><th class="num">{{ t('turnout') }}</th>
@@ -47,30 +58,13 @@
 </table>
 </div>
 
-<h2>{{ t('mun_result_heading') }}</h2>
-<p class="rule">{{ t('mun_result_note') }}</p>
-<ul class="vote-list">
-{% for r in mres if not r.minor %}
-  <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
-    <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
-    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
-{% endfor %}
-</ul>
-{% set minor = mres|selectattr('minor')|list %}
-{% if minor %}<details class="minor-votes"><summary>{{ t('minor_candidates' if rnd.kind == 'presidential' else 'minor_lists', n=minor|length) }}</summary>
-<ul class="vote-list">
-{% for r in minor %}
-  <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
-    <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
-    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
-{% endfor %}
-</ul></details>{% endif %}
-
 {% if mtop %}
-<h2>{{ t('by_station_heading') }}</h2>
+{% set valid_all = mvotes|sum %}
+{% set top_all = mtop|sum(attribute='votes') %}
+<h2 id="by-station">{{ t('by_station_heading') }}</h2>
 <p class="rule">{{ t('by_station_note_pres') if rnd.kind == 'presidential' else t('by_station_note') }}</p>
 <div class="table-wrap">
-<table class="compact shares">
+<table class="compact by-station">
   <thead><tr>
     <th class="num">{{ t('station_no') }}</th><th>{{ t('station') }}</th>
     {% for r in mtop %}<th class="num">{{ r.number }}. {{ name(r.label) }}</th>{% endfor %}
@@ -81,23 +75,26 @@
     <tr>
       <td class="num">{{ b.s.number }}</td>
       <td><a href="{{ link(st_path(rnd.id, b.s.key)) }}">{{ name(b.s.name) or t('station_details') }}</a></td>
-      {% for share, n in b.cells %}<td class="num heat" style="--h: {{ '%.0f'|format(100 * (share or 0)) }}%" title="{{ i(n) }}">{{ pct(share, 1) }}</td>{% endfor %}
-      <td class="num muted" title="{{ i(b.rest[1]) }}">{{ pct(b.rest[0], 1) }}</td>
+      {% for share, n in b.cells %}<td class="num heat" style="--h: {{ '%.0f'|format(100 * (share or 0)) }}%" title="{{ pct(share, 1) }}">{{ i(n) }}</td>{% endfor %}
+      <td class="num muted" title="{{ pct(b.rest[0], 1) }}">{{ i(b.rest[1]) }}</td>
       <td class="num">{{ i(b.valid) }}</td>
     </tr>
   {% endfor %}
+    <tr class="total"><td></td><td>{{ t('total') }}</td>{% for r in mtop %}<td class="num" title="{{ pct(r.share, 1) }}">{{ i(r.votes) }}</td>{% endfor %}<td class="num">{{ i(valid_all - top_all) }}</td><td class="num">{{ i(valid_all) }}</td></tr>
   </tbody>
 </table>
 </div>
 {% endif %}
 
+<h2 id="all-votes">{{ t('all_votes_heading_pres' if rnd.kind == 'presidential' else 'all_votes_heading') }}</h2>
+<p class="rule">{{ t('all_votes_note_pres' if rnd.kind == 'presidential' else 'all_votes_note') }}</p>
 <details class="all-votes">
-  <summary>{{ t('all_votes_details') }}</summary>
+  <summary class="button secondary">{{ t('all_votes_show') }}</summary>
   <ol class="key small">
     {% for c in rnd.contestants %}<li value="{{ c.number }}">{{ name(c.name) }}</li>{% endfor %}
   </ol>
   <div class="table-wrap">
-  <table class="compact votes">
+  <table class="compact votes" id="all-votes-table">
     <thead><tr>
       <th class="num">{{ t('station_no') }}</th>
       {% for c in rnd.contestants %}<th class="num" title="{{ name(c.name) }}">{{ c.number }}</th>{% endfor %}
@@ -110,7 +107,13 @@
     </tbody>
   </table>
   </div>
+  <p class="tools"><button type="button" class="link-button" data-csv="#all-votes-table" data-names="#station-list" data-file="{{ rnd.id }}-{{ m.code }}.csv" data-station="{{ t('station') }}" hidden>{{ t('all_votes_csv') }}</button></p>
 </details>
+
+{% if ctrl_known and mreadable %}
+<h2>{{ t('ctrl_heading') }}</h2>
+{{ mx.ctrl_summary(mctrl, mreadable, m.stations) }}
+{% endif %}
 
 {% macro doc_groups(groups) %}<ul class="commission">
 {% for g in groups %}  <li><span class="muted">{{ t('commission_' ~ g.kind) }}:</span> {% for d in g.docs %}<a class="doc" href="{{ d.url|url }}" target="_blank">{{ date(d.day) if d.day else t('doc_other') }}{% if d.n %} ({{ d.n }}){% endif %}</a> {% endfor %}</li>

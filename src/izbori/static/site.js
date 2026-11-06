@@ -250,6 +250,76 @@
     apply();
   });
 
+  // A long list of polling stations: the first rows, and a button under them for the rest. A link to a station
+  // further down (#bm-23) opens the whole list.
+  document.querySelectorAll('table[data-first]').forEach((table) => {
+    const first = Number(table.dataset.first);
+    const rows = [...table.tBodies[0].rows];
+    if (rows.length <= first + 5) return;  // a button for a handful of rows is more work than the rows
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'button secondary more';
+    if (table.id) button.setAttribute('aria-controls', table.id);
+    let open = false;
+    const show = (all) => {
+      open = all;
+      rows.forEach((r, i) => { r.hidden = !all && i >= first; });
+      button.textContent = all ? table.dataset.less : table.dataset.more;
+      button.setAttribute('aria-expanded', String(all));
+    };
+    button.addEventListener('click', () => {
+      show(!open);
+      if (!open) button.scrollIntoView({ block: 'nearest' });
+    });
+    (table.closest('.table-wrap') || table).after(button);
+    const target = () => {
+      const id = decodeURIComponent(location.hash.slice(1));
+      return id ? rows.find((r) => r.id === id) : undefined;
+    };
+    const start = target();
+    show(Boolean(start) && rows.indexOf(start) >= first);
+    window.addEventListener('beforeprint', () => show(true));  // on paper, every station
+    window.addEventListener('hashchange', () => {
+      const row = target();
+      if (row && row.hidden) {
+        show(true);
+        row.scrollIntoView();
+      }
+    });
+  });
+
+  // The whole table of votes as a CSV file, made here from the table on the page: plain numbers, the lists' names
+  // in the header, and each station's name from the list of stations.
+  document.querySelectorAll('button[data-csv]').forEach((button) => {
+    const table = document.querySelector(button.dataset.csv);
+    if (!table || typeof Blob === 'undefined') return;
+    const names = document.querySelector(button.dataset.names);
+    button.hidden = false;
+    const quote = (v) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    const number = (v) => v.replace(/[^\d-]/g, '');
+    button.addEventListener('click', () => {
+      const lines = [...table.rows].map((row, n) => {
+        const cells = [...row.cells];
+        if (n === 0) {
+          return [cells[0].textContent.trim(), button.dataset.station,
+            ...cells.slice(1).map((c) => `${c.textContent.trim()}. ${c.title}`)];
+        }
+        const no = cells[0].textContent.trim();
+        const place = names && names.querySelector(`tr[id="bm-${no}"] td:nth-child(2) a`);
+        return [no, place ? place.textContent.trim() : '', ...cells.slice(1).map((c) => number(c.textContent))];
+      });
+      const blob = new Blob([`﻿${lines.map((l) => l.map(quote).join(',')).join('\r\n')}\r\n`],
+        { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = button.dataset.file;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+  });
+
   // Click a column header marked data-sort: largest first, click again for smallest first.
   document.querySelectorAll('table').forEach((table) => {
     const heads = [...table.querySelectorAll('thead th')];

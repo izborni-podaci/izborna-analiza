@@ -324,3 +324,16 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   no station. In 2026, 7,556 of the 8,210 stations where the census was held have a settlement (6,520 named or
   certain, 607 from another election, 429 assumed seats); 654 have none, mostly where decisions give no address
   (Prokuplje, Knjaževac, Negotin, Bajina Bašta). openpyxl joins the dependencies, to read the census.
+- **6 Nov 2026, the municipality page:** the maintainer chose its order: the result in per cent first (with who
+  voted: registered, voted, turnout, invalid ballots, which replace the tiles), then the polling stations (the
+  first ten and a full-width button for the rest), then the votes of the three lists with most votes at each
+  station as numbers instead of shares (same columns, shaded by share, now with a total row), then every list at
+  every station behind a full-width button, and everything else below (controllers by list, the commission's
+  documents). The button and the CSV of the whole table are `static/site.js`, which only adds to a page: without
+  it every station shows and the CSV button stays hidden. A link to a station further down opens the list, as the
+  pages across elections link to `#bm-<number>`. The same day the analyses moved towards the site: the maintainer
+  wants what is relevant there, joined with the census where it shows something, not in separate dashboards.
+  Phones: `.table-wrap` is positioned, so a visually hidden header label inside a scrolling table no longer
+  widens the page (municipality and round pages scrolled sideways at 390 px, by up to 124 px), the
+  round page's statistics tables scroll inside their own box, and the vote list's national share has the width
+  of the votes and the share.

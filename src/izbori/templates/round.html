@@ -193,6 +193,7 @@
     <div>
       <h3>{{ t('round_heading') }}</h3>
       <p class="muted">{{ t('round_note') }}</p>
+      <div class="table-wrap">
       <table class="compact">
         <thead><tr><th>{{ t('measure') }}</th><th class="num">{{ t('on_whole') }}</th><th class="num">{{ t('expected') }}</th><th class="num">p</th></tr></thead>
         <tbody>
@@ -201,16 +202,19 @@
         {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
     <div>
       <h3>{{ t('corr_heading') }}</h3>
       <p class="muted">{{ t('corr_note') }}</p>
+      <div class="table-wrap">
       <table class="compact">
         <thead><tr><th>{{ t('candidate') if rnd.kind == 'presidential' else t('list') }}</th><th class="num">{{ t('correlation') }}</th></tr></thead>
         <tbody>
         {% for lbl, c in stats.corr %}<tr><td>{{ name(lbl) }}</td><td class="num">{{ num(c, 2) if c is not none else '—' }}</td></tr>{% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   </div>
   {% set lr_n, lr = stats.local_round %}{% set ld_n, ld = stats.local_digits %}
@@ -222,6 +226,7 @@
     <div>
       <h4>{{ t('round_heading') }}</h4>
       <p class="muted small">{{ t('local_round_note', n=i(lr_n), k=i(lr|selectattr('adjusted', 'lt', 0.05)|list|length)) }}</p>
+      <div class="table-wrap">
       <table class="compact">
         <thead><tr><th>{{ t('municipality') }}</th><th class="num">{{ t('on_whole') }}</th><th class="num">{{ t('expected') }}</th><th class="num">{{ t('p_adjusted') }}</th></tr></thead>
         <tbody>
@@ -230,12 +235,14 @@
         {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
     {% endif %}
     {% if ld %}
     <div>
       <h4>{{ t('digits_heading') }}</h4>
       <p class="muted small">{{ t('local_digits_note', n=i(ld_n), k=i(ld|selectattr('adjusted', 'lt', 0.05)|list|length)) }}</p>
+      <div class="table-wrap">
       <table class="compact">
         <thead><tr><th>{{ t('municipality') }}</th><th class="num">{{ t('counts') }}</th><th class="num">χ²</th><th class="num">{{ t('p_adjusted') }}</th></tr></thead>
         <tbody>
@@ -244,6 +251,7 @@
         {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
     {% endif %}
   </div>
