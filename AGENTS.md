@@ -288,3 +288,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   Kragujevac, Senta, Srbobran, Blace) were read again: 179 stations' controllers changed, Ub's station 2 to the
   eleven lists its decision names and Vranje's 83 stations to fuller lists. The masked layouts are in boards runs
   42125804884 and 42127173840.
+- **6 Nov 2026, a list's votes on Explore:** the maintainer asked to see how many people voted for a list, not
+  only its share, and to compare a list's fall between two elections. A list's votes are a measure like its share
+  (a count, added up per municipality); the table shows each beside the other. In two elections a count changes by
+  a number and in per cent (a share in percentage points, as before), the largest changes rank by either, and the
+  summary gives both elections' totals over every chosen station, matched or not, so a list's national result
+  reads directly. The ready-made "a list's votes in two elections" still waits for the reader to choose the lists.

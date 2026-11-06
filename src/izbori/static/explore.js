@@ -82,6 +82,7 @@
     turnout: { kind: 'pct' },
     invalid: { kind: 'pct' },
     share: { kind: 'pct', list: true },
+    votes: { kind: 'count', list: true },
     top: { kind: 'pct' },
     reg: { kind: 'count' },
     voted: { kind: 'count' },
@@ -105,6 +106,7 @@
         return base && s.invalid[i] != null ? [s.invalid[i], base] : null;
       }
       case 'share': return li >= 0 && s.valid[i] ? [d.votes[li][i] ?? 0, s.valid[i]] : null;
+      case 'votes': return li >= 0 && d.votes[li][i] != null ? [d.votes[li][i], 0] : null;
       case 'top': {
         if (!s.valid[i]) return null;
         let most = 0;
@@ -677,6 +679,8 @@
     sum.textContent = line.charAt(0).toUpperCase() + line.slice(1);
   };
   const countText = (lv, n) => t(lv === 's' ? 'ex_n_s' : 'ex_n_m', { n: num(n) });
+  // a count adds up: a list's votes or the voters of everything shown
+  const totalText = (u, rows) => (u === 'count' ? t('ex_sum', { v: num(rows.reduce((a, r) => a + (r.value ?? 0), 0)) }) : '');
   const shareYes = (rows) => {
     const known = rows.filter((r) => r.value != null);
     return known.length ? `${num((100 * known.filter((r) => r.value).length) / known.length, 1)}%` : '—';
@@ -696,19 +700,27 @@
     const asc = st.o === 'a';
     rows.sort(byValue(asc));
     const label = mlabel(key, st.r, st.lx);
-    summary([countText(lv, rows.length),
+    summary([countText(lv, rows.length), totalText(u, rows),
       u === 'yes' ? `${t(`m_${key}`)}: ${shareYes(rows)}` : t('ex_median', { v: fmt(u, median(rows.map((r) => r.value))) })]);
     if (!rows.length) return { empty: true };
     const bg = heat(rows.map((r) => r.value));
     const vc = { ...valCol(label, u, (r) => r.value, u === 'yes' ? null : bg), sort: true };
     const cols = lv === 's' ? [...stCols(), vc] : [...munCols(), vc];
+    // a list's votes beside its share, and its share beside its votes
+    const other = { share: 'votes', votes: 'share' }[key];
+    const li = listIx(d, st.lx);
+    const uo = other ? unit(other, lv) : '';
+    const ov = (r) => (r.i != null ? sval(other, d, r.i, li) : gval(other, d, r.idx, li));
+    if (other) cols.push(valCol(t(`m_${other}`), uo, ov));
     if (key !== 'reg') cols.push(regCol());
     const onSort = () => { st.o = asc ? '' : 'a'; commit(); };
     out.append(tableEl(cols, rows, { sortCol: cols.indexOf(vc), asc, onSort }));
-    const head = lv === 's' ? [...stHead(), withUnit(label, u), t('ex_col_link')] : [...munHead(), withUnit(label, u), t('ex_col_link')];
+    const extra = other ? [withUnit(t(`m_${other}`), uo)] : [];
+    const head = lv === 's' ? [...stHead(), withUnit(label, u), ...extra, t('ex_col_link')]
+      : [...munHead(), withUnit(label, u), ...extra, t('ex_col_link')];
     const body = rows.map((r) => (lv === 's'
-      ? [...stCsv(d, r.i), csvNum(u, r.value), absUrl(stHref(d, r.i))]
-      : [...munCsv(r), csvNum(u, r.value), absUrl(munHref(r.code))]));
+      ? [...stCsv(d, r.i), csvNum(u, r.value), ...(other ? [csvNum(uo, ov(r))] : []), absUrl(stHref(d, r.i))]
+      : [...munCsv(r), csvNum(u, r.value), ...(other ? [csvNum(uo, ov(r))] : []), absUrl(munHref(r.code))]));
     return { title: `${BY_ID[st.r].short} · ${label}`, csv: [head, ...body] };
   };
 
@@ -719,7 +731,7 @@
     const rows = rowsOf(d, kept(d, st.r), lv, key, listIx(d, st.lx)).filter(ranged(u)).filter((r) => r.value != null);
     const label = mlabel(key, st.r, st.lx);
     const med = median(rows.map((r) => r.value));
-    summary([countText(lv, rows.length), t('ex_median', { v: fmt(u, med) })]);
+    summary([countText(lv, rows.length), totalText(u, rows), t('ex_median', { v: fmt(u, med) })]);
     if (!rows.length) return { empty: true };
     const vals = sorted(rows.map((r) => r.value));
     let lo;
@@ -850,22 +862,44 @@
         rows.push({ id: `m${code}`, d: db, code, idx: ib, value: va, y: vb, size: gval('reg', db, ib, -1) });
       });
     }
-    const change = (r) => (u === 'count' ? (r.value ? (100 * (r.y - r.value)) / Math.abs(r.value) : null) : r.y - r.value);
-    const chText = (v) => (v == null ? '—' : u === 'count' ? `${signed(v, 1)}%` : u === 'hours' ? `${signed(v, 1)} h`
-      : `${signed(v, 1)} ${t('ex_pp')}`);
+    // a share or turnout changes in percentage points, hours in hours, a count by a number and in per cent
+    const counts = u === 'count';
+    const diff = (a, b) => (a == null || b == null ? null : b - a);
+    const rel = (a, b) => (a == null || b == null || !a ? null : (100 * (b - a)) / Math.abs(a));
+    const chText = (v, uu = u) => {
+      if (uu === 'yes') return '';
+      if (v == null) return '—';
+      if (uu === 'count') return signed(v, 0);
+      return uu === 'hours' ? `${signed(v, 1)} h` : `${signed(v, 1)} ${t('ex_pp')}`;
+    };
+    const relText = (v) => (v == null ? '—' : `${signed(v, 1)}%`);
+    const both = (a, b) => `${chText(diff(a, b))}${counts && a ? `; ${relText(rel(a, b))}` : ''}`;
     rows.forEach((r) => {
       r.a = r.value;
-      r.ch = change(r);
+      r.ch = diff(r.a, r.y);
+      r.rel = counts ? rel(r.a, r.y) : null;
       r.label = lv === 's' ? `${munName(r.code, db)} · ${stName(db, r.i)}` : munName(r.code, db);
     });
+    // in total: everything chosen in each election, matched or not (a list's votes in the whole country, say)
+    const whole = u === 'hours' ? null : [gval(key, da, kept(da, ra), lia), gval(key, db, kept(db, rb), lib)];
+    const total = whole && whole[0] != null && whole[1] != null
+      ? t('ex_total', { a: fmt(u, whole[0]), b: fmt(u, whole[1]), d: both(whole[0], whole[1]) }) : '';
     const rr = pearson(rows.map((r) => [r.value, r.y]));
-    summary([t('ex_matched', { n: num(rows.length) }), t('ex_median_change', { v: chText(median(rows.map((r) => r.ch))) }),
+    const med = counts ? relText(median(rows.map((r) => r.rel))) : chText(median(rows.map((r) => r.ch)));
+    summary([total, t('ex_matched', { n: num(rows.length) }), t('ex_median_change', { v: med }),
       rr == null ? '' : t('ex_r', { v: num(rr, 2) })]);
     if (!rows.length) return { empty: true };
-    const bigFirst = (p, q) => (p.ch == null || q.ch == null ? (p.ch == null) - (q.ch == null) : Math.abs(q.ch) - Math.abs(p.ch));
-    const chCol = { h: t('ex_change'), num: true, get: (r) => chText(r.ch) };
-    const pairCols = (us) => [valCol(BY_ID[ra].short, us, (r) => r.a), valCol(BY_ID[rb].short, us, (r) => r.y),
-      { h: t('ex_change'), num: true, get: (r) => (us === 'yes' ? '' : chText(r.ch)) }];
+    // the largest changes first: a count's by the number, or by the per cent when the reader sorts by it
+    const byRel = counts && st.o === 'r';
+    const size = (r) => (byRel ? r.rel : r.ch);
+    const bigFirst = (p, q) => {
+      const x = size(p);
+      const y = size(q);
+      return x == null || y == null ? (x == null) - (y == null) : Math.abs(y) - Math.abs(x);
+    };
+    const pairCols = (uu) => [valCol(BY_ID[ra].short, uu, (r) => r.a), valCol(BY_ID[rb].short, uu, (r) => r.y),
+      { h: t('ex_change'), num: true, get: (r) => chText(r.ch, uu) },
+      ...(uu === 'count' ? [{ h: t('ex_change_pct'), num: true, get: (r) => relText(r.rel) }] : [])];
     // listed: a municipality's stations in the later election, each beside the same place in the earlier one
     const us = unit(key, 's');
     const stPairs = (code) => {
@@ -875,26 +909,34 @@
         const ia = db.stations.place[ib] ? pa.get(db.stations.place[ib]) : undefined;
         const r = { d: db, i: ib, a: ia == null ? null : sval(key, da, ia, lia), y: sval(key, db, ib, lib) };
         r.value = r.a;
-        r.ch = r.a == null || r.y == null ? null : us === 'count' ? (r.a ? (100 * (r.y - r.a)) / Math.abs(r.a) : null) : r.y - r.a;
+        r.ch = diff(r.a, r.y);
+        r.rel = us === 'count' ? rel(r.a, r.y) : null;
         return r;
       }).sort(bigFirst);
     };
     const expand = (list) => list.flatMap((r) => (r.i != null ? [r] : stPairs(r.code))).sort(bigFirst);
     const title = `${BY_ID[ra].short} → ${BY_ID[rb].short} · ${la === lb ? la : `${la} / ${lb}`}`;
-    const dot = (r) => `${r.label}: ${fmt(u, r.value)} → ${fmt(u, r.y)}`;
+    const dot = (r) => `${r.label}: ${fmt(u, r.value)} → ${fmt(u, r.y)} (${both(r.a, r.y)})`;
     out.insertAdjacentHTML('beforeend', plot2({ rows, xlab: xa, ylab: yb, ux: u, uy: u, grid2: lv === 's' && u === 'pct',
       diagonal: true, same: true, title, cols: [...stCols(), ...pairCols(us)], dot, expand }));
-    const big = [...rows].filter((r) => r.ch != null).sort(bigFirst);
+    const big = [...rows].filter((r) => size(r) != null).sort(bigFirst);
     const h = document.createElement('h2');
     h.className = 'ex-h';
     h.textContent = t('ex_biggest');
-    moreEl.append(h, tableEl([...(lv === 's' ? stCols() : munCols()), valCol(BY_ID[ra].short, u, (r) => r.a),
-      valCol(BY_ID[rb].short, u, (r) => r.y), chCol], big, { limit: 25 }));
-    const head = lv === 's'
-      ? [...stHead(), withUnit(`${BY_ID[ra].short}: ${la}`, u), withUnit(`${BY_ID[rb].short}: ${lb}`, u), t('ex_change'), t('ex_col_link')]
-      : [...munHead(), withUnit(`${BY_ID[ra].short}: ${la}`, u), withUnit(`${BY_ID[rb].short}: ${lb}`, u), t('ex_change'), t('ex_col_link')];
+    const bigCols = [...(lv === 's' ? stCols() : munCols()), ...pairCols(u)];
+    if (counts) bigCols.slice(-2).forEach((c) => { c.sort = true; });
+    const onSort = (j) => {
+      const o = j === bigCols.length - 1 ? 'r' : '';
+      if (o !== st.o) { st.o = o; commit(); }
+    };
+    moreEl.append(h, tableEl(bigCols, big, { limit: 25, sortCol: counts ? bigCols.length - (byRel ? 1 : 2) : -1,
+      onSort: counts ? onSort : null }));
+    const chHead = counts ? [t('ex_change'), t('ex_change_pct')] : [`${t('ex_change')} (${u === 'hours' ? 'h' : t('ex_pp')})`];
+    const head = [...(lv === 's' ? stHead() : munHead()), withUnit(`${BY_ID[ra].short}: ${la}`, u),
+      withUnit(`${BY_ID[rb].short}: ${lb}`, u), ...chHead, t('ex_col_link')];
+    const two = (v) => (v == null ? '' : Number(v.toFixed(2)));
     const body = rows.map((r) => [...(lv === 's' ? stCsv(db, r.i) : munCsv(r)), csvNum(u, r.a), csvNum(u, r.y),
-      r.ch == null ? '' : Number(r.ch.toFixed(2)), absUrl(lv === 's' ? stHref(db, r.i) : munHref(r.code))]);
+      two(r.ch), ...(counts ? [two(r.rel)] : []), absUrl(lv === 's' ? stHref(db, r.i) : munHref(r.code))]);
     return { title, csv: [head, ...body], svg: true, pick: lv === 's' && u === 'pct' ? 'ex_cell_pick' : 'ex_dot_pick', file: `${ra}-${rb}` };
   };
 
@@ -962,7 +1004,7 @@
     const rows = rowsOf(d, kept(d, st.r), 'm', key, listIx(d, st.lx)).filter(ranged(u));
     const label = mlabel(key, st.r, st.lx);
     const sorted2 = [...rows].sort(byValue(false));
-    summary([countText('m', rows.length), t('ex_median', { v: fmt(u, median(rows.map((r) => r.value))) }),
+    summary([countText('m', rows.length), totalText(u, rows), t('ex_median', { v: fmt(u, median(rows.map((r) => r.value))) }),
       t(u === 'hours' ? 'ex_map_median' : 'ex_map_sums')]);
     if (!rows.length) return { empty: true };
     const stc = [...stCols(), valCol(label, unit(key, 's')), regCol()];
@@ -1258,6 +1300,7 @@
       ['invalid_map', { v: 'map', r: newest.id, x: 'invalid' }],
       prev && ['turnout_change', { v: 'compare', r: newest.id, r2: prev, lv: 's', x: 'turnout' }],
       prev && ['register_change', { v: 'compare', r: newest.id, r2: prev, lv: 'm', x: 'reg' }],
+      prev && ['votes_change', { v: 'compare', r: newest.id, r2: prev, lv: 'm', x: 'votes' }],
       ROUNDS.length > 1 && ['matrix', { v: 'matrix', r: newest.id, x: 'turnout' }],
       withCtrl && ['ctrl_map', { v: 'map', r: withCtrl.id, x: 'ctrl' }],
       ['high', { v: 'table', r: newest.id, lv: 's', x: 'turnout', x0: '90' }],
