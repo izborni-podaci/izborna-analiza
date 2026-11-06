@@ -2654,5 +2654,67 @@
     "name": "ОШ \"БРАНИСЛАВ НУШИЋ\""
    }
   ]
+ },
+ {
+  "t": "2026-11-06T03:26:20+00:00",
+  "round": "680072",
+  "title": "Избори за народне посланике Народне скупштине 2026.",
+  "kind": "parliamentary",
+  "counted": 8392,
+  "total": 8392,
+  "flags": [
+   {
+    "id": "70874/38:correction_unapplied",
+    "code": "correction_unapplied",
+    "station": "70874/38",
+    "data": {
+     "appeared": "2026-11-06T03:26:20+00:00",
+     "form": "RG-7-1"
+    },
+    "m": "Град Нови Пазар",
+    "mc": "70874",
+    "no": "38",
+    "name": "ОСНОВНА ШКОЛА"
+   },
+   {
+    "id": "70874/41:correction_unapplied",
+    "code": "correction_unapplied",
+    "station": "70874/41",
+    "data": {
+     "appeared": "2026-11-06T03:26:20+00:00",
+     "form": "RG-7-2"
+    },
+    "m": "Град Нови Пазар",
+    "mc": "70874",
+    "no": "41",
+    "name": "ОШ \"ХАЛИФА БИН ЗАИД АЛ НАХЈАН\" НОВИ ПАЗАР"
+   },
+   {
+    "id": "70874/53:correction_unapplied",
+    "code": "correction_unapplied",
+    "station": "70874/53",
+    "data": {
+     "appeared": "2026-11-06T03:26:20+00:00",
+     "form": "RG-7-1"
+    },
+    "m": "Град Нови Пазар",
+    "mc": "70874",
+    "no": "53",
+    "name": "ЛОКAЛ СЕЈДОВИЋ ШАЋИРА"
+   },
+   {
+    "id": "70874/75:correction_unapplied",
+    "code": "correction_unapplied",
+    "station": "70874/75",
+    "data": {
+     "appeared": "2026-11-06T03:26:20+00:00",
+     "form": "RG-7-2"
+    },
+    "m": "Град Нови Пазар",
+    "mc": "70874",
+    "no": "75",
+    "name": "КУЛТУРНИ ЦЕНТАР"
+   }
+  ]
  }
 ]
