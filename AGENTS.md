@@ -115,7 +115,16 @@ These are the project's promises to its readers. Never change them without the m
     workflow artifacts, so they hold no names either.
   - Layouts: the numbered parser ("1. члан:", "1) члан:") goes first, so nothing that read before changes; the
     unnumbered one (`_unnumbered`) takes over only where it finds no slot. A new layout comes from the masked
-    layouts the read jobs log (`--diagnose`), never from a decision's text with names.
+    layouts the read jobs log (`--diagnose`, or `--diagnose-ids` for decisions already read), never from a
+    decision's text with names.
+  - Tables with a row per member and per deputy, each with its own proposal (Ub, 2026): a page OCR read column by
+    column (`read_columns`) is read again line by line (psm 6), and each numbered slot's list is the one its text
+    names most (`named_most`), its own number first. Only decisions in that layout take this path.
+  - Kinds: RIK's label, which the commission picks when it uploads, decides; only at a station with no standing
+    decision and two extended ones does the title naming the standing composition, or the president, make one of
+    them standing (`standing_under_extended`). A title alone never overrules a label: on 6 Nov 2026 a title-first
+    rule turned 29 of Ada's extended decisions into standing ones (both of a station's titles name the standing
+    composition) and was taken back the same night. A re-index gives decisions already read the current kind.
   - Placement (`Placer`): by municipality and number, and where the register's station name disagrees with the
     results, by that name among the city municipalities of the same district, or among municipalities whose name
     in any election, or district, contains the register's; "РИК" (RIK's own boards) among the stations abroad and
@@ -270,3 +279,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
     upload stamp in each document's link: the register of minutes shows the same time for almost every document,
     but days later for some (Bačka Palanka 2023: register 20 Dec, files 18 Dec). Abroad and prisons are left out
     (RIK runs them). Explore gained the same hours as a measure, a median per municipality.
+- **6 Nov 2026, Ub's decisions:** the maintainer found Ub's station 2 (2026) showing controllers of lists 1, 7 and
+  15, while the decision names the student list, and its standing composition counted as the extended one. Both
+  came from the register and the scans: the commission uploaded its standing compositions under the extended
+  composition's label (now recognised station by station, by the title naming the president), and its extended
+  compositions are scanned tables that OCR read half by columns (now read line by line, row by row). The decisions
+  of Ub and eight municipalities with similar readings (Vranje, Zrenjanin, Bajina Bašta, Petrovac na Mlavi,
+  Kragujevac, Senta, Srbobran, Blace) were read again: 179 stations' controllers changed, Ub's station 2 to the
+  eleven lists its decision names and Vranje's 83 stations to fuller lists. The masked layouts are in boards runs
+  42125804884 and 42127173840.

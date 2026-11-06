@@ -47,20 +47,11 @@ PRESIDENT = re.compile(r"ПРЕД?СЕДНИ|PRED?SEDNI")
 
 
 def classify(title: str, decision: str) -> tuple[str, bool]:
-    """Kind of decision, from RIK's label and the commission's own title. The commission chooses the label when it
-    uploads, and sometimes picks the wrong one (Ub, 2026: the standing composition, "председника и члана", under
-    the extended's label), so the title decides when it names the composition, or the president, whom only the
-    standing composition has; otherwise the label does."""
+    """Kind of decision, from RIK's label and the commission's own title (commissions sometimes mislabel); a station
+    whose standing composition is under the extended's label is put right by `standing_under_extended`."""
     text = f"{title} {decision}".upper()
-    head = (title or "").upper()
     repeat = "ПОНОВН" in text or "PONOVN" in text
-    if any(w in head for w in EXTENDED_WORDS):
-        extended = True
-    elif any(w in head for w in STANDING_WORDS) or PRESIDENT.search(head):
-        extended = False
-        text = f"{text} СТАЛНИ"
-    else:
-        extended = any(w in text for w in EXTENDED_WORDS)
+    extended = any(w in text for w in EXTENDED_WORDS)
     if not extended:
         if "СТАЛН" not in text and "STALN" not in text:
             return "other", repeat
@@ -443,6 +434,43 @@ KEEP_WORDS = {"члан", "члана", "заменик", "на", "предло�
               "zamenik", "predlog", "podnosioca", "izborne", "liste", "biračko", "mesto", "broj", "rešenje"}
 
 
+def title_composition(title: str) -> str | None:
+    """The composition a commission's own title names: "extended", "standing" (also by naming the president, whom
+    only the standing composition has), or None."""
+    head = (title or "").upper()
+    if any(w in head for w in EXTENDED_WORDS):
+        return "extended"
+    if any(w in head for w in STANDING_WORDS) or PRESIDENT.search(head):
+        return "standing"
+    return None
+
+
+def standing_under_extended(placed: list[tuple["BoardDoc", str | None]], known: dict) -> set[str]:
+    """Decisions on the standing composition that RIK lists under the extended's label: at a station with no
+    decision on the standing composition and two on the extended one, the one whose own title names the standing
+    composition (Ub, 2026: "председника и члана"). Everywhere else the label stands, against the title too: Ada's
+    titles (2026) name the standing composition on both of a station's decisions, and the labels tell them
+    apart. placed: the indexed decisions with their stations; known: the store, for a station's other decisions."""
+    groups: dict = {}
+    for d, key in placed:
+        if key:
+            groups.setdefault((key, d.repeat), []).append(d)
+    listed = {d.id for d, _ in placed}
+    stored: dict = {}
+    for i, e in known.items():
+        if i not in listed and e.get("s"):
+            stored.setdefault((e["s"], bool(e.get("r"))), []).append(e.get("k"))
+    out = set()
+    for station, group in groups.items():
+        kinds = [d.kind for d in group] + stored.get(station, [])
+        if "standing" in kinds or kinds.count("extended") < 2:
+            continue
+        named = [d for d in group if d.kind == "extended" and title_composition(d.title) == "standing"]
+        if len(named) == 1:
+            out.add(named[0].id)
+    return out
+
+
 def has_text_layer(pdf: bytes) -> bool:
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "doc.pdf"
@@ -711,8 +739,14 @@ def plan(round_dir: Path, round_id: str, rik_type: int, stations, client, log=pr
     how: Counter = Counter()
     unplaced: Counter = Counter()
     moved: Counter = Counter()
+    placed = [(d, placer.place(d.municipality, d.station, d.station_name)) for d in docs]
+    standing = standing_under_extended([(d, key) for d, (key, _) in placed], known)
     for d in docs:
-        key, why = placer.place(d.municipality, d.station, d.station_name)
+        if d.id in standing:
+            d.kind = "standing"
+    if standing:
+        log(f"{len(standing)} decisions on the standing composition under the extended's label, by their titles")
+    for d, (key, why) in placed:
         how[why] += 1
         if key is None:
             unplaced[(d.municipality, why, "empty" if not d.station_name and not d.station else

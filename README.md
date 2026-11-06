@@ -164,8 +164,18 @@ the names or left blank. RIK publishes them in its register of decisions on poll
 
 How a decision is read: members numbered "1. члан:" or "1) члан:" first; failing that, the layouts some whole
 municipalities use: unnumbered entries, each role naming its list ("- члан: … на предлог … листе X"), or each list
-first with its people under it ("На предлог … листе X: члан: …, заменик члана: …"). Only filled in or empty is
-kept for each list.
+first with its people under it ("На предлог … листе X: члан: …, заменик члана: …"). A table with a row for each
+member and each deputy, each with its own proposal (Ub, 2026), is read row by row: where OCR read such a page
+column by column (slots' numbers and roles alone on their lines), it reads it again line by line, and each
+numbered slot's list is the one its text names most, its own number first when it names that one. Only filled in
+or empty is kept for each list.
+
+What a decision is comes from RIK's register: the label the commission picked when it uploaded it, and the
+commission's own title. The label decides, but at a station with no decision on the standing composition and two
+on the extended one, the one whose own title names the standing composition, or the president whom only the
+standing composition has, is the standing one (Ub's standing compositions in 2026 were uploaded under the extended
+composition's label). Elsewhere the title doesn't overrule the label: Ada's titles name the standing composition on
+both of a station's decisions.
 
 Where a decision goes: the register names the municipality and gives the station's number and name. A city's
 commission may list its city municipalities' stations under the city (Kostolac's under Požarevac and Sevojno's
@@ -350,6 +360,8 @@ uv run izbori site --out _site --incremental   # render only what changed since 
 uv run --with shapely izbori geo          # municipal boundaries from OpenStreetMap (the geo workflow, by hand)
 uv run --with shapely --with pyshp izbori geo --kim   # Kosovo and Metohija in RIK's division, into the same file
 uv run izbori boards --round 680072 --reindex --retry-unparsed   # place and read every decision again
+uv run izbori boards --round 680072 --only 71218 --reread   # read one municipality's decisions again
+uv run izbori boards --round 680072 --diagnose-ids 744462   # how one decision reads every way, names masked
 uv run izbori targets --out targets.csv --html targets.html   # private: never commit or post
 uv run pytest
 ```

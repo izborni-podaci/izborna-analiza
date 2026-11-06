@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from izbori.boards import (classify, coverage, match_list, municipality_key, named_most, parse_decision,
-                           parse_index_records, pdf_text, read_columns, slot_list)
+from izbori.boards import (BoardDoc, classify, coverage, match_list, municipality_key, named_most, parse_decision,
+                           parse_index_records, pdf_text, read_columns, slot_list, standing_under_extended)
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -130,16 +130,31 @@ def test_classify():
     assert classify("БМ 11", "Решење о именовању члана и заменика члана бирачког одбора у проширеном саставу") \
         == ("extended", False)
     assert classify("РЕШЕЊЕ", "Решење о именовању члана ... у проширеном саставу – поновно гласање") == ("extended", True)
+    assert classify("РЕШЕЊЕ О ИМЕНОВАЊУ ... У СТАЛНОМ САСТАВУ", "Решење ... у проширеном саставу")[0] == "extended"
     assert classify("РЕШЕЊЕ О ИМЕНОВАЊУ ПРЕДСЕДНИКА ... У СТАЛНОМ САСТАВУ", "")[0] == "standing"
-    # the commission picks RIK's label when it uploads, and sometimes the wrong one: its own title decides when it
-    # names the composition, or the president, whom only the standing composition has (Ub, 2026, station 2)
-    assert classify("Решење о именовању преседника и члана бирачког одбора и њихових заменика за бирачко место број 2",
-                    "Решење о именовању члана и заменика члана бирачког одбора у проширеном саставу") \
-        == ("standing", False)
-    assert classify("РЕШЕЊЕ О ИМЕНОВАЊУ ... У СТАЛНОМ САСТАВУ", "Решење ... у проширеном саставу")[0] == "standing"
-    assert classify("Решење о именовању чланова у проширеном саставу", "Решење ... у сталном саставу")[0] == "extended"
-    assert classify("Решење о измени решења о именовању председника", "Решење ... у проширеном саставу")[0] \
-        == "standing_change"
+
+
+def test_standing_composition_under_the_extended_label():
+    """Ub, 2026: the commission uploaded each station's standing composition under the extended's label, so a station
+    had two "extended" decisions and no standing one; the title of one names the president. Ada's titles name the
+    standing composition on both of a station's decisions, under two labels: there the labels stand."""
+    def doc(i, title, label, station="2"):
+        kind, repeat = classify(title, label)
+        return BoardDoc(id=i, municipality="Уб", station=station, title=title, decision=label, published="", url="",
+                        kind=kind, repeat=repeat)
+    extended = "Решење о именовању члана и заменика члана бирачког одбора у проширеном саставу"
+    standing = "Решење о именовању председника, чланова бирачког одбора и њихових заменика у сталном саставу"
+    ub = [doc("1", "Решење о именовању чланова и њихових заменика у проширеном саставу за бирачко место број 2",
+              extended),
+          doc("2", "Решење о именовању преседника и члана бирачког одбора и њихових заменика за бирачко место број 2",
+              extended)]
+    assert standing_under_extended([(d, "71218/2") for d in ub], {}) == {"2"}
+    ada = [doc("3", "Решење о именовању председника и чланова бирачког одбора", standing),
+           doc("4", "Решење о именовању председника и чланова бирачког одбора", extended)]
+    assert [d.kind for d in ada] == ["standing", "extended"]
+    assert standing_under_extended([(d, "80012/1") for d in ada], {}) == set()
+    # the station's standing decision may be in the store from an earlier pass
+    assert standing_under_extended([(ub[1], "71218/2")], {"9": {"s": "71218/2", "k": "standing"}}) == set()
     assert classify("", "Решење о одбијању предлога ... у проширеном саставу")[0] == "extended_rejected"
     assert classify("", "Решење о измени решења ... у проширеном саставу")[0] == "extended_change"
     assert classify("РЕШЕЊЕ О ИЗМЕНИ РЕШЕЊА БО - БМ 25", "Решење о измени решења о именовању члана / заменика члана "
