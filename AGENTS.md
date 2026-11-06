@@ -66,6 +66,11 @@ These are the project's promises to its readers. Never change them without the m
 - **Stations are keyed `municipality code/number` per round.** Municipality codes are stable across elections,
   but names differ ("Ниш-Медијана" in 2022, "Градска општина Медијана" in RIK's registers). Names map to codes
   with `boards.municipality_key`, using every archived round.
+- **The 2022 census** (`data/census/2022/`) is kept as the Statistical Office (RZS) published it, by settlement
+  and by municipality, with `sources.json` (address, SHA-256, size, first fetched); a table is written only when
+  its content changed. Which tables: `census.TABLES`. The census is final, so the **census** workflow runs by
+  hand; the development sandbox can't reach the Office's site (its proxy refuses it), GitHub's runners can. The
+  tables count people and hold no names. Education, ethnicity, activity and migration exist only by municipality.
 - **Places across elections** (`places.py`) are matched going forward in time, by priority: manual correction
   (`data/places.csv`), then address, then name, then number. A new election never changes how the earlier ones
   were joined. An address read from a decision that names another building than the station's own name in the
@@ -178,6 +183,7 @@ These are the project's promises to its readers. Never change them without the m
 | observers | daily, until 60 days after election day | OCR score of observers' records |
 | pages | on push | incremental site build and deploy |
 | geo | by hand | municipal boundaries from OpenStreetMap (Overpass); with kim, Kosovo and Metohija in RIK's division |
+| census | by hand | the 2022 census tables from the Statistical Office (RZS), into `data/census/2022/` |
 | test | on push | the whole test suite |
 
 A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow run`). That is how data runs start
@@ -294,3 +300,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   a number and in per cent (a share in percentage points, as before), the largest changes rank by either, and the
   summary gives both elections' totals over every chosen station, matched or not, so a list's national result
   reads directly. The ready-made "a list's votes in two elections" still waits for the reader to choose the lists.
+- **6 Nov 2026, census tables:** for a study of controllers by list (outside the site, every list measured alike),
+  the maintainer chose to archive the 2022 census, so that polling stations can be joined to their settlements and
+  compared with like places. The Office publishes seven tables by settlement (population, age and sex, households,
+  families, every census from 1948, dwellings); education, ethnicity, economic activity and migration only by
+  municipality, education also by type of settlement. `izbori census` keeps those seven and eight by
+  municipality, as published; joining stations to settlements comes next.

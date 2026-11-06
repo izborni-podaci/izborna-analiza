@@ -299,6 +299,9 @@ data/looks.json                   when RIK was last asked (results, settled roun
 data/mail.json                    email state: pending flags, time of the last message
 data/geo/municipalities.json      municipal boundaries by RIK's municipality code: OpenStreetMap (ODbL); Kosovo and
                                   Metohija in RIK's division from Glaurdić et al. 2021 (CC BY 4.0)
+data/census/2022/sources.json     where each census table came from: address, title, SHA-256, size, first fetched
+data/census/2022/settlements/     the 2022 census tables by settlement, as the Statistical Office (RZS) published them
+data/census/2022/municipalities/  census tables by municipality and city: ethnicity, education, activity, migration
 data/rounds/<id>/meta.json        type, title, English title, election day, contestants (name, short
                                   name, minority status), seat rules
 data/rounds/<id>/results.csv      latest file exactly as downloaded; git history keeps every version
@@ -359,6 +362,7 @@ uv run izbori site --out _site            # build the site
 uv run izbori site --out _site --incremental   # render only what changed since the last build
 uv run --with shapely izbori geo          # municipal boundaries from OpenStreetMap (the geo workflow, by hand)
 uv run --with shapely --with pyshp izbori geo --kim   # Kosovo and Metohija in RIK's division, into the same file
+uv run izbori census                      # the 2022 census tables from the Statistical Office (the census workflow, by hand)
 uv run izbori boards --round 680072 --reindex --retry-unparsed   # place and read every decision again
 uv run izbori boards --round 680072 --only 71218 --reread   # read one municipality's decisions again
 uv run izbori boards --round 680072 --diagnose-ids 744462   # how one decision reads every way, names masked
@@ -392,6 +396,7 @@ src/izbori/
   publishing.py what reached RIK for each municipality and when: the facts on the Commissions page
   narrative.py  the sentences at the top of the pages across elections
   geo.py        municipal boundaries for the Explore page's map: OpenStreetMap, and Kosovo and Metohija in RIK's division
+  census.py     the 2022 census tables from the Statistical Office, archived as published
   notes.py      news notes
   targets.py    private ranking
   feed.py       Atom feeds
@@ -408,7 +413,7 @@ Python 3.12+, managed with uv. Networking uses only the standard library; templa
 
 ## Data sources
 
-All from `https://www.rik.parlament.gov.rs`:
+Election data all come from `https://www.rik.parlament.gov.rs`:
 
 | Request | Returns |
 |---|---|
@@ -416,6 +421,14 @@ All from `https://www.rik.parlament.gov.rs`:
 | `POST /get_results/` with the round id | Counted and total stations, RIK's timestamp, totals per contestant, whether download is allowed. |
 | `POST /get-election` with the round id and type | RIK's register of minutes, ten stations per page: each station's documents with label, link and upload time. |
 | `GET /export-results/{round}/2` | The results CSV, one row per station. It has registered voters, voters, ballots in the box, valid and invalid ballots, entry time, one column per contestant, and links to the minutes and any correction. Available only while RIK allows downloads. |
+
+### Census 2022
+
+The Statistical Office of the Republic of Serbia (RZS) publishes the 2022 census as Excel tables at `https://popis2022.stat.gov.rs/`. A polling station serves part of a settlement, and the census counts people by settlement, so the census can describe the place around each station. `izbori census` (the **census** workflow, started by hand) keeps the tables listed in `src/izbori/census.py` in `data/census/2022/`, exactly as published, and records in `sources.json` the address, SHA-256, size and first fetch time of each; a table is written again only if its content changed.
+- **By settlement (7 tables):** population; age and sex; households by number of members; families by type; the population and the households at every census from 1948 to 2022; dwellings and their floor space.
+- **By municipality and city (8 tables):** population; ethnicity; age and sex; educational attainment; computer literacy; migration; economic activity; educational attainment by type of settlement (urban or other) within the municipality. The census gives education, ethnicity, activity and migration no further down than this.
+
+The census wasn't held in Kosovo and Metohija. The tables count people and hold no names. The Office's site is out of reach from the development sandbox; GitHub's runners reach it.
 
 ## Setup
 

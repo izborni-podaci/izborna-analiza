@@ -1,4 +1,5 @@
-"""Command line: izbori rounds | fetch | import | update | documents | boards | observers | site | targets | check."""
+"""Command line: izbori rounds | fetch | import | update | documents | boards | observers | geo | census | site |
+targets | check."""
 
 from __future__ import annotations
 
@@ -457,6 +458,21 @@ def cmd_geo(args) -> int:
     return 0
 
 
+def cmd_census(args) -> int:
+    """The 2022 census tables from the Statistical Office, as published, into data/census/2022/ (census.py)."""
+    from izbori import census
+    out = Path(args.out) if args.out else Path(args.data) / "census" / "2022"
+    changed, failed = census.fetch(out, log=log)
+    log(f"{len(changed)} tables written, {len(census.TABLES) - len(changed) - len(failed)} unchanged, "
+        f"{len(failed)} failed")
+    if changed and args.commit and commit([str(out)], f"Data: {len(changed)} tables of the 2022 census from the "
+                                                      "Statistical Office, as published, for joining stations to "
+                                                      "their settlements"):
+        if args.push:
+            push()
+    return 1 if failed else 0
+
+
 def cmd_documents(args) -> int:
     """Read RIK's register of minutes: every document published for each polling station (minutes, observers'
     records, remarks, corrections, rulings). Keeps labels, links and upload times; no names."""
@@ -765,6 +781,12 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--kim-inspect", action="store_true",
                    help="list what the dataset of Kosovo's municipalities in RIK's division holds (needs pyshp)")
     g.set_defaults(fn=cmd_geo)
+
+    z = sub.add_parser("census", help="the 2022 census tables from the Statistical Office, as published")
+    z.add_argument("--out", help="default: <data>/census/2022")
+    z.add_argument("--commit", action="store_true")
+    z.add_argument("--push", action="store_true")
+    z.set_defaults(fn=cmd_census)
 
     o = sub.add_parser("observers", help="observers' records: score them with OCR, or list them to review")
     o.add_argument("--round", help="round id (default: the newest)")

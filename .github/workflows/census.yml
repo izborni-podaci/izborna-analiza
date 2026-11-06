@@ -1,0 +1,41 @@
+# Census: the 2022 census tables of the Statistical Office (RZS), by settlement and by municipality, into
+# data/census/2022/ as published, with sources.json (address, SHA-256, size, when fetched). The census is final, so
+# this runs only when started by hand. The Office's site is out of the development sandbox's reach; GitHub's
+# runners reach it. Tables that download are committed even when another fails, and a failure fails the run.
+name: census
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit the tables"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write  # commit the tables
+
+concurrency:
+  group: census
+  cancel-in-progress: false
+
+jobs:
+  census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - name: Fetch the tables
+        env:
+          COMMIT: ${{ inputs.commit }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          args=()
+          [ "$COMMIT" = "true" ] && args+=(--commit --push)
+          uv run izbori census "${args[@]}"
