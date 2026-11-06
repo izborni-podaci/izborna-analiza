@@ -161,6 +161,9 @@ These are the project's promises to its readers. Never change them without the m
     names in `api/` are as RIK wrote them, so the script transliterates them as `translit.py` does.
   - **Explore never chooses a list.** A measure that needs one waits for the reader, and picking another election
     clears the choice (ballot numbers belong to one election). Measures and filters are the same for every list.
+    Its ready-made analyses are questions grouped by theme (`THEMES` in the script), its measures sit in groups
+    (`MGROUPS`), and every measure, view, theme and question has its words in `i18n.py` (`m_desc_*`,
+    `view_desc_*`, `preset_theme_*`, `preset_q_*`); a test reads the script and checks that none is missing.
     Unknown is not zero: a station whose board decision wasn't read has no controller value, and an election
     whose observers' records weren't read has none for them.
 - **Results by kind of settlement** (`bysettlement.py`, `r/<id>/settlements.html`): every contestant's share and
@@ -355,3 +358,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   municipality. Explore gained the census's measures (an
   urban settlement, its people, its change since 2011, its share aged 65 or more) and filters by the same classes.
   The research dashboard of the same day is not kept up: the site is where the analyses go.
+- **6 Nov 2026, Explore reorganised:** the maintainer asked for Explore to be conceptually ordered, more relevant
+  and easier to use. The twelve ready-made analyses in one row became twenty questions in six themes (turnout,
+  lists, voter register, controllers, settlements, minutes and checks), the question titling its answer; the form
+  reads election, measure, view; the sixteen measures sit in five groups with a sentence each, and each view has
+  one; the filters are grouped, and those in use show as removable chips with one reset; the notes that matter
+  for what is shown stand beside it. Nothing new is computed, and every list is still the reader's choice.

@@ -190,6 +190,35 @@ def test_explore(site, archive):
                if f["properties"].get("none"))
 
 
+def test_explore_names_every_choice(site):
+    """Every measure, view, theme and question the Explore script offers has its words in every language, and every
+    measure sits in one of the form's groups: a missing string would show its key."""
+    import json
+    from pathlib import Path
+
+    script = (Path(__file__).parents[1] / "src/izbori/static/explore.js").read_text(encoding="utf-8")
+    block = script[script.index("  const M = {"):script.index("  const MKEYS")]
+    measures = re.findall(r"^    (\w+): \{ kind:", block, re.M)
+    grouped = re.findall(r"\['(\w+)', \[([^\]]+)\]\]", script[script.index("const MGROUPS"):script.index("const MGROUPS") + 600])
+    in_groups = [k for _, keys in grouped for k in re.findall(r"'(\w+)'", keys)]
+    assert sorted(in_groups) == sorted(measures) and len(in_groups) == len(set(in_groups))
+    themes = script[script.index("const THEMES"):script.index("let theme = ''")]
+    theme_keys = re.findall(r"\['(\w+)', \[$", themes, re.M)
+    questions = re.findall(r"\['(\w+)', (?:\{|`)", themes)
+    views = re.findall(r"'(\w+)'", re.search(r"const VIEWS = \[([^\]]+)\]", script).group(1))
+    assert theme_keys and len(questions) >= 15
+    for prefix in ("", "cyr/", "en/"):
+        page = (site / prefix / "explore.html").read_text(encoding="utf-8")
+        assert "data-themes" in page and "data-questions" in page and page.count("<fieldset") == 5
+        meta = json.loads(re.search(r'id="ex-meta">(.*?)</script>', page, re.S).group(1))
+        t = meta["t"]
+        missing = [k for k in [f"m_{m}" for m in measures] + [f"m_desc_{m}" for m in measures]
+                   + [f"m_group_{g}" for g, _ in grouped] + [f"view_{v}" for v in views]
+                   + [f"view_desc_{v}" for v in views] + [f"preset_theme_{k}" for k in theme_keys]
+                   + [f"preset_q_{k}" for k in questions] if not t.get(k)]
+        assert not missing, (prefix, missing)
+
+
 @pytest.mark.parametrize("name", ["explore.js", "site.js"])
 def test_scripts_parse(name):
     import shutil

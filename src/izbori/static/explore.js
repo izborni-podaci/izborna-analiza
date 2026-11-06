@@ -32,7 +32,13 @@
   const btnCsv = box.querySelector('[data-csv]');
   const btnSvg = box.querySelector('[data-svg]');
   const filtersEl = box.querySelector('[data-filters]');
-  const presetsEl = box.querySelector('[data-presets]');
+  const themesEl = box.querySelector('[data-themes]');
+  const questionsEl = box.querySelector('[data-questions]');
+  const titleEl = box.querySelector('[data-title]');
+  const contextEl = box.querySelector('[data-context]');
+  const activeEl = box.querySelector('[data-active]');
+  const activeList = box.querySelector('[data-active-list]');
+  const fcountEl = box.querySelector('[data-fcount]');
   const moreEl = box.querySelector('[data-more]');
 
   // --- words and numbers ------------------------------------------------------------------------------------------
@@ -108,6 +114,14 @@
   const change = (p) => (p[2] && p[3] != null ? p[3] / p[2] - 1 : null);
   const share65 = (p) => (p[4] != null && p[3] ? p[4] / p[3] : null);
   const MKEYS = Object.keys(M);
+  // how the form lists them: in groups a reader recognises, each measure with a sentence on what it is (m_desc_*)
+  const MGROUPS = [
+    ['vote', ['turnout', 'invalid', 'voted', 'reg']],
+    ['lists', ['share', 'votes', 'top']],
+    ['checks', ['flagged', 'gap', 'obs', 'hours']],
+    ['ctrl', ['ctrl']],
+    ['census', ['urban', 'pop', 'growth', 'old']],
+  ];
   const unit = (key, lv) => (M[key].kind === 'yes' && lv === 'm' ? 'pct' : M[key].kind);
   const listIx = (d, n) => (n === '' || n == null || !d ? -1 : d.contestants.findIndex((c) => String(c.n) === String(n)));
 
@@ -341,6 +355,12 @@
     ['min', 'x0', 'x1'].forEach((k) => { if (s[k] !== '' && !Number.isFinite(Number(s[k]))) s[k] = ''; });
     return s;
   };
+  const fromText = (hash) => {
+    const p = new URLSearchParams(hash.replace(/^#/, ''));
+    const s = { ...DEF };
+    KEYS.forEach((k) => { if (p.has(k)) s[k] = p.get(k).trim(); });
+    return s;
+  };
   const fromHash = () => {
     const p = new URLSearchParams(location.hash.replace(/^#/, ''));
     const s = { ...DEF };
@@ -364,6 +384,61 @@
     return (older.find((r) => r.kind === BY_ID[rid].kind) || older[0] || ROUNDS.find((r) => r.id !== rid) || {}).id || '';
   };
 
+  // --- questions: ready-made analyses, by theme ------------------------------------------------------------------
+  // Each is a link, so it opens like any shared analysis. One that needs a list waits for the reader to choose it.
+  const THEMES = (() => {
+    const newest = ROUNDS[0];
+    const prev = previous(newest.id);
+    const withCtrl = ROUNDS.find((r) => r.ctrl);
+    const census = ROUNDS.find((r) => r.census);
+    return [
+      ['turnout', [
+        ['turnout_map', { v: 'map', r: newest.id, x: 'turnout' }],
+        ['turnout_hist', { v: 'hist', r: newest.id, lv: 's', x: 'turnout' }],
+        prev && ['turnout_change', { v: 'compare', r: newest.id, r2: prev, lv: 's', x: 'turnout' }],
+        ['high', { v: 'table', r: newest.id, lv: 's', x: 'turnout', x0: '90' }],
+        ROUNDS.length > 1 && ['matrix', { v: 'matrix', r: newest.id, x: 'turnout' }],
+      ]],
+      ['lists', [
+        ['share_map', { v: 'map', r: newest.id, x: 'share' }],
+        prev && ['votes_change', { v: 'compare', r: newest.id, r2: prev, lv: 'm', x: 'votes' }],
+        ['share_table', { v: 'table', r: newest.id, lv: 's', x: 'share' }],
+        ['fingerprint', { v: 'density', r: newest.id, lv: 's', x: 'turnout', y: 'top' }],
+      ]],
+      ['register', [
+        prev && ['register_change', { v: 'compare', r: newest.id, r2: prev, lv: 'm', x: 'reg' }],
+        ['gap_table', { v: 'table', r: newest.id, lv: 's', x: 'gap' }],
+      ]],
+      withCtrl && ['ctrl', [
+        ['ctrl_map', { v: 'map', r: withCtrl.id, x: 'ctrl' }],
+        ['ctrl_share', { v: 'density', r: withCtrl.id, lv: 'm', x: 'ctrl', y: 'share' }],
+      ]],
+      census && ['census', [
+        ['growth_map', { v: 'map', r: census.id, x: 'growth' }],
+        ['old_turnout', { v: 'density', r: census.id, lv: 's', x: 'old', y: 'turnout' }],
+        ['other_turnout', { v: 'map', r: census.id, x: 'turnout', nt: 'o' }],
+        ['by_settlement', `${SITE}r/${encodeURIComponent(census.id)}/settlements.html`],
+      ]],
+      ['records', [
+        ['invalid_map', { v: 'map', r: newest.id, x: 'invalid' }],
+        ['flagged_map', { v: 'map', r: newest.id, x: 'flagged' }],
+        ['hours_map', { v: 'map', r: newest.id, x: 'hours' }],
+      ]],
+    ].filter(Boolean).map(([k, items]) => [k, items.filter(Boolean)]);
+  })();
+  let theme = '';
+  const drawThemes = () => {
+    if (!THEMES.some(([k]) => k === theme)) theme = THEMES[0][0];
+    themesEl.innerHTML = THEMES.map(([k]) => `<button type="button" class="chip" data-theme="${k}" `
+      + `aria-pressed="${k === theme}">${esc(t(`preset_theme_${k}`))}</button>`).join('');
+    const items = THEMES.find(([k]) => k === theme)[1];
+    questionsEl.innerHTML = items.map(([k, s]) => {
+      const href = typeof s === 'string' ? s : toHash({ ...DEF, ...s });
+      return `<li><a href="${esc(href)}"${typeof s === 'string' ? ' class="ex-page"' : ' data-q'}>${esc(t(`preset_q_${k}`))}</a></li>`;
+    }).join('');
+    markPreset();
+  };
+
   // --- the form ---------------------------------------------------------------------------------------------------
   const field = (n) => form.querySelector(`[name="${n}"]`);
   const show = (n, on) => box.querySelectorAll(`[data-for="${n}"]`).forEach((el) => { el.hidden = !on; });
@@ -378,6 +453,25 @@
       sel.append(o);
     }
     sel.value = items.some(([v]) => v === value) ? value : (items[0] || [''])[0];
+    return sel.value;
+  };
+  const fillMeasures = (n, keys, value) => {
+    const sel = field(n);
+    sel.textContent = '';
+    for (const [g, group] of MGROUPS) {
+      const here = group.filter((k) => keys.includes(k));
+      if (!here.length) continue;
+      const og = document.createElement('optgroup');
+      og.label = t(`m_group_${g}`);
+      for (const k of here) {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = t(`m_${k}`);
+        og.append(o);
+      }
+      sel.append(og);
+    }
+    sel.value = keys.includes(value) ? value : keys[0];
     return sel.value;
   };
   const listItems = (rid) => [['', t('ex_pick_list')],
@@ -404,11 +498,11 @@
     const ms = allowed(v, lv);
     if (!ms.includes(st.x)) st.x = ms[0];
     if (!ms.includes(st.y)) st.y = ms.includes('top') ? 'top' : ms[0];
-    st.x = fill('x', ms.map((k) => [k, t(`m_${k}`)]), st.x);
+    st.x = fillMeasures('x', ms, st.x);
     show('lx', M[st.x].list && v !== 'matrix');
     if (M[st.x].list) st.lx = fill('lx', listItems(st.r), st.lx);
     show('y', v === 'density');
-    if (v === 'density') st.y = fill('y', ms.map((k) => [k, t(`m_${k}`)]), st.y);
+    if (v === 'density') st.y = fillMeasures('y', ms, st.y);
     const yList = v === 'density' ? M[st.y].list : v === 'compare' && M[st.x].list;
     show('ly', yList);
     if (yList) {
@@ -438,9 +532,42 @@
     show('x0', v !== 'compare' && v !== 'matrix' && unit(st.x, lv) !== 'yes');
     field('x0').value = st.x0;
     field('x1').value = st.x1;
-    if (st.mun || st.k !== 'd' || st.min || st.fl || st.cl || st.ob || st.x0 || st.x1 || bySettlement()) {
-      filtersEl.open = true;
+    // what the measure and the view are, in a sentence each; a list the reader still has to choose stands out
+    box.querySelector('[data-desc="x"]').textContent = v === 'density'
+      ? `${t(`m_desc_${st.x}`)} ${t('ex_y')}: ${t(`m_desc_${st.y}`)}` : t(`m_desc_${st.x}`);
+    box.querySelector('[data-desc="v"]').textContent = t(`view_desc_${v}`);
+    form.querySelector('[data-for="lx"]').classList.toggle('ex-need', Boolean(M[st.x].list && !st.lx && v !== 'matrix'));
+    form.querySelector('[data-for="ly"]').classList.toggle('ex-need', Boolean(yList) && !st.ly);
+    // the filters in use, each one a chip that removes it; the panel itself stays as the reader left it
+    const on = activeFilters();
+    activeList.innerHTML = on.map(([k, label]) => `<li><button type="button" class="chip" data-clear="${k}" `
+      + `aria-label="${esc(t('ex_remove', { f: label }))}">${esc(label)} <span aria-hidden="true">×</span></button></li>`).join('');
+    activeEl.hidden = !on.length;
+    fcountEl.textContent = on.length ? `(${num(on.length)})` : '';
+  };
+
+  // the filters in use, as [key, label]
+  const FILTERS = ['mun', 'k', 'min', 'fl', 'cl', 'ob', 'nt', 'ns', 'nc', 'na', 'x0'];
+  const activeFilters = () => {
+    const on = [];
+    const option = (n) => { const o = field(n).selectedOptions[0]; return o ? o.textContent : ''; };
+    if (st.mun) on.push(['mun', `${t('ex_mun')}: ${munName(st.mun)}`]);
+    if (st.k !== DEF.k) on.push(['k', `${t('ex_kind')}: ${t(`ex_kind_${st.k}`)}`]);
+    if (st.min) on.push(['min', `${t('ex_min')}: ${num(Number(st.min))}`]);
+    if (st.fl) on.push(['fl', `${t('ex_flags')}: ${option('fl')}`]);
+    if (st.cl && st.v !== 'matrix') on.push(['cl', `${t('ex_ctrl')}: ${listName(st.r, st.cl)}, ${t(`ex_ctrl_${st.cv}`)}`]);
+    if (st.ob) on.push(['ob', `${t('ex_obs')}: ${t(st.ob === 'yes' ? 'ex_yes' : 'ex_no')}`]);
+    if (st.nt) on.push(['nt', `${t('ex_nt')}: ${t(`ex_sx_type_${st.nt === 'u' ? 0 : 1}`)}`]);
+    if (st.ns !== '') on.push(['ns', `${t('ex_ns')}: ${t(`ex_sx_size_${st.ns}`)}`]);
+    if (st.nc !== '') on.push(['nc', `${t('ex_nc')}: ${t(`ex_sx_change_${st.nc}`)}`]);
+    if (st.na !== '') on.push(['na', `${t('ex_na')}: ${t(`ex_old_${st.na}`)}`]);
+    if ((st.x0 !== '' || st.x1 !== '') && st.v !== 'compare' && st.v !== 'matrix' && unit(st.x, level()) !== 'yes') {
+      on.push(['x0', `${t(`m_${st.x}`)}: ${st.x0 === '' ? '…' : num(Number(st.x0), 1)}–${st.x1 === '' ? '…' : num(Number(st.x1), 1)}`]);
     }
+    return on;
+  };
+  const clearFilter = (k) => {
+    if (k === 'cl') { st.cl = ''; st.cv = DEF.cv; } else if (k === 'x0') { st.x0 = ''; st.x1 = ''; } else st[k] = DEF[k];
   };
 
   // --- the data ---------------------------------------------------------------------------------------------------
@@ -1167,20 +1294,49 @@
     st.mun = fill('mun', [['', t('ex_all')], ...munItems], st.mun);
     if (had !== st.mun) history.replaceState(null, '', toHash(st));
   };
+  // a question is still the one asked once the reader has chosen its lists or the order of a table
+  const core = (s) => toHash({ ...s, lx: '', ly: '', o: '' });
   const markPreset = () => {
-    const h = toHash(st);
-    presetsEl.querySelectorAll('a').forEach((a) => {
-      if (a.getAttribute('href') === h) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+    const h = core(st);
+    questionsEl.querySelectorAll('a').forEach((a) => {
+      if (a.hasAttribute('data-q') && core(fromText(a.getAttribute('href'))) === h) {
+        a.setAttribute('aria-current', 'true');
+      } else a.removeAttribute('aria-current');
     });
+  };
+  // the title over the result: the question it answers, when it is one of them, else what is shown
+  const asked = () => {
+    const h = core(st);
+    for (const [, items] of THEMES) for (const [k, q] of items) if (typeof q === 'object' && core({ ...DEF, ...q }) === h) return k;
+    return null;
+  };
+  const setTitle = (res) => {
+    const q = asked();
+    const list = M[st.x].list && st.lx ? ` · ${listName(st.r, st.lx)}` : '';
+    titleEl.textContent = q ? t(`preset_q_${q}`) + list
+      : (res && res.title) || (st.v === 'matrix' ? t(`m_${st.x}`) : `${BY_ID[st.r].short} · ${mlabel(st.x, st.r, st.lx)}`);
+  };
+  // the notes that matter for what is shown, beside it; all of them stay at the end of the page
+  const setContext = () => {
+    const keys = [st.x, st.v === 'density' ? st.y : null].filter(Boolean);
+    const notes = [];
+    if (keys.includes('top')) notes.push(keys.includes('turnout') ? 'ex_note_fingerprint' : 'ex_note_same');
+    if (st.v === 'compare') notes.push('ex_note_change', 'ex_note_places');
+    if (keys.includes('ctrl') || (st.cl && st.v !== 'matrix')) notes.push('ex_note_ctrl');
+    if (keys.some((k) => M[k].census) || bySettlement()) notes.push('ex_note_census');
+    contextEl.textContent = [...new Set(notes)].slice(0, 2).map((k) => t(k)).join(' ');
   };
   let token = 0;
   let drawnWidth = 0;
+  let jump = false;
   const render = async () => {
     const my = ++token;
     colors();
     SEL = new Map();
     tip.hidden = true;
     markPreset();
+    setTitle(null);
+    setContext();
     const v = st.v;
     const need = v === 'matrix' ? ROUNDS.map((r) => r.id) : v === 'compare' && st.r2 ? [st.r, st.r2] : [st.r];
     if (need.some((id) => !DATA[id]) || (v === 'map' && GEO === undefined)) say('ex_msg_loading');
@@ -1210,6 +1366,11 @@
     if (p) { setActions(null); say(p); return; }
     const res = { map: drawMap, density: drawDensity, compare: drawCompare, hist: drawHist, table: drawTable, matrix: drawMatrix }[v](ds);
     setActions(res);
+    setTitle(res && !res.empty ? res : null);
+    if (jump) { // a question was chosen: bring its answer into view where the form pushed it down
+      jump = false;
+      if (titleEl.getBoundingClientRect().top > window.innerHeight * 0.6) titleEl.scrollIntoView({ block: 'start' });
+    }
     if (res && res.empty) { say('ex_msg_nodata'); return; }
     if (lastSel && SEL.has(lastSel)) select(lastSel);
     else if (res && res.pick) listEl.innerHTML = `<p class="small muted">${esc(t(res.pick))}</p>`;
@@ -1223,6 +1384,19 @@
   };
 
   // --- what the reader does ---------------------------------------------------------------------------------------
+  themesEl.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-theme]');
+    if (b) { theme = b.dataset.theme; drawThemes(); }
+  });
+  questionsEl.addEventListener('click', (e) => {
+    const a = e.target.closest('a');
+    if (a && a.getAttribute('href').startsWith('#')) jump = true;
+  });
+  activeEl.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-clear]');
+    if (b) { clearFilter(b.dataset.clear); commit(); }
+    if (e.target.closest('[data-reset]')) { FILTERS.forEach(clearFilter); commit(); }
+  });
   form.addEventListener('change', (e) => {
     const n = e.target.name;
     if (!n || !(n in st)) return;
@@ -1235,6 +1409,8 @@
       if (st.r2 === st.r) { st.r2 = ''; st.ly = ''; }
     }
     if (n === 'r2') st.ly = '';
+    // two measures of one election that both need a list: the second starts as the list chosen for the first
+    if (n === 'lx' && st.v === 'density' && M[st.y].list && !st.ly) st.ly = st.lx;
     if (n === 'v') {
       st.o = '';
       if (st.v === 'compare' && !st.r2) st.r2 = previous(st.r);
@@ -1344,27 +1520,6 @@
     }
   });
 
-  // presets: links, so each opens like any shared analysis
-  const presets = () => {
-    const newest = ROUNDS[0];
-    const prev = previous(newest.id);
-    const withCtrl = ROUNDS.find((r) => r.ctrl);
-    return [
-      ['fingerprint', { v: 'density', r: newest.id, lv: 's', x: 'turnout', y: 'top' }],
-      ['turnout_map', { v: 'map', r: newest.id, x: 'turnout' }],
-      ['invalid_map', { v: 'map', r: newest.id, x: 'invalid' }],
-      prev && ['turnout_change', { v: 'compare', r: newest.id, r2: prev, lv: 's', x: 'turnout' }],
-      prev && ['register_change', { v: 'compare', r: newest.id, r2: prev, lv: 'm', x: 'reg' }],
-      prev && ['votes_change', { v: 'compare', r: newest.id, r2: prev, lv: 'm', x: 'votes' }],
-      ROUNDS.length > 1 && ['matrix', { v: 'matrix', r: newest.id, x: 'turnout' }],
-      withCtrl && ['ctrl_map', { v: 'map', r: withCtrl.id, x: 'ctrl' }],
-      ['high', { v: 'table', r: newest.id, lv: 's', x: 'turnout', x0: '90' }],
-      ['hours_map', { v: 'map', r: newest.id, x: 'hours' }],
-      newest.census && ['old_turnout', { v: 'density', r: newest.id, lv: 's', x: 'old', y: 'turnout' }],
-      newest.census && ['growth_map', { v: 'map', r: newest.id, x: 'growth' }],
-    ].filter(Boolean);
-  };
-  presetsEl.innerHTML = presets().map(([k, s]) => `<a class="chip" href="${esc(toHash({ ...DEF, ...s }))}">${esc(t(`preset_${k}`))}</a>`).join('');
 
   // a new theme or a much wider or narrower window: draw again, keeping what was chosen
   new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -1379,6 +1534,9 @@
     }).observe(out);
   }
 
+  theme = (THEMES.find(([, items]) => items.some(([, q]) => typeof q === 'object'
+    && core({ ...DEF, ...q }) === core(st))) || THEMES[0])[0];
   syncForm();
+  drawThemes();
   render();
 })();

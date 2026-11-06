@@ -7,50 +7,68 @@
 <noscript><p class="callout">{{ t('ex_noscript') }}</p></noscript>
 
 <div class="ex" data-explore data-root="{{ root }}" data-site="{{ link('') }}" hidden>
-  <section class="ex-presets" aria-labelledby="ex-presets-h">
-    <h2 id="ex-presets-h" class="kicker">{{ t('ex_presets') }}</h2>
-    <div class="ex-preset-list" data-presets></div>
+  {# Start from a question: themes, and under the chosen one its questions, each a link to an analysis. #}
+  <section class="ex-questions" aria-labelledby="ex-questions-h">
+    <h2 id="ex-questions-h" class="kicker">{{ t('ex_questions') }}</h2>
+    <div class="ex-themes" role="group" aria-labelledby="ex-questions-h" data-themes></div>
+    <ul class="ex-qlist" data-questions></ul>
   </section>
 
-  <form class="ex-form" data-form onsubmit="return false">
+  {# Or build one: the election and the measure, then how to show it, then which stations. #}
+  <form class="ex-form" data-form onsubmit="return false" aria-labelledby="ex-own-h">
+    <h2 id="ex-own-h" class="kicker">{{ t('ex_own') }}</h2>
     <div class="ex-row">
-      <label>{{ t('ex_view') }}<select name="v"></select></label>
       <label data-for="r">{{ t('ex_round') }}<select name="r"></select></label>
-      <label data-for="r2">{{ t('ex_round2') }}<select name="r2"></select></label>
-      <label data-for="lv">{{ t('ex_level') }}<select name="lv"></select></label>
-    </div>
-    <div class="ex-row">
       <label>{{ t('ex_x') }}<select name="x"></select></label>
       <label data-for="lx">{{ t('ex_list') }}<select name="lx"></select></label>
+    </div>
+    <p class="ex-desc" data-desc="x"></p>
+    <div class="ex-row">
+      <label>{{ t('ex_view') }}<select name="v"></select></label>
+      <label data-for="lv">{{ t('ex_level') }}<select name="lv"></select></label>
+      <label data-for="r2">{{ t('ex_round2') }}<select name="r2"></select></label>
       <label data-for="y">{{ t('ex_y') }}<select name="y"></select></label>
       <label data-for="ly">{{ t('ex_list') }}<select name="ly"></select></label>
     </div>
+    <p class="ex-desc" data-desc="v"></p>
     <details class="ex-filters" data-filters>
-      <summary>{{ t('ex_filters') }}</summary>
-      <div class="ex-row">
+      <summary>{{ t('ex_filters') }} <span class="ex-fcount" data-fcount></span></summary>
+      <fieldset class="ex-row">
+        <legend>{{ t('ex_f_place') }}</legend>
         <label>{{ t('ex_mun') }}<select name="mun"></select></label>
         <label>{{ t('ex_kind') }}<select name="k"></select></label>
         <label>{{ t('ex_min') }}<input name="min" type="number" min="0" step="10" inputmode="numeric"></label>
+      </fieldset>
+      <fieldset class="ex-row">
+        <legend>{{ t('ex_f_records') }}</legend>
         <label>{{ t('ex_flags') }}<select name="fl"></select></label>
-      </div>
-      <div class="ex-row">
-        <label data-for="cl">{{ t('ex_ctrl') }}<select name="cl"></select></label>
-        <label data-for="cv"><span class="visually-hidden">{{ t('ex_ctrl') }}</span><select name="cv"></select></label>
         <label>{{ t('ex_obs') }}<select name="ob"></select></label>
-        <span class="ex-range" data-for="x0">
-          <label>{{ t('ex_from') }}<input name="x0" type="number" step="any" inputmode="decimal"></label>
-          <label>{{ t('ex_to') }}<input name="x1" type="number" step="any" inputmode="decimal"></label>
-        </span>
-      </div>
-      <div class="ex-row">
+      </fieldset>
+      <fieldset class="ex-row" data-for="cl">
+        <legend>{{ t('ex_f_ctrl') }}</legend>
+        <label>{{ t('ex_ctrl') }}<select name="cl"></select></label>
+        <label data-for="cv"><span class="visually-hidden">{{ t('ex_ctrl') }}</span><select name="cv"></select></label>
+      </fieldset>
+      <fieldset class="ex-row">
+        <legend>{{ t('ex_f_census') }}</legend>
         <label>{{ t('ex_nt') }}<select name="nt"></select></label>
         <label>{{ t('ex_ns') }}<select name="ns"></select></label>
         <label>{{ t('ex_nc') }}<select name="nc"></select></label>
         <label>{{ t('ex_na') }}<select name="na"></select></label>
-      </div>
+      </fieldset>
+      <fieldset class="ex-row" data-for="x0">
+        <legend>{{ t('ex_f_range') }}</legend>
+        <label>{{ t('ex_from') }}<input name="x0" type="number" step="any" inputmode="decimal"></label>
+        <label>{{ t('ex_to') }}<input name="x1" type="number" step="any" inputmode="decimal"></label>
+      </fieldset>
     </details>
+    <div class="ex-active" data-active hidden>
+      <ul class="ex-active-list" aria-label="{{ t('ex_active') }}" data-active-list></ul>
+      <button type="button" class="link-button" data-reset>{{ t('ex_reset') }}</button>
+    </div>
   </form>
 
+  <h2 class="ex-title" data-title></h2>
   <p class="ex-msg" data-msg aria-live="polite"></p>
   <div class="ex-bar">
     <p class="ex-sum" data-sum aria-live="polite"></p>
@@ -61,6 +79,7 @@
       <span class="small muted" data-copied aria-live="polite"></span>
     </div>
   </div>
+  <p class="ex-context" data-context></p>
   <div class="ex-out" data-out></div>
   <div class="ex-list" data-list></div>
   <div class="ex-more" data-more></div>
