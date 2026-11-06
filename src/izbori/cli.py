@@ -1,5 +1,5 @@
-"""Command line: izbori rounds | fetch | import | update | documents | boards | observers | geo | census | site |
-targets | check."""
+"""Command line: izbori rounds | fetch | import | update | documents | boards | observers | geo | census |
+settlements | site | targets | check."""
 
 from __future__ import annotations
 
@@ -473,6 +473,41 @@ def cmd_census(args) -> int:
     return 1 if failed else 0
 
 
+def cmd_settlements(args) -> int:
+    """Each station's settlement in the 2022 census, per round, into data/rounds/<id>/settlements.json."""
+    from izbori import boards, settlements
+    table = Path(args.data) / settlements.TABLE
+    if not table.exists():
+        log(f"{table} is missing: run the census workflow first")
+        return 1
+    from izbori.report import links
+    census = settlements.Census(settlements.load_units(table))
+    rules = settlements.load_rules(Path(args.data) / settlements.RULES_FILE, log)
+    archive = Archive(args.data)
+    rids = archive.round_ids()
+    if not rids:
+        return 0
+    cache: dict = {}
+    joined = {}
+    for rid in rids:  # every round: a place's other elections may name its settlement (rule 6)
+        cache[rid] = archive.load(rid)
+        addresses = boards.addresses(boards.load_store(archive.dir(rid)))
+        joined[rid] = settlements.join(cache[rid].stations, census, addresses, rid, rules, log)
+    settlements.inherit(joined, links(archive, rids[-1], cache))
+    written = []
+    for rid in rids:
+        counts = settlements.summary(cache[rid].stations, joined[rid], census.for_round(cache[rid].stations))
+        log(f"{rid}: " + ", ".join(f"{how} {n}" for how, n in counts.most_common()))
+        if settlements.save_store(archive.dir(rid), joined[rid]):
+            written.append(rid)
+    if written and args.commit and commit([str(archive.dir(rid) / settlements.STORE) for rid in written],
+                                          "Data: stations' settlements in the 2022 census "
+                                          f"({', '.join(written)})"):
+        if args.push:
+            push()
+    return 0
+
+
 def cmd_documents(args) -> int:
     """Read RIK's register of minutes: every document published for each polling station (minutes, observers'
     records, remarks, corrections, rulings). Keeps labels, links and upload times; no names."""
@@ -787,6 +822,11 @@ def main(argv: list[str] | None = None) -> int:
     z.add_argument("--commit", action="store_true")
     z.add_argument("--push", action="store_true")
     z.set_defaults(fn=cmd_census)
+
+    n = sub.add_parser("settlements", help="each station's settlement in the 2022 census, for every round")
+    n.add_argument("--commit", action="store_true")
+    n.add_argument("--push", action="store_true")
+    n.set_defaults(fn=cmd_settlements)
 
     o = sub.add_parser("observers", help="observers' records: score them with OCR, or list them to review")
     o.add_argument("--round", help="round id (default: the newest)")

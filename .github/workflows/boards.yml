@@ -3,7 +3,9 @@
 #
 # Three steps, so that four jobs read at once: plan indexes RIK's register and lists what to read; read (four
 # jobs) each read their share with OCR; merge keeps the index and every part in the round's store and commits
-# once. With nothing to read, merge still keeps what the register lists (links, kinds).
+# once. With nothing to read, merge still keeps what the register lists (links, kinds). Then each station is joined
+# to its settlement in the 2022 census again, since the decisions give the addresses (a commit of its own when
+# that changed).
 name: boards
 
 on:
@@ -183,3 +185,10 @@ jobs:
           args=(--merge plan.json --show 15)
           [ "$COMMIT" = "true" ] && args+=(--commit --push --dispatch-pages)
           uv run izbori boards "${args[@]}" part-*.json
+      - name: Join the stations to their census settlements (the addresses may have changed)
+        env:
+          COMMIT: ${{ github.event_name == 'schedule' || inputs.commit }}
+        run: |
+          args=()
+          [ "$COMMIT" = "true" ] && args+=(--commit --push)
+          uv run izbori settlements "${args[@]}"

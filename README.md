@@ -294,6 +294,7 @@ Every page says which RIK timestamp the data comes from and when it was fetched.
 data/rounds.json                  every round RIK lists
 data/feed.json                    feed entries
 data/places.csv                   manual corrections to how stations are followed across elections
+data/settlements.csv              manual corrections to which census settlement a station is in
 data/elections.csv                election days entered by hand once an election is called
 data/looks.json                   when RIK was last asked (results, settled rounds, daily re-download)
 data/mail.json                    email state: pending flags, time of the last message
@@ -314,6 +315,7 @@ data/rounds/<id>/boards.json      decisions on polling boards: per decision, sta
 data/rounds/<id>/documents.json   every document RIK lists per station: label, link, upload time (no names)
 data/rounds/<id>/observers.json   per observers' record: how much is written in its remark lines (numbers only)
 data/rounds/<id>/observer_reviews.csv  what a person found in observers' records (edited by hand)
+data/rounds/<id>/settlements.json each station's settlement in the 2022 census: census municipality, settlement, rule
 data/rounds/<id>/commission.json  the municipal electoral commissions' documents: link, kind, day; RIK's name of a
                                   city the results don't have
 ```
@@ -324,7 +326,7 @@ The archive starts with the three files from 1 November 2026 at 22:19, 23:26 and
 
 ## Schedule
 
-- **Every day.** The **documents** workflow reads RIK's register of minutes: daily for two weeks after election day, then on Mondays until 60 days after it, and each time only if a quick count (one or two requests per kind of document) shows something new. The **boards** workflow reads new decisions on polling boards until 14 days after election day. The **observers** workflow scores new observers' records of the newest round, once each, until 60 days after election day.
+- **Every day.** The **documents** workflow reads RIK's register of minutes: daily for two weeks after election day, then on Mondays until 60 days after it, and each time only if a quick count (one or two requests per kind of document) shows something new. The **boards** workflow reads new decisions on polling boards until 14 days after election day, then joins the stations to their census settlements again. The **observers** workflow scores new observers' records of the newest round, once each, until 60 days after election day.
 - **By the election calendar.** The **update** workflow starts every hour, but asks RIK only as often as the nearest election calls for (`src/izbori/schedule.py`):
   - no election under way: once a day, which also finds a newly called election in RIK's list of rounds;
   - election day: every 6 hours until two hours before the polls close, then every hour until two days after;
@@ -363,6 +365,7 @@ uv run izbori site --out _site --incremental   # render only what changed since 
 uv run --with shapely izbori geo          # municipal boundaries from OpenStreetMap (the geo workflow, by hand)
 uv run --with shapely --with pyshp izbori geo --kim   # Kosovo and Metohija in RIK's division, into the same file
 uv run izbori census                      # the 2022 census tables from the Statistical Office (the census workflow, by hand)
+uv run izbori settlements                 # each station's census settlement, every round (after the boards workflow too)
 uv run izbori boards --round 680072 --reindex --retry-unparsed   # place and read every decision again
 uv run izbori boards --round 680072 --only 71218 --reread   # read one municipality's decisions again
 uv run izbori boards --round 680072 --diagnose-ids 744462   # how one decision reads every way, names masked
@@ -397,6 +400,7 @@ src/izbori/
   narrative.py  the sentences at the top of the pages across elections
   geo.py        municipal boundaries for the Explore page's map: OpenStreetMap, and Kosovo and Metohija in RIK's division
   census.py     the 2022 census tables from the Statistical Office, archived as published
+  settlements.py each station's settlement in the census: by address, name, the same place, or the seat
   notes.py      news notes
   targets.py    private ranking
   feed.py       Atom feeds
@@ -409,7 +413,7 @@ notes/          news notes per round, added by hand
 tests/
 ```
 
-Python 3.12+, managed with uv. Networking uses only the standard library; templates use Jinja2.
+Python 3.12+, managed with uv. Networking uses only the standard library; templates use Jinja2; Excel files are read with xlrd (RIK's older results) and openpyxl (the census).
 
 ## Data sources
 
@@ -429,6 +433,19 @@ The Statistical Office of the Republic of Serbia (RZS) publishes the 2022 census
 - **By municipality and city (8 tables):** population; ethnicity; age and sex; educational attainment; computer literacy; migration; economic activity; educational attainment by type of settlement (urban or other) within the municipality. The census gives education, ethnicity, activity and migration no further down than this.
 
 The census wasn't held in Kosovo and Metohija. The tables count people and hold no names. The Office's site is out of reach from the development sandbox; GitHub's runners reach it.
+
+**Each station's settlement** (`settlements.py`). `izbori settlements` joins every round's stations to the census, the same way for every station, the first rule that answers deciding:
+1. a manual correction in `data/settlements.csv`: "manual";
+2. a settlement of the station's municipality named in the address read from its board decision, after the first part: "address";
+3. named in the address's first part ("Дом културе Голубинци"): "building";
+4. named in the station's name in the results: "station";
+5. the municipality has a single settlement (Belgrade's urban city municipalities): "single";
+6. the same polling place in another election (as on the pages across elections) found its settlement by one of the rules above: "place";
+7. an address with a street or a house number that names no settlement: the settlement bearing the municipality's name, "Стара Пазова", "Младеновац (варош)" or "Београд (Вождовац)": "seat". This one is assumed, as a town's stations are usually given by building and street alone.
+
+Otherwise the station has none: unknown is not zero. Names are compared in Latin without diacritics, word by word, the longest first; a name the census qualifies in brackets is also found without them when that leaves no doubt ("Београд" in Voždovac is "Београд (Вождовац)"; "Младеновац" is the town rather than the village). An address that names another building than the results isn't used. The census prints names, not codes, in a hierarchy shown by indentation; RIK's municipalities are matched by name, a name in brackets saying which city ("Палилула (Ниш)"). Of 2026's 8,210 stations in places with a census, 7,556 have a settlement: 6,520 named or certain (address, building, station, single), 607 from another election and 429 assumed seats.
+
+`data/rounds/<id>/settlements.json` keeps, per station, the census municipality (`u`, its city before a colon for a city municipality: "Град Ниш: Палилула"), the settlement as the census prints it (`s`) and the rule (`m`). `data/settlements.csv` corrects it by hand, with the columns `round`, `municipality_code`, `number`, `settlement`, `note` (why, with a source); a row naming a settlement outside the station's municipality is skipped. The **boards** workflow joins again after it reads new decisions, since they give the addresses.
 
 ## Setup
 

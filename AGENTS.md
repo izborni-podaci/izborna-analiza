@@ -63,6 +63,8 @@ These are the project's promises to its readers. Never change them without the m
     lists under a city the results don't have (Niš, Belgrade), RIK's name of that city.
   - `observers.json`: the OCR numbers only.
   - `observer_reviews.csv`: what a person found in an observers' record.
+  - `settlements.json`: per station, its census municipality and settlement and the rule that found them (for the
+    analysis; no page shows it yet).
 - **Stations are keyed `municipality code/number` per round.** Municipality codes are stable across elections,
   but names differ ("Ниш-Медијана" in 2022, "Градска општина Медијана" in RIK's registers). Names map to codes
   with `boards.municipality_key`, using every archived round.
@@ -71,6 +73,14 @@ These are the project's promises to its readers. Never change them without the m
   its content changed. Which tables: `census.TABLES`. The census is final, so the **census** workflow runs by
   hand; the development sandbox can't reach the Office's site (its proxy refuses it), GitHub's runners can. The
   tables count people and hold no names. Education, ethnicity, activity and migration exist only by municipality.
+- **Each station's settlement** (`settlements.py`): the first rule that answers decides, the same for every
+  station: a correction in `data/settlements.csv`, a settlement named in the decision's address (after its first
+  part: "address"; in it: "building"), in the station's name, the municipality's only settlement, the same place
+  in another election ("place", by `places.py`), and last the seat, assumed only for an address with a street or a
+  house number that names no settlement. No rule, no entry: unknown is not zero. The census prints names, not codes:
+  its units come from the first column's indentation, and RIK's municipalities match them by name (brackets say
+  which city; a city municipality RIK doesn't list in a round belongs to the city's own). The **boards** workflow
+  joins again after reading decisions, since they give the addresses.
 - **Places across elections** (`places.py`) are matched going forward in time, by priority: manual correction
   (`data/places.csv`), then address, then name, then number. A new election never changes how the earlier ones
   were joined. An address read from a decision that names another building than the station's own name in the
@@ -179,7 +189,7 @@ These are the project's promises to its readers. Never change them without the m
 |---|---|---|
 | update | hourly, plus Sunday evenings; asks RIK by the calendar | results, flags, feeds, email |
 | documents | daily | register of minutes, commission documents |
-| boards | daily, until 14 days after election day | decisions on polling boards: plan, four OCR jobs, merge (one commit) |
+| boards | daily, until 14 days after election day | decisions on polling boards: plan, four OCR jobs, merge (one commit); then the stations' census settlements |
 | observers | daily, until 60 days after election day | OCR score of observers' records |
 | pages | on push | incremental site build and deploy |
 | geo | by hand | municipal boundaries from OpenStreetMap (Overpass); with kim, Kosovo and Metohija in RIK's division |
@@ -306,3 +316,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   families, every census from 1948, dwellings); education, ethnicity, economic activity and migration only by
   municipality, education also by type of settlement. `izbori census` keeps those seven and eight by
   municipality, as published; joining stations to settlements comes next.
+- **6 Nov 2026, stations' settlements:** the maintainer chose to keep the join in the repo: a store per round that
+  records the rule behind each station's settlement, and corrections by hand in `data/settlements.csv`, as
+  `data/places.csv` does for places. The seat is assumed only where a decision gives a street address naming no
+  place: falling back to it for every station put all 91 of Prokuplje's stations, from 107 settlements, in the
+  town. The same place in another election comes before the seat, and fills the 2022 round, whose results name
+  no station. In 2026, 7,556 of the 8,210 stations where the census was held have a settlement (6,520 named or
+  certain, 607 from another election, 429 assumed seats); 654 have none, mostly where decisions give no address
+  (Prokuplje, Knjaževac, Negotin, Bajina Bašta). openpyxl joins the dependencies, to read the census.
