@@ -27,9 +27,9 @@ def test_place_in_the_asked_order():
     summary = place(rows(), ["Pokrajinski 2023"], "lat")
     assert latin(summary.context) == "Najnoviji izbori: Parlamentarni 2026 · poređenje sa opštinom"
     assert lat(summary) == [
-        ("Oznake", ["Na 2 od 3 izbora: Parlamentarni 2026 (pad izlaznosti); Parlamentarni 2023 (mnogo nevažećih "
+        ("Upozorenja", ["Na 2 od 3 izbora: Parlamentarni 2026 (pad izlaznosti); Parlamentarni 2023 (mnogo nevažećih "
                     "listića, pad izlaznosti)",
-                    "Ista oznaka više puta: pad izlaznosti (na 2 izbora)",
+                    "Isto upozorenje više puta: pad izlaznosti (na 2 izbora)",
                     "Nevažeći 0,5% (opština 0,9%) · veći nego u opštini na 1 od 3 izbora"]),
         ("Izlaznost", ["70,4% · 0,9 poena više nego u opštini", "Ranije 47,6–59,7%"]),
         ("Najviše glasova", ["Lista A 71,8% (opština 60,7%)", "Na 2 od 3 izbora prvi i u opštini"]),
@@ -51,7 +51,7 @@ def test_place_variants():
     one = [rows()[0]]
     one[0].flags = []
     assert lat(place(one, [], "lat")) == [
-        ("Oznake", ["Bez oznake", "Nevažeći 0,5% (opština 0,9%)"]),
+        ("Upozorenja", ["Bez upozorenja", "Nevažeći 0,5% (opština 0,9%)"]),
         ("Izlaznost", ["70,4% · 0,9 poena više nego u opštini"]),  # nothing earlier
         ("Najviše glasova", ["Lista A 71,8% (opština 60,7%)"]),
     ]  # one election: nothing changed, and it missed none
@@ -61,7 +61,7 @@ def test_place_variants():
     same[1].turnout, same[1].invalid = 0.5, 0.009
     got = dict(lat(place(same, [], "lat")))
     assert got["Izlaznost"] == ["70,4% · koliko i u opštini", "Ranije 50,0% (Lokalni 2024)"]
-    assert got["Oznake"][-1].endswith("nikad veći nego u opštini")
+    assert got["Upozorenja"][-1].endswith("nikad veći nego u opštini")
     assert got["Mesto"][0] == "Isti broj i naziv na svim izborima"
 
     # the latest election has no count yet: the figures name the one they come from
@@ -103,8 +103,8 @@ def test_municipality():
     summary = municipality(r, ["Lokalni 2024"], (46, 14), (17, 8, 0), "lat")
     assert latin(summary.context) == "Najnoviji izbori: Parlamentarni 2026 · poređenje sa celim izborima"
     got = dict(lat(summary))
-    assert got["Oznake"] == ["7 od 221 biračkih mesta za proveru (3,2%; ukupno 2,6%)",
-                             "Mesta sa oznakom na bar jednim izborima: 46 · na bar dvoje: 14",
+    assert got["Upozorenja"] == ["7 od 221 biračkih mesta za proveru (3,2%; ukupno 2,6%)",
+                             "Mesta sa upozorenjem na bar jednim izborima: 46 · na bar dvoje: 14",
                              "Nevažeći 0,5% (ukupno 0,9%) · veći nego na celim izborima na 1 od 3 izbora"]
     assert got["Izlaznost"][0] == "70,4% · 0,9 poena više nego na celim izborima"
     assert got["Najviše glasova"][1] == "Na 2 od 3 izbora prvi i na celim izborima"
@@ -117,12 +117,12 @@ def test_rank_among_peers():
     r = rows()
     r[0].rank_invalid, r[0].rank_turnout = (12, 221), (3, 221)
     got = dict(lat(place(r, [], "lat")))
-    assert got["Oznake"][-1] == "Nevažeći 0,5% (opština 0,9%) · 12. od 221 u opštini · veći nego u opštini na 1 od 3 izbora"
+    assert got["Upozorenja"][-1] == "Nevažeći 0,5% (opština 0,9%) · 12. od 221 u opštini · veći nego u opštini na 1 od 3 izbora"
     assert got["Izlaznost"][1] == "3. od 221 u opštini · ranije 47,6–59,7%"
     en = {x.label: x.lines for x in place(r, [], "en").rows}
     assert en["Turnout"][1] == "3 of 221 in the municipality · earlier 47.6–59.7%"
     r[0].rank_invalid = None  # too few stations to rank
-    assert "12. od 221" not in " ".join(dict(lat(place(r, [], "lat")))["Oznake"])
+    assert "12. od 221" not in " ".join(dict(lat(place(r, [], "lat")))["Upozorenja"])
 
 
 def test_rank_helper():

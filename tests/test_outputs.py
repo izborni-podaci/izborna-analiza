@@ -545,7 +545,7 @@ def test_place_across_elections(site):
     # the analysis on top: flags and invalid ballots, turnout, most votes, then how the place changed
     analysis = re.search(r'<section class="analysis".*?</section>', page, re.S).group(0)
     assert "Najnoviji izbori: Parlamentarni 2026 · poređenje sa opštinom" in analysis
-    order = [analysis.index(x) for x in ("<dt>Oznake</dt>", "Bez oznake ni na jednim od 4 izbora", "Nevažeći ",
+    order = [analysis.index(x) for x in ("<dt>Upozorenja</dt>", "Bez upozorenja ni na jednim od 4 izbora", "Nevažeći ",
                                          "<dt>Izlaznost</dt>", "70,4% · ", "Studentska lista 71,8%",
                                          "Ranije BM 10 (Parlamentarni 2023, Predsednički 2022)")]
     assert order == sorted(order)

@@ -398,3 +398,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   "Earlier minutes"), so both versions can still be opened and compared, and old feed entries keep the entry but
   drop that line. Remarks on the minutes stay a flag (he accepts that one, with some doubt: it says a document
   exists, not what it says).
+- **8 Nov 2026, "upozorenje" on every page.** The Serbian pages now say *upozorenje* for a flag everywhere (the
+  strings, the about page, the guide); English keeps "flag". Neuter noun, so the adjectives and verbs around it
+  changed with it ("isto upozorenje", "pojavilo").
