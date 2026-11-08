@@ -126,6 +126,85 @@ def load(path: Path) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
 
+# --- settlements -----------------------------------------------------------------------------------------------------
+# Serbia's settlements (naselja) are in OpenStreetMap as administrative relations at admin_level 9 carrying the
+# cadastre's settlement code (ref:RS:naselje). The census tables name settlements but carry no code, so a boundary
+# joins the census by its municipality (the one its representative point falls in, from municipalities.json) and
+# its name, normalised the way settlements.py matches RIK's names. A boundary that matches no census settlement is
+# kept with an empty "census" and drawn grey.
+
+SETTLEMENT_QUERY = """[out:json][timeout:1800][maxsize:1073741824];
+area["ISO3166-1"="RS"]->.rs;
+relation["boundary"="administrative"]["admin_level"="9"]["ref:RS:naselje"](area.rs);
+out geom;"""
+SETTLEMENT_TOLERANCE = 0.0004  # degrees, about 35 m: a pixel on a map of one municipality
+SETTLEMENT_FILE = "settlements.json"
+
+
+def settlement_features(data: dict, municipalities: list[dict], census_names, log=print) -> list[dict]:
+    """One feature per settlement relation: its code, name, the RIK municipality whose boundary holds its
+    representative point, and the census settlement it matches there (census_names(code) → {normalised name:
+    printed name}; empty when the municipality has no census unit)."""
+    from shapely import STRtree, set_precision
+    from shapely.geometry import mapping, shape
+
+    from izbori.settlements import norm
+
+    polys, codes = [], []
+    for f in municipalities:
+        polys.append(shape(f["geometry"]))
+        codes.append(f["properties"]["code"])
+    tree = STRtree(polys) if polys else None
+    out, unmatched, outside = [], 0, 0
+    for rel in data.get("elements", []):
+        tags = rel.get("tags", {})
+        code = (tags.get("ref:RS:naselje") or "").strip()
+        if not code:
+            continue
+        area = geometry(rel)
+        if area is None:
+            continue
+        point = area.representative_point()
+        hits = [i for i in tree.query(point) if polys[i].covers(point)] if tree else []
+        if not hits:
+            outside += 1
+            continue
+        mun = codes[hits[0]]
+        name = tags.get("name") or tags.get("name:sr") or ""
+        names = census_names(mun)
+        match = names.get(norm(name), "") if names else ""
+        if names and not match:
+            unmatched += 1
+        area = set_precision(area.simplify(SETTLEMENT_TOLERANCE, preserve_topology=True), 10 ** -DIGITS)
+        if area.is_empty:
+            continue
+        shp = mapping(area)
+        out.append({"type": "Feature",
+                    "properties": {"code": code, "name": name, "municipality": mun, "census": match},
+                    "geometry": {"type": shp["type"], "coordinates": _round(shp["coordinates"])}})
+    out.sort(key=lambda f: (f["properties"]["municipality"], f["properties"]["code"]))
+    log(f"settlements: {len(out)} boundaries, {unmatched} without a census match, {outside} outside every municipality")
+    return out
+
+
+def write_settlements(path: Path, feats: list[dict], fetched: str) -> None:
+    head = {"type": "FeatureCollection", "attribution": ATTRIBUTION, "license": LICENSE,
+            "source": f"OpenStreetMap through the Overpass API, {fetched}; admin_level 9 with ref:RS:naselje"}
+    lines = [json.dumps(f, ensure_ascii=False, separators=(",", ":")) for f in feats]
+    text = json.dumps(head, ensure_ascii=False)[:-1] + ', "features": [\n' + ",\n".join(lines) + "\n]}\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def settlements_by_municipality(path: Path) -> dict[str, list[dict]]:
+    """The settlement boundaries grouped by RIK municipality code; empty when the file isn't there."""
+    data = load(path)
+    out: dict[str, list[dict]] = {}
+    for f in (data or {}).get("features", []):
+        out.setdefault(f["properties"]["municipality"], []).append(f)
+    return out
+
+
 # --- Kosovo and Metohija, in RIK's division ------------------------------------------------------------------------
 # OpenStreetMap maps Kosovo's municipalities as Kosovo divides them since 2000, which isn't how RIK counts there.
 # RIK keeps the earlier division; its boundaries are in Glaurdić et al., a CC BY 4.0 dataset of the municipalities of

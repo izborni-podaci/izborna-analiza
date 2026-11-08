@@ -442,6 +442,33 @@ def cmd_geo(args) -> int:
             if args.push and push() and args.dispatch_pages:
                 dispatch_pages()
         return 0
+    if args.settlements:  # the settlements' boundaries, joined to the municipalities' and to the census
+        from izbori import settlements as sx
+        muns = (geo.load(out) or {}).get("features", [])
+        muns = [f for f in muns if f["properties"].get("source") != "ELWar"]
+        census = sx.Census(sx.load_units(Path(args.data) / sx.TABLE)) if (Path(args.data) / sx.TABLE).exists() else None
+        districts: dict[str, str] = {}
+        for rid in reversed(archive.round_ids()):
+            for s in archive.load(rid).stations:
+                districts.setdefault(s.municipality_code, s.district_name)
+        cache: dict[str, dict] = {}
+
+        def census_names(code: str) -> dict:
+            if code not in cache:
+                u = census.unit(names.get(code, ""), districts.get(code, "")) if census and code in names else None
+                cache[code] = {sx.norm(n): n for n in u.settlements} if u else {}
+            return cache[code]
+        feats = geo.settlement_features(geo.fetch(geo.SETTLEMENT_QUERY, timeout=1900), muns, census_names, log)
+        if not feats:
+            log("no settlement boundaries: nothing written")
+            return 1
+        target = out.parent / geo.SETTLEMENT_FILE
+        geo.write_settlements(target, feats, now_iso()[:10])
+        log(f"wrote {target}")
+        if args.commit and commit([str(target)], "Data: settlement boundaries from OpenStreetMap"):
+            if args.push and push() and args.dispatch_pages:
+                dispatch_pages()
+        return 0
     data = geo.fetch()
     feats = geo.features(data)
     have = {f["properties"]["code"] for f in feats}
@@ -813,6 +840,8 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--dispatch-pages", action="store_true")
     g.add_argument("--kim", action="store_true",
                    help="add Kosovo and Metohija's municipalities in RIK's division (needs pyshp and shapely)")
+    g.add_argument("--settlements", action="store_true",
+                   help="the settlements' boundaries (admin_level 9) into <data>/geo/settlements.json (needs shapely)")
     g.add_argument("--kim-inspect", action="store_true",
                    help="list what the dataset of Kosovo's municipalities in RIK's division holds (needs pyshp)")
     g.set_defaults(fn=cmd_geo)

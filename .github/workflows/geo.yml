@@ -1,6 +1,7 @@
 # Geo: municipal boundaries for the map on the Explore page, from OpenStreetMap (ODbL), joined to RIK's
 # municipalities by the cadastre's municipality code that OpenStreetMap carries. Boundaries rarely change, so this
-# runs only when started by hand; it commits data/geo/municipalities.json and starts the pages workflow.
+# runs only when started by hand; it commits data/geo/municipalities.json (or, with `settlements`, the settlements'
+# boundaries at admin_level 9 into data/geo/settlements.json) and starts the pages workflow.
 name: geo
 
 on:
@@ -16,6 +17,10 @@ on:
         default: false
       kim:
         description: "Only add Kosovo and Metohija's municipalities, in RIK's division"
+        type: boolean
+        default: false
+      settlements:
+        description: "Only the settlements' boundaries (admin_level 9), into data/geo/settlements.json"
         type: boolean
         default: false
 
@@ -44,6 +49,7 @@ jobs:
           COMMIT: ${{ inputs.commit }}
           INSPECT: ${{ inputs.inspect }}
           KIM: ${{ inputs.kim }}
+          SETTLEMENTS: ${{ inputs.settlements }}
         run: |
           if [ "$INSPECT" = "true" ]; then
             uv run --with "pyshp>=2.3" izbori geo --kim-inspect
@@ -53,5 +59,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           args=()
           [ "$KIM" = "true" ] && args+=(--kim)
+          [ "$SETTLEMENTS" = "true" ] && args+=(--settlements)
           [ "$COMMIT" = "true" ] && args+=(--commit --push --dispatch-pages)
           uv run --with "shapely>=2.0" --with "pyshp>=2.3" izbori geo "${args[@]}"

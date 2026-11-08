@@ -86,3 +86,34 @@ def test_kosovo_in_rik_s_division_by_name(tmp_path):
     geo.write(out, feats, source="kept")
     back = json.loads(out.read_text(encoding="utf-8"))
     assert "Glaurdić" in back["attribution"] and "CC BY 4.0" in back["license"] and back["source"] == "kept"
+
+
+def test_settlements_join_municipality_and_census(tmp_path):
+    # one municipality, two settlements inside it (one with a census name, one with a name the census spells
+    # differently and so unmatched), one outside every municipality
+    muns = [{"type": "Feature", "properties": {"code": "70513"},
+             "geometry": {"type": "Polygon", "coordinates": [[[21.7, 43.1], [21.9, 43.1], [21.9, 43.3], [21.7, 43.3],
+                                                              [21.7, 43.1]]]}}]
+
+    def square(x, y, d=0.03):
+        return [pt(x, y), pt(x + d, y), pt(x + d, y + d), pt(x, y + d), pt(x, y)]
+    data = {"elements": [
+        {"type": "relation", "tags": {"ref:RS:naselje": "703966", "name": "Пуковац", "admin_level": "9"},
+         "members": [{"type": "way", "role": "outer", "geometry": square(21.75, 43.15)}]},
+        {"type": "relation", "tags": {"ref:RS:naselje": "703974", "name": "Русна (стари назив)", "admin_level": "9"},
+         "members": [{"type": "way", "role": "outer", "geometry": square(21.8, 43.2)}]},
+        {"type": "relation", "tags": {"ref:RS:naselje": "999999", "name": "Негде", "admin_level": "9"},
+         "members": [{"type": "way", "role": "outer", "geometry": square(20.0, 44.0)}]},
+        {"type": "relation", "tags": {"name": "no code"}, "members": []},
+    ]}
+    census = {"70513": {"PUKOVAC": "Пуковац", "RUSNA": "Русна"}}
+    log = []
+    feats = geo.settlement_features(data, muns, lambda code: census.get(code, {}), log=log.append)
+    assert [(f["properties"]["code"], f["properties"]["municipality"], f["properties"]["census"]) for f in feats] == [
+        ("703966", "70513", "Пуковац"), ("703974", "70513", "")]
+    assert log == ["settlements: 2 boundaries, 1 without a census match, 1 outside every municipality"]
+    out = tmp_path / "geo" / "settlements.json"
+    geo.write_settlements(out, feats, "2026-11-08")
+    grouped = geo.settlements_by_municipality(out)
+    assert list(grouped) == ["70513"] and len(grouped["70513"]) == 2
+    assert geo.settlements_by_municipality(tmp_path / "nowhere.json") == {}
