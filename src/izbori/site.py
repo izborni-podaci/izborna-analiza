@@ -314,6 +314,25 @@ class Site:
         return [{"number": contestants[i].number, "label": labels[i], "full": contestants[i].name,
                  "share": (votes[i] or 0) / total} for i in order if votes[i]]
 
+    def place_results(self, rid: str, s) -> tuple[list[dict], int, int]:
+        """A station's result as the page shows it: every contestant with at least 1% of its valid votes (and at
+        least the first three), most votes first, each with its share here, in the municipality and in the whole
+        election; then how many contestants are left and the votes they got between them."""
+        total = sum(v or 0 for v in s.votes)
+        if not total:
+            return [], len(s.votes), 0
+        a, mv, labels = self.analyses[rid], self.mun_votes[rid][s.municipality_code], self.labels[rid]
+        mun_total = sum(mv)
+        order = sorted(range(len(s.votes)), key=lambda i: (-(s.votes[i] or 0), i))
+        shown = [i for k, i in enumerate(order) if (s.votes[i] or 0) and ((s.votes[i] or 0) / total >= 0.01 or k < 3)]
+        rows = [{"number": a.round.contestants[i].number, "label": narrative.short_label(labels[i]),
+                 "full": a.round.contestants[i].name,
+                 "votes": s.votes[i] or 0, "share": (s.votes[i] or 0) / total,
+                 "mun": mv[i] / mun_total if mun_total else None, "country": a.totals.share_of_valid(i)}
+                for i in shown]
+        rest = [i for i in order if i not in set(shown)]
+        return rows, len(rest), sum(s.votes[i] or 0 for i in rest)
+
     def place_pages(self, loc: str, cols: dict) -> None:
         """One page for every polling place: a few sentences about it, then one row per election it took part in,
         newest first, every election alike, each linking to the station's row in that election."""
@@ -328,15 +347,20 @@ class Site:
                 codes.update(f.code for f in flags)
                 ctrl = self.ctrl_of(rid)
                 older = p.stations[p.rounds[i + 1]] if i + 1 < len(p.rounds) else None
+                e = self.place_election(rid, s, flags, cols[rid]["short"])
                 rows.append({"rid": rid, "short": cols[rid]["short"], "date": fmt_date(self.dates[rid], loc), "s": s,
                              "how": p.how[rid] if older is not None and older.number != s.number else "",
                              "address": p.addresses.get(rid, ""), "flags": self.flag_view(a, flags, loc),
                              "notes": a.notes.get(s.key, []), "ctrl": ctrl.get(s.key), "ctrl_known": bool(ctrl),
+                             "no_ctrl": missing_controllers(ctrl.get(s.key), len(a.round.contestants)),
                              "docs": a.documents.get(s.key, []), "review": a.reviews.get(s.key),
                              "board_docs": self.board_docs_of(rid).get(s.key, []),
-                             "n_lists": len(a.round.contestants),
-                             "top": self.top_three(rid, s.votes) if s.counted else []})
-                story.append(self.place_election(rid, s, flags, cols[rid]["short"]))
+                             "n_lists": len(a.round.contestants), "kind": a.round.kind,
+                             "top": self.top_three(rid, s.votes) if s.counted else [],
+                             "results": self.place_results(rid, s) if s.counted else ([], 0, 0),
+                             "e": e, "leader": narrative.short_label(e.leader), "prev_reg": [((self.dates[r] or "")[:4] or cols[r]["short"], p.stations[r].registered)
+                                                  for r in p.rounds[i + 1:i + 3] if p.stations[r].registered]})
+                story.append(e)
             hints = sorted(codes, key=strength)
             self.write(loc, f"s/{p.id}.html", "station.html", p=p, s=p.newest, rows=rows, address=p.address,
                        hints=hints, group_of=group_of,
@@ -1092,6 +1116,14 @@ def peer_values(rnd, municipalities: dict[str, dict]) -> dict:
     domestic = [m for m in municipalities.values() if m["kind"] == "domestic"]
     return {"st": {code: entry([s.invalid_share for s in sts], [s.turnout for s in sts]) for code, sts in by_code.items()},
             "mun": entry([m["invalid"] for m in domestic], [m["turnout"] for m in domestic])}
+
+
+def missing_controllers(c: dict | None, n_lists: int) -> list[int] | None:
+    """Ballot numbers with neither a member nor a deputy on the board; None when no decision was read."""
+    if not c or c.get("lists") is None:
+        return None
+    have = {int(k) for k, v in c["lists"].items() if v.get("member") or v.get("deputy")}
+    return [n for n in range(1, n_lists + 1) if n not in have]
 
 
 def rank_of(value: float | None, values: list | None) -> tuple[int, int] | None:

@@ -1,53 +1,96 @@
 {% extends "base.html" %}
 {% import "_macros.html" as mx with context %}
 {% block title %}{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}{% endblock %}
+
+{# One election at this place: the result with bars, three tiles against the municipality, every flag as a
+   sentence with what to check, then who sat on the board and what RIK published. The newest election is open
+   on the page; the earlier ones fold into the same form. #}
+{% macro election_block(e) %}
+{% set rows, rest_n, rest_votes = e.results %}
+<div class="el-body">
+  {% if e.s.counted %}
+  <div class="el-grid">
+    <div class="el-results">
+      {% for r in rows %}
+      <div class="res-row">
+        <span class="res-name"{% if r.full != r.label %} title="{{ name(r.full) }}"{% endif %}>{{ r.number }}. {{ name(r.label) }}</span>
+        <span class="res-bar" aria-hidden="true"><i style="width: {{ (100 * r.share)|round(1) }}%"></i></span>
+        <span class="res-votes">{{ i(r.votes) }}</span>
+        <span class="res-pct">{{ pct(r.share, 1) }}</span>
+        <span class="res-ref">{% if r.mun is not none %}{{ t('st_in_mun', p=pct(r.mun, 1)) }}{% endif %}{% if r.country is not none %} · {{ t('st_in_country' if e.kind in ('presidential', 'parliamentary') else 'st_in_election', p=pct(r.country, 1)) }}{% endif %}</span>
+      </div>
+      {% endfor %}
+      {% if rest_n %}<p class="res-rest small muted">{% if rest_votes %}{{ t('st_others', n=i(rest_n), votes=i(rest_votes)) }}{% else %}{{ t('st_others_none', n=i(rest_n)) }}{% endif %}</p>{% endif %}
+    </div>
+    <div class="el-side">
+      <div class="tiles el-tiles">
+        <div class="tile"><p class="tile-label">{{ t('turnout') }}</p><p class="tile-value">{{ pct(e.s.turnout, 1) }}</p><p class="tile-sub">{% if e.e.ref_turnout is not none %}{{ t('st_in_mun', p=pct(e.e.ref_turnout, 1)) }}{% endif %}{% if e.e.rank_turnout %} · {{ t('st_rank', r=e.e.rank_turnout[0], n=i(e.e.rank_turnout[1])) }}{% endif %}</p></div>
+        <div class="tile"><p class="tile-label">{{ t('invalid') }}</p><p class="tile-value">{{ pct(e.s.invalid_share, 1) }}</p><p class="tile-sub">{{ i(e.s.invalid) }}{% if e.e.ref_invalid is not none %} · {{ t('st_in_mun', p=pct(e.e.ref_invalid, 1)) }}{% endif %}</p></div>
+        <div class="tile"><p class="tile-label">{{ t('registered') }}</p><p class="tile-value">{{ i(e.s.registered) }}</p><p class="tile-sub">{% for short, n in e.prev_reg %}{{ t('st_prev_reg', short=short, n=i(n)) }}{% if not loop.last %} · {% endif %}{% endfor %}</p></div>
+      </div>
+      {% for f in e.flags %}
+      <div class="warn-box g-{{ f.group }}">
+        <p class="warn-head">{{ mx.sym(f.code, f.group) }}<strong>{{ t('st_warning') }} · {{ f.name }}</strong></p>
+        <p class="warn-text">{{ f.text }}</p>
+        <p class="warn-check small"><strong>{{ t('what_to_check') }}:</strong> {{ t('hint_' ~ f.code) }}</p>
+      </div>
+      {% endfor %}
+      {{ mx.notes_list(e.notes) }}
+    </div>
+  </div>
+  {% else %}
+  <p class="muted">{{ t('not_counted') }} · {{ t('registered') }}: {{ i(e.s.registered) }}</p>
+  {% endif %}
+  <dl class="kv">
+    <dt>{{ t('station') }}</dt><dd>{{ t('station_no') }} {{ e.s.number }}{% if e.s.name %} · {{ name(e.s.name) }}{% endif %}{% if e.how %} <span class="joined small muted">({{ t('joined_' ~ e.how) }})</span>{% endif %}{% if e.address and e.address != address %} · <span class="muted">{{ t('address') }}: {{ name(e.address) }}</span>{% endif %}</dd>
+    {% if e.ctrl_known %}
+    <dt>{{ t('st_ctrl') }}</dt><dd>{{ mx.controllers(e.ctrl, e.n_lists) }}{% if e.no_ctrl is not none %}<p class="small muted">{% if e.no_ctrl %}{{ t('st_no_ctrl', lists=e.no_ctrl|join(', ')) }}{% else %}{{ t('st_all_ctrl') }}{% endif %}</p>{% endif %}</dd>
+    {% endif %}
+    <dt>{{ t('st_docs') }}</dt><dd>{% if e.docs %}<div class="docs">{{ mx.doc_links(e.docs) }}</div>{% else %}<span class="muted small">{{ t('st_no_docs') }}</span>{% endif %}{% if e.board_docs %}<div class="docs"><span class="muted">{{ t('board_docs') }}:</span> {{ mx.doc_links(e.board_docs) }}</div>{% endif %}</dd>
+    {% if e.review and not e.review.remarks %}
+    <dt>{{ t('st_remarks') }}</dt><dd class="small muted">{{ t('review_none', date=t('review_checked', date=date(e.review.checked)) if e.review.checked else '') }}</dd>
+    {% endif %}
+  </dl>
+</div>
+{% endmacro %}
+
+{% macro election_summary(e) %}
+{% if e.s.counted %}{{ t('st_sum', t=pct(e.s.turnout, 1), leader=name(e.leader), p=pct(e.e.leader_share, 1), i=pct(e.s.invalid_share, 1)) }}{% else %}{{ t('not_counted') }}{% endif %}
+{% endmacro %}
+
 {% block main %}
 {{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(s.municipality), link('m/' ~ s.municipality_code ~ '.html')), (t('station_no') ~ ' ' ~ s.number, none)]) }}
-<p class="kicker">{{ name(s.municipality) }} · {{ t('station_history') }}</p>
+<p class="kicker">{{ name(s.municipality) }} · {{ t('st_kicker') }} · {{ t('station_history') }}</p>
 <h1 class="station-title">{{ t('station_no') }} {{ s.number }}{% if s.name %} · {{ name(s.name) }}{% endif %}</h1>
 {% if address %}<p class="muted">{{ t('address') }}: {{ name(address) }}</p>{% endif %}
-<p class="tools"><button type="button" class="link-button" data-print hidden>{{ t('print') }}</button></p>
-{{ mx.analysis(analysis) }}
-{{ mx.trends(charts, t('trend_here_place'), t('trend_ref_mun')) }}
-<p class="rule">{{ t('place_lede') }}</p>
+<p class="muted">{{ t('st_intro', n=i(rows|length), reg=i(s.registered)) }}</p>
+<p class="tools small"><a href="{{ link('r/' ~ rows[0].rid ~ '/m/' ~ s.municipality_code ~ '.html') }}">{{ t('st_mun_link', mun=name(s.municipality)) }}</a> · <button type="button" class="link-button" data-print hidden>{{ t('print') }}</button></p>
 
-<div class="table-wrap history-wrap">
-<table class="history" role="table">
-  <thead role="rowgroup"><tr role="row">
-    <th role="columnheader">{{ t('home_col_election') }}</th><th role="columnheader">{{ t('station') }}</th>
-    <th role="columnheader" class="num">{{ t('registered') }}</th><th role="columnheader" class="num">{{ t('voted') }}</th><th role="columnheader" class="num">{{ t('turnout') }}</th>
-    <th role="columnheader" class="num">{{ t('invalid') }}</th><th role="columnheader">{{ t('top_three') }}</th><th role="columnheader">{{ t('flags') }}</th>
-  </tr></thead>
-  <tbody role="rowgroup">
-  {% for e in rows %}
-    <tr role="row"{% if e.flags %} class="flagged"{% endif %}>
-      {{ mx.history_election(e, link('r/' ~ e.rid ~ '/m/' ~ e.s.municipality_code ~ '.html') ~ '#bm-' ~ e.s.number) }}
-      <td role="cell" class="block l-station"><span class="nowrap">{{ t('station_no') }} {{ e.s.number }}</span>{% if e.s.name %} · {{ name(e.s.name) }}{% endif %}{% if e.how %} <span class="joined small muted">({{ t('joined_' ~ e.how) }})</span>{% endif %}
-        {% if e.ctrl_known %}{{ mx.controllers(e.ctrl, e.n_lists) }}{% elif e.address %}<p class="small muted">{{ t('address') }}: {{ name(e.address) }}</p>{% endif %}
-        <div class="docs small">{{ mx.doc_links(e.docs) }}</div>{% if e.board_docs %}<div class="docs small"><span class="muted">{{ t('board_docs') }}:</span> {{ mx.doc_links(e.board_docs) }}</div>{% endif %}{% if e.review and not e.review.remarks %}<p class="small muted">{{ t('review_none', date=t('review_checked', date=date(e.review.checked)) if e.review.checked else '') }}</p>{% endif %}</td>
-      {% if e.s.counted %}
-      <td role="cell" class="num l-registered">{{ i(e.s.registered) }}</td>
-      <td role="cell" class="num l-voted">{{ i(e.s.voted) }}</td>
-      <td role="cell" class="num l-turnout">{{ pct(e.s.turnout, 1) }}</td>
-      <td role="cell" class="num l-invalid">{{ i(e.s.invalid) }}</td>
-      {{ mx.history_top(e.top) }}
-      {% else %}
-      <td role="cell" class="num l-registered">{{ i(e.s.registered) }}</td>
-      <td role="cell" colspan="4" class="muted l-voted">{{ t('not_counted') }}</td>
-      {% endif %}
-      <td role="cell" class="block l-flags">{% if e.flags %}{{ mx.chips(e.flags) }}{% else %}<span class="muted">{{ t('repeat_no_flag_short') }}</span>{% endif %}{{ mx.notes_list(e.notes) }}</td>
-    </tr>
+{% set latest = rows[0] %}
+<section class="el el-latest" id="e-{{ latest.rid }}">
+  <div class="sec-head"><h2><a href="{{ link('r/' ~ latest.rid ~ '/m/' ~ latest.s.municipality_code ~ '.html') }}#bm-{{ latest.s.number }}">{{ latest.short }}</a></h2><span class="muted">{{ latest.date }} · {{ t('st_latest_note') }}</span>{% if latest.flags %}<span class="el-flags">{% if latest.flags|length == 1 %}{{ t('st_flags_one') }}{% else %}{{ t('st_flags_n', n=latest.flags|length) }}{% endif %}</span>{% endif %}</div>
+  {{ election_block(latest) }}
+</section>
+
+<section class="across" id="kroz-izbore">
+  {{ mx.analysis(analysis) }}
+  {{ mx.trends(charts, t('trend_here_place'), t('trend_ref_mun')) }}
+</section>
+
+{% if rows|length > 1 %}
+<section class="earlier" id="raniji-izbori">
+  <div class="sec-head"><h2>{{ t('st_earlier_heading') }}</h2><span class="muted">{{ t('st_earlier_note') }}</span></div>
+  {% for e in rows[1:] %}
+  <details class="el el-fold" id="e-{{ e.rid }}">
+    <summary>
+      <span class="el-name"><a href="{{ link('r/' ~ e.rid ~ '/m/' ~ e.s.municipality_code ~ '.html') }}#bm-{{ e.s.number }}">{{ e.short }}</a><small class="muted">{{ e.date }}</small></span>
+      <span class="el-sum muted">{{ election_summary(e) }}</span>
+      <span class="el-flags{% if not e.flags %} ok{% endif %}">{% if not e.flags %}{{ t('st_no_flags') }}{% elif e.flags|length == 1 %}{{ t('st_flags_one') }}{% else %}{{ t('st_flags_n', n=e.flags|length) }}{% endif %}</span>
+    </summary>
+    {{ election_block(e) }}
+  </details>
   {% endfor %}
-  </tbody>
-</table>
-</div>
-<p class="rule">{{ t('place_rule') }} <a href="{{ root }}api/s/{{ p.id }}.json" type="application/json">{{ t('json_link') }}</a></p>
-
-{% if hints %}
-<section>
-  <h2>{{ t('what_to_check') }}</h2>
-  <p class="principle">{{ t('principle') }}</p>
-  <ul>{% for code in hints %}<li><span class="sym-line">{{ mx.sym(code, group_of[code]) }}<strong>{{ check_name(code) }}.</strong></span> {{ t('hint_' ~ code) }}</li>{% endfor %}</ul>
 </section>
 {% endif %}
+<p class="rule">{{ t('place_rule') }} <a href="{{ root }}api/s/{{ p.id }}.json" type="application/json">{{ t('json_link') }}</a></p>
 {% endblock %}

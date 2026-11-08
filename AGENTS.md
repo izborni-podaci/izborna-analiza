@@ -404,3 +404,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 - **8 Nov 2026, Izbori back in the header.** Marko asked for it: *Početna · Izbori · Za kontrolore i koordinatore ·
   Analize i podaci · Vodič*. Izbori is current on the elections page and every round page; the coordinators' tab
   on the municipalities' pages. Five tabs fit a 390 px phone with the short names; at 360 px the row scrolls.
+- **8 Nov 2026, the station's page.** Second step of the build order. Drawn on the canvas ("Strana biračkog mesta")
+  and approved as proposed: the latest election first and open, in a block with the result and bars, three tiles
+  against the municipality, each flag as a sentence with what to check right under it (the "What to check" list at
+  the bottom is gone), controllers with the lists that have none (a coordinator's weak spot), documents; then "In
+  short" and the trends; then the earlier elections folded into the same block. The wide history table is gone
+  from this page (it stays on the municipality's history page and in the JSON). Rules kept: every contestant alike
+  (shown when at least 1% here, the first three always), names shortened by the same rule as in sentences.

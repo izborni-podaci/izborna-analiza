@@ -31,8 +31,8 @@ def test_site(site):
     labels = (out / "static/labels.css").read_text(encoding="utf-8")
     assert ':lang(sr-Cyrl) table.history td.l-registered::before { content: "Уписани бирачи"; }' in labels
     assert ':lang(sr-Latn) table.history td.l-registered::before { content: "Upisani birači"; }' in labels
-    place = next((out / "s").glob("*.html")).read_text(encoding="utf-8")
-    assert "static/labels.css" in place and "l-registered" in place and "data-label" not in place
+    history = next((out / "m").glob("*.html")).read_text(encoding="utf-8")
+    assert "static/labels.css" in history and "l-registered" in history and "data-label" not in history
 
     # Latin and English pages carry no Cyrillic except the name of the Cyrillic switch
     for path in [*out.glob("*.html"), *(out / "r").rglob("*.html"), *(out / "s").glob("*.html"),
@@ -542,7 +542,11 @@ def test_place_across_elections(site):
     rows = re.findall(r'<a href="\.\./r/(\d+)/m/70157\.html#bm-(\d+)">', page)
     assert rows == [("680072", "14"), ("567956", "14"), ("341140", "10"), ("42732", "10")]
     assert "isto mesto po nazivu" in page
-    # the analysis on top: flags and invalid ballots, turnout, most votes, then how the place changed
+    # the latest election is open at the top, the three earlier ones fold into the same block, each with its result
+    assert page.count('class="el el-latest"') == 1 and page.count('<details class="el el-fold"') == 3
+    assert page.count('class="el-results"') == 4 and page.count('class="res-row"') >= 12
+    assert page.index('class="el el-latest"') < page.index('<section class="analysis"') < page.index('el-fold')
+    # the analysis: flags and invalid ballots, turnout, most votes, then how the place changed
     analysis = re.search(r'<section class="analysis".*?</section>', page, re.S).group(0)
     assert "Najnoviji izbori: Parlamentarni 2026 · poređenje sa opštinom" in analysis
     order = [analysis.index(x) for x in ("<dt>Upozorenja</dt>", "Bez upozorenja ni na jednim od 4 izbora", "Nevažeći ",
