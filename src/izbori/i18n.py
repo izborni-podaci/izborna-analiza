@@ -638,6 +638,8 @@ S: dict[str, tuple[str, str]] = {
     "vi_more": ("Сва насеља ({n})", "Every settlement ({n})"),
     "vi_less": ("Мање", "Fewer"),
     "map_source": ("Границе насеља: © сарадници OpenStreetMap-а, ODbL.", "Settlement boundaries: © OpenStreetMap contributors, ODbL."),
+    "vi_png": ("Преузми слику (PNG)", "Download the image (PNG)"),
+    "vi_png_source": ("izborni-podaci.github.io/izborna-analiza · подаци: РИК · границе: OpenStreetMap (ODbL)", "izborni-podaci.github.io/izborna-analiza · data: RIK · boundaries: OpenStreetMap (ODbL)"),
     "vi_legend_close": ("тесна победа (испод 5 поена)", "close win (under 5 points)"),
     "vi_legend_none": ("без резултата или без границе у попису", "no result or no census match"),
     "vi_map_note": ("Насеља са границом: {mapped} од {n}. Боја је редослед листе у целој земљи на овим изборима, не листа сама; пређи преко насеља за назив и резултат.", "Settlements with a boundary: {mapped} of {n}. The colour is the list's rank in the whole election, not the list itself; hover a settlement for its name and result."),

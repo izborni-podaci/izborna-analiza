@@ -437,3 +437,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   their own village. The municipality's page now gives that material to anyone: a sentence naming the settlements
   each list is first in, and a table per census settlement. Next: settlement boundaries (OSM `ref:RS:naselje`) for a
   map per municipality, then an image to download and an `og:image`, so a link carries the map.
+  Done the same day: `izbori geo --settlements` (4,720 boundaries, 7 without a census match), the map on the page
+  (`maps.py`; colour = the list's rank in the whole election, lighter under 5 points, grey without a result), names
+  where they fit, and "Download the image (PNG)" drawn on a canvas in the browser. `og:image` still needs a raster
+  made at build time; not done. Known gap seen on Novi Sad: Kovilj's stations are not placed in Kovilj
+  (settlements.py), so it draws grey.

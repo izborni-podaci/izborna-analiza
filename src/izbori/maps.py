@@ -48,6 +48,29 @@ def project(features: list[dict], width: int = WIDTH, max_height: int = MAX_HEIG
     return to, height
 
 
+LABEL_MIN = 56  # a settlement narrower than this many pixels gets no name on the map (the tooltip still has it)
+LABEL_PX = 6.2  # about the width of a letter at the label's size, to tell whether a name fits
+
+
+def label_point(geometry: dict, to):
+    """Where a settlement's name goes: the centroid of its largest ring (by area), and that ring's width in
+    pixels. The centroid can fall outside a crescent; good enough for the names that fit."""
+    best, best_area = None, -1.0
+    for ring in _rings(geometry):
+        pts = [to(lon, lat) for lon, lat in ring]
+        area = cx = cy = 0.0
+        for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1]):
+            cross = x1 * y2 - x2 * y1
+            area += cross
+            cx += (x1 + x2) * cross
+            cy += (y1 + y2) * cross
+        if abs(area) > best_area and area:
+            best_area = abs(area)
+            xs = [x for x, _ in pts]
+            best = (cx / (3 * area), cy / (3 * area), max(xs) - min(xs))
+    return best
+
+
 def path_d(geometry: dict, to) -> str:
     parts = []
     for ring in _rings(geometry):
@@ -64,11 +87,15 @@ def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[i
     to, height = project(features, width)
     if to is None:
         return ""
-    paths = []
+    paths, texts = [], []
     for f in sorted(features, key=lambda f: f["properties"].get("census") or ""):
         p = f["properties"]
         r = results.get(p.get("census") or "")
         cls, tip = "mp-none", escape(p.get("census") or p.get("name") or "")
+        label = p.get("census") or p.get("name") or ""
+        spot = label_point(f["geometry"], to) if label else None
+        if spot and spot[2] >= LABEL_MIN and len(label) * LABEL_PX <= spot[2] + 12:
+            texts.append(f'<text x="{spot[0]:.1f}" y="{spot[1]:.1f}">{escape(label)}</text>')
         if r and r.get("leader") is not None:
             rank = ranks.get(r["leader"], PALETTE + 1)
             cls = f"mp-{min(rank, PALETTE + 1)}"
@@ -78,7 +105,7 @@ def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[i
         paths.append(f'<path class="mp {cls}" d="{path_d(f["geometry"], to)}" data-set="{escape(p.get("census") or "")}">'
                      f"<title>{tip}</title></path>")
     return (f'<svg class="smap" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}">'
-            + "".join(paths) + "</svg>")
+            + "".join(paths) + "".join(texts) + "</svg>")
 
 
 def legend(results: dict[str, dict], ranks: dict[int, int], labels: dict[int, str]) -> list[dict]:

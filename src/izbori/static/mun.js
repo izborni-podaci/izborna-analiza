@@ -120,6 +120,64 @@
     more.remove();
   });
 
+  // the map as a PNG: the SVG with its computed colours, a title, the legend and the source line, drawn on a
+  // canvas at twice the size and saved; everything happens in the browser, nothing is sent anywhere
+  const png = document.querySelector('[data-map-png]');
+  const svg = document.querySelector('svg.smap');
+  if (png && svg && window.URL && document.createElement('canvas').getContext) {
+    png.hidden = false;
+    png.addEventListener('click', () => {
+      const copy = svg.cloneNode(true);
+      const paths = svg.querySelectorAll('path');
+      copy.querySelectorAll('path').forEach((p, k) => {
+        const cs = getComputedStyle(paths[k]);
+        p.setAttribute('fill', cs.fill); p.setAttribute('fill-opacity', cs.fillOpacity);
+        p.setAttribute('stroke', '#ffffff'); p.setAttribute('stroke-width', '1');
+        p.querySelector('title') && p.removeChild(p.querySelector('title'));
+      });
+      copy.querySelectorAll('text').forEach((t) => {
+        t.setAttribute('font-family', 'system-ui, sans-serif'); t.setAttribute('font-size', '11'); t.setAttribute('fill', '#0f1f33');
+        t.setAttribute('text-anchor', 'middle'); t.setAttribute('dominant-baseline', 'middle');
+        t.setAttribute('paint-order', 'stroke'); t.setAttribute('stroke', '#ffffff'); t.setAttribute('stroke-width', '3'); t.setAttribute('stroke-linejoin', 'round');
+      });
+      copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      const [, , vw, vh] = copy.getAttribute('viewBox').split(' ').map(Number);
+      const scale = 2; const pad = 28; const top = 96;
+      const legend = [...document.querySelectorAll('.smap-legend > span')].map((sp) => ({ text: sp.textContent.trim(), color: getComputedStyle(sp.querySelector('.sw')).backgroundColor }));
+      const lines = Math.ceil(legend.length / 2);
+      const W = vw + 2 * pad; const H = top + vh + 24 + lines * 26 + 56;
+      const canvas = document.createElement('canvas'); canvas.width = W * scale; canvas.height = H * scale;
+      const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#0f1f33'; ctx.font = '600 24px Georgia, serif';
+      ctx.fillText(png.dataset.title, pad, 40);
+      ctx.font = '15px system-ui, sans-serif'; ctx.fillStyle = '#44607f';
+      ctx.fillText(document.querySelector('.villages .sec-head h2').textContent, pad, 68);
+      const img = new Image();
+      const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      img.onload = () => {
+        ctx.drawImage(img, pad, top, vw, vh);
+        URL.revokeObjectURL(url);
+        let y = top + vh + 30;
+        ctx.font = '14px system-ui, sans-serif';
+        legend.forEach((g, k) => {
+          const x = pad + (k % 2) * (W / 2 - pad);
+          if (k && k % 2 === 0) y += 26;
+          ctx.fillStyle = g.color; ctx.fillRect(x, y - 11, 16, 12);
+          ctx.fillStyle = '#0f1f33'; ctx.fillText(g.text, x + 22, y);
+        });
+        ctx.fillStyle = '#44607f'; ctx.font = '12px system-ui, sans-serif';
+        ctx.fillText(png.dataset.source, pad, H - 20);
+        canvas.toBlob((out) => {
+          const a = document.createElement('a'); a.href = URL.createObjectURL(out); a.download = png.dataset.file;
+          document.body.appendChild(a); a.click(); a.remove();
+        }, 'image/png');
+      };
+      img.src = url;
+    });
+  }
+
   // the remembered list, when this election has it
   const remembered = (mem.read().lists || {})[data.rid];
   let idx = remembered !== undefined ? indexOf(remembered) : -1;
