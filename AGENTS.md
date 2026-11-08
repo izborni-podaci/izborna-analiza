@@ -505,3 +505,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   does (same rule, same sentence). The municipality a reader viewed last is remembered from the canonical address
   too (the script only knew `r/<id>/m/`). "Places to watch" filters by municipality and links back; the
   municipality's first card leads there with `#m-<code>`.
+- **8 Nov 2026, addresses by name.** Marko: izbornipodaci.rs/beograd, /novisad. Every municipality and city
+  is at `/<name>/` (`cities.name_slug`, `cities.slugs`; `<name>/index.html`, since Pages serves folders);
+  `m/<code>.html` and `g/<slug>.html` became one-line pages with a meta refresh, so nothing shared breaks, and the
+  run-together spelling (`/novisad/`) leads to the hyphenated one. The template helpers `mun_href(code)` and
+  `city_href(slug)` are the only way to link a municipality or a city; `r/<id>/m/<code>.html` stays for earlier
+  elections (and the newest, with `#bm-N` anchors from the check page). Size: the newest election's municipality
+  page now exists twice (by name, and under r/); making the r/ copy a redirect would save ~30 MB but lose the
+  anchors unless a script carries the hash — a lever if the budget tightens.

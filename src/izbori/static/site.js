@@ -63,11 +63,11 @@
             // [folded label, folded label with former numbers, [label, url, sub-line]]
             const mun = j.m.map((m) => {
               const f = fold(m[0]);
-              return [f, f, [m[0], `m/${m[1]}.html`, d.munSub.replace('{n}', m[2])]];
+              return [f, f, [m[0], `${m[4]}/`, d.munSub.replace('{n}', m[2])]];
             });
             const cities = (j.g || []).map((g) => {
               const f = fold(g[0]);
-              return [f, f, [g[0], `g/${g[1]}.html`, d.citySub.replace('{n}', g[2])]];
+              return [f, f, [g[0], `${g[1]}/`, d.citySub.replace('{n}', g[2])]];
             });
             const st = j.s.map((s) => {
               const m = j.m[s[0]];
@@ -233,7 +233,7 @@
         back.hidden = !mc;
         if (mc) {
           const a = back.querySelector('a');
-          a.href = (form.dataset.munBase || '') + 'm/' + mc + '.html';
+          a.href = (form.dataset.munBase || '') + (mun.options[mun.selectedIndex].dataset.slug || ('m/' + mc + '.html'));
           a.textContent = back.dataset.text.replace('{mun}', mun.options[mun.selectedIndex].textContent);
         }
       }
@@ -393,7 +393,7 @@
     const places = (v.places || []).filter((p) => p.href !== location.pathname);
     places.unshift({ href: location.pathname, title: h1.textContent.trim() });
     memory.write({ ...v, places: places.slice(0, 3) });
-  } else if (h1 && /\/m\/[^/]+\.html$/.test(location.pathname)) {  // m/<code>.html, or r/<id>/m/<code>.html
+  } else if (h1 && (document.getElementById('compare') || /\/m\/[^/]+\.html$/.test(location.pathname))) {  // a municipality's or a city's page
     memory.write({ ...memory.read(), municipality: { href: location.pathname, title: h1.textContent.trim() } });
   }
   document.querySelectorAll('form[data-pick-municipality]').forEach((form) => {

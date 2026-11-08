@@ -31,7 +31,7 @@ def test_site(site):
     labels = (out / "static/labels.css").read_text(encoding="utf-8")
     assert ':lang(sr-Cyrl) table.history td.l-registered::before { content: "Уписани бирачи"; }' in labels
     assert ':lang(sr-Latn) table.history td.l-registered::before { content: "Upisani birači"; }' in labels
-    history = next((out / "m").glob("*.html")).read_text(encoding="utf-8")
+    history = (out / json.loads((out / "search.json").read_text(encoding="utf-8"))["m"][0][4] / "index.html").read_text(encoding="utf-8")
     assert "static/labels.css" in history and "l-registered" in history and "data-label" not in history
 
     # Latin pages carry no Cyrillic except the name of the Cyrillic switch; English pages are not built (8 Nov 2026)
@@ -57,8 +57,8 @@ def test_site(site):
     home = (out / "index.html").read_text(encoding="utf-8")
     assert "Svako biračko mesto u Srbiji" in home and "data-next" not in home
     assert home.count('<article class="door') == 3 and "Za kontrolore i koordinatore" in home
-    assert 'Probajte: <a href="r/680072/m/' in home and 'href="s/' in home
-    assert '<select id="opstina" name="m" data-base="">' in home and 'value="r/680072/m/70351.html"' in home
+    assert 'Probajte: <a href="novi-sad/"' in home and 'href="s/' in home  # the largest municipality, by its name
+    assert '<select id="opstina" name="m" data-base="">' in home and 'value="bujanovac/"' in home
     assert home.count('class="so-card') == 4
     assert "Šta odskače: Parlamentarni 2026" in home and "Lista sa najvećom razlikom između sela i grada" in home
     assert re.search(r'class="so-card so-brick" href="r/680072/check\.html#m-\d+"', home)
@@ -76,10 +76,10 @@ def test_site(site):
     assert 'id="podaci"' in (out / "about.html").read_text(encoding="utf-8")
     assert 'value="g-paper"' in (out / "r/680072/check.html").read_text(encoding="utf-8")  # the group's link lands
     # every municipality, in Serbian alphabetical order: Latin (lj after l, ć after c) and Cyrillic
-    names = re.findall(r'<td><a href="m/\d+\.html">([^<]+)</a>', (out / "municipalities.html").read_text(encoding="utf-8"))
+    names = re.findall(r'<td><a href="[a-z0-9-]+/">([^<]+)</a>', (out / "municipalities.html").read_text(encoding="utf-8"))
     assert len(names) > 150 and names.index("Lučani") < names.index("Ljig")
     assert names.index("Crna Trava") < names.index("Ćićevac")
-    cyr = re.findall(r'<td><a href="\.\./cyr/m/\d+\.html">([^<]+)</a>',
+    cyr = re.findall(r'<td><a href="\.\./cyr/[a-z0-9-]+/">([^<]+)</a>',
                      (out / "cyr/municipalities.html").read_text(encoding="utf-8"))
     assert cyr.index("Тутин") < cyr.index("Ћићевац") < cyr.index("Уб")
 
@@ -425,10 +425,11 @@ def test_search_leads_to_pages_across_elections(site):
     polling place's (newest first), flagged or not."""
     for prefix in ("", "cyr/"):
         data = json.loads((site / prefix / "search.json").read_text(encoding="utf-8"))
-        assert all(len(m) == 4 and m[2] >= 1 for m in data["m"])
+        assert all(len(m) == 5 and m[2] >= 1 for m in data["m"])
         for m in data["m"]:
             assert (site / prefix / f"r/{m[3]}/m/{m[1]}.html").exists(), m
-            assert (site / prefix / f"m/{m[1]}.html").exists(), m
+            assert (site / prefix / f"{m[4]}/index.html").exists(), m
+            assert 'http-equiv="refresh" content="0; url=../' + m[4] + '/"' in (site / prefix / f"m/{m[1]}.html").read_text(encoding="utf-8")
         for s in data["s"]:
             mi, number, _, page, k, n, _ = s
             page = page or f"{data['m'][mi][1]}-{re.sub(r'[^0-9A-Za-z_-]', '_', number)}"
@@ -438,14 +439,17 @@ def test_search_leads_to_pages_across_elections(site):
     assert len(data["s"]) == len(list((site / "s").glob("*.html")))
     # the cities split into municipalities are found by their own name and open their own page
     assert [g[:2] for g in data["g"]] == [["Beograd", "beograd"], ["Niš", "nis"], ["Požarevac", "pozarevac"], ["Užice", "uzice"]]
-    assert data["g"][0][2] == 17 and all((site / f"g/{g[1]}.html").exists() for g in data["g"])
+    assert data["g"][0][2] == 17 and all((site / f"{g[1]}/index.html").exists() for g in data["g"])
+    assert {m[1]: m[4] for m in data["m"] if m[1] in ("89010", "70203", "70947", "71340")} == {
+        "89010": "novi-sad", "70203": "palilula-beograd", "70947": "grad-pozarevac", "71340": "kostolac"}
+    assert "0; url=../novi-sad/" in (site / "novisad/index.html").read_text(encoding="utf-8")  # the run-together spelling
     flagged = [s for s in data["s"] if s[4]]
     assert flagged and data["s"][:len(flagged)] == flagged  # flagged places first
 
 
 def test_municipality_across_elections(site):
     # Novi Sad voted in the presidential 2022, parliamentary 2023, provincial 2023 and parliamentary 2026 elections
-    page = (site / "m/89010.html").read_text(encoding="utf-8")
+    page = (site / "novi-sad/index.html").read_text(encoding="utf-8")
     rows = re.findall(r'<th scope="row" role="rowheader" class="election"><a href="\.\./r/(\d+)/m/89010\.html">', page)
     assert rows == ["680072", "341143", "341140", "42732"]  # newest first, one row each
     assert "Opština nije glasala na: Lokalni 2024" in page
@@ -457,6 +461,7 @@ def test_municipality_across_elections(site):
     mun = (site / "r/680072/m/89010.html").read_text(encoding="utf-8")
     # the same page for the newest election: the strip leads to the earlier ones, the history is here too
     assert 'href="../../../s/89010-1.html"' in mun and 'href="../../../r/341140/m/89010.html"' in mun
+    assert 'href="../../../novi-sad/" aria-current="page"' in mun  # the strip's newest entry is the page by name
     assert 'id="kroz-izbore"' in mun and 'class="el-strip"' in mun
 
 
@@ -684,14 +689,15 @@ def test_incremental_build_matches_a_full_build(tmp_path, archive, monkeypatch):
 def test_city_page_adds_its_municipalities_up(site):
     """Belgrade: RIK has no row for the city, the page adds its 17 municipalities up, in two groups with subtotals and
     the whole city, maps them by the leading list and links each; the municipality's page points back."""
-    page = (site / "g/beograd.html").read_text(encoding="utf-8")
+    page = (site / "beograd/index.html").read_text(encoding="utf-8")
     assert "<h1>Beograd</h1>" in page and "17 opština" in page
-    links = re.findall(r'<td><a href="\.\./m/(\d+)\.html">([^<]+)</a>', page)
-    assert len(links) == 17 and ("70203", "Palilula") in links and ("70092", "Barajevo") in links
+    links = re.findall(r'<td><a href="\.\./([a-z0-9-]+)/">([^<]+)</a>', page)
+    assert len(links) == 17 and ("palilula-beograd", "Palilula") in links and ("barajevo", "Barajevo") in links
     assert page.index("Centralne opštine (10)") < page.index("Prigradske opštine (7)") < page.index("Ceo grad")
     assert 'class="smap"' in page and page.count('class="mp mp-') == 17
     assert "Kroz izbore" in page and "Lokalni 2024" in page  # Belgrade's own election counts too
-    mun = (site / "m/70203.html").read_text(encoding="utf-8")
-    assert '<a href="../g/beograd.html">deo grada Beograd (17 opština) →</a>' in mun
-    poz = (site / "g/pozarevac.html").read_text(encoding="utf-8")
+    mun = (site / "palilula-beograd/index.html").read_text(encoding="utf-8")
+    assert '<a href="../beograd/">deo grada Beograd (17 opština) →</a>' in mun
+    assert "0; url=../beograd/" in (site / "g/beograd.html").read_text(encoding="utf-8")
+    poz = (site / "pozarevac/index.html").read_text(encoding="utf-8")
     assert "(grad bez gradskih opština)" in poz and ("Kostolac" in poz)

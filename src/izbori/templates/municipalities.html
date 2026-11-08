@@ -10,7 +10,7 @@
   <thead><tr><th scope="col">{{ t('mun_index_name') }}</th><th scope="col" class="num">{{ t('mun_index_elections') }}</th><th scope="col" class="num">{{ t('mun_index_stations') }}</th><th scope="col">{{ t('mun_index_commission') }}</th></tr></thead>
   <tbody>
   {% for m in rows %}
-    <tr><td><a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ name(m.name) }}</a></td><td class="num">{{ i(m.n) }}</td><td class="num">{{ i(m.stations) }}{% if m.latest %}<span class="muted small"> · {{ m.latest }}</span>{% endif %}</td><td>{% if m.cdocs %}<a href="{{ link('r/' ~ m.crid ~ '/m/' ~ m.code ~ '.html') }}#commission">{{ i(m.cdocs) }}{% if m.cshort %} · {{ m.cshort }}{% endif %}</a>{% else %}<span class="muted">—</span>{% endif %}</td></tr>
+    <tr><td><a href="{{ mun_href(m.code) }}">{{ name(m.name) }}</a></td><td class="num">{{ i(m.n) }}</td><td class="num">{{ i(m.stations) }}{% if m.latest %}<span class="muted small"> · {{ m.latest }}</span>{% endif %}</td><td>{% if m.cdocs %}<a href="{{ link('r/' ~ m.crid ~ '/m/' ~ m.code ~ '.html') }}#commission">{{ i(m.cdocs) }}{% if m.cshort %} · {{ m.cshort }}{% endif %}</a>{% else %}<span class="muted">—</span>{% endif %}</td></tr>
   {% endfor %}
   </tbody>
 </table>

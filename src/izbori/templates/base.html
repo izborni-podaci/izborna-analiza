@@ -12,7 +12,7 @@
 <script>try { var th = localStorage.getItem('theme'); if (th === 'dark' || th === 'light') document.documentElement.dataset.theme = th; } catch (e) {}</script>
 <link rel="alternate" type="application/atom+xml" href="{{ feed_href }}" title="{{ t('footer_feed') }}">
 {% for l in langs %}<link rel="alternate" hreflang="{{ l.lang }}" href="{{ l.href }}">
-{% endfor %}
+{% endfor %}{% block head %}{% endblock %}
 </head>
 <body>
 <header class="top">
@@ -21,7 +21,7 @@
     <nav class="main-nav" aria-label="{{ t('nav_main') }}">
       <a href="{{ link('index.html') }}"{% if page == 'index.html' %} aria-current="page"{% endif %}>{{ t('nav_home') }}</a>
       <a href="{{ link('elections.html') }}"{% if page == 'elections.html' or (page.startswith('r/') and '/m/' not in page) %} aria-current="page"{% endif %}>{{ t('nav_elections') }}</a>
-      <a href="{{ link('municipalities.html') }}" data-short="{{ t('nav_coord_short') }}"{% if page == 'municipalities.html' or page.startswith('m/') or '/m/' in page %} aria-current="page"{% endif %}>{{ t('nav_coord') }}</a>
+      <a href="{{ link('municipalities.html') }}" data-short="{{ t('nav_coord_short') }}"{% if page == 'municipalities.html' or page.startswith('m/') or '/m/' in page or (page.endswith('/index.html') and page.count('/') == 1) %} aria-current="page"{% endif %}>{{ t('nav_coord') }}</a>
       <a href="{{ link('repeat.html') }}" data-short="{{ t('nav_repeat_short') }}"{% if page == 'repeat.html' %} aria-current="page"{% endif %}>{{ t('nav_repeat') }}</a>
       <a href="{{ link('explore.html') }}" data-short="{{ t('nav_analyses_short') }}"{% if page == 'explore.html' %} aria-current="page"{% endif %}>{{ t('nav_analyses') }}</a>
       <a href="{{ link('guide.html') }}" title="{{ t('nav_guide') }}"{% if page == 'guide.html' %} aria-current="page"{% endif %}>{{ t('nav_guide_short') }}</a>

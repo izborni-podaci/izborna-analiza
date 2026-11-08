@@ -52,7 +52,7 @@
   <label>{{ t('filter_municipality') }}
     <select data-f="mun">
       <option value="">{{ t('filter_all') }}</option>
-      {% for code, mname in mun_options %}<option value="{{ code }}">{{ name(mname) }}</option>{% endfor %}
+      {% for code, mname in mun_options %}<option value="{{ code }}" data-slug="{{ slugs[code] }}/">{{ name(mname) }}</option>{% endfor %}
     </select>
   </label>
   <label>{{ t('filter_type') }}

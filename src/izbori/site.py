@@ -81,6 +81,8 @@ class Site:
         return {
             "loc": loc, "lang": LANG_ATTR[loc], "root": root, "link": link, "langs": langs, "page": page,
             "site_host": self.site_url.split("://", 1)[-1].rstrip("/"),
+            "mun_href": lambda code: link(self.slugs[code] + "/") if code in getattr(self, "slugs", {}) else link(f"m/{code}.html"),
+            "city_href": lambda slug: link(slug + "/"),
             "t": lambda key, **kw: t(key, loc, **kw), "i": lambda n: fmt_int(n, loc),
             "pct": lambda x, d=1: fmt_pct(x, loc, d), "num": lambda x, d=1: fmt_num(x, loc, d),
             "pval": lambda x: "< " + fmt_num(0.001, loc, 3) if x < 0.001 else fmt_num(x, loc, 3),
@@ -234,7 +236,7 @@ class Site:
         if latest:
             rid = latest.round.id
             muns = [m for m in self.mun_rows[rid].values() if m["kind"] == "domestic"]
-            home["municipalities"] = [{"name": m["name"], "href": f"r/{rid}/m/{m['code']}.html"}
+            home["municipalities"] = [{"name": m["name"], "href": f"{self.slugs[m['code']]}/"}
                                       for m in sorted(muns, key=lambda m: collate(m["name"], "cyr"))]
             # what to try in the search: the largest municipality, a station by name, a station by number
             biggest = max(muns, key=lambda m: m["stations"], default=None)
@@ -243,7 +245,7 @@ class Site:
             numbered = next((s for s in reversed(latest.round.stations) if s.kind == "domestic"
                              and self.st_path(rid, s.key) and s.number.isdigit() and int(s.number) > 20), None)
             home["examples"] = [e for e in (
-                biggest and {"label": biggest["name"], "href": f"r/{rid}/m/{biggest['code']}.html"},
+                biggest and {"label": biggest["name"], "href": f"{self.slugs[biggest['code']]}/"},
                 named and {"label": named.name, "href": self.st_path(rid, named.key)},
                 numbered and {"label": f"{numbered.municipality} {numbered.number}",
                               "href": self.st_path(rid, numbered.key)}) if e]
@@ -481,7 +483,7 @@ class Site:
         rids = self.mun_rounds[code]
         newest_first = list(reversed(self.rids))
         strip = [{"rid": r, "short": self.shorts[loc][r], "date": fmt_date(self.dates[r], loc), "current": r == rid,
-                  "href": f"r/{r}/m/{code}.html"} for r in rids]
+                  "href": f"{self.slugs[code]}/" if r == rids[0] else f"r/{r}/m/{code}.html"} for r in rids]
         if rid != rids[0]:
             return {"strip": strip, "history": None}
         rows = [{"rid": r, "short": self.shorts[loc][r], "date": fmt_date(self.dates[r], loc),
@@ -534,7 +536,8 @@ class Site:
                                                [self.mun_rows[r].get(c) for c in city.codes],
                                                [self.mun_votes[r].get(c) for c in city.codes], self.analyses[r].totals,
                                                len(self.flagged[r])) for r in rids]])
-            if self.keep(loc, f"g/{slug}.html", self.round_key(rid) + inputs):
+            self.redirect(loc, f"g/{slug}.html", f"../{slug}/")
+            if self.keep(loc, f"{slug}/index.html", self.round_key(rid) + inputs):
                 continue
             a = self.analyses[rid]
             sh = self.round_shared(a, loc)
@@ -591,7 +594,7 @@ class Site:
                                 "m": cities.add_up(hrows, [s for s in self.analyses[r].round.stations
                                                            if s.municipality_code in hcodes]),
                                 "top": self.top_three(r, hv), "n": len(hrows)})
-            self.write(loc, f"g/{slug}.html", "city.html", city=city, slug=slug, rows=rows, total=total, mres=mres,
+            self.write(loc, f"{slug}/index.html", "city.html", city=city, slug=slug, rows=rows, total=total, mres=mres,
                        mtop=top, index=index, groups=groups, leaders=leaders, labels=self.labels[rid],
                        city_map=city_map, map_key=map_key, legend=legend, history=history,
                        country=sh["country"], short_name=cities.short_name, **sh["common"])
@@ -602,12 +605,21 @@ class Site:
         a page across elections alone, and the coordinator's page was only under r/<id>/m/)."""
         for code, rids in self.mun_rounds.items():
             rid = rids[0]
-            if self.keep(loc, f"m/{code}.html", self.round_key(rid) + self.history_inputs(loc, code)):
+            slug = self.slugs[code]
+            self.redirect(loc, f"m/{code}.html", f"../{slug}/")
+            for other in cities.aliases(slug):
+                self.redirect(loc, f"{other}/index.html", f"../{slug}/")
+            if self.keep(loc, f"{slug}/index.html", self.round_key(rid) + self.history_inputs(loc, code)):
                 continue
             a = self.analyses[rid]
-            self.write(loc, f"m/{code}.html", "municipality.html", canonical=True, city=self.city_link(code),
-                       **self.municipality_context(a, loc, self.mun_rows[rid][code], f"m/{code}.html"),
+            self.write(loc, f"{slug}/index.html", "municipality.html", canonical=True, city=self.city_link(code),
+                       **self.municipality_context(a, loc, self.mun_rows[rid][code], f"{slug}/index.html"),
                        **self.history_context(loc, code, rid))
+
+    def redirect(self, loc: str, page: str, target: str) -> None:
+        """A one-line page at an old address that leads to the new one (GitHub Pages has no server redirects)."""
+        if not self.keep(loc, page, "redirect|" + target):
+            self.write(loc, page, "redirect.html", target=target)
 
     def write_api(self) -> None:
         """The data behind the pages across elections as JSON, for anyone who wants it without parsing HTML:
@@ -758,7 +770,7 @@ class Site:
             rows.append((-k, latin(names[p.code]), int(s.number) if s.number.isdigit() else 0, s.number,
                          [at[p.code], s.number, conv(s.name), page, k, len(p.rounds), ", ".join(p.former_numbers)]))
         rows.sort(key=lambda r: r[:4])
-        data = {"m": [[conv(names[c]), c, len(self.mun_rounds[c]), self.mun_rounds[c][0]] for c in order],
+        data = {"m": [[conv(names[c]), c, len(self.mun_rounds[c]), self.mun_rounds[c][0], self.slugs[c]] for c in order],
                 "g": [[conv(c.name), slug, len(c.codes)] for slug, c in sorted(self.cities.items())],
                 "s": [r[4] for r in rows]}
         self.put(PREFIX[loc] + "search.json", json.dumps(data, ensure_ascii=False, separators=(",", ":")))
@@ -931,6 +943,12 @@ class Site:
         # the cities split into several municipalities (Belgrade, Niš, …): one page each, and an entry in the search
         self.cities = cities.cities(self.city_parts, [s for a in rounds for s in a.round.stations])
         self.city_of = {code: slug for slug, c in self.cities.items() for code in c.codes}
+        # every municipality's address by name (/novi-sad/), the cities' too (/beograd/); the old m/<code>.html and
+        # g/<slug>.html stay as one-line pages that lead there
+        newest_names = {code: rows[0] for code, rows in ((c, [self.mun_rows[r][c]["name"] for r in rs])
+                                                         for c, rs in self.mun_rounds.items())}
+        self.slugs = cities.slugs(newest_names, set(self.mun_rows[rids[-1]]) if rids else set(), set(self.cities),
+                                  {c.own for c in self.cities.values() if c.own})
         top = max(overall["counts"].values(), default=0) or 1
         appear = [{"code": c.code, "group": c.group, "n": overall["counts"][c.code],
                    "w": 100 * overall["counts"][c.code] / top}
@@ -975,7 +993,7 @@ class Site:
                                      key=lambda x: collate(latin(x[1]) if loc == "en" else x[1], loc))
             self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns, groups=groups,
                        rounds=columns, same=rep_same, checks=CHECKS, group_of=group_of, example=example,
-                       st_path=self.st_path, mun_options=rep_mun_options)
+                       st_path=self.st_path, mun_options=rep_mun_options, slugs=self.slugs)
             cols = {c["id"]: c for c in columns}
             self.place_pages(loc, cols)
             self.municipality_pages(loc)

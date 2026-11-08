@@ -308,6 +308,8 @@ S: dict[str, tuple[str, str]] = {
     "search_mun_sub": ("општина · избори: {n}", "municipality · elections: {n}"),
     "search_city_sub": ("град · општина: {n}", "city · municipalities: {n}"),
     "city_kicker": ("град", "city"),
+    "redirect_title": ("Страна је премештена", "The page has moved"),
+    "redirect_text": ("Ова страна је сада на адреси", "This page is now at"),
     "city_compare_heading": ("Како се град пореди", "How the city compares"),
     "city_own_row": ("(град без градских општина)", "(the city without its city municipalities)"),
     "city_map_source": ("Границе општина: © сарадници OpenStreetMap-а, ODbL.", "Municipal boundaries: © OpenStreetMap contributors, ODbL."),

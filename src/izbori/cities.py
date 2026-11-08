@@ -74,6 +74,39 @@ def cities(city_parts: dict[str, tuple[str, str]], stations) -> dict[str, City]:
     return {slug: c for slug, c in out.items() if len(c.codes) > 1}
 
 
+def name_slug(name: str) -> str:
+    """A municipality's address from its name: Latin, lowercase, ASCII, words joined by hyphens ("Нови Сад" →
+    "novi-sad", "Градска општина Палилула (Београд)" → "palilula-beograd", "Град Пожаревац" → "grad-pozarevac" only
+    when asked to keep the word, see slugs())."""
+    import re
+    s = latin(name).replace("Đ", "Dj").replace("đ", "dj").lower()
+    s = "".join(ch for ch in unicodedata.normalize("NFD", s) if not unicodedata.combining(ch))
+    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", s)).strip("-")
+
+
+RESERVED = {"api", "cyr", "en", "lat", "feed", "g", "m", "r", "s", "static", "index"}
+
+
+def slugs(names: dict[str, str], newest: set[str], city_slugs: set[str], own: set[str]) -> dict[str, str]:
+    """Each municipality code → its address. names: code → name as RIK writes it; newest: the codes in the newest
+    election (they win a shared name); city_slugs: the cities' addresses (a city's own municipality keeps the word
+    "grad": grad-pozarevac beside the city's pozarevac); own: those municipalities' codes. A name two municipalities
+    share, or one a city takes, gets the code appended."""
+    out: dict[str, str] = {}
+    taken = set(city_slugs) | RESERVED
+    for code in sorted(names, key=lambda c: (c not in newest, c)):
+        base = name_slug(names[code] if code in own else bare_name(names[code]))  # palilula-beograd, palilula-nis
+        slug = base if base not in taken else f"{base}-{name_slug(code)}"
+        taken.add(slug)
+        out[code] = slug
+    return out
+
+
+def aliases(slug: str) -> list[str]:
+    """Other spellings a reader may type: the words run together (novisad for novi-sad)."""
+    return [slug.replace("-", "")] if "-" in slug else []
+
+
 def add_up(rows: list[dict], stations: list) -> dict:
     """A city's figures from its municipalities' rows and stations, as municipalities() computes them."""
     counted = [s for s in stations if s.counted]
@@ -86,6 +119,12 @@ def add_up(rows: list[dict], stations: list) -> dict:
     return {"stations": n, "counted": len(counted), "registered": reg, "voted": voted,
             "turnout": voted / reg if reg else None, "invalid": invalid / ballots if ballots else None,
             "flagged": flagged, "flagged_share": flagged / n if n else None, "municipalities": len(rows)}
+
+
+def bare_name(name: str) -> str:
+    """A municipality's name without the kind of municipality in front, the city in brackets kept."""
+    import re
+    return re.sub(r"^(Градска општина|Gradska opština|Град|Grad|Општина|Opština)\s+", "", name).strip()
 
 
 def short_name(name: str) -> str:

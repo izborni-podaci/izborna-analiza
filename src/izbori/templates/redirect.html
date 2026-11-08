@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{{ t('redirect_title') }}{% endblock %}
+{% block head %}<meta http-equiv="refresh" content="0; url={{ target }}">
+<link rel="canonical" href="{{ target }}">{% endblock %}
+{% block main %}
+{# The old address of a page that moved; the browser goes on at once, the link is for anyone it doesn't. #}
+<p>{{ t('redirect_text') }} <a href="{{ target }}">{{ target }}</a></p>
+{% endblock %}
