@@ -1,0 +1,37 @@
+# Weekly: look at the municipalities' own sites (data/municipal_sites.csv) for the electoral commissions' documents
+# and keep the links found (data/municipal_docs.json). The log names the new ones; a decision on polling stations is a
+# candidate for data/station_lists.csv.
+name: watch
+
+on:
+  schedule:
+    - cron: "41 4 * * 2"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Only these municipalities (codes, comma-separated)"
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - name: Look at the sites
+        env:
+          ONLY: ${{ inputs.only }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          args=(--commit --push)
+          [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          uv run izbori watch "${args[@]}"

@@ -502,6 +502,14 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   address rule, passed on to other elections), the **stations** workflow runs it. An act of 2023 serves 2026
   through the places. Rows must look like the station (a shared word in the name) so a renumbering can't move a
   station to another's settlement.
+- **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
+  municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
+  RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);
+  later a pre-election mode of the municipality page (stations, controller coverage, deadlines before any result),
+  rounds of one day grouped on the elections page and the home, the "area" column of the station acts as a
+  street index for "where do I vote", feeds that announce new commission documents, and a size/time measurement
+  with dozens of simultaneous rounds. Not a dry run on Belgrade 2024: Marko expects Belgrade's commission to be the
+  best-run; a small municipality's local election is the better test.
 - **8 Nov 2026, the search opens the newest election's municipality page.** Marko: whoever picks their
   municipality or station in the search should land on the page just built, with the map. A municipality in the
   search, in the municipalities index and in a station page's crumbs now opens `r/<newest>/m/<code>.html`; the page

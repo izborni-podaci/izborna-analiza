@@ -322,6 +322,8 @@ data/feed.json                    feed entries
 data/places.csv                   manual corrections to how stations are followed across elections
 data/settlements.csv              manual corrections to which census settlement a station is in
 data/station_lists.csv            the commissions' decisions on polling stations found on the web (round, municipality, link)
+data/municipal_sites.csv          each municipality's web site (the domain of its commission's e-mail in RIK's address book)
+data/municipal_docs.json          links to the commissions' documents found on those sites by the watch workflow (link, municipality, kind, first seen)
 data/elections.csv                election days entered by hand once an election is called
 data/looks.json                   when RIK was last asked (results, settled rounds, daily re-download)
 data/mail.json                    email state: pending flags, time of the last message
@@ -462,6 +464,8 @@ The Statistical Office of the Republic of Serbia (RZS) publishes the 2022 census
 - **By municipality and city (8 tables):** population; ethnicity; age and sex; educational attainment; computer literacy; migration; economic activity; educational attainment by type of settlement (urban or other) within the municipality. The census gives education, ethnicity, activity and migration no further down than this.
 
 The census wasn't held in Kosovo and Metohija. The tables count people and hold no names. The Office's site is out of reach from the development sandbox; GitHub's runners reach it.
+
+**The municipalities' sites** (`watch.py`, the weekly **watch** workflow, `izbori watch`). The law has local electoral commissions publish their acts on the web, mostly on the municipality's own site. `data/municipal_sites.csv` gives each municipality's site, taken from the domain of the commission's e-mail in RIK's address book of local commissions (21 use webmail; their sites are added by hand as they are found). The watch visits each site's front page, the pages it links to about elections or the commission, and the site's search for polling stations and polling boards, and keeps the links to .pdf/.doc/.docx documents whose link text or file name is about polling stations, polling boards or the commission — the link, the municipality, a kind told from keywords and the day first seen, never a title (it can name a person) or any text. A new decision on polling stations is logged as a line to add to `data/station_lists.csv`. This is the preparation for local elections, where every commission publishes on its own.
 
 **Each station's settlement** (`settlements.py`). `izbori settlements` joins every round's stations to the census, the same way for every station, the first rule that answers deciding:
 1. a manual correction in `data/settlements.csv`: "manual";

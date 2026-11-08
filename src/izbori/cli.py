@@ -563,6 +563,17 @@ def cmd_stationlist(args) -> int:
     return 0
 
 
+def cmd_watch(args) -> int:
+    """Look at the municipalities' sites for the electoral commissions' documents (data/municipal_docs.json)."""
+    from izbori import watch
+    root = Path(args.data)
+    new = watch.run(root, now_iso()[:10], log, only=set(args.only.split(",")) if args.only else None)
+    if new and args.commit and commit([str(root / watch.STORE)], f"Data: {new} documents found on the municipalities' sites"):
+        if args.push:
+            push()
+    return 0
+
+
 def cmd_settlements(args) -> int:
     """Each station's settlement in the 2022 census, per round, into data/rounds/<id>/settlements.json."""
     from izbori import boards, settlements
@@ -916,6 +927,12 @@ def main(argv: list[str] | None = None) -> int:
     z.add_argument("--commit", action="store_true")
     z.add_argument("--push", action="store_true")
     z.set_defaults(fn=cmd_census)
+
+    w = sub.add_parser("watch", help="look at the municipalities' sites for the electoral commissions' documents")
+    w.add_argument("--only", metavar="CODES", help="only these municipalities (codes, comma-separated)")
+    w.add_argument("--commit", action="store_true")
+    w.add_argument("--push", action="store_true")
+    w.set_defaults(fn=cmd_watch)
 
     sl = sub.add_parser("stationlist", help="read the commissions' decisions on polling stations listed in "
                                             "data/station_lists.csv, for the stations' settlements")
