@@ -54,6 +54,7 @@
       {{ t('city_map_source') }}
     </figcaption>
   </figure>
+  <div class="vi-panel" data-city-panel hidden></div>
 </section>
 {% endif %}
 
@@ -116,4 +117,6 @@
 </section>
 {% endif %}
 <p class="rule">{{ t('city_rule') }}</p>
+{% if city_map %}<script type="application/json" id="city-data">{{ city_data|safe }}</script>{% endif %}
 {% endblock %}
+{% block scripts %}{% if city_map %}<script src="{{ root }}static/city.js" defer></script>{% endif %}{% endblock %}

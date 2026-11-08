@@ -602,7 +602,27 @@ class Site:
                                 "m": cities.add_up(hrows, [s for s in self.analyses[r].round.stations
                                                            if s.municipality_code in hcodes]),
                                 "top": self.top_three(r, hv), "n": len(hrows)})
+            # the map's municipalities are clickable: each one's stations, from this JSON (no server, no third party)
+            tt = lambda key, **kw: t(key, loc, **kw)  # noqa: E731
+            show = latin if loc == "en" else (lambda x: x)
+            root = "../"
+            muns = {}
+            for m in rows:
+                label = cities.short_name(m["name"])
+                sts = sorted((s for s in a.round.stations if s.municipality_code == m["code"]),
+                             key=lambda s: (int(s.number) if s.number.isdigit() else 0, s.number))
+                muns[show(label)] = {"name": show(m["name"]), "href": root + PREFIX[loc] + self.slugs[m["code"]] + "/",
+                                     "stations": [[s.number, show(s.name), round(s.turnout, 4) if s.counted and s.turnout is not None else None,
+                                                   len(sh["by_station"].get(s.key, [])),
+                                                   root + PREFIX[loc] + self.st_path(rid, s.key)] for s in sts]}
+            city_data = json.dumps({"muns": muns, "i18n": {"title": tt("city_panel_title", name="{name}", n="{n}"),
+                                                            "close": tt("vi_panel_close"), "station": tt("station"),
+                                                            "turnout": tt("turnout"), "flags": tt("co_tile_flagged"),
+                                                            "page": tt("city_panel_page"), "stationNo": tt("station_no"),
+                                                            "more": tt("city_panel_more", n="{n}"), "hint": tt("city_panel_hint")}},
+                                   ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
             self.write(loc, f"{slug}/index.html", "city.html", city=city, slug=slug, rows=rows, total=total, mres=mres,
+                       city_data=city_data,
                        mtop=top, index=index, groups=groups, leaders=leaders, labels=self.labels[rid],
                        city_map=city_map, map_key=map_key, legend=legend, history=history,
                        country=sh["country"], short_name=cities.short_name, **sh["common"])
