@@ -19,7 +19,7 @@
   <div class="wrap top-row">
     <a class="brand" href="{{ link('index.html') }}">{{ t('site_name') }}</a>
     <nav class="main-nav" aria-label="{{ t('nav_main') }}">
-      <a href="{{ link('index.html') }}#pretraga"{% if page == 'index.html' or page == 'repeat.html' or page.startswith('s/') %} aria-current="page"{% endif %}>{{ t('nav_mine') }}</a>
+      <a href="{{ link('index.html') }}"{% if page == 'index.html' %} aria-current="page"{% endif %}>{{ t('nav_home') }}</a>
       <a href="{{ link('municipalities.html') }}" data-short="{{ t('nav_coord_short') }}"{% if page == 'municipalities.html' or page.startswith('m/') or page.startswith('r/') or page == 'elections.html' %} aria-current="page"{% endif %}>{{ t('nav_coord') }}</a>
       <a href="{{ link('explore.html') }}" data-short="{{ t('nav_analyses_short') }}"{% if page == 'explore.html' %} aria-current="page"{% endif %}>{{ t('nav_analyses') }}</a>
       <a href="{{ link('guide.html') }}" data-short="{{ t('nav_guide_short') }}"{% if page == 'guide.html' %} aria-current="page"{% endif %}>{{ t('nav_guide') }}</a>

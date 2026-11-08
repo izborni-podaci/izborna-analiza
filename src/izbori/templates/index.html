@@ -115,7 +115,12 @@
       <span class="so-kicker">{{ t('so_repeated_kicker') }}</span>
       <span class="so-head">{{ t('so_repeated_head') }}</span>
       <span class="so-title">{{ t('so_repeated_title', n=i(r.n), elections=i(r.elections)) }}</span>
-      <span class="so-body">{% for m in r.municipalities %}<strong>{{ name(m.name) }}</strong>{% if m.n > 1 %} ({{ m.n }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}.</span>
+      <span class="so-body so-lines">
+        <span>{{ t('so_repeated_body', elections=i(r.elections)) }}</span>
+        {% set many = r.municipalities|selectattr('n', 'gt', 1)|list %}{% set ones = r.municipalities|rejectattr('n', 'gt', 1)|list %}
+        {% if many %}<span>{{ t('so_repeated_most') }} {% for m in many %}<strong>{{ name(m.name) }}</strong> ({{ m.n }}){% if not loop.last %}, {% endif %}{% endfor %}.</span>{% endif %}
+        {% if ones %}<span>{{ t('so_repeated_one') }} {% for m in ones %}<strong>{{ name(m.name) }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}.</span>{% endif %}
+      </span>
       <span class="so-cta">{{ t('so_repeated_cta') }}</span>
     </a>
     {% endif %}
