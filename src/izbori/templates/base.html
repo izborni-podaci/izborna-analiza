@@ -19,11 +19,10 @@
   <div class="wrap top-row">
     <a class="brand" href="{{ link('index.html') }}">{{ t('site_name') }}</a>
     <nav class="main-nav" aria-label="{{ t('nav_main') }}">
-      <a href="{{ link('elections.html') }}"{% if page == 'elections.html' or page.startswith('r/') %} aria-current="page"{% endif %}>{{ t('nav_elections') }}</a>
-      <a href="{{ link('repeat.html') }}" data-short="{{ t('nav_repeat_short') }}"{% if page == 'repeat.html' %} aria-current="page"{% endif %}>{{ t('nav_repeat') }}</a>
-      <a href="{{ link('explore.html') }}"{% if page == 'explore.html' %} aria-current="page"{% endif %}>{{ t('nav_explore') }}</a>
+      <a href="{{ link('index.html') }}#pretraga"{% if page == 'index.html' or page == 'repeat.html' or page.startswith('s/') %} aria-current="page"{% endif %}>{{ t('nav_mine') }}</a>
+      <a href="{{ link('municipalities.html') }}" data-short="{{ t('nav_coord_short') }}"{% if page == 'municipalities.html' or page.startswith('m/') or page.startswith('r/') or page == 'elections.html' %} aria-current="page"{% endif %}>{{ t('nav_coord') }}</a>
+      <a href="{{ link('explore.html') }}" data-short="{{ t('nav_analyses_short') }}"{% if page == 'explore.html' %} aria-current="page"{% endif %}>{{ t('nav_analyses') }}</a>
       <a href="{{ link('guide.html') }}" data-short="{{ t('nav_guide_short') }}"{% if page == 'guide.html' %} aria-current="page"{% endif %}>{{ t('nav_guide') }}</a>
-      <a href="{{ link('about.html') }}"{% if page == 'about.html' %} aria-current="page"{% endif %}>{{ t('nav_about') }}</a>
     </nav>
     <div class="top-tools">
       <a class="icon-btn" href="{{ link('index.html') }}#pretraga" aria-label="{{ t('search_label') }}" title="{{ t('search_label') }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></a>
@@ -44,7 +43,7 @@
 </main>
 <footer class="wrap foot">
   <p>{{ t('footer_data') }}</p>
-  <p><a href="{{ repo_url }}">{{ t('footer_code') }}</a> · <a href="{{ feed_href }}">{{ t('footer_feed') }}</a></p>
+  <p><a href="{{ link('elections.html') }}">{{ t('nav_elections') }}</a> · <a href="{{ link('repeat.html') }}">{{ t('nav_repeat') }}</a> · <a href="{{ link('about.html') }}">{{ t('nav_about') }}</a> · <a href="{{ repo_url }}">{{ t('footer_code') }}</a> · <a href="{{ feed_href }}">{{ t('footer_feed') }}</a></p>
 </footer>
 <script src="{{ root }}static/site.js" defer></script>
 {% block scripts %}{% endblock %}

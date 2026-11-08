@@ -54,14 +54,26 @@ def test_site(site):
     assert "Guide for controllers and observers" in guide_en and "More ballots than signatures" in guide_en
     assert 'id="lokalni"' in guide_en and "<strong>higher court</strong>" in guide_en
 
-    # the home page: the archive in numbers under the search, nothing beside it with no election ahead, six ways in
+    # the home page (8 Nov 2026): the search with examples, three doors, four cards about the latest election, the
+    # trust strip; nothing about a next election while none is in data/elections.csv
     home = (out / "index.html").read_text(encoding="utf-8")
-    assert "Izbora u arhivi: " in home and "dokumenata sa sajta RIK-a: " in home
-    assert 'class="hero"' in home and "data-next" not in home  # no election ahead in data/elections.csv
+    assert "Svako biračko mesto u Srbiji" in home and "data-next" not in home
+    assert home.count('<article class="door') == 3 and "Za kontrolore i koordinatore" in home
+    assert 'Probajte: <a href="r/680072/m/' in home and 'href="s/' in home
+    assert '<select id="opstina" name="m" data-base="">' in home and 'value="r/680072/m/70351.html"' in home
+    assert home.count('class="so-card') == 4
+    assert "Šta odskače: Parlamentarni 2026" in home and "Lista sa najvećom razlikom između sela i grada" in home
+    assert re.search(r'class="so-card so-brick" href="r/680072/check\.html#m-\d+"', home)
+    assert "Uvek ista mesta" in home and 'href="repeat.html"' in home
+    assert "Gde su tri najjače liste najjače, a gde najslabije" in home
+    assert 'href="explore.html#v=map&amp;r=680072&amp;x=share&amp;lx=' in home or 'href="explore.html#v=map&r=680072&x=share&lx=' in home
     # the guide's link reads its whole name; phones show the short one from the attribute, not a second text
     assert '<a href="guide.html" data-short="Vodič">Vodič za kontrolore i posmatrače</a>' in home
-    for target in ('href="municipalities.html"', 'href="about.html#podaci"', 'href="r/680072/index.html#controllers"',
-                   'href="guide.html"', 'href="repeat.html"'):
+    nav = re.search(r'<nav class="main-nav".*?</nav>', home, re.S).group(0)
+    assert [a for a in re.findall(r">([^<]+)</a>", nav)] == ["Moje mesto", "Za kontrolore i koordinatore",
+                                                               "Analize i podaci", "Vodič za kontrolore i posmatrače"]
+    for target in ('href="municipalities.html"', 'href="about.html#podaci"', 'href="elections.html"',
+                   'href="repeat.html"', 'href="about.html"'):
         assert target in home, target
     assert 'id="podaci"' in (out / "about.html").read_text(encoding="utf-8")
     assert 'value="g-paper"' in (out / "r/680072/check.html").read_text(encoding="utf-8")  # the group's link lands
@@ -132,7 +144,7 @@ def test_explore(site, archive):
     out = site
     for prefix in ("", "cyr/", "en/"):
         page = (out / prefix / "explore.html").read_text(encoding="utf-8")
-        assert re.search(r'<a href="[^"]*explore\.html" aria-current="page">', page)
+        assert re.search(r'<a href="[^"]*explore\.html"[^>]* aria-current="page">', page)
         assert "static/explore.js" in page and "<noscript>" in page
         meta = json.loads(re.search(r'<script type="application/json" id="ex-meta">(.*?)</script>', page, re.S).group(1))
         assert meta["loc"] == {"": "lat", "cyr/": "cyr", "en/": "en"}[prefix]
@@ -247,7 +259,7 @@ def test_home_shows_the_next_election(tmp_path, archive):
                                         f"{day.isoformat()},,local,Примерне општине\n", encoding="utf-8")
     out = build(Archive(data), tmp_path / "site", None, "https://example.org/x/")
     home = (out / "index.html").read_text(encoding="utf-8")
-    assert 'class="hero with-next"' in home and f'data-days-until="{day.isoformat()}"' in home
+    assert 'class="next next-strip"' in home and f'data-days-until="{day.isoformat()}"' in home
     assert "Lokalni izbori" in home and "Primerne opštine" in home
     first = day - timedelta(days=15)
     assert f"do {first.day}.{first.month}.{first.year}." in home and "predlog članova biračkih odbora" in home

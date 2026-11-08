@@ -364,3 +364,24 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   reads election, measure, view; the sixteen measures sit in five groups with a sentence each, and each view has
   one; the filters are grouped, and those in use show as removable chips with one reset; the notes that matter
   for what is shown stand beside it. Nothing new is computed, and every list is still the reader's choice.
+- **7–8 Nov 2026, the redesign and its readers:** the maintainer defined three readers and asked for the site to
+  serve each: (1) a curious visitor or a controller, who comes through a link to the site, wants their station or
+  municipality, how it compares and anything that stands out, with little text and nothing to decode; (2) a
+  coordinator of 30–60 controllers (the maintainer counts himself here), who works by municipality or part of one
+  and needs the weak spots of its stations, ranked by his order (warnings repeated across elections, near-unanimous
+  votes with a high turnout, no controller of his list, a sudden rise in registered voters, a turnout far from the
+  surroundings), comparisons with the municipality, similar settlements and the country, and the history of its
+  stations; (3) a statistician or a curious reader who wants the long view: data to download and Explore. Of two
+  concepts sketched on a design canvas (one page in layers; three entrances), he chose **three entrances**: the
+  navigation reads *Moje mesto · Za kontrolore i koordinatore · Analize i podaci · Vodič*, the home page is the
+  search, three doors and what stands out. His other decisions: a neutral title ("every polling station in Serbia,
+  through every election since 2022"), no example of a station page and no "what you get in three lines" on the
+  first door but a short story instead; no "what's new since your last visit" anywhere, since it would look like
+  tracking (what the browser keeps is shown as shortcuts only, with a forget button); the strip with the latest
+  election's figures dropped; **"upozorenje" replaces "oznaka"** as the word for a flag (clearer, a mildly negative
+  connotation accepted) — the pages still say "oznaka" and change in a separate commit; the cards must be clear
+  to someone who doesn't yet know what a warning is, so they say "brojke ukazuju na nešto neobično" and name the
+  places; lists may be named; the cards are the four in `highlights.py`, in the style of the canvas's fourth
+  variant (a big line, a sentence, the figures below), with a palette where a colour means a kind of content and
+  never a list: ink, sand, amber, brick (only for unusual numbers), teal, and yellow on dark. Build order he set:
+  home → the station's page → the municipality → analyses.

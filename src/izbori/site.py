@@ -29,7 +29,7 @@ from izbori.links import safe_url
 from izbori.model import ABROAD, PRISONS, last_url
 from izbori.i18n import (BELGRADE, LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, collate, fmt_date, fmt_int,
                          fmt_num, fmt_pct, fmt_time, keep, kind_name, latin_page, strip_keep, t)
-from izbori import bysettlement, commission, documents, geo, narrative, publishing, schedule, settlements
+from izbori import bysettlement, commission, documents, geo, highlights, narrative, publishing, schedule, settlements
 from izbori.places import RULES_FILE, Place, contradicts, follow
 from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
@@ -226,7 +226,25 @@ class Site:
         years = sorted(d[:4] for d in self.dates.values() if d)
         home = {"rounds": len(self.rids), "first": years[0] if years else "", "last": years[-1] if years else "",
                 "places": len(self.places.places), "docs": sum(self.linked_docs(rid) for rid in self.rids),
-                "ctrl": bool(latest and self.ctrl_of(latest.round.id)), "next": None}
+                "ctrl": bool(latest and self.ctrl_of(latest.round.id)), "next": None,
+                "census": bool(latest and self.by_settlement_of(latest.round.id)["used"]),
+                "stations": latest.totals.stations if latest else 0, "examples": [], "municipalities": []}
+        if latest:
+            rid = latest.round.id
+            muns = [m for m in self.mun_rows[rid].values() if m["kind"] == "domestic"]
+            home["municipalities"] = [{"name": m["name"], "href": f"r/{rid}/m/{m['code']}.html"}
+                                      for m in sorted(muns, key=lambda m: collate(m["name"], "cyr"))]
+            # what to try in the search: the largest municipality, a station by name, a station by number
+            biggest = max(muns, key=lambda m: m["stations"], default=None)
+            named = next((s for s in latest.round.stations if s.kind == "domestic" and s.name
+                          and self.st_path(rid, s.key) and 6 <= len(s.name) <= 24), None)
+            numbered = next((s for s in reversed(latest.round.stations) if s.kind == "domestic"
+                             and self.st_path(rid, s.key) and s.number.isdigit() and int(s.number) > 20), None)
+            home["examples"] = [e for e in (
+                biggest and {"label": biggest["name"], "href": f"r/{rid}/m/{biggest['code']}.html"},
+                named and {"label": named.name, "href": self.st_path(rid, named.key)},
+                numbered and {"label": f"{numbered.municipality} {numbered.number}",
+                              "href": self.st_path(rid, numbered.key)}) if e]
         today = datetime.now(BELGRADE).date()
         ahead = schedule.upcoming(self.archive.root, today)
         if ahead:
@@ -235,6 +253,15 @@ class Site:
                             "notes": [r["note"] for r in ahead if r["note"]],
                             "deadlines": [(key, d.isoformat()) for key, d in schedule.deadlines(day, today)]}
         return home
+
+    def highlights_of(self, rid: str) -> dict:
+        """The home page's four cards about the latest election (highlights.py)."""
+        muns = list(self.mun_rows[rid].values())
+        names = {m["code"]: m["name"] for m in muns}
+        a = self.analyses[rid]
+        return {"gap": highlights.gap(self.by_settlement_of(rid)["rows"]), "flagged": highlights.flagged(muns),
+                "repeated": highlights.repeated(self.places.places, self.flagged, names),
+                "top": highlights.top(a.round.contestants, self.labels[rid], muns, self.mun_votes[rid])}
 
     def explore_meta(self, loc: str) -> dict:
         """What the Explore page's script needs besides the stations' files: the elections, newest first, with their
@@ -777,6 +804,7 @@ class Site:
             self.publishing_of(rid)
             self.by_settlement_of(rid)
         home = self.home_data(rounds[0] if rounds else None)
+        cards = self.highlights_of(rids[-1]) if rids else {}
 
         def pages_in(loc: str) -> None:
             columns = [{"id": a.round.id, "title": self.round_title(a.round, loc), "national": national[a.round.id],
@@ -790,7 +818,7 @@ class Site:
                           "share": share[a.round.id], "bar": 100 * share[a.round.id] / share_top}
                          for a in rounds]
             self.write(loc, "index.html", "index.html", latest=summaries[0] if summaries else None, overall=overall,
-                       checks=CHECKS, groups=GROUPS, home=home)
+                       checks=CHECKS, groups=GROUPS, home=home, cards=cards)
             self.write(loc, "municipalities.html", "municipalities.html", rows=self.municipality_index(loc),
                        last=self.shorts[loc][rids[-1]] if rids else "", last_rid=rids[-1] if rids else "")
             meta = json.dumps(self.explore_meta(loc), ensure_ascii=False, separators=(",", ":"))

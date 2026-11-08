@@ -350,4 +350,45 @@
       });
     });
   });
+
+  // The home page's doors. The municipality picker goes straight to the municipality; without scripts the form
+  // opens the list of municipalities. What the reader viewed (places and the last municipality) is kept in this
+  // browser only, as shortcuts on the next visit; "forget all" clears it. Nothing is sent anywhere.
+  const memory = {
+    read() { try { return JSON.parse(localStorage.getItem('viewed') || '{}'); } catch (e) { return {}; } },
+    write(v) { try { localStorage.setItem('viewed', JSON.stringify(v)); } catch (e) { /* private window */ } },
+    clear() { try { localStorage.removeItem('viewed'); } catch (e) { /* nothing to clear */ } },
+  };
+  const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const h1 = document.querySelector('main h1');
+  if (h1 && /\/s\/[^/]+\.html$/.test(location.pathname)) {
+    const v = memory.read();
+    const places = (v.places || []).filter((p) => p.href !== location.pathname);
+    places.unshift({ href: location.pathname, title: h1.textContent.trim() });
+    memory.write({ ...v, places: places.slice(0, 3) });
+  } else if (h1 && /\/r\/[^/]+\/m\/[^/]+\.html$/.test(location.pathname)) {
+    memory.write({ ...memory.read(), municipality: { href: location.pathname, title: h1.textContent.trim() } });
+  }
+  document.querySelectorAll('form[data-pick-municipality]').forEach((form) => {
+    const select = form.querySelector('select');
+    const go = () => { if (select.value) location.href = select.dataset.base + select.value; };
+    select.addEventListener('change', go);
+    form.addEventListener('submit', (e) => { if (select.value) { e.preventDefault(); go(); } });
+  });
+  const recent = memory.read();
+  document.querySelectorAll('[data-recent]').forEach((el) => {
+    const head = `<span class="recent-h">${el.dataset.heading}</span>`;
+    if (el.dataset.recent === 'places' && recent.places && recent.places.length) {
+      el.innerHTML = head + recent.places.map((p) => `<li><a href="${esc(p.href)}">${esc(p.title)}</a></li>`).join('');
+      el.hidden = false;
+    }
+    if (el.dataset.recent === 'municipality' && recent.municipality) {
+      el.innerHTML = `${head}<a href="${esc(recent.municipality.href)}">${esc(recent.municipality.title)}</a>`;
+      el.hidden = false;
+    }
+  });
+  document.querySelectorAll('[data-forget]').forEach((b) => {
+    if (recent.places || recent.municipality) b.hidden = false;
+    b.addEventListener('click', () => { memory.clear(); location.reload(); });
+  });
 })();

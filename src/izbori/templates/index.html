@@ -2,106 +2,142 @@
 {% import "_macros.html" as mx with context %}
 {% block title %}{{ t('nav_overview') }}{% endblock %}
 {% block main %}
-{% set nx = home.next %}
-<section class="hero{% if nx %} with-next{% endif %}">
-  <div class="hero-main">
-    <h1>{{ t('home_title') }}</h1>
-    <p class="deck">{{ t('home_lede') }}</p>
-    <form class="search" role="search" data-search data-index="{{ link('search.json') }}" data-base="{{ link('') }}" action="{{ link('elections.html') }}" data-bm="{{ t('station_no') }}" data-mun-sub="{{ t('search_mun_sub', n='{n}') }}" data-flagged="{{ t('search_flagged', k='{k}', n='{n}') }}" data-clean="{{ t('search_clean', n='{n}') }}" data-former="{{ t('search_former', n='{n}') }}">
-      <label for="pretraga">{{ t('search_field') }}</label>
-      <div class="search-row">
-        <input id="pretraga" type="search" autocomplete="off" placeholder="{{ t('search_placeholder') }}">
-        <button type="submit" class="button">{{ t('search_button') }}</button>
-      </div>
-      <div class="search-out" data-search-results data-none="{{ t('search_none') }}" aria-live="polite"></div>
-    </form>
-    <p class="stats"><a href="{{ link('elections.html') }}">{{ t('stats_rounds', n=i(home.rounds)) }}</a>{% if home.first %} ({{ home.first }}{% if home.last != home.first %}–{{ home.last }}{% endif %}){% endif %} · {{ t('stats_places', n=i(home.places)) }} · {{ t('stats_docs', n=i(home.docs)) }}</p>
-  </div>
-  {% if nx %}
-  <aside class="next" data-next aria-labelledby="next-h">
-    <p class="kicker">{{ t('next_kicker') }}</p>
-    <h2 id="next-h">{% for k in nx.kinds %}{{ kind_name(k) }}{% if not loop.last %}{{ t('next_and') }}{% endif %}{% endfor %}</h2>
-    <p class="next-date">{{ date(nx.day) }} <span class="next-in" data-days-until="{{ nx.day }}" data-in="{{ t('next_in', n='{n}', unit='{unit}') }}" data-one="{{ t('next_day_one') }}" data-many="{{ t('next_day_many') }}" data-today="{{ t('next_today') }}" data-tomorrow="{{ t('next_tomorrow') }}"></span></p>
-    {% for note in nx.notes %}<p class="next-note">{{ name(note) }}</p>{% endfor %}
-    {% if nx.deadlines %}
-    <ul class="next-deadlines">
-      {% for key, d in nx.deadlines %}
-      <li><span class="next-when">{{ t('next_from' if key == 'silence' else 'next_by_midnight' if key == 'handover' else 'next_by', d=date(d)) }}</span> {{ t('dl_' ~ key) }}</li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-    <p class="next-guide"><a href="{{ link('guide.html') }}#rokovi">{{ t('next_guide') }}</a></p>
-    <p class="next-foot">{{ t('next_authority') }}</p>
-  </aside>
-  {% endif %}
+{# The home page as the maintainer designed it (7–8 Nov 2026): the question and the search, three doors (one per
+   kind of reader), what stands out in the latest election, and why to trust the site. #}
+<section class="hero home-hero">
+  <h1>{{ t('home_title') }}</h1>
+  <p class="deck">{{ t('home_lede') }}</p>
+  <form class="search" role="search" data-search data-index="{{ link('search.json') }}" data-base="{{ link('') }}" action="{{ link('elections.html') }}" data-bm="{{ t('station_no') }}" data-mun-sub="{{ t('search_mun_sub', n='{n}') }}" data-flagged="{{ t('search_flagged', k='{k}', n='{n}') }}" data-clean="{{ t('search_clean', n='{n}') }}" data-former="{{ t('search_former', n='{n}') }}">
+    <label for="pretraga" class="visually-hidden">{{ t('search_field') }}</label>
+    <div class="search-row">
+      <input id="pretraga" type="search" autocomplete="off" placeholder="{{ t('search_placeholder') }}">
+      <button type="submit" class="button">{{ t('search_button') }}</button>
+    </div>
+    <div class="search-out" data-search-results data-none="{{ t('search_none') }}" aria-live="polite"></div>
+  </form>
+  <p class="search-try">{{ t('search_try') }} {% for ex in home.examples %}<a href="{{ link(ex.href) }}">{{ name(ex.label) }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</p>
 </section>
 
-{% if latest %}
-<section class="band">
-  <h2>{{ t('intents_heading') }}</h2>
-  <div class="intents">
-    <a class="intent" href="{{ link('r/' ~ latest.id ~ '/check.html') }}">
-      <span class="kicker">{{ t('intent1_kicker', title=latest.short) }}</span>
-      <span class="intent-title">{{ t('intent1_title') }}</span>
-      <span class="intent-body">{{ t('intent1_body', n=i(latest.flagged), total=i(latest.total)) }}</span>
-      <span class="intent-cta">{{ t('intent1_cta') }}</span>
-    </a>
-    <a class="intent" href="{{ link('repeat.html') }}">
-      <span class="kicker">{{ t('intent2_kicker') }}</span>
-      <span class="intent-title">{{ t('intent2_title') }}</span>
-      <span class="intent-body">{{ t('intent2_body', n=i(overall.repeated)) }}</span>
-      <span class="intent-cta">{{ t('nav_repeat') }}</span>
-    </a>
-    <a class="intent" href="{{ link('municipalities.html') }}">
-      <span class="kicker">{{ t('intent5_kicker') }}</span>
-      <span class="intent-title">{{ t('intent5_title') }}</span>
-      <span class="intent-body">{{ t('intent5_body') }}</span>
-      <span class="intent-cta">{{ t('intent5_cta') }}</span>
-    </a>
-    <a class="intent" href="{{ link('guide.html') }}">
-      <span class="kicker">{{ t('intent3_kicker') }}</span>
-      <span class="intent-title">{{ t('intent3_title') }}</span>
-      <span class="intent-body">{{ t('intent3_body') }}</span>
-      <span class="intent-cta">{{ t('intent3_cta') }}</span>
-    </a>
-    {% if home.ctrl %}
-    <a class="intent" href="{{ link('r/' ~ latest.id ~ '/index.html') }}#controllers">
-      <span class="kicker">{{ t('intent1_kicker', title=latest.short) }}</span>
-      <span class="intent-title">{{ t('intent4_title') }}</span>
-      <span class="intent-body">{{ t('intent4_body') }}</span>
-      <span class="intent-cta">{{ t('intent4_cta') }}</span>
+{% set nx = home.next %}
+{% if nx %}
+<aside class="next next-strip" data-next aria-labelledby="next-h">
+  <p class="kicker">{{ t('next_kicker') }}</p>
+  <h2 id="next-h">{% for k in nx.kinds %}{{ kind_name(k) }}{% if not loop.last %}{{ t('next_and') }}{% endif %}{% endfor %}</h2>
+  <p class="next-date">{{ date(nx.day) }} <span class="next-in" data-days-until="{{ nx.day }}" data-in="{{ t('next_in', n='{n}', unit='{unit}') }}" data-one="{{ t('next_day_one') }}" data-many="{{ t('next_day_many') }}" data-today="{{ t('next_today') }}" data-tomorrow="{{ t('next_tomorrow') }}"></span></p>
+  {% for note in nx.notes %}<p class="next-note">{{ name(note) }}</p>{% endfor %}
+  {% if nx.deadlines %}
+  <ul class="next-deadlines">
+    {% for key, d in nx.deadlines %}
+    <li><span class="next-when">{{ t('next_from' if key == 'silence' else 'next_by_midnight' if key == 'handover' else 'next_by', d=date(d)) }}</span> {{ t('dl_' ~ key) }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <p class="next-guide"><a href="{{ link('guide.html') }}#rokovi">{{ t('next_guide') }}</a></p>
+  <p class="next-foot">{{ t('next_authority') }}</p>
+</aside>
+{% endif %}
+
+<section class="doors" aria-label="{{ t('doors_label') }}">
+  <article class="door door-first">
+    <p class="kicker">{{ t('door1_kicker') }}</p>
+    <h2>{{ t('door1_title') }}</h2>
+    <p class="door-story">{{ t('door1_story') }}</p>
+    <p class="door-note">{{ t('door1_note', n=i(home.stations)) }}</p>
+    <ul class="door-recent" data-recent="places" data-heading="{{ t('door1_recent') }}" hidden></ul>
+    <p class="door-cta">{{ t('door1_cta_pre') }} <a href="{{ link('explore.html') }}#v=table&r={{ latest.id }}&lv=m&x=turnout">{{ t('door1_cta_high') }}</a> {{ t('door1_cta_mid') }} <a href="{{ link('explore.html') }}#v=table&r={{ latest.id }}&lv=m&x=turnout&o=a">{{ t('door1_cta_low') }}</a>{{ t('door1_cta_post') }}</p>
+  </article>
+
+  <article class="door">
+    <p class="kicker">{{ t('door2_kicker') }}</p>
+    <h2>{{ t('door2_title') }}</h2>
+    <p class="door-story">{{ t('door2_story') }}</p>
+    <form class="door-pick" data-pick-municipality action="{{ link('municipalities.html') }}">
+      <label for="opstina">{{ t('municipality') }}</label>
+      <div class="pick-row">
+        <select id="opstina" name="m" data-base="{{ link('') }}">
+          <option value="">{{ t('door2_pick') }}</option>
+          {% for m in home.municipalities %}<option value="{{ m.href }}">{{ name(m.name) }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="button secondary">{{ t('door2_go') }}</button>
+      </div>
+    </form>
+    <ul class="door-list">
+      <li>{{ t('door2_li1') }}</li>
+      <li>{{ t('door2_li2') }}</li>
+      <li>{{ t('door2_li3') }}</li>
+      <li>{{ t('door2_li4') }}</li>
+    </ul>
+    <p class="door-recent" data-recent="municipality" data-heading="{{ t('door2_recent') }}" hidden></p>
+    <p class="door-cta"><a href="{{ link('municipalities.html') }}">{{ t('door2_cta') }}</a></p>
+  </article>
+
+  <article class="door">
+    <p class="kicker">{{ t('door3_kicker') }}</p>
+    <h2>{{ t('door3_title') }}</h2>
+    <p class="door-story">{{ t('door3_story') }}</p>
+    <ul class="door-questions">
+      <li><a href="{{ link('explore.html') }}#v=map&r={{ latest.id }}&x=turnout">{{ t('preset_q_turnout_map') }}</a></li>
+      {% if home.ctrl %}<li><a href="{{ link('explore.html') }}#v=density&r={{ latest.id }}&lv=m&x=ctrl&y=share">{{ t('preset_q_ctrl_share') }}</a></li>{% endif %}
+      {% if home.census %}<li><a href="{{ link('explore.html') }}#v=map&r={{ latest.id }}&x=growth">{{ t('preset_q_growth_map') }}</a></li>{% endif %}
+    </ul>
+    <p class="door-cta"><a href="{{ link('explore.html') }}">{{ t('door3_cta_all') }}</a> · <a href="{{ link('about.html') }}#podaci">{{ t('door3_cta_data') }}</a></p>
+  </article>
+</section>
+
+{% if cards and (cards.gap or cards.flagged or cards.repeated or cards.top) %}
+<section class="stands-out" aria-labelledby="stands-out-h">
+  <h2 id="stands-out-h">{{ t('so_heading', title=latest.short) }}</h2>
+  <div class="so-grid">
+    {% if cards.gap %}{% set g = cards.gap %}
+    <a class="so-card so-ink" href="{{ link('r/' ~ latest.id ~ '/settlements.html') }}">
+      <span class="so-kicker">{{ t('so_gap_kicker') }}</span>
+      <span class="so-head">{{ name(g.label) }}</span>
+      <span class="so-title">{{ t('so_gap_title') }}</span>
+      <span class="so-body so-lines">
+        <span>{{ t('so_gap_small', share=pct(g.small, 0)) }}</span>
+        <span>{{ t('so_gap_large', share=pct(g.large, 0)) }}</span>
+        <span>{{ t('so_gap_diff', pp=num(100 * g.diff, 0)) }}</span>
+      </span>
+      <span class="so-cta">{{ t('so_gap_cta') }}</span>
     </a>
     {% endif %}
-    <a class="intent" href="{{ link('about.html') }}#podaci">
-      <span class="kicker">{{ t('intent6_kicker') }}</span>
-      <span class="intent-title">{{ t('intent6_title') }}</span>
-      <span class="intent-body">{{ t('intent6_body') }}</span>
-      <span class="intent-cta">{{ t('intent6_cta') }}</span>
+    {% if cards.flagged %}{% set f = cards.flagged[0] %}
+    <a class="so-card so-brick" href="{{ link('r/' ~ latest.id ~ '/check.html') }}#m-{{ f.code }}">
+      <span class="so-kicker">{{ t('so_flagged_kicker') }}</span>
+      <span class="so-head">{{ name(f.name) }}</span>
+      <span class="so-title">{{ t('so_flagged_title', n=i(f.flagged), total=i(f.stations)) }}</span>
+      <span class="so-body">{{ t('so_flagged_body') }}{% if cards.flagged|length > 1 %} {{ t('so_flagged_next') }} {% for m in cards.flagged[1:] %}<strong>{{ name(m.name) }}</strong> ({{ t('so_of', n=i(m.flagged), total=i(m.stations)) }}){% if not loop.last %} {{ t('and') }} {% endif %}{% endfor %}.{% endif %}</span>
+      <span class="so-cta">{{ t('so_flagged_cta') }}</span>
     </a>
+    {% endif %}
+    {% if cards.repeated %}{% set r = cards.repeated %}
+    <a class="so-card so-sand" href="{{ link('repeat.html') }}">
+      <span class="so-kicker">{{ t('so_repeated_kicker') }}</span>
+      <span class="so-head">{{ t('so_repeated_head') }}</span>
+      <span class="so-title">{{ t('so_repeated_title', n=i(r.n), elections=i(r.elections)) }}</span>
+      <span class="so-body">{% for m in r.municipalities %}<strong>{{ name(m.name) }}</strong>{% if m.n > 1 %} ({{ m.n }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}.</span>
+      <span class="so-cta">{{ t('so_repeated_cta') }}</span>
+    </a>
+    {% endif %}
+    {% if cards.top %}{% set first = cards.top[0] %}
+    <a class="so-card so-teal" href="{{ link('explore.html') }}#v=map&r={{ latest.id }}&x=share&lx={{ first.number }}">
+      <span class="so-kicker">{{ t('so_top_kicker') }}</span>
+      <span class="so-head">{{ name(first.best.name) }} {{ pct(first.best.share, 0) }} · {{ name(first.worst.name) }} {{ pct(first.worst.share, 0) }}</span>
+      <span class="so-title">{{ t('so_top_title') }}</span>
+      <span class="so-body so-lines">
+        {% for c in cards.top %}<span>{{ name(c.label) }} · <strong>{{ name(c.best.name) }}</strong> {{ pct(c.best.share, 0) }} · <strong>{{ name(c.worst.name) }}</strong> {{ pct(c.worst.share, 0) }}</span>{% endfor %}
+      </span>
+      <span class="so-cta">{{ t('so_top_cta') }}</span>
+    </a>
+    {% endif %}
   </div>
+  <p class="so-note">{{ t('so_note') }}</p>
 </section>
 {% endif %}
 
-<section class="read">
-  <h2>{{ t('read_heading') }}</h2>
-  <p class="muted">{{ t('read_note') }}</p>
-  <ol class="steps">
-    <li><span class="step-n" aria-hidden="true">1</span><span><strong>{{ t('read1_title') }}</strong><span class="step-body">{{ t('read1_body') }}</span></span></li>
-    <li><span class="step-n" aria-hidden="true">2</span><span><strong>{{ t('read2_title') }}</strong>
-      <span class="step-body">
-        <span class="sym-line">{{ mx.sym('signed_over_ballots', 'paper') }}{{ check_name('signed_over_ballots') }}</span><br>
-        <span class="sym-line">{{ mx.sym('invalid_spike', 'unusual') }}{{ check_name('invalid_spike') }}</span><br>
-        <span class="sym-line">{{ mx.sym('turnout_drop', 'unusual') }}{{ check_name('turnout_drop') }}</span><br>
-        <a href="{{ link('about.html') }}#checks">{{ t('read2_link') }}</a>
-      </span></span></li>
-    <li><span class="step-n" aria-hidden="true">3</span><span><strong>{{ t('read3_title') }}</strong><span class="step-body">{{ t('read3_body') }}</span></span></li>
-  </ol>
+<section class="trust-strip" aria-label="{{ t('trust_label') }}">
+  <div><strong>{{ t('trust1_h') }}</strong><span>{{ t('trust1_b') }}</span></div>
+  <div><strong>{{ t('trust2_h') }}</strong><span>{{ t('trust2_b') }}</span></div>
+  <div><strong>{{ t('trust3_h') }}</strong><span>{{ t('trust3_b') }} <button type="button" class="link-button" data-forget hidden>{{ t('forget_all') }}</button></span></div>
 </section>
-
-<ul class="trust">
-  <li>{{ t('trust_source') }}</li>
-  <li>{{ t('trust_same') }}</li>
-  <li><a href="{{ repo_url }}">{{ t('trust_code') }}</a></li>
-  <li>{{ t('trust_private') }}</li>
-</ul>
 {% endblock %}
