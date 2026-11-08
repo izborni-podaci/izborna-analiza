@@ -1,0 +1,51 @@
+# Read the local commissions' decisions on polling stations listed in data/station_lists.csv (number, name, address,
+# area per station: the primary source for a station's settlement), then join every station to its settlement again.
+# Run by hand after adding a link, or weekly. OCR is needed for the scanned ones.
+name: stations
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      reread:
+        description: "Read the acts already read again (after a change to the reader)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: boards  # shares the store the settlements step writes with the boards workflow
+  cancel-in-progress: false
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install OCR
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - name: Read the decisions on polling stations
+        env:
+          REREAD: ${{ inputs.reread }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          args=(--commit --push)
+          [ "$REREAD" = "true" ] && args+=(--reread)
+          uv run izbori stationlist "${args[@]}"
+      - name: Join the stations to their census settlements
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: uv run izbori settlements --commit --push

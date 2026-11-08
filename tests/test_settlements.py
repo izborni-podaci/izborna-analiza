@@ -236,3 +236,27 @@ def test_the_archived_census_names_every_joined_settlement(archive):
         assert {(e["u"], e["s"]) for e in joined.values()} <= set(fig), rid
     # Preševo and Bujanovac: the 2011 census counted them only as municipalities
     assert all(f.pop2011 is None for (u, _), f in fig.items() if u == "Бујановац")
+
+
+def test_a_decision_on_polling_stations_names_each_settlement(tmp_path):
+    """A commission's act on polling stations (made-up): one row per station with number, name, address and area;
+    the settlement in the row is the station's, when the row looks like the station (a shared word in the name)."""
+    from izbori import stationlist
+    c = census(tmp_path)
+    units = c.for_round([st("1")])["80357"]
+    act = ("На основу члана 56. Закона ... доноси РЕШЕЊЕ о одређивању бирачких места\n"
+           "Р.бр. | Назив | Адреса | Подручје\n"
+           "1 | ОШ „Бошко Палковљевић Пинки“ | Стара Пазова, Ћирила и Методија 1 | улице: Ћирила и Методија, Карађорђева 1-99\n"
+           "2 | Дом културе | Голубинци, Путиначка 2 | насеље Голубинци\n"
+           "3 | Месна заједница | Нови Бановци, Светосавска 1 | Нови Бановци (цело насеље)\n"
+           "4 | ОШ „Симеон Араницки“ | Стара Пазова, Светосавска 5 | улице: Светосавска 1-50\n")
+    stations = [st("1", "ОШ БОШКО ПАЛКОВЉЕВИЋ ПИНКИ"), st("2", "ДОМ КУЛТУРЕ"), st("3", "ОШ ВУК КАРАЏИЋ"),
+                st("4", "ОСНОВНА ШКОЛА")]  # 3: another building than the act's row (renumbered); 4: a bare kind
+    got = stationlist.read_act(act, stations, units)
+    assert got == {"80357/1": {"s": "Стара Пазова", "ok": True}, "80357/2": {"s": "Голубинци", "ok": True},
+                   "80357/3": {"s": "Нови Бановци", "ok": False}, "80357/4": {"s": "Стара Пазова", "ok": True}}
+    rows = stationlist.rows("1. Школа, Голубинци 2\n2. Дом, кућни број 12\n3. Трећи", 3)
+    assert rows == {1: " Школа, Голубинци 2", 2: " Дом, кућни број 12", 3: " Трећи"}  # 12 and 2 inside rows pass
+    # the join takes the act's settlement before the address, and passes it on like any certain rule
+    got = S.join(stations[:2], c, {"80357/2": "Дом културе, Стара Пазова"}, "r1", listed={"80357/2": "Голубинци"})
+    assert got["80357/2"] == {"u": "Стара Пазова", "s": "Голубинци", "m": "list"} and "list" in S.DIRECT

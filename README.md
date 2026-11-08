@@ -321,6 +321,7 @@ data/rounds.json                  every round RIK lists
 data/feed.json                    feed entries
 data/places.csv                   manual corrections to how stations are followed across elections
 data/settlements.csv              manual corrections to which census settlement a station is in
+data/station_lists.csv            the commissions' decisions on polling stations found on the web (round, municipality, link)
 data/elections.csv                election days entered by hand once an election is called
 data/looks.json                   when RIK was last asked (results, settled rounds, daily re-download)
 data/mail.json                    email state: pending flags, time of the last message
@@ -464,6 +465,7 @@ The census wasn't held in Kosovo and Metohija. The tables count people and hold 
 
 **Each station's settlement** (`settlements.py`). `izbori settlements` joins every round's stations to the census, the same way for every station, the first rule that answers deciding:
 1. a manual correction in `data/settlements.csv`: "manual";
+1a. the local electoral commission's decision on polling stations (the law has it give each station's number, name, address and area; `data/station_lists.csv` lists the acts found, `izbori stationlist` and the **stations** workflow read them — text layer, OCR or .docx — cut them into one row per station number and take the settlement a row names, when the row also looks like the station in the results): "list";
 2. a settlement of the station's municipality named in the address read from its board decision, after the first part: "address";
 3. named in the address's first part ("Дом културе Голубинци"): "building";
 4. named in the station's name in the results: "station";

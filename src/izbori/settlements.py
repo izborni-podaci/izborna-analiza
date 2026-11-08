@@ -60,7 +60,7 @@ FIGURE_TABLES = (POPULATION, AGES)
 STORE = "settlements.json"
 RULES_FILE = "settlements.csv"
 HOW = ("manual", "address", "building", "station", "single", "place", "seat")
-DIRECT = {"manual", "address", "building", "station", "single"}  # what another election may pass on
+DIRECT = {"manual", "list", "address", "building", "station", "single"}  # what another election may pass on
 PREFIXES = ("GRADSKA OPSTINA ", "GRAD ", "OPSTINA ")
 PLACE_WORDS = {"GRAD", "OBLAST", "UPRAVNI", "OKRUG", "OPSTINA", "GRADSKA"}  # say nothing about which place
 STREET = re.compile(r"\b(UL|ULICA|BR|BROJ|BB|TRG|BUL|BULEVAR|PUT|SOKAK|NASELJE)\b")
@@ -336,7 +336,7 @@ def match(station: Station, units: list[Unit], address: str = "") -> tuple[Unit,
 
 
 def join(stations: list[Station], census: Census, addresses: dict[str, str], rid: str = "",
-         rules: Rules | None = None, log=None) -> dict[str, dict]:
+         rules: Rules | None = None, log=None, listed: dict[str, str] | None = None) -> dict[str, dict]:
     """Per station key: {"u": census municipality, "s": settlement, "m": the rule}; stations with none are left
     out. Rule 6 (the same place in another election) is added by inherit, once every round is joined."""
     rules = rules or Rules()
@@ -352,6 +352,12 @@ def join(stations: list[Station], census: Census, addresses: dict[str, str], rid
                 continue
             if log:
                 log(f"{RULES_FILE}: {rid} {s.key}: {manual} is not a settlement of {s.municipality}")
+        in_act = (listed or {}).get(s.key)  # the commission's decision on polling stations names the settlement
+        if in_act:
+            found = [u for u in us if in_act in u.settlements]
+            if found:
+                out[s.key] = {"u": found[0].key, "s": in_act, "m": "list"}
+                continue
         hit = match(s, us, addresses.get(s.key, ""))
         if hit:
             out[s.key] = {"u": hit[0].key, "s": hit[1], "m": hit[2]}

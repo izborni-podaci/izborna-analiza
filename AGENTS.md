@@ -492,6 +492,16 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   two. The other four had no usable address line at all (no address, no town in it, or the building and the town
   run together) and got rows in `data/settlements.csv` with the reason. The map's settlements are clickable: a
   settlement's stations list under the map, from the page's own JSON.
+- **8 Nov 2026, the 700 stations without a settlement.** 442 of them had an address from the board decision that
+  names only the building (Senta, Negotin, Bajina Bašta, Valjevo …), 173 none at all (Prokuplje, Knjaževac). Guessing
+  "no street means the town" was rejected: the same commissions write bare names for village stations too. RIK's
+  station lookup (biracka-mesta/) has no addresses either. The primary source is the local commission's decision
+  on polling stations (law, art. 56–57: number, name, address, area), published on the web — a handful are in
+  RIK's register of commission documents (Negotin, Ljubovija, Pirot), the rest on the municipalities' own sites.
+  `data/station_lists.csv` collects the links Marko or I find, `stationlist.py` reads them (rule "list", before the
+  address rule, passed on to other elections), the **stations** workflow runs it. An act of 2023 serves 2026
+  through the places. Rows must look like the station (a shared word in the name) so a renumbering can't move a
+  station to another's settlement.
 - **8 Nov 2026, the search opens the newest election's municipality page.** Marko: whoever picks their
   municipality or station in the search should land on the page just built, with the map. A municipality in the
   search, in the municipalities index and in a station page's crumbs now opens `r/<newest>/m/<code>.html`; the page

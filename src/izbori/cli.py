@@ -508,6 +508,61 @@ def cmd_census(args) -> int:
     return 1 if failed else 0
 
 
+def cmd_stationlist(args) -> int:
+    """Read the local commissions' decisions on polling stations listed in data/station_lists.csv, for each
+    station's settlement (data/rounds/<id>/station_lists.json)."""
+    import urllib.request
+    from izbori import settlements, stationlist
+    archive = Archive(args.data)
+    acts = stationlist.load_lists(Path(args.data) / stationlist.LISTS_FILE, log)
+    if args.round:
+        acts = [a for a in acts if a["round"] == args.round]
+    if not acts:
+        log("no decisions on polling stations listed")
+        return 0
+    table = Path(args.data) / settlements.TABLE
+    census = settlements.Census(settlements.load_units(table))
+    client = Client()
+    written = []
+    for rid in sorted({a["round"] for a in acts}):
+        rnd = archive.load(rid)
+        units = census.for_round(rnd.stations)
+        store = stationlist.load_store(archive.dir(rid))
+        changed = False
+        for act in (a for a in acts if a["round"] == rid):
+            code, url = act["municipality_code"], act["url"]
+            if url in store["docs"] and not args.reread:
+                continue
+            try:
+                if "parlament.gov.rs" in url:
+                    data = client.get_bytes(url)
+                else:
+                    req = urllib.request.Request(url, headers={"User-Agent": "izborna-analiza"})
+                    with urllib.request.urlopen(req, timeout=120) as r:
+                        data = r.read()
+                text = stationlist.document_text(data, url)
+            except Exception as e:  # noqa: BLE001 - one act must not stop the rest
+                log(f"{rid} {code}: {url}: {type(e).__name__}")
+                continue
+            stations = [s for s in rnd.stations if s.municipality_code == code]
+            found = stationlist.read_act(text, stations, units.get(code, []))
+            ok = sum(1 for v in found.values() if v["ok"])
+            log(f"{rid} {code}: {len(stations)} stations, rows with a settlement {len(found)}, matching the station's "
+                f"name {ok}")
+            store["docs"][url] = {"m": code, "rows": len(found), "ok": ok}
+            store["stations"] = {k: v for k, v in store["stations"].items() if not k.startswith(code + "/")}
+            store["stations"].update(found)
+            changed = True
+        if changed:
+            stationlist.save_store(archive.dir(rid), store)
+            written.append(rid)
+    if written and args.commit and commit([str(archive.dir(rid) / stationlist.STORE) for rid in written],
+                                          f"Data: stations' settlements from the decisions on polling stations ({', '.join(written)})"):
+        if args.push:
+            push()
+    return 0
+
+
 def cmd_settlements(args) -> int:
     """Each station's settlement in the 2022 census, per round, into data/rounds/<id>/settlements.json."""
     from izbori import boards, settlements
@@ -527,7 +582,9 @@ def cmd_settlements(args) -> int:
     for rid in rids:  # every round: a place's other elections may name its settlement (rule 6)
         cache[rid] = archive.load(rid)
         addresses = boards.addresses(boards.load_store(archive.dir(rid)))
-        joined[rid] = settlements.join(cache[rid].stations, census, addresses, rid, rules, log)
+        from izbori import stationlist
+        joined[rid] = settlements.join(cache[rid].stations, census, addresses, rid, rules, log,
+                                       listed=stationlist.listed(archive.dir(rid)))
     settlements.inherit(joined, links(archive, rids[-1], cache))
     written = []
     for rid in rids:
@@ -859,6 +916,14 @@ def main(argv: list[str] | None = None) -> int:
     z.add_argument("--commit", action="store_true")
     z.add_argument("--push", action="store_true")
     z.set_defaults(fn=cmd_census)
+
+    sl = sub.add_parser("stationlist", help="read the commissions' decisions on polling stations listed in "
+                                            "data/station_lists.csv, for the stations' settlements")
+    sl.add_argument("--round", help="only this round")
+    sl.add_argument("--reread", action="store_true", help="read the acts already read again")
+    sl.add_argument("--commit", action="store_true")
+    sl.add_argument("--push", action="store_true")
+    sl.set_defaults(fn=cmd_stationlist)
 
     n = sub.add_parser("settlements", help="each station's settlement in the 2022 census, for every round")
     n.add_argument("--commit", action="store_true")
