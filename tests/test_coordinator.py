@@ -80,3 +80,21 @@ def test_weak_spots(tmp_path):
     data = coordinator.station_json(rnd.stations, ctrl, flags_of, lambda s: "", 2, {s.key: "x" for s in rnd.stations})
     assert data[0]["ctrl"] == "mn" and data[1]["ctrl"] == "nd" and data[4]["ctrl"] is None
     assert data[0]["flags"] == ["near_unanimity"] and data[0]["v"] == list(by_key["70000/1"].votes)
+
+
+def test_result_by_settlement(tmp_path):
+    a = new_archive(tmp_path)
+    sts = [station("1", voted=100, l1=70, l2=30, invalid=0), station("2", voted=100, l1=20, l2=80, invalid=0),
+           station("3", voted=100, l1=40, l2=60, invalid=0), station("4", voted=100, l1=90, l2=10, invalid=0)]
+    a.add_snapshot("1", make_csv(sts), fetched="2026-10-25T20:00:00+00:00")
+    rnd = a.load("1")
+    joined = {"70000/1": {"u": "Тест", "s": "Село"}, "70000/2": {"u": "Тест", "s": "Село"},
+              "70000/3": {"u": "Тест", "s": "Град"}}  # station 4 is not placed
+    figures = {("Тест", "Село"): Figures(urban=False, pop2011=900, pop2022=800)}
+    rows = coordinator.by_settlement(rnd.stations, joined, figures, 0)
+    assert [r["name"] for r in rows] == ["Село", "Град", ""]  # most registered first, the unplaced last
+    selo = rows[0]
+    assert selo["stations"] == 2 and selo["population"] == 800 and selo["registered"] == 1000
+    assert selo["leader"] == 1 and abs(selo["share"] - 110 / 200) < 1e-9 and abs(selo["mine"] - 90 / 200) < 1e-9
+    assert rows[1]["leader"] == 1 and rows[1]["population"] is None
+    assert coordinator.leaders(rows) == [(1, ["Село", "Град"])]  # the unplaced stations don't count as a settlement

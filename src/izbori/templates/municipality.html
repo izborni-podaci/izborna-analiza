@@ -116,6 +116,36 @@
 {% endfor %}
 </ul></details>{% endif %}
 
+{% set placed = villages|selectattr('name')|list %}
+{% if placed|length > 1 %}
+<section class="villages" id="naselja">
+  <div class="sec-head"><h2>{{ t('vi_heading') }}</h2><span class="muted">{{ t('vi_note') }}</span></div>
+  {% if village_leaders %}
+  {% set parts = [] %}
+  {% for li, names in village_leaders %}{% set shown = [] %}{% for nm in names %}{% set _ = shown.append(name(nm)) %}{% endfor %}{% set _ = parts.append(t('vi_part_one' if names|length == 1 else 'vi_part', list=name(labels[li]), n=i(names|length), names=shown|join(', '))) %}{% endfor %}
+  <p class="vi-summary">{{ t('vi_summary', n=i(placed|length), parts=parts|join('; ')) }}</p>
+  {% endif %}
+  <div class="table-wrap">
+  <table class="villages" id="village-list" data-first="12" data-more="{{ t('vi_more', n=i(villages|length)) }}" data-less="{{ t('vi_less') }}">
+    <thead><tr><th>{{ t('vi_col_settlement') }}</th><th class="num">{{ t('vi_col_stations') }}</th><th class="num">{{ t('vi_col_pop') }}</th><th class="num">{{ t('registered') }}</th><th class="num">{{ t('turnout') }}</th><th>{{ t('vi_col_first') }}</th>{% if index is not none %}<th class="num" data-mine="col-share">{{ t('co_col_mine') }}</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for v in villages %}
+    <tr data-set="{{ v.name }}">
+      <td>{% if v.name %}<b>{{ name(v.name) }}</b>{% else %}<span class="muted">{{ t('vi_unplaced') }}</span>{% endif %}</td>
+      <td class="num">{{ v.stations }}</td>
+      <td class="num">{{ i(v.population) if v.population is not none else '–' }}</td>
+      <td class="num">{{ i(v.registered) }}</td>
+      <td class="num">{{ pct(v.turnout, 1) if v.turnout is not none else '' }}</td>
+      <td>{% if v.leader is not none %}{{ name(labels[v.leader]) }} <span class="muted">{{ pct(v.share, 1) }}{% if v.second is not none and v.share - v.second < 0.05 %} · {{ t('vi_close') }}{% endif %}</span>{% endif %}</td>
+      {% if index is not none %}<td class="num" data-cell="vshare">{{ pct(v.mine, 1) if v.mine is not none else '' }}</td>{% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endif %}
+
 <h2 id="stations">{{ t('stations_heading') }}</h2>
 <p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }}{% if m.flagged %} · <a href="{{ link(base + 'check.html') }}#m-{{ m.code }}">{{ t('mun_flagged', n=i(m.flagged)) }}</a>{% endif %}{% if index is not none %} · <span class="small muted">{{ t('co_table_note') }}</span>{% endif %}</p>
 <div class="table-wrap">

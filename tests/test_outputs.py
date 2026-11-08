@@ -494,8 +494,10 @@ def test_municipality_page_for_coordinators(site, archive):
 
     page = (site / "r/680072/m/70351.html").read_text(encoding="utf-8")
     heads = re.findall(r"<h2[^>]*>([^<]+)</h2>", page)
-    assert heads[:6] == ["Kako se opština poredi", "Slabe tačke", "Moja lista po mestima", "Rezultat u opštini",
-                         "Biračka mesta", "Sve liste na svim biračkim mestima"]
+    assert heads[:7] == ["Kako se opština poredi", "Slabe tačke", "Moja lista po mestima", "Rezultat u opštini",
+                         "Kako je glasalo svako naselje", "Biračka mesta", "Sve liste na svim biračkim mestima"]
+    assert re.search(r'<p class="vi-summary">Od \d+ naselja, .* je prva u ', page)
+    assert '<table class="villages" id="village-list" data-first="12"' in page
     cards = re.findall(r'<div class="wk[^"]*">\s*<h3>([^<]+)</h3>', page)
     assert cards == ["Upozorenja na više izbora", "Jednoglasnost uz visoku izlaznost", "Bez kontrolora moje liste",
                      "Nagli rast upisanih", "Izlaznost daleko od okoline", "Nema primedbi, a brojke odskaču"]

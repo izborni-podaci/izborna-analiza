@@ -1059,11 +1059,14 @@ class Site:
                                                                     len(a.round.contestants), hrefs, show)},
                               ensure_ascii=False, separators=(",", ":"))
             flag_text = {s.key: {f["code"]: f["text"] for f in r["flags"]} for s, r in zip(sts, rows)}
+            villages = coordinator.by_settlement(sts, settl, self.figures, index)
+            village_leaders = coordinator.leaders(villages)
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
                        mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st, weak=weak, devs=devs,
                        index=index, number=number, compare=compare, mun_data=data.replace("<", "\\u003c"),
                        ctrl_of=coordinator.controller_of, rules=RULES, flag_text=flag_text, labels=self.labels[rid],
-                       settlement_by_key={s.key: settlement_of(s) for s in sts},
+                       settlement_by_key={s.key: settlement_of(s) for s in sts}, villages=villages,
+                       village_leaders=village_leaders,
                        cdocs=self.commission_of(rid).get(m["code"], []),
                        citydocs=self.city_docs_of(rid)[0].get(m["code"]), **common)
 

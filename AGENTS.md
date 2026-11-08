@@ -432,3 +432,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   the English strings, templates and tests of the strings stay. `site.compact` removes indentation only (a line
   break stays a line break), never the space between tags on one line, so inline elements don't run together.
   Expected: ~650 MB.
+- **8 Nov 2026, how every settlement voted.** A Reddit post that drew a crowd was a map of one region's villages
+  with a list "which list is first in which villages", made by hand from izbori26.rs's data; people answered about
+  their own village. The municipality's page now gives that material to anyone: a sentence naming the settlements
+  each list is first in, and a table per census settlement. Next: settlement boundaries (OSM `ref:RS:naselje`) for a
+  map per municipality, then an image to download and an `og:image`, so a link carries the map.

@@ -96,10 +96,21 @@
     });
   }
 
+  function renderVillages(idx) {
+    document.querySelectorAll('#village-list tr[data-set]').forEach((tr) => {
+      const cell = tr.querySelector('[data-cell="vshare"]');
+      if (!cell) return;
+      const sts = data.stations.filter((st) => (st.set || '') === tr.dataset.set && st.valid);
+      const valid = sts.reduce((a, st) => a + st.valid, 0);
+      cell.textContent = valid ? pct(sts.reduce((a, st) => a + (st.v[idx] || 0), 0) / valid) : '';
+    });
+  }
+
   function apply(idx) {
     renderWithout(idx);
     renderChart(idx);
     renderTable(idx);
+    renderVillages(idx);
   }
 
   document.addEventListener('click', (e) => {

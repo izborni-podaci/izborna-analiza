@@ -151,6 +151,49 @@ def station_json(stations: list, ctrl: dict, flags_of: dict, settlement_of, n_li
     return out
 
 
+def by_settlement(stations: list, settlements: dict, figures: dict, index: int | None) -> list[dict]:
+    """The municipality's result settlement by settlement: stations, the census population, registered voters,
+    turnout, the leading list with its share of the valid votes (and the runner-up's share, for how close it was),
+    and list `index`'s share. Stations not placed in a settlement are one row at the end with an empty name.
+    Settlements with the most registered voters first."""
+    groups: dict[str, list] = defaultdict(list)
+    units: dict[str, tuple] = {}
+    for s in stations:
+        e = settlements.get(s.key)
+        name = e["s"] if e and e.get("s") else ""
+        groups[name].append(s)
+        if e and e.get("u") and name:
+            units[name] = (e["u"], name)
+    rows = []
+    for name, sts in groups.items():
+        counted = [s for s in sts if s.counted]
+        reg = sum(s.registered for s in counted)
+        voted = sum(s.voted for s in counted)
+        valid = sum(s.valid or 0 for s in counted)
+        n = max((len(s.votes) for s in counted), default=0)
+        votes = [sum(s.votes[i] or 0 for s in counted if i < len(s.votes)) for i in range(n)]
+        order = sorted(range(n), key=lambda i: (-votes[i], i)) if valid else []
+        f = figures.get(units.get(name)) if name else None
+        rows.append({"name": name, "stations": len(sts), "counted": len(counted), "population": f.pop2022 if f else None,
+                     "registered": reg, "turnout": voted / reg if reg else None, "valid": valid,
+                     "leader": order[0] if order and votes[order[0]] else None,
+                     "share": votes[order[0]] / valid if order and valid else None,
+                     "second": votes[order[1]] / valid if len(order) > 1 and valid else None,
+                     "mine": votes[index] / valid if index is not None and valid and index < n else None})
+    rows.sort(key=lambda r: (r["name"] == "", -r["registered"]))
+    return rows
+
+
+def leaders(rows: list[dict]) -> list[tuple[int, list[str]]]:
+    """Which list is first in which settlements: (list index, settlement names), most settlements first; the
+    names in the order of the rows (largest settlement first). Unplaced stations are left out."""
+    won: dict[int, list[str]] = defaultdict(list)
+    for r in rows:
+        if r["name"] and r["leader"] is not None:
+            won[r["leader"]].append(r["name"])
+    return sorted(won.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+
+
 def codes_of(flags: list) -> set[str]:
     return {f.code for f in flags}
 

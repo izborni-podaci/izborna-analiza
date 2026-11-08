@@ -487,6 +487,8 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 td.ctrl-none { color: var(--critical); font-weight: 700; }
 td.ctrl-yes { color: var(--teal-ink); }
 table.stations td b { font-weight: 600; }
+.vi-summary { max-width: 80ch; margin: 0 0 12px; }
+table.villages td b { font-weight: 600; }
 
 /* phones: big touch targets, one column */
 @media (max-width: 600px) {
