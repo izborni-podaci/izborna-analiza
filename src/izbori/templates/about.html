@@ -46,7 +46,7 @@
 
 <h2 id="podaci">Подаци и обавештења</h2>
 <ul>
-  <li><strong>Атом фид</strong> са сваком новом групом упозорења: <a href="{{ root }}feed.sr.xml">на српском</a> и <a href="{{ root }}feed.en.xml">на енглеском</a>. Свака општина има и свој фид, повезан на њеној страни.</li>
+  <li><strong>Атом фид</strong> са сваком новом групом упозорења: <a href="{{ root }}feed.sr.xml">feed.sr.xml</a>. Свака општина има и свој фид, повезан на њеној страни.</li>
   <li><strong>Подаци у JSON-у</strong>, исти као на странама кроз изборе: <a href="{{ root }}api/index.json">api/index.json</a> садржи изборе, општине и бирачка места; <code>api/m/&lt;шифра&gt;.json</code> је општина кроз изборе, а <code>api/s/&lt;место&gt;.json</code> бирачко место.</li>
   <li><strong>Сва бирачка места једних избора</strong> у једној датотеци, <code>api/r/&lt;избори&gt;/stations.json</code>, како их користи страна <a href="{{ link('explore.html') }}">Истражи</a>. Границе општина за њену мапу су у <code>api/geo/municipalities.json</code> (© сарадници OpenStreetMap-а, ODbL).</li>
   <li><strong>Табела општинских комисија</strong> једних избора као CSV, <code>api/r/&lt;избори&gt;/commissions.csv</code>.</li>

@@ -22,7 +22,7 @@ def site(tmp_path_factory, archive):
 
 def test_site(site):
     out = site
-    for prefix in ("", "cyr/", "en/"):
+    for prefix in ("", "cyr/"):
         for page in ("index.html", "guide.html", "about.html", "r/680072/index.html", "r/680072/check.html",
                      "r/680072/changes.html", "r/680072/commissions.html"):
             assert (out / prefix / page).exists(), prefix + page
@@ -34,9 +34,10 @@ def test_site(site):
     history = next((out / "m").glob("*.html")).read_text(encoding="utf-8")
     assert "static/labels.css" in history and "l-registered" in history and "data-label" not in history
 
-    # Latin and English pages carry no Cyrillic except the name of the Cyrillic switch
+    # Latin pages carry no Cyrillic except the name of the Cyrillic switch; English pages are not built (8 Nov 2026)
+    assert not (out / "en").exists() and not (out / "feed.en.xml").exists()
     for path in [*out.glob("*.html"), *(out / "r").rglob("*.html"), *(out / "s").glob("*.html"),
-                 *(out / "m").glob("*.html"), *(out / "en").rglob("*.html")]:
+                 *(out / "m").glob("*.html")]:
         text = path.read_text(encoding="utf-8").replace("Ћирилица", "")
         assert not CYRILLIC.search(text), path
     assert CYRILLIC.search((out / "cyr/r/680072/index.html").read_text(encoding="utf-8"))
@@ -50,9 +51,6 @@ def test_site(site):
     assert 'id="brojanje"' in guide and "Više listića nego potpisa" in guide and "čl. 116" in guide
     # local elections: the differences, with the higher court for appeals and four copies of the minutes for lists
     assert 'id="lokalni"' in guide and "višem sudu" in guide and "<strong>četiri</strong>" in guide
-    guide_en = (out / "en/guide.html").read_text(encoding="utf-8")
-    assert "Guide for controllers and observers" in guide_en and "More ballots than signatures" in guide_en
-    assert 'id="lokalni"' in guide_en and "<strong>higher court</strong>" in guide_en
 
     # the home page (8 Nov 2026): the search with examples, three doors, four cards about the latest election, the
     # trust strip; nothing about a next election while none is in data/elections.csv
@@ -102,7 +100,7 @@ def test_commissions(site, archive):
     """Each election's page on the municipal commissions: one row per municipality in Serbia, linked from the
     round's pages and the municipalities page, with the same table as CSV."""
     out = site
-    for prefix in ("", "cyr/", "en/"):
+    for prefix in ("", "cyr/"):
         page = (out / prefix / "r/680072/commissions.html").read_text(encoding="utf-8")
         assert re.search(r'<a href="[^"]*commissions\.html" aria-current="page">', page)
         root = "../../../" if prefix else "../../"
@@ -142,12 +140,12 @@ def test_explore(site, archive):
     """The Explore page: its script draws everything in the browser from api/, with the strings and the lists that
     come with the page in its language, and the boundaries joined to RIK's municipalities by code."""
     out = site
-    for prefix in ("", "cyr/", "en/"):
+    for prefix in ("", "cyr/"):
         page = (out / prefix / "explore.html").read_text(encoding="utf-8")
         assert re.search(r'<a href="[^"]*explore\.html"[^>]* aria-current="page">', page)
         assert "static/explore.js" in page and "<noscript>" in page
         meta = json.loads(re.search(r'<script type="application/json" id="ex-meta">(.*?)</script>', page, re.S).group(1))
-        assert meta["loc"] == {"": "lat", "cyr/": "cyr", "en/": "en"}[prefix]
+        assert meta["loc"] == {"": "lat", "cyr/": "cyr"}[prefix]
         assert [r["id"] for r in meta["rounds"]][0] == "680072"  # newest first
         # every list of every election, in ballot order: the reader chooses one, the page never does
         assert all([x["n"] for x in r["lists"]] == sorted(x["n"] for x in r["lists"]) for r in meta["rounds"])
@@ -219,7 +217,7 @@ def test_explore_names_every_choice(site):
     questions = re.findall(r"\['(\w+)', (?:\{|`)", themes)
     views = re.findall(r"'(\w+)'", re.search(r"const VIEWS = \[([^\]]+)\]", script).group(1))
     assert theme_keys and len(questions) >= 15
-    for prefix in ("", "cyr/", "en/"):
+    for prefix in ("", "cyr/"):
         page = (site / prefix / "explore.html").read_text(encoding="utf-8")
         assert "data-themes" in page and "data-questions" in page and page.count("<fieldset") == 5
         meta = json.loads(re.search(r'id="ex-meta">(.*?)</script>', page, re.S).group(1))
@@ -264,7 +262,6 @@ def test_home_shows_the_next_election(tmp_path, archive):
     first = day - timedelta(days=15)
     assert f"do {first.day}.{first.month}.{first.year}." in home and "predlog članova biračkih odbora" in home
     assert 'href="guide.html#rokovi"' in home
-    assert "Local election" in (out / "en/index.html").read_text(encoding="utf-8")
 
 
 def test_feeds(archive):
@@ -380,8 +377,6 @@ def test_site_shows_controllers(tmp_path, archive):
     assert "Kontrolori u biračkim odborima" in round_page
     mun = (out / f"r/680072/m/{s.municipality_code}.html").read_text(encoding="utf-8")
     assert "Kontrolori: liste 1, 3" in mun and "liste 1, 3 od 18" not in mun and "OŠ PRIMER, GLAVNA 1" in mun
-    assert "Controllers: lists 1, 3" in (out / f"en/r/680072/m/{s.municipality_code}.html").read_text(
-        encoding="utf-8")
     assert "Kontrolora ukupno" in mun and "Kontrolora ukupno" in round_page
     # the observers' record and the remark are linked by name, and the remark is a flag
     row = mun[mun.index('id="bm-23"'):]
@@ -392,13 +387,11 @@ def test_site_shows_controllers(tmp_path, archive):
     place = re.search(r'href="\.\./\.\./\.\./(s/[^"]+\.html)"', row).group(1)
     page = (out / place).read_text(encoding="utf-8")
     assert re.search(r"Zapisnik o posmatračima objavljen|O posmatračima za \d od \d izbora", page)
-    assert ">Observers</a>" in (out / "en" / place).read_text(encoding="utf-8")
     # the decisions on its polling board are linked on its page, apart from the documents of the vote
     board = page[page.index("Rešenja o biračkom odboru:"):]
     board = board[:board.index("</div>")]
     assert re.findall(r">([^<]+)</a>", board) == ["stalni sastav", "prošireni sastav"]  # one without a link: not shown
     assert "%D0%A0%D0%B5%D1%88%D0%B5%D1%9A%D0%B5%20%D0%BF%D1%80%D0%BE%D1%88%D0%B8%D1%80%D0%B5%D0%BD%D0%B8" in board
-    assert "Decisions on the polling board:" in (out / "en" / place).read_text(encoding="utf-8")
     assert "Rešenja o biračkom odboru" not in mun  # the municipality's list keeps to the documents of the vote
     commission_part = mun[mun.index('id="commission"'):]
     assert "Dokumenti izborne komisije" in commission_part
@@ -430,7 +423,7 @@ def test_site_station_pages_and_breadcrumbs(site):
 def test_search_leads_to_pages_across_elections(site):
     """Every search result opens a page across all elections: a municipality page with a row per election, and a
     page for every polling place, flagged or not."""
-    for prefix in ("", "cyr/", "en/"):
+    for prefix in ("", "cyr/"):
         data = json.loads((site / prefix / "search.json").read_text(encoding="utf-8"))
         assert all(len(m) == 3 and m[2] >= 1 for m in data["m"])
         for m in data["m"]:
@@ -467,7 +460,7 @@ def test_results_by_settlement(site, archive):
     from izbori import boards, bysettlement, settlements
     from izbori.i18n import fmt_pct
 
-    for prefix in ("", "cyr/", "en/"):
+    for prefix in ("", "cyr/"):
         for rid in archive.round_ids():
             assert (site / prefix / f"r/{rid}/settlements.html").exists(), prefix + rid
     page = (site / "r/680072/settlements.html").read_text(encoding="utf-8")
@@ -489,8 +482,8 @@ def test_results_by_settlement(site, archive):
     lines = (site / "api/r/680072/settlements.csv").read_text(encoding="utf-8").splitlines()
     assert lines[0].startswith("dimension,class,number,contestant") and len(lines) == 1 + 11 * len(rnd.contestants)
     # no decisions on polling boards were read for the presidential election of 2022: its votes only
-    pres = (site / "en/r/42732/settlements.html").read_text(encoding="utf-8")
-    assert "Share of valid votes" in pres and "had a controller" not in pres and "No controllers here" in pres
+    pres = (site / "r/42732/settlements.html").read_text(encoding="utf-8")
+    assert "Udeo u važećim glasovima" in pres and "imala kontrolora" not in pres and "Kontrolora ovde nema" in pres
 
 
 def test_municipality_page_for_coordinators(site, archive):
@@ -525,14 +518,11 @@ def test_municipality_page_for_coordinators(site, archive):
     assert '<script src="../../../static/mun.js" defer></script>' in page
     assert f'data-first="10" data-more="Prikaži sva biračka mesta ({len(sts)})"' in page
     # the whole table behind a button that says what it is, and a CSV made from it in the browser
-    assert '<details class="all-votes">\n  <summary class="button secondary">Cela tabela</summary>' in page
+    assert '<details class="all-votes">\n<summary class="button secondary">Cela tabela</summary>' in page
     assert 'data-table-csv="#all-votes-table"' in page and 'data-file="680072-70351.csv"' in page
     total = re.search(r'<tr class="total">(.*?)</tr>', page).group(1)
     assert re.findall(r'<td class="num">([^<]+)</td>', total) == [fmt_int(v, "lat") for v in totals]
 
-    en = (site / "en/r/680072/m/70351.html").read_text(encoding="utf-8")
-    assert "Show all polling stations (" in en and "Every list at every polling station" in en
-    assert "How the municipality compares" in en and "No controller of my list" in en
     pres = (site / "r/42732/m/70351.html").read_text(encoding="utf-8")
     assert "Svi kandidati na svim biračkim mestima" in pres
 
@@ -555,8 +545,7 @@ def test_place_across_elections(site):
                                          "Ranije BM 10 (Parlamentarni 2023, Predsednički 2022)")]
     assert order == sorted(order)
     assert "Pokrajinski 2023" not in analysis  # not held in Belgrade, so not a gap in this station's history
-    en = (site / "en/s/70157-14.html").read_text(encoding="utf-8")
-    assert "Earlier No. 10 (Parliamentary 2023, Presidential 2022)" in en
+    assert "Ranije BM 10 (Parlamentarni 2023, Predsednički 2022)" in page
     # a school that held stations 134 and 140 in 2023 kept only 140 in 2026; station 134 of 2026 is another place
     # with another name, so the number alone doesn't join it to the school's old 134
     def stations(path):

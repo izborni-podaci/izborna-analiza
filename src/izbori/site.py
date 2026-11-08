@@ -27,7 +27,7 @@ from izbori.describe import describe, field_label
 from izbori.history import Archive
 from izbori.links import safe_url
 from izbori.model import ABROAD, PRISONS, last_url
-from izbori.i18n import (BELGRADE, LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, collate, fmt_date, fmt_int,
+from izbori.i18n import (BELGRADE, BUILT, LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, collate, fmt_date, fmt_int,
                          fmt_num, fmt_pct, fmt_time, keep, kind_name, latin_page, strip_keep, t)
 from izbori import (bysettlement, commission, coordinator, documents, geo, highlights, narrative, publishing, schedule,
                     settlements)
@@ -77,7 +77,7 @@ class Site:
             return latin(text) if loc == "en" else text
 
         langs = [{"href": root + PREFIX[other] + page, "label": Markup(LANG_LABELS[other]),
-                  "current": other == loc, "lang": LANG_ATTR[other]} for other in LOCALES]
+                  "current": other == loc, "lang": LANG_ATTR[other]} for other in BUILT]
         return {
             "loc": loc, "lang": LANG_ATTR[loc], "root": root, "link": link, "langs": langs, "page": page,
             "t": lambda key, **kw: t(key, loc, **kw), "i": lambda n: fmt_int(n, loc),
@@ -94,7 +94,7 @@ class Site:
     def write(self, loc: str, page: str, template: str, **extra) -> None:
         html = self.env.get_template(template).render(**self.context(loc, page, **extra))
         html = latin_page(html) if loc == "lat" else strip_keep(html)
-        self.put(PREFIX[loc] + page, html)
+        self.put(PREFIX[loc] + page, compact(html))
 
     def put(self, rel: str, text: str) -> None:
         path = self.out / rel
@@ -791,7 +791,7 @@ class Site:
         self.dates = {rid: self.archive.meta(rid).get("date") for rid in rids}
         self.flagged = {a.round.id: a.by_station for a in oldest_first}
         self.labels = {a.round.id: display_labels(a.round.contestants) for a in oldest_first}
-        self.shorts = {loc: {a.round.id: self.short_title(a.round, loc) for a in oldest_first} for loc in LOCALES}
+        self.shorts = {loc: {a.round.id: self.short_title(a.round, loc) for a in oldest_first} for loc in BUILT}
         self.round_inputs = {a.round.id: repr((a.round.kind, self.dates[a.round.id], self.labels[a.round.id],
                                                [(c.number, c.name, c.short) for c in a.round.contestants]))
                              for a in oldest_first}
@@ -863,19 +863,17 @@ class Site:
             for a in rounds:
                 self.round_pages(a, loc)
 
-        self.side_by_side([lambda loc=loc: pages_in(loc) for loc in LOCALES])
+        self.side_by_side([lambda loc=loc: pages_in(loc) for loc in BUILT])
         self.write_api()
         # GitHub Pages serves this file for a missing page at any depth, so its links are absolute.
         self.write("lat", "404.html", "404.html", root=self.site_url,
                    link=lambda target: self.site_url + target)
         self.put("feed.sr.xml", feed.build(self.archive.root, self.archive, "lat", self.site_url))
-        self.put("feed.en.xml", feed.build(self.archive.root, self.archive, "en", self.site_url))
         entries = feed.load_entries(self.archive.root)
         for code, rids in self.mun_rounds.items():  # one feed per municipality, for observers who follow one place
             name = self.mun_rows[rids[0]][code]["name"]
-            for loc, lang in (("lat", "sr"), ("en", "en")):
-                self.put(f"feed/{code}.{lang}.xml", feed.build(self.archive.root, self.archive, loc, self.site_url,
-                                                               municipality=(code, name), entries=entries))
+            self.put(f"feed/{code}.sr.xml", feed.build(self.archive.root, self.archive, "lat", self.site_url,
+                                                       municipality=(code, name), entries=entries))
         self.finish()
         return self.out
 
@@ -1092,7 +1090,7 @@ def cell_labels() -> str:
     def quote(text: str) -> str:
         return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
     rules = []
-    for loc in LOCALES:
+    for loc in BUILT:
         for key in LABELLED:
             text = t(key, loc)
             text = latin(text) if loc == "lat" else text
@@ -1138,6 +1136,17 @@ def strength(code: str) -> tuple[int, int, str]:
 
 def dump(data) -> str:
     return json.dumps(data, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+
+
+INDENT = re.compile(r"\n[ \t]+")
+BLANK = re.compile(r"\n{2,}")
+
+
+def compact(html: str) -> str:
+    """The page without the templates' indentation: a line break between tags renders the same as a line break
+    and eight spaces, and the indentation was 5–6% of the site (Nov 2026). Text keeps its single spaces; nothing
+    between tags on one line is touched, so inline elements stay apart. No page has a <pre>."""
+    return BLANK.sub("\n", INDENT.sub("\n", html))
 
 
 def votes_json(contestants, votes: list) -> list[list[int]]:

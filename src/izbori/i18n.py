@@ -8,7 +8,9 @@ from zoneinfo import ZoneInfo
 
 from izbori.translit import latin
 
-LOCALES = ["lat", "cyr", "en"]
+LOCALES = ["lat", "cyr", "en"]  # every language the strings exist in
+BUILT = ["lat", "cyr"]  # the languages the site is written in; English was dropped from the build on 8 Nov 2026
+# to keep the site under GitHub Pages' 1 GB (it was 291 MB of 962). The strings stay, so it can come back.
 LANG_ATTR = {"lat": "sr-Latn", "cyr": "sr-Cyrl", "en": "en"}
 PREFIX = {"lat": "", "cyr": "cyr/", "en": "en/"}
 BELGRADE = ZoneInfo("Europe/Belgrade")

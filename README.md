@@ -1,6 +1,6 @@
 # Izborni podaci
 
-A public site in Serbian (Latin and Cyrillic) and English. It saves every results file that Serbia's Republic Electoral Commission (RIK) publishes. It checks every polling station by the same rules, whoever the candidates and lists are. It shows observers and journalists where to look.
+A public site in Serbian (Latin and Cyrillic; every string also exists in English, but the English pages are not built, see Languages). It saves every results file that Serbia's Republic Electoral Commission (RIK) publishes. It checks every polling station by the same rules, whoever the candidates and lists are. It shows observers and journalists where to look.
 
 **Site:** https://izborni-podaci.github.io/izborna-analiza/
 
@@ -12,7 +12,7 @@ A public site in Serbian (Latin and Cyrillic) and English. It saves every result
   - station checks
   - news notes
   - the private target list
-  - the site in three languages
+  - the site in two scripts
   - Atom feeds and the email digest
   - the scheduled jobs
   - tests on the 2026 parliamentary files
@@ -238,7 +238,7 @@ The score adds up the flag weights, round by round. Each older round counts 70% 
 
 ## The site
 
-**Languages:** Serbian Latin (default), Serbian Cyrillic and English. Serbian text is written once in Cyrillic and converted to Latin automatically, as are RIK's names.
+**Languages:** Serbian Latin (default) and Serbian Cyrillic are built (`i18n.BUILT`). Serbian text is written once in Cyrillic and converted to Latin automatically, as are RIK's names. Every string also has an English version (`i18n.LOCALES`), but the English pages have not been built since 8 Nov 2026: they were 291 MB of a 962 MB site against GitHub Pages' 1 GB limit; adding "en" to `BUILT` brings them back. Pages are written without the templates' indentation (`site.compact`), which was 5–6% of the site.
 
 **Pages:**
 - **Home** (`index.html`), designed for three kinds of reader (8 Nov 2026): the question and the search, with three things to try (the largest municipality, a station by name, a station by number); three doors: *Moje mesto* for anyone (the search, and the places viewed in this browser), *Za kontrolore i koordinatore* (a municipality picker that opens the municipality's page in the latest election, and the municipality viewed last), *Analize i podaci* (three questions from Explore, all the questions, the data); **what stands out** in the latest election, four cards computed at build time by `highlights.py`, one rule each and the same for every list: the list whose share differs most between settlements under 500 people and cities over 100,000; the municipality with the largest share of flagged stations (at least 10 stations, in the country), and the two after it; the places flagged in every election they took part in (at least three); the three lists with most votes, each with the municipality where its share is largest and where it is smallest (at least 10 counted stations); then why to trust the site (sources, what a warning is, no names and no tracking). The next election, when one is entered in `data/elections.csv`, shows under the search with its deadlines. The places and the municipality a reader views are kept only in their browser (`localStorage`), as shortcuts on the next visit, with one button to forget them; nothing is sent anywhere.

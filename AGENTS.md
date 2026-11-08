@@ -152,7 +152,9 @@ These are the project's promises to its readers. Never change them without the m
 
 ### Site
 
-- **Static pages in three languages:** Latin (the default), Cyrillic and English.
+- **Static pages in two scripts:** Latin (the default) and Cyrillic (`i18n.BUILT`). Every string also exists in
+  English (`i18n.LOCALES`), but the English pages are not built since 8 Nov 2026: they were 291 MB of a 962 MB site
+  against GitHub Pages' 1 GB. Putting "en" back into `BUILT` brings them back.
   - Serbian text is written once in Cyrillic; the Latin pages are the whole page transliterated.
   - Links to RIK are percent-encoded, so transliteration can't break them.
   - There is no JavaScript framework. Charts are SVG drawn when the site is built, except on the Explore page:
@@ -423,3 +425,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   only in the reader's browser (`viewed.lists`), consistent with the no-tracking principle; the page is rendered
   for the leading list so it reads without scripts. The near-unanimity card is the `near_unanimity` rule alone,
   since that rule already requires turnout of 90%.
+- **8 Nov 2026, the size budget: English dropped from the build, indentation stripped.** The station page redesign
+  took the places' pages from 441 to 674 MB and the site to 962 MB (Cyrillic 332, English 291, Latin 286, API 52).
+  Measured options: without English and Cyrillic the site is ~340 MB; stripping the templates' indentation saves
+  5.5%. Marko chose: drop English for now, keep Cyrillic, strip the indentation. `i18n.BUILT` lists what is built;
+  the English strings, templates and tests of the strings stay. `site.compact` removes indentation only (a line
+  break stays a line break), never the space between tags on one line, so inline elements don't run together.
+  Expected: ~650 MB.
