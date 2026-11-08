@@ -474,4 +474,17 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   municipality or station in the search should land on the page just built, with the map. A municipality in the
   search, in the municipalities index and in a station page's crumbs now opens `r/<newest>/m/<code>.html`; the page
   across elections (`m/<code>.html`) stays one link away, as the station page keeps its earlier elections folded.
-  Merging the two municipality pages into one, as the station page is, is the fuller answer and is left open.
+  Merged the same evening (next entry).
+- **8 Nov 2026, one page per municipality and per place.** Marko: the previous designs go out of use; a municipality
+  or a place found by the search shows the new page. `m/<code>.html` is now the coordinator's page for the newest
+  election with the municipality's other elections at the end (narrative, trends, the table of elections and the
+  places across elections, folded), and `r/<id>/m/<code>.html` is the same page for that election (the history only
+  on the newest); `municipality_history.html` is gone. Both come from `Site.municipality_context` (per municipality)
+  over `Site.round_shared` (per election and language, cached), so the two addresses can't drift apart. Under the
+  title, a table of contents and a strip of the municipality's elections; the station page got the same strip, each
+  election leading to its block (a link to a folded block opens it, `site.js`). "My list by station" was redrawn:
+  bars of the list's share from zero, strongest first, a line at the municipality's share, six strongest and six
+  weakest shown — Marko found the symmetric deviation chart unclear at first sight. The header has six sections
+  again: "Places to watch" (`repeat.html`, until now "Station history"; the name says what the list is for without
+  calling a place guilty, which "problematic places" would) is back between coordinators and analyses, the guide
+  shows as "Vodič", and short names take over below 1150 px.

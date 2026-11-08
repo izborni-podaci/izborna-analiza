@@ -59,12 +59,17 @@
 {% endmacro %}
 
 {% block main %}
-{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(s.municipality), link('r/' ~ rows[0].rid ~ '/m/' ~ s.municipality_code ~ '.html')), (t('station_no') ~ ' ' ~ s.number, none)]) }}
+{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(s.municipality), link('m/' ~ s.municipality_code ~ '.html')), (t('station_no') ~ ' ' ~ s.number, none)]) }}
 <p class="kicker">{{ name(s.municipality) }} · {{ t('st_kicker') }} · {{ t('station_history') }}</p>
 <h1 class="station-title">{{ t('station_no') }} {{ s.number }}{% if s.name %} · {{ name(s.name) }}{% endif %}</h1>
 {% if address %}<p class="muted">{{ t('address') }}: {{ name(address) }}</p>{% endif %}
 <p class="muted">{{ t('st_intro', n=i(rows|length), reg=i(s.registered)) }}</p>
 <p class="tools small"><a href="{{ link('r/' ~ rows[0].rid ~ '/m/' ~ s.municipality_code ~ '.html') }}">{{ t('st_mun_link', mun=name(s.municipality)) }}</a> · <button type="button" class="link-button" data-print hidden>{{ t('print') }}</button></p>
+{% if rows|length > 1 %}
+<nav class="el-strip" aria-label="{{ t('st_strip_label') }}">
+  {% for e in rows %}<a href="#e-{{ e.rid }}"{% if loop.first %} aria-current="page"{% endif %}>{{ e.short }}{% if loop.first %}<small>{{ e.date }} · {{ t('st_latest_note') }}</small>{% endif %}</a>{% endfor %}
+</nav>
+{% endif %}
 
 {% set latest = rows[0] %}
 <section class="el el-latest" id="e-{{ latest.rid }}">

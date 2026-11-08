@@ -22,8 +22,9 @@
       <a href="{{ link('index.html') }}"{% if page == 'index.html' %} aria-current="page"{% endif %}>{{ t('nav_home') }}</a>
       <a href="{{ link('elections.html') }}"{% if page == 'elections.html' or (page.startswith('r/') and '/m/' not in page) %} aria-current="page"{% endif %}>{{ t('nav_elections') }}</a>
       <a href="{{ link('municipalities.html') }}" data-short="{{ t('nav_coord_short') }}"{% if page == 'municipalities.html' or page.startswith('m/') or '/m/' in page %} aria-current="page"{% endif %}>{{ t('nav_coord') }}</a>
+      <a href="{{ link('repeat.html') }}" data-short="{{ t('nav_repeat_short') }}"{% if page == 'repeat.html' %} aria-current="page"{% endif %}>{{ t('nav_repeat') }}</a>
       <a href="{{ link('explore.html') }}" data-short="{{ t('nav_analyses_short') }}"{% if page == 'explore.html' %} aria-current="page"{% endif %}>{{ t('nav_analyses') }}</a>
-      <a href="{{ link('guide.html') }}" data-short="{{ t('nav_guide_short') }}"{% if page == 'guide.html' %} aria-current="page"{% endif %}>{{ t('nav_guide') }}</a>
+      <a href="{{ link('guide.html') }}" title="{{ t('nav_guide') }}"{% if page == 'guide.html' %} aria-current="page"{% endif %}>{{ t('nav_guide_short') }}</a>
     </nav>
     <div class="top-tools">
       <a class="icon-btn" href="{{ link('index.html') }}#pretraga" aria-label="{{ t('search_label') }}" title="{{ t('search_label') }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></a>

@@ -66,20 +66,20 @@ def test_site(site):
     assert "Gde su tri najjače liste najjače, a gde najslabije" in home
     assert 'href="explore.html#v=map&amp;r=680072&amp;x=share&amp;lx=' in home or 'href="explore.html#v=map&r=680072&x=share&lx=' in home
     # the guide's link reads its whole name; phones show the short one from the attribute, not a second text
-    assert '<a href="guide.html" data-short="Vodič">Vodič za kontrolore i posmatrače</a>' in home
+    assert '<a href="guide.html" title="Vodič za kontrolore i posmatrače">Vodič</a>' in home
     nav = re.search(r'<nav class="main-nav".*?</nav>', home, re.S).group(0)
-    assert [a for a in re.findall(r">([^<]+)</a>", nav)] == ["Početna", "Izbori", "Za kontrolore i koordinatore",
-                                                               "Analize i podaci", "Vodič za kontrolore i posmatrače"]
+    assert [a for a in re.findall(r">([^<]+)</a>", nav)] == ["Početna", "Izbori", "Za kontrolore i koordinatore", "Mesta za praćenje",
+                                                               "Analize i podaci", "Vodič"]
     for target in ('href="municipalities.html"', 'href="about.html#podaci"', 'href="elections.html"',
                    'href="repeat.html"', 'href="about.html"'):
         assert target in home, target
     assert 'id="podaci"' in (out / "about.html").read_text(encoding="utf-8")
     assert 'value="g-paper"' in (out / "r/680072/check.html").read_text(encoding="utf-8")  # the group's link lands
     # every municipality, in Serbian alphabetical order: Latin (lj after l, ć after c) and Cyrillic
-    names = re.findall(r'<td><a href="r/\d+/m/\d+\.html">([^<]+)</a>', (out / "municipalities.html").read_text(encoding="utf-8"))
+    names = re.findall(r'<td><a href="m/\d+\.html">([^<]+)</a>', (out / "municipalities.html").read_text(encoding="utf-8"))
     assert len(names) > 150 and names.index("Lučani") < names.index("Ljig")
     assert names.index("Crna Trava") < names.index("Ćićevac")
-    cyr = re.findall(r'<td><a href="\.\./cyr/r/\d+/m/\d+\.html">([^<]+)</a>',
+    cyr = re.findall(r'<td><a href="\.\./cyr/m/\d+\.html">([^<]+)</a>',
                      (out / "cyr/municipalities.html").read_text(encoding="utf-8"))
     assert cyr.index("Тутин") < cyr.index("Ћићевац") < cyr.index("Уб")
 
@@ -421,8 +421,8 @@ def test_site_station_pages_and_breadcrumbs(site):
 
 
 def test_search_leads_to_pages_across_elections(site):
-    """A municipality found by the search opens its page in its newest election (the one with the map), which links
-    to its page across elections; a polling place opens its page across all elections, flagged or not."""
+    """Every search result opens one page: a municipality's (its newest election in full, the others at the end) or a
+    polling place's (newest first), flagged or not."""
     for prefix in ("", "cyr/"):
         data = json.loads((site / prefix / "search.json").read_text(encoding="utf-8"))
         assert all(len(m) == 4 and m[2] >= 1 for m in data["m"])
@@ -514,8 +514,10 @@ def test_municipality_page_for_coordinators(site, archive):
     first = counted[0]
     share = (first.votes[lead] or 0) / first.valid
     assert f'<td class="num" data-cell="share">{fmt_pct(share, "lat")}</td>' in page
-    devs = re.findall(r'<span class="val">([+−][\d,]+)</span>', page)
-    assert len(devs) == len([s for s in counted if s.valid]) and devs[0].lstrip("+−") >= devs[1].lstrip("+−")
+    # my list by station: one bar per counted station, the list's share from zero, strongest first, the difference
+    # from the municipality's average beside it
+    devs = re.findall(r'<span class="val">([\d,]+%) <small class="muted">([+−][\d,]+)</small></span>', page)
+    assert len(devs) == len([s for s in counted if s.valid]) and devs[0][0] >= devs[-1][0] and devs[0][1][0] == "+"
     data = json.loads(page[page.index('<script type="application/json" id="mun-data">') + 46:].split("</script>")[0])
     assert data["default"] == lead and len(data["stations"]) == len(sts) and data["stations"][0]["v"] == list(first.votes)
     assert '<script src="../../../static/mun.js" defer></script>' in page

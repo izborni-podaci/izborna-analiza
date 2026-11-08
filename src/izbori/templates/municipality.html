@@ -1,11 +1,27 @@
 {% extends "base.html" %}
 {% import "_macros.html" as mx with context %}
-{% block title %}{{ name(m.name) }} · {{ rtitle }}{% endblock %}
+{% block title %}{{ name(m.name) }}{% if not canonical %} · {{ rtitle }}{% endif %}{% endblock %}
 {% block main %}
+{# One page per municipality (8 Nov 2026): at m/<code>.html (canonical) the newest election in full with the other
+   elections at the end; at r/<id>/m/<code>.html the same page for that election, the history only when it is the
+   newest. The strip under the title moves between them. #}
+{% if canonical %}
+{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(m.name), none)]) }}
+<p class="kicker">{% if m.kind == 'domestic' %}{{ name(m.district) }} · {% endif %}{{ t('mun_kicker') }}</p>
+{% else %}
 {{ mx.round_nav('') }}
 <p class="kicker">{{ rtitle }}{% if m.kind == 'domestic' %} · {{ name(m.district) }}{% endif %}</p>
+{% endif %}
 <h1>{{ name(m.name) }}</h1>
-<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }} · {{ t('registered') }}: {{ i(m.registered) }} · <a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ t('mun_across_link') }}</a></p>
+<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }} · {{ t('registered') }}: {{ i(m.registered) }}{% if history %} · {{ t('mun_in_elections', n=i(history.n)) if history.n > 1 else t('mun_in_one_election') }} · <a href="{{ root }}feed/{{ m.code }}.{{ 'en' if loc == 'en' else 'sr' }}.xml" type="application/atom+xml">{{ t('mun_feed_short') }}</a> · <a href="{{ root }}api/m/{{ m.code }}.json" type="application/json">{{ t('json_link') }}</a>{% else %} · <a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ t('mun_across_link') }}</a>{% endif %}</p>
+<nav class="toc" aria-label="{{ t('on_this_page') }}">
+  <a href="#compare">{{ t('co_compare_heading') }}</a>{% if weak %} · <a href="#weak">{{ t('co_weak_heading') }}</a>{% endif %}{% if devs %} · <a href="#my-list-chart">{{ t('co_dev_heading') }}</a>{% endif %} · <a href="#result">{{ t('mun_result_heading') }}</a>{% if villages|length > 1 %} · <a href="#naselja">{{ t('vi_heading') }}</a>{% endif %} · <a href="#stations">{{ t('stations_heading') }}</a>{% if history %} · <a href="#kroz-izbore">{{ t('mun_across_heading') }}</a>{% endif %}
+</nav>
+{% if strip|length > 1 %}
+<nav class="el-strip" aria-label="{{ t('mun_strip_label') }}">
+  {% for e in strip %}<a href="{{ link(e.href) }}"{% if e.current %} aria-current="page"{% endif %}>{{ e.short }}{% if e.current %}<small>{{ e.date }}{% if loop.first %} · {{ t('mun_strip_latest') }}{% endif %}</small>{% endif %}</a>{% endfor %}
+</nav>
+{% endif %}
 {{ mx.data_note() }}
 
 {# The page for a coordinator (8 Nov 2026, drawn on the canvas and approved): their list, how the municipality
@@ -23,7 +39,7 @@
 
 {% set sim = compare.similar %}
 {% set co = compare.country %}
-<section class="co-compare">
+<section class="co-compare" id="compare">
   <div class="sec-head"><h2>{{ t('co_compare_heading') }}</h2><span class="muted">{% if sim %}{{ t('co_compare_note', n=i(sim.n), kind=(t('co_kind_urban') if sim.urban else t('co_kind_rural') if sim.urban is not none else '')) }}{% else %}{{ t('co_compare_note_short') }}{% endif %}</span></div>
   <div class="tiles co-tiles">
     <div class="tile"><p class="tile-label">{{ t('turnout') }}</p><p class="tile-value">{{ pct(m.turnout, 1) }}</p><p class="tile-sub">{% if co.turnout is not none %}{{ t('co_country', v=pct(co.turnout, 1)) }}{% endif %}{% if sim and sim.turnout is not none %} · {{ t('co_similar', v=pct(sim.turnout, 1)) }}{% endif %}{% if compare.rank_turnout %} · {{ t('co_rank', r=compare.rank_turnout[0], n=i(compare.rank_turnout[1])) }}{% endif %}</p></div>
@@ -77,26 +93,32 @@
 {% endif %}
 
 {% if devs %}
+{# My list by station (redrawn 8 Nov 2026, Marko: the deviation chart wasn't clear at first sight): one bar per
+   station, the list's share from zero, strongest first, a line at the municipality's share; the six strongest and
+   the six weakest shown, the middle folded. mun.js redraws it for the list the reader picks. #}
 {% set avg = mvotes[index] / (mvotes|sum) if mvotes|sum else 0 %}
-{% set span = (devs[0].dev|abs) if devs[0].dev else 0.01 %}
+{% set drows = devs|sort(attribute='share', reverse=True) %}
+{% set top = drows[0].share if drows[0].share else 0.01 %}
+{% set fold = drows|length > 12 %}
 <section class="co-dev" id="my-list-chart" data-mine="chart">
   <div class="sec-head"><h2>{{ t('co_dev_heading') }}</h2><span class="muted" data-dev-note>{{ t('co_dev_note', avg=pct(avg, 1)) }}</span></div>
-  <div class="dev" data-dev-rows data-first="{{ 12 }}" data-rest="{{ t('co_dev_rest', n='{n}') }}">
-    {% for d in devs %}
+  <div class="dev" data-dev-rows style="--avg: {{ '%.1f'|format(100 * avg / top) }}%">
+    {% for d in drows %}
     {% set c = ctrl_of(ctrl.get(d.s.key), number) %}
-    <div class="dv{% if loop.index > 12 %} dv-rest{% endif %}">
+    {% set w = '%.1f'|format(100 * d.share / top) %}
+    <div class="dv{% if fold and loop.index > 6 and loop.index <= drows|length - 6 %} dv-rest{% endif %}">
       <a class="lab" href="{{ link(st_path(rnd.id, d.s.key)) }}"><b>{{ t('station_no') }} {{ d.s.number }}</b> {{ name(settlement_by_key[d.s.key] or d.s.name) }}</a>
-      <span class="ax">{% if d.dev >= 0 %}<i style="left: 50%; width: {{ '%.1f'|format(50 * d.dev / span) }}%"></i>{% else %}<i class="neg" style="right: 50%; width: {{ '%.1f'|format(50 * -d.dev / span) }}%"></i>{% endif %}{% if c == 'none' %}<span class="nc" title="{{ t('co_legend_nc') }}"></span>{% endif %}</span>
-      <span class="val">{{ ('+' if d.dev >= 0 else '−') ~ num(100 * (d.dev|abs), 1) }}</span>
+      <span class="ax"><i{% if d.share < avg %} class="neg"{% endif %} style="width: {{ w }}%"></i>{% if c == 'none' %}<span class="nc" style="left: calc({{ w }}% + 4px)" title="{{ t('co_legend_nc') }}"></span>{% endif %}</span>
+      <span class="val">{{ pct(d.share, 1) }} <small class="muted">{{ ('+' if d.share >= avg else '−') ~ num(100 * ((d.share - avg)|abs), 1) }}</small></span>
     </div>
+    {% if fold and loop.index == 6 %}<button type="button" class="link-button dev-more" data-dev-more>{{ t('co_dev_rest', n=i(drows|length - 12)) }}</button>{% endif %}
     {% endfor %}
-    {% if devs|length > 12 %}<button type="button" class="link-button dev-more" data-dev-more>{{ t('co_dev_rest', n=i(devs|length - 12)) }}</button>{% endif %}
   </div>
-  <p class="legend small muted"><span><i class="sw"></i>{{ t('co_legend_above') }}</span><span><i class="sw neg"></i>{{ t('co_legend_below') }}</span>{% if ctrl_known %}<span><span class="nc"></span>{{ t('co_legend_nc') }}</span>{% endif %}<span>{{ t('co_legend_note') }}</span></p>
+  <p class="legend small muted"><span><i class="sw"></i>{{ t('co_legend_above') }}</span><span><i class="sw neg"></i>{{ t('co_legend_below') }}</span><span><i class="sw line"></i>{{ t('co_legend_avg') }}</span>{% if ctrl_known %}<span><span class="nc"></span>{{ t('co_legend_nc') }}</span>{% endif %}</p>
 </section>
 {% endif %}
 
-<h2>{{ t('mun_result_heading') }}</h2>
+<h2 id="result">{{ t('mun_result_heading') }}</h2>
 <p class="mun-line">{{ t('mun_turnout_line', voted=i(m.voted), registered=i(m.registered), turnout=pct(m.turnout, 1), invalid=pct(m.invalid, 1)) }}</p>
 <p class="rule">{{ t('mun_result_note') }}</p>
 <ul class="vote-list">
@@ -232,5 +254,67 @@
 {% endif %}
 {% if m.kind == 'domestic' %}<p class="muted small"><a href="{{ link(base + 'commissions.html') }}#c-{{ m.code }}">{{ t('cm_row_link') }}</a></p>{% endif %}
 {% if index is not none %}<script type="application/json" id="mun-data">{{ mun_data|safe }}</script>{% endif %}
+
+{% if history %}
+{# The municipality across elections, once a page of its own (m/<code>.html until 8 Nov 2026): the narrative, the
+   trends against the country, one row per election, and its polling places, folded. #}
+<section class="across" id="kroz-izbore">
+  <div class="sec-head"><h2>{{ t('mun_across_heading') }}</h2><span class="muted">{{ t('mun_across_note') }}</span></div>
+  {{ mx.analysis(history.analysis) }}
+  {{ mx.trends(history.charts, t('trend_here_mun'), t('trend_ref_all')) }}
+  <details class="el-fold hist-fold" open>
+    <summary><span class="el-name">{{ t('mun_elections_fold') }}<small class="muted">{{ t('mun_across_lede') }}</small></span></summary>
+    <div class="el-body table-wrap history-wrap">
+    <table class="history" role="table">
+      <thead role="rowgroup"><tr role="row">
+        <th role="columnheader">{{ t('home_col_election') }}</th><th role="columnheader" class="num">{{ t('stations') }}</th>
+        <th role="columnheader" class="num">{{ t('registered') }}</th><th role="columnheader" class="num">{{ t('voted') }}</th><th role="columnheader" class="num">{{ t('turnout') }}</th>
+        <th role="columnheader" class="num">{{ t('invalid') }}</th><th role="columnheader">{{ t('top_three') }}</th><th role="columnheader" class="num">{{ t('flagged') }}</th>
+      </tr></thead>
+      <tbody role="rowgroup">
+      {% for e in history.rows %}
+        {% set hm = e.m %}
+        <tr role="row">
+          {{ mx.history_election(e, link('r/' ~ e.rid ~ '/m/' ~ m.code ~ '.html')) }}
+          <td role="cell" class="num l-stations">{{ i(hm.counted) }}{% if hm.counted != hm.stations %} / {{ i(hm.stations) }}{% endif %}</td>
+          <td role="cell" class="num l-registered">{{ i(hm.registered) }}</td>
+          <td role="cell" class="num l-voted">{{ i(hm.voted) }}</td>
+          <td role="cell" class="num l-turnout">{{ pct(hm.turnout, 1) }}</td>
+          <td role="cell" class="num l-invalid">{{ pct(hm.invalid, 1) }}</td>
+          {{ mx.history_top(e.top) }}
+          <td role="cell" class="num l-flagged">{% if hm.flagged %}<a href="{{ link('r/' ~ e.rid ~ '/check.html') }}#m-{{ m.code }}">{{ i(hm.flagged) }}</a>{% else %}0{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </details>
+  <details class="el-fold hist-fold">
+    <summary><span class="el-name">{{ t('mun_places_heading') }}<small class="muted">{{ t('mun_places_note', n=i(history.places|length)) }}</small></span></summary>
+    <div class="el-body">
+    <p class="rule">{{ t('place_rule') }}</p>
+    <label class="filter">{{ t('filter_search') }} <input type="search" data-filter="#places" autocomplete="off"></label>
+    <div class="table-wrap">
+    <table class="compact places" id="places">
+      <thead><tr>
+        <th class="num">{{ t('station_no') }}</th><th>{{ t('station') }}</th>
+        <th class="num">{{ t('col_elections') }}</th><th class="num">{{ t('col_flagged') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for p in history.places %}
+        <tr{% if p.k %} class="flagged"{% endif %}>
+          <td class="num">{{ p.number }}</td>
+          <td><a href="{{ link('s/' ~ p.id ~ '.html') }}">{{ name(p.name) or t('station_details') }}</a>{% if p.former %}<div class="small muted">{{ t('place_former', numbers=p.former|join(', ')) }}</div>{% endif %}{% if p.last %}<div class="small muted">{{ t('place_last', title=p.last) }}</div>{% endif %}</td>
+          <td class="num">{{ p.n }}</td>
+          <td class="num">{{ p.k }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    </div>
+  </details>
+</section>
+{% endif %}
 {% endblock %}
 {% block scripts %}{% if index is not none %}<script src="{{ root }}static/mun.js" defer></script>{% endif %}{% endblock %}

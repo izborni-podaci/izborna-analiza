@@ -63,7 +63,7 @@
             // [folded label, folded label with former numbers, [label, url, sub-line]]
             const mun = j.m.map((m) => {
               const f = fold(m[0]);
-              return [f, f, [m[0], `r/${m[3]}/m/${m[1]}.html`, d.munSub.replace('{n}', m[2])]];
+              return [f, f, [m[0], `m/${m[1]}.html`, d.munSub.replace('{n}', m[2])]];
             });
             const st = j.s.map((s) => {
               const m = j.m[s[0]];
@@ -287,6 +287,15 @@
       }
     });
   });
+
+  // a link to a folded election (the strip under a station's title, or a link from elsewhere) opens it
+  const openFold = () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const el = id && document.getElementById(id);
+    if (el && el.tagName === 'DETAILS') el.open = true;
+  };
+  openFold();
+  window.addEventListener('hashchange', openFold);
 
   // The whole table of votes as a CSV file, made here from the table on the page: plain numbers, the lists' names
   // in the header, and each station's name from the list of stations.

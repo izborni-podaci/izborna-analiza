@@ -57,26 +57,24 @@
     const counted = data.stations.filter((st) => st.valid);
     const totalVotes = counted.reduce((a, st) => a + (st.v[idx] || 0), 0);
     const totalValid = counted.reduce((a, st) => a + st.valid, 0);
-    const rows = counted.map((st) => {
-      const v = st.v[idx] || 0;
-      const restValid = totalValid - st.valid;
-      const rest = restValid ? (totalVotes - v) / restValid : null;
-      const here = v / st.valid;
-      return { st, dev: rest === null ? 0 : here - rest };
-    }).sort((a, b) => Math.abs(b.dev) - Math.abs(a.dev));
-    const span = rows.length && rows[0].dev ? Math.abs(rows[0].dev) : 0.01;
-    const first = 12;
+    const avg = totalValid ? totalVotes / totalValid : 0;
+    // one bar per station, the list's share from zero, strongest first; the line is the municipality's share
+    const rows = counted.map((st) => ({ st, share: (st.v[idx] || 0) / st.valid })).sort((a, b) => b.share - a.share);
+    const top = rows.length && rows[0].share ? rows[0].share : 0.01;
+    const fold = rows.length > 12;
     const html = rows.map((r, k) => {
-      const w = (50 * Math.abs(r.dev) / span).toFixed(1);
-      const bar = r.dev >= 0 ? '<i style="left: 50%; width: ' + w + '%"></i>' : '<i class="neg" style="right: 50%; width: ' + w + '%"></i>';
-      const nc = ctrlOf(r.st, idx) === 'n' ? '<span class="nc" title="' + esc(L.legendNc) + '"></span>' : '';
-      return '<div class="dv' + (k >= first ? ' dv-rest' : '') + '"><a class="lab" href="' + esc(r.st.href) + '"><b>' + esc(L.stationNo) + ' ' + esc(r.st.n) + '</b> ' + esc(r.st.set || r.st.name || '') + '</a><span class="ax">' + bar + nc + '</span><span class="val">' + esc(signed(100 * r.dev, 1)) + '</span></div>';
+      const w = (100 * r.share / top).toFixed(1);
+      const bar = '<i' + (r.share < avg ? ' class="neg"' : '') + ' style="width: ' + w + '%"></i>';
+      const nc = ctrlOf(r.st, idx) === 'n' ? '<span class="nc" style="left: calc(' + w + '% + 4px)" title="' + esc(L.legendNc) + '"></span>' : '';
+      const hidden = fold && k >= 6 && k < rows.length - 6;
+      const more = fold && k === 5 ? '<button type="button" class="link-button dev-more" data-dev-more>' + esc(fill(L.rest, { n: num(rows.length - 12, 0) })) + '</button>' : '';
+      return '<div class="dv' + (hidden ? ' dv-rest' : '') + '"><a class="lab" href="' + esc(r.st.href) + '"><b>' + esc(L.stationNo) + ' ' + esc(r.st.n) + '</b> ' + esc(r.st.set || r.st.name || '') + '</a><span class="ax">' + bar + nc + '</span><span class="val">' + esc(pct(r.share)) + ' <small class="muted">' + esc(signed(100 * (r.share - avg), 1)) + '</small></span></div>' + more;
     }).join('');
     const wrap = box.querySelector('[data-dev-rows]');
     const open = wrap.classList.contains('open');
-    wrap.innerHTML = html + (rows.length > first ? '<button type="button" class="link-button dev-more" data-dev-more>' + esc(fill(L.rest, { n: num(rows.length - first, 0) })) + '</button>' : '');
+    wrap.innerHTML = html;
+    wrap.style.setProperty('--avg', (100 * avg / top).toFixed(1) + '%');
     wrap.classList.toggle('open', open);
-    const avg = totalValid ? totalVotes / totalValid : 0;
     const note = box.querySelector('[data-dev-note]');
     if (note) note.textContent = fill(L.devNote, { avg: pct(avg) });
   }

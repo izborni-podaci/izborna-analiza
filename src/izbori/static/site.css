@@ -87,6 +87,10 @@ header.top { background: var(--brand); color: var(--on-brand); border-bottom: 3p
 .main-nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--brand-2); text-decoration: none; font-size: 0.95rem; }
 .main-nav a[aria-current] { color: var(--on-brand); font-weight: 600; text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 7px; }
 .main-nav a:hover { color: var(--on-brand); }
+@media (max-width: 1150px) {  /* six sections: the long names give way to short ones before the row wraps */
+  .main-nav a[data-short] { font-size: 0; }
+  .main-nav a[data-short]::after { content: attr(data-short); font-size: 0.95rem; }
+}
 .top-tools { display: flex; align-items: center; gap: 4px; }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: var(--on-brand); }
 .icon-btn:hover { color: var(--gold); }
@@ -446,6 +450,15 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .el-fold .el-body { padding: 4px 16px 16px; border-top: 1px solid var(--grid); }
 .across .analysis { margin-top: 30px; }
 
+/* the municipality's page: the strip of its elections under the title, its history folded at the end */
+.el-strip { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin: 14px 0 0; }
+.el-strip a { padding: 8px 12px; text-decoration: none; color: var(--ink-2); border: 1px solid transparent; border-bottom: 0; margin-bottom: -1px; font-size: 0.95rem; }
+.el-strip a:hover { background: var(--surface); }
+.el-strip a[aria-current] { color: var(--ink); font-weight: 600; border-color: var(--border); background: var(--page); border-bottom: 2px solid var(--page); }
+.el-strip a small { display: block; font-weight: 400; font-size: 0.75rem; color: var(--ink-2); }
+.hist-fold summary { grid-template-columns: minmax(0, 1fr) auto; }
+.hist-fold .el-body { padding-top: 10px; }
+
 /* the municipality's page for a coordinator: my list, how it compares, the weak spots, my list by station */
 .mine { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; background: var(--surface); padding: 10px 14px; margin: 16px 0 0; font-size: 0.95rem; }
 .mine select { font: inherit; padding: 8px 10px; border: 1px solid var(--brand); background: var(--page); color: var(--ink); min-width: 240px; max-width: 100%; }
@@ -467,22 +480,23 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .wk-more { margin-top: auto; padding-top: 6px; font-size: 0.85rem; font-weight: 600; }
 .wk-unknown .wk-n { display: none; }
 .dev { margin-top: 10px; }
-.dv { display: grid; grid-template-columns: 220px minmax(0, 1fr) 64px; gap: 0 12px; align-items: center; font-size: 0.85rem; padding: 3px 0; border-bottom: 1px solid var(--surface); }
+.dv { display: grid; grid-template-columns: 220px minmax(0, 1fr) 96px; gap: 0 12px; align-items: center; font-size: 0.85rem; padding: 3px 0; border-bottom: 1px solid var(--surface); }
 .dv .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
 .dv .lab:hover { text-decoration: underline; }
 .dv .ax { position: relative; height: 16px; }
-.dv .ax::before { content: ""; position: absolute; left: 50%; top: -4px; bottom: -4px; border-left: 1px solid var(--ink); }
-.dv .ax i { position: absolute; top: 3px; height: 10px; background: var(--accent); }
-.dv .ax i.neg { background: color-mix(in srgb, var(--accent) 50%, var(--page)); }
+.dv .ax::before { content: ""; position: absolute; left: var(--avg, 50%); top: -4px; bottom: -4px; border-left: 2px solid var(--ink); z-index: 1; }
+.dv .ax i { position: absolute; left: 0; top: 3px; height: 10px; background: var(--accent); }
+.dv .ax i.neg { background: color-mix(in srgb, var(--accent) 45%, var(--page)); }
 .dv .ax .nc, .legend .nc { position: absolute; top: 1px; width: 12px; height: 12px; border: 2px solid var(--critical); border-radius: 50%; background: var(--page); box-sizing: border-box; }
-.dv .ax i:not(.neg) + .nc { left: calc(50% + var(--w, 0%) + 3px); }
 .dv .val { text-align: right; font-variant-numeric: tabular-nums; }
+.dv .val small { font-size: 0.8em; }
 .dv-rest { display: none; }
 .dev.open .dv-rest { display: grid; }
 .dev-more { margin-top: 6px; font-size: 0.85rem; }
 .legend { display: flex; gap: 18px; flex-wrap: wrap; margin: 8px 0 0; }
 .legend .sw { display: inline-block; width: 14px; height: 10px; background: var(--accent); vertical-align: middle; margin-right: 5px; }
-.legend .sw.neg { background: color-mix(in srgb, var(--accent) 50%, var(--page)); }
+.legend .sw.neg { background: color-mix(in srgb, var(--accent) 45%, var(--page)); }
+.legend .sw.line { width: 2px; height: 14px; background: var(--ink); }
 .legend .nc { position: static; display: inline-block; vertical-align: middle; margin-right: 5px; }
 td.ctrl-none { color: var(--critical); font-weight: 700; }
 td.ctrl-yes { color: var(--teal-ink); }
@@ -530,8 +544,6 @@ table.villages td b { font-weight: 600; }
   .key { columns: 1; }
   .guide-toc ol { columns: 1; }
   /* the guide's long name doesn't fit beside the others: the link keeps it, the screen shows the short one */
-  .main-nav a[data-short] { font-size: 0; }
-  .main-nav a[data-short]::after { content: attr(data-short); font-size: 0.95rem; }
   /* the guide's tables become one block per row, each cell under its column's name */
   .guide table.stack thead { display: none; }
   .guide table.stack tr { display: block; padding: 10px 12px; border-bottom: 1px solid var(--grid); }
@@ -552,7 +564,9 @@ table.villages td b { font-weight: 600; }
   .co-tiles .tile { padding: 8px 10px; }
   .co-tiles .tile-value { font-size: 1.25rem; }
   .weak { grid-template-columns: minmax(0, 1fr); }
-  .dv { grid-template-columns: 120px minmax(0, 1fr) 52px; gap: 0 8px; }
+  .dv { grid-template-columns: 120px minmax(0, 1fr) 80px; gap: 0 8px; }
+  .el-strip { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+  .el-strip a { white-space: nowrap; }
   .mine select { min-width: 0; width: 100%; }
   .el-side { order: -1; }
   .res-row { grid-template-columns: minmax(0, 1fr) 56px 56px; }

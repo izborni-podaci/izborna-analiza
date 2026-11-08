@@ -461,47 +461,63 @@ class Site:
             e.same_leader = here == there if there is not None else None
         return e
 
-    def municipality_history_pages(self, loc: str, cols: dict) -> None:
-        """One page per municipality: one row per election it took part in, newest first, each linking to the
-        municipality in that election; then its polling places, each linking to its page across elections."""
+    def history_inputs(self, loc: str, code: str) -> str:
+        """What a municipality's part across elections is made from: every election it took part in, its rows and
+        places there, and the titles of the elections it missed."""
+        rids = self.mun_rounds[code]
         newest_first = list(reversed(self.rids))
-        by_code: dict[str, list[Place]] = defaultdict(list)
-        for p in self.places.places:
-            by_code[p.code].append(p)
+        places = self.places.in_municipality(code)
+        return repr([code, rids, [(rid, self.round_inputs[rid], self.shorts[loc][rid], self.mun_rows[rid][code],
+                                   self.mun_votes[rid][code], self.analyses[rid].totals, len(self.flagged[rid]),
+                                   self.peers[rid]["mun"]["digest"], self.docs_known[rid],
+                                   self.observed[rid][code]) for rid in rids],
+                     [(p.id, p.rounds, p.newest.number, p.newest.name, p.former_numbers, self.flagged_in(p))
+                      for p in places], [self.shorts[loc][r] for r in newest_first if r not in rids]])
+
+    def history_context(self, loc: str, code: str, rid: str) -> dict:
+        """A municipality's other elections, for its page in election `rid`: the strip of its elections (newest
+        first, the current one marked) and, on its newest election only, the part across elections: one row per
+        election, the narrative, the trends and its polling places (what used to be a page of its own)."""
+        rids = self.mun_rounds[code]
+        newest_first = list(reversed(self.rids))
+        strip = [{"rid": r, "short": self.shorts[loc][r], "date": fmt_date(self.dates[r], loc), "current": r == rid,
+                  "href": f"r/{r}/m/{code}.html"} for r in rids]
+        if rid != rids[0]:
+            return {"strip": strip, "history": None}
+        rows = [{"rid": r, "short": self.shorts[loc][r], "date": fmt_date(self.dates[r], loc),
+                 "m": self.mun_rows[r][code], "top": self.top_three(r, self.mun_votes[r][code])} for r in rids]
+        places = []
+        mine = self.places.in_municipality(code)
+        for p in mine:
+            s = p.newest
+            places.append({"id": p.id, "number": s.number, "name": s.name, "former": p.former_numbers,
+                           "n": len(p.rounds), "k": self.flagged_in(p),
+                           "last": self.shorts[loc][p.rounds[0]] if p.rounds[0] != rids[0] else "",
+                           "order": (p.rounds[0] != rids[0], int(s.number) if s.number.isdigit() else 10 ** 9,
+                                     s.number, newest_first.index(p.rounds[0]))})
+        places.sort(key=lambda x: x["order"])
+        repeat = (sum(1 for x in places if x["k"] >= 1), sum(1 for x in places if x["k"] >= 2))
+        network = (sum(1 for p in mine if p.rounds == [rids[0]]),
+                   sum(1 for p in mine if rids[0] not in p.stations),
+                   sum(1 for p in mine if rids[0] in p.stations and p.former_numbers))
+        elections = [self.municipality_election(r, code, self.shorts[loc][r]) for r in rids]
+        analysis = narrative.municipality(elections, [self.shorts[loc][r] for r in newest_first if r not in rids],
+                                          repeat, network, loc)
+        return {"strip": strip, "history": {"rows": rows, "places": places, "analysis": analysis,
+                                            "charts": self.trends(rids, elections, "all", loc), "n": len(rids)}}
+
+    def municipality_pages(self, loc: str) -> None:
+        """One page per municipality at m/<code>.html, the address the search and the index open: the coordinator's
+        page in its newest election, with its other elections at the end (8 Nov 2026; before that this address held
+        a page across elections alone, and the coordinator's page was only under r/<id>/m/)."""
         for code, rids in self.mun_rounds.items():
-            inputs = repr([code, rids, [(rid, self.round_inputs[rid], self.shorts[loc][rid], self.mun_rows[rid][code],
-                                         self.mun_votes[rid][code], self.analyses[rid].totals, len(self.flagged[rid]),
-                                         self.peers[rid]["mun"]["digest"], self.docs_known[rid],
-                                         self.observed[rid][code]) for rid in rids],
-                           [(p.id, p.rounds, p.newest.number, p.newest.name, p.former_numbers, self.flagged_in(p))
-                            for p in by_code[code]], [self.shorts[loc][r] for r in newest_first if r not in rids]])
-            if self.keep(loc, f"m/{code}.html", inputs):
+            rid = rids[0]
+            if self.keep(loc, f"m/{code}.html", self.round_key(rid) + self.history_inputs(loc, code)):
                 continue
-            newest = self.mun_rows[rids[0]][code]
-            rows = [{"rid": rid, "short": cols[rid]["short"], "date": fmt_date(self.dates[rid], loc),
-                     "m": self.mun_rows[rid][code], "top": self.top_three(rid, self.mun_votes[rid][code])}
-                    for rid in rids]
-            places = []
-            for p in by_code[code]:
-                s = p.newest
-                places.append({"id": p.id, "number": s.number, "name": s.name, "former": p.former_numbers,
-                               "n": len(p.rounds), "k": self.flagged_in(p),
-                               "last": cols[p.rounds[0]]["short"] if p.rounds[0] != rids[0] else "",
-                               "order": (p.rounds[0] != rids[0], int(s.number) if s.number.isdigit() else 10 ** 9,
-                                         s.number, newest_first.index(p.rounds[0]))})
-            places.sort(key=lambda x: x["order"])
-            mine = by_code[code]
-            repeat = (sum(1 for x in places if x["k"] >= 1), sum(1 for x in places if x["k"] >= 2))
-            network = (sum(1 for p in mine if p.rounds == [rids[0]]),
-                       sum(1 for p in mine if rids[0] not in p.stations),
-                       sum(1 for p in mine if rids[0] in p.stations and p.former_numbers))
-            elections = [self.municipality_election(rid, code, cols[rid]["short"]) for rid in rids]
-            analysis = narrative.municipality(elections, [cols[r]["short"] for r in newest_first if r not in rids],
-                                              repeat, network, loc)
-            self.write(loc, f"m/{code}.html", "municipality_history.html", code=code, mname=newest["name"],
-                       feed_href=f"{'../' * (PREFIX[loc] + 'm/').count('/')}feed/{code}.{'en' if loc == 'en' else 'sr'}.xml",
-                       district=newest["district"] if newest["kind"] == "domestic" else "", rows=rows, places=places,
-                       analysis=analysis, charts=self.trends(rids, elections, "all", loc))
+            a = self.analyses[rid]
+            self.write(loc, f"m/{code}.html", "municipality.html", canonical=True,
+                       **self.municipality_context(a, loc, self.mun_rows[rid][code], f"m/{code}.html"),
+                       **self.history_context(loc, code, rid))
 
     def write_api(self) -> None:
         """The data behind the pages across elections as JSON, for anyone who wants it without parsing HTML:
@@ -639,9 +655,8 @@ class Site:
     def write_search(self, loc: str) -> None:
         """search.json for the search on the home page, kept small. Municipalities: [name, code, elections, newest
         election]. Polling places: [municipality, number, name, page, elections flagged, elections, former numbers],
-        flagged ones first; page is left out ("") when it is the municipality code and number. A municipality leads
-        to its page in its newest election (the coordinator's page, with the map); a place to its page across all
-        elections, which opens on the newest; the page builds the labels and links."""
+        flagged ones first; page is left out ("") when it is the municipality code and number. Both lead to their one
+        page (m/<code>.html, s/<place>.html), which opens on the newest election; the page builds the labels and links."""
         conv = (lambda text: text) if loc == "cyr" else latin
         names = {code: self.mun_rows[rids[0]][code]["name"] for code, rids in self.mun_rounds.items()}
         order = sorted(names, key=lambda code: latin(names[code]))
@@ -801,6 +816,7 @@ class Site:
                                                [(c.number, c.name, c.short) for c in a.round.contestants]))
                              for a in oldest_first}
         self.round_keys: dict[str, str] = {}
+        self.shared_cache: dict = {}  # round_shared(), per election and language
         # rounds whose documents are known: RIK's register was read, or the results file lists observers' records
         self.docs_known = {a.round.id: documents.path(self.archive.dir(a.round.id)).exists()
                            or any(d.kind == "observers" for docs in a.documents.values() for d in docs)
@@ -865,7 +881,7 @@ class Site:
                        st_path=self.st_path)
             cols = {c["id"]: c for c in columns}
             self.place_pages(loc, cols)
-            self.municipality_history_pages(loc, cols)
+            self.municipality_pages(loc)
             for a in rounds:
                 self.round_pages(a, loc)
 
@@ -929,18 +945,141 @@ class Site:
         self.state_path.write_text(json.dumps({"version": self.version, "pages": self.state}, sort_keys=True),
                                    encoding="utf-8")
 
+    def round_shared(self, a: Analysis, loc: str) -> dict:
+        """What every municipality page of one election shares: the stations by municipality, the controllers, the
+        settlements, the lists' colour slots and short labels, the country's figures, the previous election's rows.
+        Computed once per election and language."""
+        rid = a.round.id
+        if (rid, loc) in self.shared_cache:
+            return self.shared_cache[(rid, loc)]
+        municipalities = list(self.mun_rows[rid].values())
+        by_station = self.flagged[rid]
+        ctrl = self.ctrl_of(rid)
+        ctrl_table, ctrl_readable = ctrl_rows(a.round.contestants, ctrl.values())
+        label = self.contestant_label(a, loc)
+        base = f"r/{rid}/"
+        common = {"rebuilt": self.archive.meta(rid).get("source") == "results_app",
+                  "ctrl_readable": ctrl_readable, "a": a, "rnd": a.round, "totals": a.totals, "base": base,
+                  "view": self.round_view(a), "snapshots": a.snapshots, "label": label,
+                  "rtitle": self.round_title(a.round, loc), "rshort": self.short_title(a.round, loc),
+                  "st_path": self.st_path, "ctrl": ctrl, "ctrl_known": bool(ctrl), "ctrl_table": ctrl_table}
+        by_code: dict[str, list] = defaultdict(list)
+        for s in a.round.stations:
+            by_code[s.municipality_code].append(s)
+        settl = self.settlements_of(rid)
+        profiles = coordinator.profiles(self.mun_rows[rid], by_code, settl, self.figures)
+        shapes = geo.settlements_by_municipality(self.archive.root / "geo" / geo.SETTLEMENT_FILE)
+        ranks = {i: k + 1 for k, i in enumerate(sorted(range(len(a.round.contestants)), key=lambda i: -a.totals.votes[i]))}
+        manual = {i: self.list_colours[(rid, c.number)] for i, c in enumerate(a.round.contestants)
+                  if (rid, c.number) in self.list_colours}
+        ranks = maps.slots(ranks, manual)  # from here on: each list's colour slot, the maintainer's where set
+        short = {i: narrative.short_label(self.labels[rid][i]) for i in range(len(a.round.contestants))}
+        if loc == "en":
+            short = {i: latin(v) for i, v in short.items()}
+        domestic = [m for m in municipalities if m["kind"] == "domestic"]
+        country = {"turnout": a.totals.turnout, "invalid": a.totals.invalid_share,
+                   "flagged_share": (sum(m["flagged"] for m in domestic) / sum(m["stations"] for m in domestic))
+                   if domestic else None}
+        prev = a.previous[0] if a.previous else None
+        prev_rows = self.mun_rows.get(prev, {}) if prev else {}
+        both = [c for c in prev_rows if c in self.mun_rows[rid] and self.mun_rows[rid][c]["kind"] == "domestic"]
+        country["registered_change"] = (sum(self.mun_rows[rid][c]["registered"] for c in both)
+                                        / sum(prev_rows[c]["registered"] for c in both) - 1) if both and sum(
+            prev_rows[c]["registered"] for c in both) else None
+        country["prev_year"] = (self.dates.get(prev) or "")[:4] if prev else ""
+        settlement_of = lambda s: (settl.get(s.key) or {}).get("s", "")  # noqa: E731
+        sh = dict(rid=rid, base=base, municipalities=municipalities, by_station=by_station, ctrl=ctrl, common=common,
+                  by_code=by_code, settl=settl, profiles=profiles, shapes=shapes, ranks=ranks, short=short,
+                  country=country, prev_rows=prev_rows, settlement_of=settlement_of)
+        self.shared_cache[(rid, loc)] = sh
+        return sh
+
+    def municipality_context(self, a: Analysis, loc: str, m: dict, page: str) -> dict:
+        """Everything municipality.html needs for one municipality in one election (the coordinator's page), written
+        at `page` (the stations' links in the page's JSON are relative to it)."""
+        sh = self.round_shared(a, loc)
+        rid, base, by_code, settl, ctrl, by_station = sh["rid"], sh["base"], sh["by_code"], sh["settl"], sh["ctrl"], sh["by_station"]
+        profiles, shapes, ranks, short, country, prev_rows = (sh["profiles"], sh["shapes"], sh["ranks"], sh["short"],
+                                                              sh["country"], sh["prev_rows"])
+        settlement_of, common = sh["settlement_of"], sh["common"]
+        sts = sorted(by_code[m["code"]], key=lambda s: (int(s.number) if s.number.isdigit() else 0, s.number))
+        rows = [{"s": s, "flags": self.flag_view(a, by_station.get(s.key, []), loc),
+                 "notes": a.notes.get(s.key, []), "docs": a.documents.get(s.key, []),
+                 "settlement": settlement_of(s)} for s in sts]
+        votes = self.mun_votes[rid][m["code"]]
+        mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
+        mres, top, by_st = vote_view(a.round.contestants, votes, a.totals, [s for s in sts if s.counted])
+        index = leading(votes)
+        number = a.round.contestants[index].number if index is not None else None
+        flags_of = {s.key: by_station.get(s.key, []) for s in sts}
+        root = "../" * (PREFIX[loc] + page).count("/")
+        hrefs = {s.key: root + PREFIX[loc] + self.st_path(rid, s.key) for s in sts}
+        weak = coordinator.weak_spots(sts, flags_of, self.places.in_municipality(m["code"]), self.flagged,
+                                      ctrl, number, settlement_of, a.reviews) if number is not None else None
+        devs = coordinator.deviations(sts, votes, index) if index is not None else []
+        prev_m = prev_rows.get(m["code"])
+        compare = {"similar": coordinator.similar(m["code"], profiles, self.mun_rows[rid]), "country": country,
+                   "rank_turnout": rank_of(m["turnout"], self.peers[rid]["mun"]["turnout"]),
+                   "rank_invalid": rank_of(m["invalid"], self.peers[rid]["mun"]["invalid"]),
+                   "prev_registered": prev_m["registered"] if prev_m and prev_m["registered"] else None}
+        tt = lambda key, **kw: t(key, loc, **kw)  # noqa: E731
+        show = latin if loc == "en" else (lambda x: x)
+        data = json.dumps({"rid": rid, "default": index, "name": show(m["name"]),
+                           "lists": [{"n": c.number, "label": show(narrative.short_label(self.labels[rid][i])),
+                                      "slot": ranks.get(i, 9), "country": a.totals.share_of_valid(i)}
+                                     for i, c in enumerate(a.round.contestants)],
+                           "turnout": {"mun": m["turnout"], "country": country["turnout"]},
+                           "i18n": {"rule3": tt("co_w3_rule", number="{number}"), "ofRead": tt("co_w3_of", n="{n}"),
+                                    "chartResult": tt("vi_chart_result"), "chartTurnout": tt("vi_chart_turnout"),
+                                    "country": tt("vi_chart_country"), "municipality": tt("vi_chart_mun"),
+                                    "stations": tt("co_stations_word"), "stationNo": tt("station_no"),
+                                    "legendNc": tt("co_legend_nc"), "rest": tt("co_dev_rest", n="{n}"),
+                                    "devNote": tt("co_dev_note", avg="{avg}"), "member": tt("co_ctrl_member"),
+                                    "deputy": tt("co_ctrl_deputy"), "none": tt("co_ctrl_none"),
+                                    "notRead": tt("co_not_read")},
+                           "stations": coordinator.station_json(sts, ctrl, flags_of, settlement_of,
+                                                                len(a.round.contestants), hrefs, show)},
+                          ensure_ascii=False, separators=(",", ":"))
+        flag_text = {s.key: {f["code"]: f["text"] for f in r["flags"]} for s, r in zip(sts, rows)}
+        villages = coordinator.by_settlement(sts, settl, self.figures, index)
+        village_leaders = coordinator.leaders(villages)
+        results = {v["name"]: v for v in villages if v["name"]}
+        feats = shapes.get(m["code"], [])
+        village_map, village_key = maps.settlement_map(feats, results, ranks, short, m["name"], lambda x: fmt_pct(x, loc, 1)) \
+            if feats and len(results) > 1 else ("", [])
+        village_legend = maps.legend(results, ranks, short) if village_map else []
+        top2 = sorted(range(len(votes)), key=lambda k: -votes[k])[:2] if any(votes) else []
+        village_facts = [tt("vi_fact_turnout", hi=f["hi"], hv=fmt_pct(f["hv"], loc, 1), lo=f["lo"], lv=fmt_pct(f["lv"], loc, 1))
+                         if f["kind"] == "turnout" else
+                         tt("vi_fact_list", list=short[f["index"]], hi=f["hi"], hv=fmt_pct(f["hv"], loc, 1), lo=f["lo"],
+                            lv=fmt_pct(f["lv"], loc, 1))
+                         for f in coordinator.facts(villages, top2)] if village_map else []
+        if village_map and m["turnout"] is not None and country["turnout"] is not None:
+            village_facts.append(tt("vi_fact_mun", t=fmt_pct(m["turnout"], loc, 1), c=fmt_pct(country["turnout"], loc, 1)))
+        return dict(m=m, rows=rows, mvotes=votes,
+                   mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st, weak=weak, devs=devs,
+                   index=index, number=number, compare=compare, mun_data=data.replace("<", "\\u003c"),
+                   ctrl_of=coordinator.controller_of, rules=RULES, flag_text=flag_text, labels=self.labels[rid],
+                   settlement_by_key={s.key: settlement_of(s) for s in sts}, villages=villages,
+                   village_leaders=village_leaders, village_map=village_map, village_legend=village_legend,
+                   village_facts=village_facts, village_key=village_key,
+                   mapped=sum(1 for f in feats if f["properties"].get("census") in results),
+                   cdocs=self.commission_of(rid).get(m["code"], []),
+                   citydocs=self.city_docs_of(rid)[0].get(m["code"]), **common)
+
     def round_pages(self, a: Analysis, loc: str) -> None:
         rid = a.round.id
         base = f"r/{rid}/"
-        pages = [base + "index.html", base + "check.html", base + "changes.html", base + "commissions.html",
-                 base + "settlements.html"] + [
-            base + f"m/{code}.html" for code in self.mun_rows[rid]]
-        if all([self.keep(loc, page, self.round_key(rid)) for page in pages]):  # a list: every page is recorded
+        pages = {page: self.round_key(rid) for page in (base + "index.html", base + "check.html", base + "changes.html",
+                                                        base + "commissions.html", base + "settlements.html")}
+        # a municipality's page also carries its other elections (the strip, and the history on its newest)
+        pages.update({base + f"m/{code}.html": self.round_key(rid) + self.history_inputs(loc, code)
+                      for code in self.mun_rows[rid]})
+        if all([self.keep(loc, page, key) for page, key in pages.items()]):  # a list: every page is recorded
             return
         stations = {s.key: s for s in a.round.stations}
         by_station = self.flagged[rid]
         municipalities = list(self.mun_rows[rid].values())
-        view = self.round_view(a)
         totals = a.totals
         top2 = stats.top_two(totals.votes) if totals.votes else []
         label = self.contestant_label(a, loc)
@@ -966,13 +1105,7 @@ class Site:
         for f in a.flags:
             counts[f.code] += 1
         group_counts = {g: len({f.station for f in a.flags if f.check.group == g}) for g in GROUPS}
-        ctrl = self.ctrl_of(rid)
-        ctrl_table, ctrl_readable = ctrl_rows(a.round.contestants, ctrl.values())
-        common = {"rebuilt": self.archive.meta(rid).get("source") == "results_app",
-                  "ctrl_readable": ctrl_readable, "a": a, "rnd": a.round, "totals": totals, "base": base, "view": view,
-                  "snapshots": a.snapshots, "label": label, "rtitle": self.round_title(a.round, loc),
-                  "rshort": self.short_title(a.round, loc), "st_path": self.st_path,
-                  "ctrl": ctrl, "ctrl_known": bool(ctrl), "ctrl_table": ctrl_table}
+        common = self.round_shared(a, loc)["common"]
         self.write(loc, base + "index.html", "round.html", municipalities=municipalities, stats=context_stats,
                    counts=counts, group_counts=group_counts, checks=CHECKS, groups=GROUPS, **common)
 
@@ -1012,96 +1145,11 @@ class Site:
         self.write(loc, base + "settlements.html", "settlements.html", sx=self.by_settlement_of(rid),
                    dims=bysettlement.DIMENSIONS, **common)
 
-        by_code: dict[str, list] = defaultdict(list)
-        for s in a.round.stations:
-            by_code[s.municipality_code].append(s)
-        settl = self.settlements_of(rid)
-        profiles = coordinator.profiles(self.mun_rows[rid], by_code, settl, self.figures)
-        shapes = geo.settlements_by_municipality(self.archive.root / "geo" / geo.SETTLEMENT_FILE)
-        ranks = {i: k + 1 for k, i in enumerate(sorted(range(len(a.round.contestants)), key=lambda i: -a.totals.votes[i]))}
-        manual = {i: self.list_colours[(rid, c.number)] for i, c in enumerate(a.round.contestants)
-                  if (rid, c.number) in self.list_colours}
-        ranks = maps.slots(ranks, manual)  # from here on: each list's colour slot, the maintainer's where set
-        short = {i: narrative.short_label(self.labels[rid][i]) for i in range(len(a.round.contestants))}
-        if loc == "en":
-            short = {i: latin(v) for i, v in short.items()}
-        domestic = [m for m in municipalities if m["kind"] == "domestic"]
-        country = {"turnout": a.totals.turnout, "invalid": a.totals.invalid_share,
-                   "flagged_share": (sum(m["flagged"] for m in domestic) / sum(m["stations"] for m in domestic))
-                   if domestic else None}
-        prev = a.previous[0] if a.previous else None
-        prev_rows = self.mun_rows.get(prev, {}) if prev else {}
-        both = [c for c in prev_rows if c in self.mun_rows[rid] and self.mun_rows[rid][c]["kind"] == "domestic"]
-        country["registered_change"] = (sum(self.mun_rows[rid][c]["registered"] for c in both)
-                                        / sum(prev_rows[c]["registered"] for c in both) - 1) if both and sum(
-            prev_rows[c]["registered"] for c in both) else None
-        country["prev_year"] = (self.dates.get(prev) or "")[:4] if prev else ""
-        settlement_of = lambda s: (settl.get(s.key) or {}).get("s", "")  # noqa: E731
-        for m in municipalities:
-            sts = sorted(by_code[m["code"]], key=lambda s: (int(s.number) if s.number.isdigit() else 0, s.number))
-            rows = [{"s": s, "flags": self.flag_view(a, by_station.get(s.key, []), loc),
-                     "notes": a.notes.get(s.key, []), "docs": a.documents.get(s.key, []),
-                     "settlement": settlement_of(s)} for s in sts]
-            votes = self.mun_votes[rid][m["code"]]
-            mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
-            mres, top, by_st = vote_view(a.round.contestants, votes, a.totals, [s for s in sts if s.counted])
-            index = leading(votes)
-            number = a.round.contestants[index].number if index is not None else None
-            flags_of = {s.key: by_station.get(s.key, []) for s in sts}
-            root = "../" * (PREFIX[loc] + base + "m/x.html").count("/")
-            hrefs = {s.key: root + PREFIX[loc] + self.st_path(rid, s.key) for s in sts}
-            weak = coordinator.weak_spots(sts, flags_of, self.places.in_municipality(m["code"]), self.flagged,
-                                          ctrl, number, settlement_of, a.reviews) if number is not None else None
-            devs = coordinator.deviations(sts, votes, index) if index is not None else []
-            prev_m = prev_rows.get(m["code"])
-            compare = {"similar": coordinator.similar(m["code"], profiles, self.mun_rows[rid]), "country": country,
-                       "rank_turnout": rank_of(m["turnout"], self.peers[rid]["mun"]["turnout"]),
-                       "rank_invalid": rank_of(m["invalid"], self.peers[rid]["mun"]["invalid"]),
-                       "prev_registered": prev_m["registered"] if prev_m and prev_m["registered"] else None}
-            tt = lambda key, **kw: t(key, loc, **kw)  # noqa: E731
-            show = latin if loc == "en" else (lambda x: x)
-            data = json.dumps({"rid": rid, "default": index, "name": show(m["name"]),
-                               "lists": [{"n": c.number, "label": show(narrative.short_label(self.labels[rid][i])),
-                                          "slot": ranks.get(i, 9), "country": a.totals.share_of_valid(i)}
-                                         for i, c in enumerate(a.round.contestants)],
-                               "turnout": {"mun": m["turnout"], "country": country["turnout"]},
-                               "i18n": {"rule3": tt("co_w3_rule", number="{number}"), "ofRead": tt("co_w3_of", n="{n}"),
-                                        "chartResult": tt("vi_chart_result"), "chartTurnout": tt("vi_chart_turnout"),
-                                        "country": tt("vi_chart_country"), "municipality": tt("vi_chart_mun"),
-                                        "stations": tt("co_stations_word"), "stationNo": tt("station_no"),
-                                        "legendNc": tt("co_legend_nc"), "rest": tt("co_dev_rest", n="{n}"),
-                                        "devNote": tt("co_dev_note", avg="{avg}"), "member": tt("co_ctrl_member"),
-                                        "deputy": tt("co_ctrl_deputy"), "none": tt("co_ctrl_none"),
-                                        "notRead": tt("co_not_read")},
-                               "stations": coordinator.station_json(sts, ctrl, flags_of, settlement_of,
-                                                                    len(a.round.contestants), hrefs, show)},
-                              ensure_ascii=False, separators=(",", ":"))
-            flag_text = {s.key: {f["code"]: f["text"] for f in r["flags"]} for s, r in zip(sts, rows)}
-            villages = coordinator.by_settlement(sts, settl, self.figures, index)
-            village_leaders = coordinator.leaders(villages)
-            results = {v["name"]: v for v in villages if v["name"]}
-            feats = shapes.get(m["code"], [])
-            village_map, village_key = maps.settlement_map(feats, results, ranks, short, m["name"], lambda x: fmt_pct(x, loc, 1)) \
-                if feats and len(results) > 1 else ("", [])
-            village_legend = maps.legend(results, ranks, short) if village_map else []
-            top2 = sorted(range(len(votes)), key=lambda k: -votes[k])[:2] if any(votes) else []
-            village_facts = [tt("vi_fact_turnout", hi=f["hi"], hv=fmt_pct(f["hv"], loc, 1), lo=f["lo"], lv=fmt_pct(f["lv"], loc, 1))
-                             if f["kind"] == "turnout" else
-                             tt("vi_fact_list", list=short[f["index"]], hi=f["hi"], hv=fmt_pct(f["hv"], loc, 1), lo=f["lo"],
-                                lv=fmt_pct(f["lv"], loc, 1))
-                             for f in coordinator.facts(villages, top2)] if village_map else []
-            if village_map and m["turnout"] is not None and country["turnout"] is not None:
-                village_facts.append(tt("vi_fact_mun", t=fmt_pct(m["turnout"], loc, 1), c=fmt_pct(country["turnout"], loc, 1)))
-            self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
-                       mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st, weak=weak, devs=devs,
-                       index=index, number=number, compare=compare, mun_data=data.replace("<", "\\u003c"),
-                       ctrl_of=coordinator.controller_of, rules=RULES, flag_text=flag_text, labels=self.labels[rid],
-                       settlement_by_key={s.key: settlement_of(s) for s in sts}, villages=villages,
-                       village_leaders=village_leaders, village_map=village_map, village_legend=village_legend,
-                       village_facts=village_facts, village_key=village_key,
-                       mapped=sum(1 for f in feats if f["properties"].get("census") in results),
-                       cdocs=self.commission_of(rid).get(m["code"], []),
-                       citydocs=self.city_docs_of(rid)[0].get(m["code"]), **common)
+        for m in self.round_shared(a, loc)["municipalities"]:
+            code = m["code"]
+            self.write(loc, base + f"m/{code}.html", "municipality.html", canonical=False,
+                       **self.municipality_context(a, loc, m, base + f"m/{code}.html"),
+                       **self.history_context(loc, code, rid))
 
 
 def _write_pages(site: Site, job, send) -> None:
