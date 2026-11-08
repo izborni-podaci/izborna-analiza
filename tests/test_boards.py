@@ -79,6 +79,17 @@ def test_a_misread_na_before_predlog_keeps_the_slot(contestants):
     assert lists_of(parse_decision(text), contestants) == {1: (True, True), 2: (True, True), 3: (True, True)}
 
 
+def test_a_garbled_clan_still_starts_a_slot(contestants):
+    """Mali Iđoš station 16, 8 Nov 2026: OCR read the fourth slot's "члан" as another word, so the fourth slot ran
+    into the third, which then named two lists and kept the wrong one."""
+    a, b, c = LISTS
+    text = HEAD + (f"1. члан: Петар Петровић и\n\n- заменик члана: Марко Марковић на предлог подносиоца Изборне листе "
+                   f"{a};\n\n3. члан: Лука Лукић и\n\n- заменик члана: Мина Минић на предлог подносиоца Изборне листе "
+                   f"{c};\n\n4. чпан: Јован Јовић и\n\n- заменик чпана: Ана Анић на предлог подносиоца Изборне листе "
+                   f"{b};\n") + TAIL
+    assert lists_of(parse_decision(text), contestants) == {1: (True, True), 3: (True, True), 2: (True, True)}
+
+
 def test_lists_match_despite_ocr_noise(contestants):
     # strings as OCR returned them from real decisions, including garbled Latin parts
     cases = {

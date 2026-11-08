@@ -137,7 +137,10 @@ def last_page(pagination_html: str) -> int:
 # --- reading a decision ------------------------------------------------------------------------
 
 LETTERS = re.compile(r"[A-Za-zА-Яа-яЂђЈјЉљЊњЋћЏџČčĆćŠšŽžĐđ]")
-SLOT = re.compile(r"(?:^|\n)[\s\-–—~+•]*(\d{1,2})\s*[.,)][\s\-–—_|]*(?:члан|clan|član)\b\s*:?", re.IGNORECASE)  # 1) - члан
+# "1. члан:" or "1) - члан"; also "4. xxxx:" where OCR garbled the word "члан" — a slot's number, a short word and a
+# colon is a slot all the same (without this, the garbled slot's people and list ran into the slot before it)
+SLOT = re.compile(r"(?:^|\n)[\s\-–—~+•]*(\d{1,2})\s*[.,)][\s\-–—_|]*(?:(?:члан|clan|član)\b\s*:?|[^\W\d_]{3,6}\s*:)",
+                  re.IGNORECASE)
 # Every member's or deputy's role, and every proposal, wherever they stand: for the layouts that don't number
 # each member ("- члан: …", or each list first and its people under it). "члана" alone (genitive, as in "на основу
 # члана 32") is never a role.
@@ -525,7 +528,8 @@ def decision_text(pdf: bytes) -> str:
 # The reading's version: raise it when parse_decision reads more than before, and every decision read by an
 # older reading is read again (plan() lists them), a few hundred per daily run until all are current.
 # 2: a proposal is "предлог" with whatever short word before it (OCR misread "на" and dropped the slot).
-PARSER = 2
+# 3: a slot starts at "N. <short word>:" even when OCR garbled "члан" (the slot ran into the one before it).
+PARSER = 3
 
 
 def slot_list(slot: Slot, contestants: list[dict]) -> int | None:
