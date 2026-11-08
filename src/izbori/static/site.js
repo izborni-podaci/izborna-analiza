@@ -65,6 +65,10 @@
               const f = fold(m[0]);
               return [f, f, [m[0], `m/${m[1]}.html`, d.munSub.replace('{n}', m[2])]];
             });
+            const cities = (j.g || []).map((g) => {
+              const f = fold(g[0]);
+              return [f, f, [g[0], `g/${g[1]}.html`, d.citySub.replace('{n}', g[2])]];
+            });
             const st = j.s.map((s) => {
               const m = j.m[s[0]];
               const label = `${m[0]} · ${d.bm} ${s[1]}${s[2] ? ` · ${s[2]}` : ''}`;
@@ -74,7 +78,7 @@
               const f = fold(label);
               return [f, s[6] ? `${f} ${fold(`${d.bm} ${s[6]}`)}` : f, [label, `s/${page}.html`, sub]];
             });
-            items = mun.concat(st);
+            items = cities.concat(mun, st);
           })
           .catch(() => { items = []; });
       }
@@ -218,14 +222,26 @@
     const groups = [...box.querySelectorAll('[data-group]')];
     const f = (n) => form.querySelector(`[data-f="${n}"]`);
     const out = form.querySelector('output');
+    const mun = f('mun');  // places to watch: the municipality, also chosen by #m-<code> from the municipality's page
+    const back = document.querySelector('[data-mun-back]');
     const apply = () => {
       const ty = f('type').value;
       const same = f('same').checked;
       const q = fold(f('q').value.trim());
+      const mc = mun ? mun.value : '';
+      if (back) {
+        back.hidden = !mc;
+        if (mc) {
+          const a = back.querySelector('a');
+          a.href = (form.dataset.munBase || '') + 'm/' + mc + '.html';
+          a.textContent = back.dataset.text.replace('{mun}', mun.options[mun.selectedIndex].textContent);
+        }
+      }
       let shown = 0;
       rows.forEach((r, i) => {
         const codes = ((same ? r.dataset.same : r.dataset.types) || '').split(' ').filter(Boolean);
-        const ok = (!same || codes.length > 0) && (!ty || codes.includes(ty)) && (!q || texts[i].includes(q));
+        const ok = (!same || codes.length > 0) && (!ty || codes.includes(ty)) && (!q || texts[i].includes(q))
+          && (!mc || r.dataset.mun === mc);
         r.hidden = !ok;
         if (ok) shown += 1;
       });
@@ -234,12 +250,14 @@
         g.hidden = visible === 0;
         const c = g.querySelector('[data-count]');
         if (c) c.textContent = c.textContent.replace(/[\d.,]+/, fmt.format(visible));
-        if (ty || same || q) g.open = visible > 0 && visible <= 400;
+        if (ty || same || q || mc) g.open = visible > 0 && visible <= 400;
       });
       if (out) out.textContent = out.dataset.shown.replace('{n}', fmt.format(shown));
     };
     const wanted = decodeURIComponent(location.hash.slice(1));
     if (wanted && [...f('type').options].some((o) => o.value === wanted)) f('type').value = wanted;
+    if (mun && wanted.startsWith('m-') && [...mun.options].some((o) => o.value === wanted.slice(2))) mun.value = wanted.slice(2);
+    if (mun) mun.addEventListener('change', apply);
     document.querySelectorAll('[data-set-same]').forEach((a) => a.addEventListener('click', () => {
       f('type').value = a.dataset.setSame;
       f('same').checked = true;
@@ -375,7 +393,7 @@
     const places = (v.places || []).filter((p) => p.href !== location.pathname);
     places.unshift({ href: location.pathname, title: h1.textContent.trim() });
     memory.write({ ...v, places: places.slice(0, 3) });
-  } else if (h1 && /\/r\/[^/]+\/m\/[^/]+\.html$/.test(location.pathname)) {
+  } else if (h1 && /\/m\/[^/]+\.html$/.test(location.pathname)) {  // m/<code>.html, or r/<id>/m/<code>.html
     memory.write({ ...memory.read(), municipality: { href: location.pathname, title: h1.textContent.trim() } });
   }
   document.querySelectorAll('form[data-pick-municipality]').forEach((form) => {

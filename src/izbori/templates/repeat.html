@@ -47,8 +47,14 @@
 </section>
 
 <h2 id="mesta">{{ t('repeat_stations_heading') }}</h2>
-<p>{{ t('repeat_groups_note') }}</p>
-<form class="filters" data-filter-rows="#rep-groups" onsubmit="return false">
+<p>{{ t('repeat_groups_note') }} <span data-mun-back data-text="{{ t('repeat_mun_back', mun='{mun}') }}" hidden><a href=""></a></span></p>
+<form class="filters" data-filter-rows="#rep-groups" data-mun-base="{{ link('') }}" onsubmit="return false">
+  <label>{{ t('filter_municipality') }}
+    <select data-f="mun">
+      <option value="">{{ t('filter_all') }}</option>
+      {% for code, mname in mun_options %}<option value="{{ code }}">{{ name(mname) }}</option>{% endfor %}
+    </select>
+  </label>
   <label>{{ t('filter_type') }}
     <select data-f="type">
       <option value="">{{ t('filter_all') }}</option>
@@ -70,7 +76,7 @@
       <thead><tr><th>{{ t('station') }}</th>{% for r in rounds %}<th title="{{ r.title }}">{{ r.short }}</th>{% endfor %}</tr></thead>
       <tbody>
       {% for row in group %}{% set s = row.station %}
-        <tr data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same_codes }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}">
+        <tr data-k="{{ row.k }}" data-types="{{ row.types }}" data-same="{{ row.same_codes }}" data-mun="{{ s.municipality_code }}" data-text="{{ name(s.municipality) }} {{ s.number }} {{ name(s.name) }}">
           <td><a href="{{ link(st_path(row.rid, row.key)) }}">{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %}<div class="small muted">{{ name(s.name) }}</div>{% endif %}{% if row.same %}<div class="small st-same"><strong>{{ t('repeat_same') }}:</strong> {% for code, m in row.same %}{{ check_name(code) }} ({{ t('repeat_times', n=m) }}){% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}</td>
           {% for r in rounds %}<td class="small">{% if r.id in row.flags %}{% for code in row.flags[r.id] %}<span class="sym-line cell-flag">{{ mx.sym(code, group_of[code]) }}{{ check_name(code) }}</span>{% endfor %}{% elif r.id in row.took %}<span class="muted">{{ t('repeat_no_flag_short') }}</span>{% else %}<span class="muted">{{ t('repeat_not_there_short') }}</span>{% endif %}{% if r.id in row.renamed %} <span class="renamed" title="{{ t('repeat_renamed') }}">≠</span>{% endif %}</td>{% endfor %}
         </tr>

@@ -13,7 +13,7 @@
 <p class="kicker">{{ rtitle }}{% if m.kind == 'domestic' %} · {{ name(m.district) }}{% endif %}</p>
 {% endif %}
 <h1>{{ name(m.name) }}</h1>
-<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }} · {{ t('registered') }}: {{ i(m.registered) }}{% if history %} · {{ t('mun_in_elections', n=i(history.n)) if history.n > 1 else t('mun_in_one_election') }} · <a href="{{ root }}feed/{{ m.code }}.{{ 'en' if loc == 'en' else 'sr' }}.xml" type="application/atom+xml">{{ t('mun_feed_short') }}</a> · <a href="{{ root }}api/m/{{ m.code }}.json" type="application/json">{{ t('json_link') }}</a>{% else %} · <a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ t('mun_across_link') }}</a>{% endif %}</p>
+<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }} · {{ t('registered') }}: {{ i(m.registered) }}{% if history %} · {{ t('mun_in_elections', n=i(history.n)) if history.n > 1 else t('mun_in_one_election') }} · <a href="{{ root }}feed/{{ m.code }}.{{ 'en' if loc == 'en' else 'sr' }}.xml" type="application/atom+xml">{{ t('mun_feed_short') }}</a> · <a href="{{ root }}api/m/{{ m.code }}.json" type="application/json">{{ t('json_link') }}</a>{% else %} · <a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ t('mun_across_link') }}</a>{% endif %}{% if city %} · <a href="{{ link('g/' ~ city.slug ~ '.html') }}">{{ t('mun_city_own' if city.own else 'mun_city_link', city=name(city.name), n=i(city.n)) }}</a>{% endif %}</p>
 <nav class="toc" aria-label="{{ t('on_this_page') }}">
   <a href="#compare">{{ t('co_compare_heading') }}</a>{% if weak %} · <a href="#weak">{{ t('co_weak_heading') }}</a>{% endif %}{% if devs %} · <a href="#my-list-chart">{{ t('co_dev_heading') }}</a>{% endif %} · <a href="#result">{{ t('mun_result_heading') }}</a>{% if villages|length > 1 %} · <a href="#naselja">{{ t('vi_heading') }}</a>{% endif %} · <a href="#stations">{{ t('stations_heading') }}</a>{% if history %} · <a href="#kroz-izbore">{{ t('mun_across_heading') }}</a>{% endif %}
 </nav>
@@ -49,12 +49,13 @@
   </div>
 </section>
 
-{% macro card(title, rule, n, of, items, more_href, more_text, cls='') %}
+{% macro card(title, rule, n, of, items, more_href, more_text, cls='', check='') %}
 <div class="wk {{ cls }}">
   <h3>{{ title }}</h3>
   <p class="wk-n{% if n == 0 %} ok{% endif %}">{{ i(n) }}<small>{{ of }}</small></p>
   <p class="wk-rule">{{ rule }}</p>
   {% if items %}<ul class="wk-list">{% for it in items %}<li>{{ it }}</li>{% endfor %}</ul>{% endif %}
+  {% if check and n %}<p class="wk-check small"><strong>{{ t('what_to_check') }}:</strong> {{ check }}</p>{% endif %}
   {% if caller is defined %}{{ caller() }}{% endif %}
   {% if more_href %}<a class="wk-more" href="{{ more_href }}">{{ more_text }}</a>{% endif %}
 </div>
@@ -65,29 +66,29 @@
   <div class="sec-head"><h2>{{ t('co_weak_heading') }}</h2><span class="muted">{{ t('co_weak_note') }}</span></div>
   <div class="weak">
     {% set items = [] %}{% for r in weak.repeated[:5] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, r.s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ r.s.number ~ '</b> ' ~ name(r.s.name) ~ '</a> · ' ~ t('co_w1_item', n=r.n, of=r.of))|safe) %}{% endfor %}
-    {{ card(t('co_w1_title'), t('co_w1_rule'), weak.repeated|length, t('co_stations_word'), items, link('m/' ~ m.code ~ '.html'), t('co_w1_more')) }}
+    {{ card(t('co_w1_title'), t('co_w1_rule'), weak.repeated|length, t('co_stations_word'), items, link('repeat.html') ~ '#m-' ~ m.code, t('co_w1_more'), check=t('co_w1_check')) }}
 
     {% set items = [] %}{% for s in weak.unanimous[:5] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ s.number ~ '</b> ' ~ name(s.name) ~ '</a> · ' ~ t('co_w2_item', share=pct((s.votes|max) / s.valid if s.valid else 0, 1), turnout=pct(s.turnout, 1)))|safe) %}{% endfor %}
-    {{ card(t('co_w2_title'), t('co_w2_rule', near=pct(rules.near_share, 0), high=pct(rules.high_turnout, 0)), weak.unanimous|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more')) }}
+    {{ card(t('co_w2_title'), t('co_w2_rule', near=pct(rules.near_share, 0), high=pct(rules.high_turnout, 0)), weak.unanimous|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more'), check=t('hint_near_unanimity')) }}
 
     {% if ctrl_known %}
     {% set items = [] %}{% for settlement, group in weak.without_groups[:5] %}{% set _ = items.append(('<b>' ~ (name(settlement) if settlement else name(m.name)) ~ '</b> · ' ~ t('station_no') ~ ' ' ~ (group|map(attribute='number')|join(', ')))|safe) %}{% endfor %}
     <div data-mine="without">
-    {{ card(t('co_w3_title'), t('co_w3_rule', number=number), weak.without|length, t('co_w3_of', n=i(weak.ctrl_read)) if weak.ctrl_read else t('co_stations_word'), items, '#stations', t('co_w3_more')) }}
+    {{ card(t('co_w3_title'), t('co_w3_rule', number=number), weak.without|length, t('co_w3_of', n=i(weak.ctrl_read)) if weak.ctrl_read else t('co_stations_word'), items, '#stations', t('co_w3_more'), check=t('co_w3_check')) }}
     </div>
     {% else %}
     {{ card(t('co_w3_title'), t('co_w3_unknown'), 0, '', [], none, '', 'wk-unknown') }}
     {% endif %}
 
     {% set items = [] %}{% for s in weak.register[:5] %}{% set f = flag_text[s.key]['registered_jump'] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ s.number ~ '</b> ' ~ name(s.name) ~ '</a> · ' ~ f)|safe) %}{% endfor %}
-    {{ card(t('co_w4_title'), t('co_w4_rule', jump=pct(rules.registered_jump, 0), redrawn=pct(rules.registered_redrawn, 0)), weak.register|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more')) }}
+    {{ card(t('co_w4_title'), t('co_w4_rule', jump=pct(rules.registered_jump, 0), redrawn=pct(rules.registered_redrawn, 0)), weak.register|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more'), check=t('hint_registered_jump')) }}
 
     {% set items = [] %}{% for s in weak.apart[:5] %}{% set f = flag_text[s.key]['turnout_apart'] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ s.number ~ '</b> ' ~ name(s.name) ~ '</a> · ' ~ f)|safe) %}{% endfor %}
-    {{ card(t('co_w5_title'), t('co_w5_rule', pts=num(100 * rules.turnout_apart, 0)), weak.apart|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more')) }}
+    {{ card(t('co_w5_title'), t('co_w5_rule', pts=num(100 * rules.turnout_apart, 0)), weak.apart|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more'), check=t('hint_turnout_apart')) }}
 
     {% set items = [] %}{% for s in weak.silent[:5] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ s.number ~ '</b> ' ~ name(s.name) ~ '</a>')|safe) %}{% endfor %}
     {% if not weak.silent %}{% set items = [t('co_w6_none')] %}{% endif %}
-    {{ card(t('co_w6_title'), t('co_w6_rule'), weak.silent|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more')) }}
+    {{ card(t('co_w6_title'), t('co_w6_rule'), weak.silent|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more'), check=t('co_w6_check')) }}
   </div>
 </section>
 {% endif %}

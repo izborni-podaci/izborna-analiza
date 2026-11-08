@@ -29,7 +29,7 @@ from izbori.links import safe_url
 from izbori.model import ABROAD, PRISONS, last_url
 from izbori.i18n import (BELGRADE, BUILT, LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, collate, fmt_date, fmt_int,
                          fmt_num, fmt_pct, fmt_time, keep, kind_name, latin_page, strip_keep, t)
-from izbori import (bysettlement, commission, coordinator, documents, geo, highlights, narrative, publishing, schedule,
+from izbori import (bysettlement, cities, commission, coordinator, documents, geo, highlights, narrative, publishing, schedule,
                     settlements)
 from izbori.places import RULES_FILE, Place, contradicts, follow
 from izbori.report import Analysis, analyze, links
@@ -506,6 +506,96 @@ class Site:
         return {"strip": strip, "history": {"rows": rows, "places": places, "analysis": analysis,
                                             "charts": self.trends(rids, elections, "all", loc), "n": len(rids)}}
 
+    def city_link(self, code: str) -> dict | None:
+        """The city a municipality is part of, for the line under its title."""
+        slug = self.city_of.get(code)
+        if not slug:
+            return None
+        c = self.cities[slug]
+        return {"slug": slug, "name": c.name, "n": len(c.codes), "own": c.own == code}
+
+    def city_rows(self, rid: str, city: cities.City) -> list[dict]:
+        """The city's municipalities in one election, as municipality rows, the city's own first, then by name."""
+        rows = [self.mun_rows[rid][c] for c in city.codes if c in self.mun_rows[rid]]
+        return sorted(rows, key=lambda m: city.order(m["code"], m["name"]))
+
+    def city_pages(self, loc: str) -> None:
+        """One page per city split into municipalities (g/<slug>.html): its figures added up from its
+        municipalities, the result, a map of its municipalities by the leading list, the municipalities (Belgrade's
+        in two groups with subtotals), and the same figures at every election. The arithmetic is a municipality's;
+        the city is whatever RIK's results put under it."""
+        boundaries = None
+        for slug, city in sorted(self.cities.items()):
+            rids = [r for r in reversed(self.rids) if any(c in self.mun_rows[r] for c in city.codes)]
+            if not rids:
+                continue
+            rid = rids[0]
+            inputs = repr([slug, city.codes, [(r, self.round_inputs[r], self.shorts[loc][r],
+                                               [self.mun_rows[r].get(c) for c in city.codes],
+                                               [self.mun_votes[r].get(c) for c in city.codes], self.analyses[r].totals,
+                                               len(self.flagged[r])) for r in rids]])
+            if self.keep(loc, f"g/{slug}.html", self.round_key(rid) + inputs):
+                continue
+            a = self.analyses[rid]
+            sh = self.round_shared(a, loc)
+            rows = self.city_rows(rid, city)
+            codes = {m["code"] for m in rows}
+            sts = [s for s in a.round.stations if s.municipality_code in codes]
+            total = cities.add_up(rows, sts)
+            votes = [sum(self.mun_votes[rid][m["code"]][i] for m in rows) for i in range(len(a.round.contestants))]
+            mres, top, _ = vote_view(a.round.contestants, votes, a.totals, [])
+            index = leading(votes)
+            # the municipalities on a map, coloured by the list first in each, as the settlements are
+            if boundaries is None:
+                boundaries = geo.load(self.archive.root / "geo" / "municipalities.json") or {"features": []}
+            by_code = {f["properties"].get("code"): f for f in boundaries["features"]}
+            feats, results = [], {}
+            for m in rows:
+                f = by_code.get(m["code"])
+                label = cities.short_name(m["name"])
+                mv = self.mun_votes[rid][m["code"]]
+                lead = leading(mv)
+                order = sorted(range(len(mv)), key=lambda k: -mv[k])
+                valid = sum(mv) or 1
+                results[label] = {"leader": lead, "share": mv[lead] / valid if lead is not None else None,
+                                  "second": mv[order[1]] / valid if len(order) > 1 and lead is not None else None}
+                if f:
+                    feats.append({"type": "Feature", "geometry": f["geometry"],
+                                  "properties": {"code": m["code"], "name": label, "census": label}})
+            short = sh["short"]
+            city_map, map_key = maps.settlement_map(feats, results, sh["ranks"], short, city.name,
+                                                    lambda x: fmt_pct(x, loc, 1)) if len(feats) > 1 else ("", [])
+            legend = maps.legend(results, sh["ranks"], short) if city_map else []
+            groups = []
+            for m in rows:
+                g = city.group_of(m["code"])
+                if not groups or groups[-1]["key"] != g:
+                    groups.append({"key": g, "rows": []})
+                groups[-1]["rows"].append(m)
+            for g in groups:
+                g["sum"] = cities.add_up(g["rows"], [s for s in sts if s.municipality_code in {m["code"] for m in g["rows"]}])
+                gv = [sum(self.mun_votes[rid][m["code"]][i] for m in g["rows"]) for i in range(len(a.round.contestants))]
+                g["top"] = self.top_three(rid, gv)
+            leaders = {}
+            for m in rows:
+                mv = self.mun_votes[rid][m["code"]]
+                lead = leading(mv)
+                leaders[m["code"]] = (lead, mv[lead] / sum(mv)) if lead is not None and sum(mv) else (None, None)
+            history = []
+            for r in rids:
+                hrows = self.city_rows(r, city)
+                hcodes = {m["code"] for m in hrows}
+                hv = [sum(self.mun_votes[r][m["code"]][i] for m in hrows)
+                      for i in range(len(self.analyses[r].round.contestants))]
+                history.append({"rid": r, "short": self.shorts[loc][r], "date": fmt_date(self.dates[r], loc),
+                                "m": cities.add_up(hrows, [s for s in self.analyses[r].round.stations
+                                                           if s.municipality_code in hcodes]),
+                                "top": self.top_three(r, hv), "n": len(hrows)})
+            self.write(loc, f"g/{slug}.html", "city.html", city=city, slug=slug, rows=rows, total=total, mres=mres,
+                       mtop=top, index=index, groups=groups, leaders=leaders, labels=self.labels[rid],
+                       city_map=city_map, map_key=map_key, legend=legend, history=history,
+                       country=sh["country"], short_name=cities.short_name, **sh["common"])
+
     def municipality_pages(self, loc: str) -> None:
         """One page per municipality at m/<code>.html, the address the search and the index open: the coordinator's
         page in its newest election, with its other elections at the end (8 Nov 2026; before that this address held
@@ -515,7 +605,7 @@ class Site:
             if self.keep(loc, f"m/{code}.html", self.round_key(rid) + self.history_inputs(loc, code)):
                 continue
             a = self.analyses[rid]
-            self.write(loc, f"m/{code}.html", "municipality.html", canonical=True,
+            self.write(loc, f"m/{code}.html", "municipality.html", canonical=True, city=self.city_link(code),
                        **self.municipality_context(a, loc, self.mun_rows[rid][code], f"m/{code}.html"),
                        **self.history_context(loc, code, rid))
 
@@ -669,6 +759,7 @@ class Site:
                          [at[p.code], s.number, conv(s.name), page, k, len(p.rounds), ", ".join(p.former_numbers)]))
         rows.sort(key=lambda r: r[:4])
         data = {"m": [[conv(names[c]), c, len(self.mun_rounds[c]), self.mun_rounds[c][0]] for c in order],
+                "g": [[conv(c.name), slug, len(c.codes)] for slug, c in sorted(self.cities.items())],
                 "s": [r[4] for r in rows]}
         self.put(PREFIX[loc] + "search.json", json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
@@ -837,6 +928,9 @@ class Site:
             self.peers[rid] = peer_values(a.round, self.mun_rows[rid])
         # which city municipalities belong to a city, from every election's names and districts
         self.city_parts = commission.city_parts(s for a in rounds for s in a.round.stations)
+        # the cities split into several municipalities (Belgrade, Niš, …): one page each, and an entry in the search
+        self.cities = cities.cities(self.city_parts, [s for a in rounds for s in a.round.stations])
+        self.city_of = {code: slug for slug, c in self.cities.items() for code in c.codes}
         top = max(overall["counts"].values(), default=0) or 1
         appear = [{"code": c.code, "group": c.group, "n": overall["counts"][c.code],
                    "w": 100 * overall["counts"][c.code] / top}
@@ -872,13 +966,16 @@ class Site:
             self.write(loc, "explore.html", "explore.html", meta=Markup(meta.replace("</", "<\\/")))
             self.write(loc, "elections.html", "elections.html", rounds=summaries)
             self.write_search(loc)
+            self.city_pages(loc)
             self.write(loc, "guide.html", f"guide.{'en' if loc == 'en' else 'sr'}.html",
                        latest=summaries[0] if summaries else None)
             self.write(loc, "about.html", "about.html", checks=CHECKS, groups=GROUPS)
             groups = [(k, [r for r in rep_rows if r["k"] == k]) for k in sorted({r["k"] for r in rep_rows}, reverse=True)]
+            rep_mun_options = sorted({(r["station"].municipality_code, r["station"].municipality) for r in rep_rows},
+                                     key=lambda x: collate(latin(x[1]) if loc == "en" else x[1], loc))
             self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns, groups=groups,
                        rounds=columns, same=rep_same, checks=CHECKS, group_of=group_of, example=example,
-                       st_path=self.st_path)
+                       st_path=self.st_path, mun_options=rep_mun_options)
             cols = {c["id"]: c for c in columns}
             self.place_pages(loc, cols)
             self.municipality_pages(loc)
@@ -1147,7 +1244,7 @@ class Site:
 
         for m in self.round_shared(a, loc)["municipalities"]:
             code = m["code"]
-            self.write(loc, base + f"m/{code}.html", "municipality.html", canonical=False,
+            self.write(loc, base + f"m/{code}.html", "municipality.html", canonical=False, city=self.city_link(code),
                        **self.municipality_context(a, loc, m, base + f"m/{code}.html"),
                        **self.history_context(loc, code, rid))
 

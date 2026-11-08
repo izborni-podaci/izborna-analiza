@@ -488,3 +488,16 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   again: "Places to watch" (`repeat.html`, until now "Station history"; the name says what the list is for without
   calling a place guilty, which "problematic places" would) is back between coordinators and analyses, the guide
   shows as "Vodič", and short names take over below 1150 px.
+- **8 Nov 2026, cities split into municipalities.** Marko: Belgrade or Niš should come up in the search even
+  though RIK splits them into municipalities, and asked how to treat "urban" against "territorial" Belgrade. The
+  city is whatever the results put under it (`commission.city_parts`, from the names and districts of every
+  archived election), so Belgrade is its 17 municipalities, as RIK counts; the page adds them up by a
+  municipality's arithmetic (`cities.py`) and never computes a second "urban Belgrade" total. The customary split
+  into ten central and seven outer municipalities is shown only as two groups with subtotals in the table, and the
+  page says so. A city with a code of its own and one city municipality beside it (Požarevac + Kostolac, Užice +
+  Sevojno) gets the same page, its own row first and marked. One address per city, `g/<slug>.html`; no per-election
+  city pages, the table at the end has every election.
+- **8 Nov 2026, three small ones from the principles.** The weak-spot cards say what to check, as the station page
+  does (same rule, same sentence). The municipality a reader viewed last is remembered from the canonical address
+  too (the script only knew `r/<id>/m/`). "Places to watch" filters by municipality and links back; the
+  municipality's first card leads there with `#m-<code>`.

@@ -458,6 +458,10 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .el-strip a small { display: block; font-weight: 400; font-size: 0.75rem; color: var(--ink-2); }
 .hist-fold summary { grid-template-columns: minmax(0, 1fr) auto; }
 .hist-fold .el-body { padding-top: 10px; }
+.wk-check { margin: 6px 0 0; color: var(--ink-2); border-top: 1px solid var(--grid); padding-top: 6px; }
+table.city-muns tr.group th { text-align: left; padding-top: 14px; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+table.city-muns tr.subtotal, table.city-muns tr.total { font-weight: 600; background: var(--surface); }
+table.city-muns tr.subtotal th, table.city-muns tr.total th { text-align: left; }
 
 /* the municipality's page for a coordinator: my list, how it compares, the weak spots, my list by station */
 .mine { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; background: var(--surface); padding: 10px 14px; margin: 16px 0 0; font-size: 0.95rem; }

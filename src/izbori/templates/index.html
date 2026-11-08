@@ -7,7 +7,7 @@
 <section class="hero home-hero">
   <h1>{{ t('home_title') }}</h1>
   <p class="deck">{{ t('home_lede') }}</p>
-  <form class="search" role="search" data-search data-index="{{ link('search.json') }}" data-base="{{ link('') }}" action="{{ link('elections.html') }}" data-bm="{{ t('station_no') }}" data-mun-sub="{{ t('search_mun_sub', n='{n}') }}" data-flagged="{{ t('search_flagged', k='{k}', n='{n}') }}" data-clean="{{ t('search_clean', n='{n}') }}" data-former="{{ t('search_former', n='{n}') }}">
+  <form class="search" role="search" data-search data-index="{{ link('search.json') }}" data-base="{{ link('') }}" action="{{ link('elections.html') }}" data-bm="{{ t('station_no') }}" data-mun-sub="{{ t('search_mun_sub', n='{n}') }}" data-city-sub="{{ t('search_city_sub', n='{n}') }}" data-flagged="{{ t('search_flagged', k='{k}', n='{n}') }}" data-clean="{{ t('search_clean', n='{n}') }}" data-former="{{ t('search_former', n='{n}') }}">
     <label for="pretraga" class="visually-hidden">{{ t('search_field') }}</label>
     <div class="search-row">
       <input id="pretraga" type="search" autocomplete="off" placeholder="{{ t('search_placeholder') }}">

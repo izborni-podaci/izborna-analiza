@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mx with context %}
+{% block title %}{{ name(city.name) }} · {{ t('city_kicker') }}{% endblock %}
+{% block main %}
+{# A city split into several municipalities (8 Nov 2026): RIK has no row for it, so this page adds its
+   municipalities up by a municipality's arithmetic and lists them. The city is what the results put under it. #}
+{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(city.name), none)]) }}
+<p class="kicker">{{ t('city_kicker') }} · {{ rshort }}</p>
+<h1>{{ name(city.name) }}</h1>
+<p class="mun-line">{{ t('city_line', n=i(total.municipalities), stations=i(total.stations), registered=i(total.registered)) }}{% if history|length > 1 %} · {{ t('mun_in_elections', n=i(history|length)) }}{% endif %}</p>
+<nav class="toc" aria-label="{{ t('on_this_page') }}">
+  <a href="#compare">{{ t('city_compare_heading') }}</a> · <a href="#result">{{ t('city_result_heading') }}</a>{% if city_map %} · <a href="#mapa">{{ t('city_map_heading') }}</a>{% endif %} · <a href="#opstine">{{ t('city_municipalities_heading') }}</a>{% if history|length > 1 %} · <a href="#kroz-izbore">{{ t('mun_across_heading') }}</a>{% endif %}
+</nav>
+{{ mx.data_note() }}
+
+<section class="co-compare" id="compare">
+  <div class="sec-head"><h2>{{ t('city_compare_heading') }}</h2><span class="muted">{{ t('city_compare_note') }}</span></div>
+  <div class="tiles co-tiles">
+    <div class="tile"><p class="tile-label">{{ t('turnout') }}</p><p class="tile-value">{{ pct(total.turnout, 1) }}</p><p class="tile-sub">{% if country.turnout is not none %}{{ t('co_country', v=pct(country.turnout, 1)) }}{% endif %}</p></div>
+    <div class="tile"><p class="tile-label">{{ t('co_tile_flagged') }}</p><p class="tile-value">{{ t('co_n_of', n=i(total.flagged), of=i(total.stations)) }}</p><p class="tile-sub">{{ pct(total.flagged_share, 1) }}{% if country.flagged_share is not none %} · {{ t('co_country', v=pct(country.flagged_share, 1)) }}{% endif %}</p></div>
+    <div class="tile"><p class="tile-label">{{ t('invalid') }}</p><p class="tile-value">{{ pct(total.invalid, 1) }}</p><p class="tile-sub">{% if country.invalid is not none %}{{ t('co_country', v=pct(country.invalid, 1)) }}{% endif %}</p></div>
+    <div class="tile"><p class="tile-label">{{ t('registered') }}</p><p class="tile-value">{{ i(total.registered) }}</p><p class="tile-sub">{{ t('city_tile_counted', counted=i(total.counted), n=i(total.stations)) }}</p></div>
+  </div>
+</section>
+
+<h2 id="result">{{ t('city_result_heading') }}</h2>
+<p class="mun-line">{{ t('mun_turnout_line', voted=i(total.voted), registered=i(total.registered), turnout=pct(total.turnout, 1), invalid=pct(total.invalid, 1)) }}</p>
+<p class="rule">{{ t('city_result_note') }}</p>
+<ul class="vote-list">
+{% for r in mres if not r.minor %}
+  <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
+    <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
+    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
+{% endfor %}
+</ul>
+{% set minor = mres|selectattr('minor')|list %}
+{% if minor %}<details class="minor-votes"><summary>{{ t('minor_candidates' if rnd.kind == 'presidential' else 'minor_lists', n=minor|length) }}</summary>
+<ul class="vote-list">
+{% for r in minor %}
+  <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
+    <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
+    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
+{% endfor %}
+</ul></details>{% endif %}
+
+{% if city_map %}
+<section class="villages" id="mapa">
+  <div class="sec-head"><h2>{{ t('city_map_heading') }}</h2><span class="muted">{{ t('city_map_note') }}</span></div>
+  <figure class="smap-wrap">
+    {{ city_map|safe }}
+    <figcaption class="small muted">
+      <span class="smap-legend">{% for g in legend %}<span><i class="sw {{ g.cls }}"></i>{{ name(g.label) }} ({{ i(g.n) }})</span>{% endfor %}<span><i class="sw mp-close-sw"></i>{{ t('vi_legend_close') }}</span></span>
+      {% if map_key %}<span class="smap-key">{% for nm in map_key %}<span>{{ loop.index }} {{ name(nm) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
+      {{ t('city_map_source') }}
+    </figcaption>
+  </figure>
+</section>
+{% endif %}
+
+<section id="opstine">
+  <div class="sec-head"><h2>{{ t('city_municipalities_heading') }}</h2><span class="muted">{{ t('city_municipalities_note') }}</span></div>
+  <div class="table-wrap">
+  <table class="compact city-muns">
+    <thead><tr><th>{{ t('municipality') }}</th><th class="num">{{ t('stations') }}</th><th class="num">{{ t('registered') }}</th><th class="num">{{ t('turnout') }}</th><th class="num">{{ t('invalid') }}</th><th>{{ t('vi_col_first') }}</th><th class="num">{{ t('flagged') }}</th></tr></thead>
+    <tbody>
+    {% for g in groups %}
+      {% if g.key %}<tr class="group"><th colspan="7">{{ t('city_group_' ~ g.key, n=i(g.rows|length)) }}</th></tr>{% endif %}
+      {% for m in g.rows %}
+      {% set lead = leaders[m.code] %}
+      <tr{% if m.flagged %} class="flagged"{% endif %}>
+        <td><a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ name(short_name(m.name)) }}</a>{% if m.code == city.own %} <span class="muted small">{{ t('city_own_row') }}</span>{% endif %}</td>
+        <td class="num">{{ i(m.stations) }}</td>
+        <td class="num">{{ i(m.registered) }}</td>
+        <td class="num">{{ pct(m.turnout, 1) }}</td>
+        <td class="num">{{ pct(m.invalid, 1) }}</td>
+        <td>{% if lead[0] is not none %}{{ name(labels[lead[0]]) }} <span class="muted">{{ pct(lead[1], 1) }}</span>{% endif %}</td>
+        <td class="num">{% if m.flagged %}<a href="{{ link(base + 'check.html') }}#m-{{ m.code }}">{{ i(m.flagged) }}</a>{% else %}0{% endif %}</td>
+      </tr>
+      {% endfor %}
+      {% if g.key %}<tr class="subtotal"><th>{{ t('city_subtotal') }}</th><td class="num">{{ i(g.sum.stations) }}</td><td class="num">{{ i(g.sum.registered) }}</td><td class="num">{{ pct(g.sum.turnout, 1) }}</td><td class="num">{{ pct(g.sum.invalid, 1) }}</td><td>{% if g.top %}{{ name(g.top[0].label) }} <span class="muted">{{ pct(g.top[0].share, 1) }}</span>{% endif %}</td><td class="num">{{ i(g.sum.flagged) }}</td></tr>{% endif %}
+    {% endfor %}
+    </tbody>
+    <tfoot><tr class="total"><th>{{ t('city_total') }}</th><td class="num">{{ i(total.stations) }}</td><td class="num">{{ i(total.registered) }}</td><td class="num">{{ pct(total.turnout, 1) }}</td><td class="num">{{ pct(total.invalid, 1) }}</td><td>{% if mtop %}{{ name(mtop[0].label) }} <span class="muted">{{ pct(mtop[0].share, 1) }}</span>{% endif %}</td><td class="num">{{ i(total.flagged) }}</td></tr></tfoot>
+  </table>
+  </div>
+</section>
+
+{% if history|length > 1 %}
+<section class="across" id="kroz-izbore">
+  <div class="sec-head"><h2>{{ t('mun_across_heading') }}</h2><span class="muted">{{ t('city_across_note') }}</span></div>
+  <div class="table-wrap history-wrap">
+  <table class="history" role="table">
+    <thead role="rowgroup"><tr role="row">
+      <th role="columnheader">{{ t('home_col_election') }}</th><th role="columnheader" class="num">{{ t('city_col_muns') }}</th><th role="columnheader" class="num">{{ t('stations') }}</th>
+      <th role="columnheader" class="num">{{ t('registered') }}</th><th role="columnheader" class="num">{{ t('voted') }}</th><th role="columnheader" class="num">{{ t('turnout') }}</th>
+      <th role="columnheader" class="num">{{ t('invalid') }}</th><th role="columnheader">{{ t('top_three') }}</th><th role="columnheader" class="num">{{ t('flagged') }}</th>
+    </tr></thead>
+    <tbody role="rowgroup">
+    {% for e in history %}
+      {% set hm = e.m %}
+      <tr role="row">
+        {{ mx.history_election(e, link('r/' ~ e.rid ~ '/index.html')) }}
+        <td role="cell" class="num">{{ i(e.n) }}</td>
+        <td role="cell" class="num l-stations">{{ i(hm.counted) }}{% if hm.counted != hm.stations %} / {{ i(hm.stations) }}{% endif %}</td>
+        <td role="cell" class="num l-registered">{{ i(hm.registered) }}</td>
+        <td role="cell" class="num l-voted">{{ i(hm.voted) }}</td>
+        <td role="cell" class="num l-turnout">{{ pct(hm.turnout, 1) }}</td>
+        <td role="cell" class="num l-invalid">{{ pct(hm.invalid, 1) }}</td>
+        {{ mx.history_top(e.top) }}
+        <td role="cell" class="num l-flagged">{{ i(hm.flagged) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endif %}
+<p class="rule">{{ t('city_rule') }}</p>
+{% endblock %}

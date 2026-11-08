@@ -436,6 +436,9 @@ def test_search_leads_to_pages_across_elections(site):
             assert 0 <= k <= n
     data = json.loads((site / "search.json").read_text(encoding="utf-8"))
     assert len(data["s"]) == len(list((site / "s").glob("*.html")))
+    # the cities split into municipalities are found by their own name and open their own page
+    assert [g[:2] for g in data["g"]] == [["Beograd", "beograd"], ["Niš", "nis"], ["Požarevac", "pozarevac"], ["Užice", "uzice"]]
+    assert data["g"][0][2] == 17 and all((site / f"g/{g[1]}.html").exists() for g in data["g"])
     flagged = [s for s in data["s"] if s[4]]
     assert flagged and data["s"][:len(flagged)] == flagged  # flagged places first
 
@@ -452,7 +455,9 @@ def test_municipality_across_elections(site):
     assert 'href="../s/89010-140.html"' in page and "Biračka mesta kroz izbore" in page
     # round pages link to it, and their stations to their own pages
     mun = (site / "r/680072/m/89010.html").read_text(encoding="utf-8")
-    assert 'href="../../../m/89010.html"' in mun and 'href="../../../s/89010-1.html"' in mun
+    # the same page for the newest election: the strip leads to the earlier ones, the history is here too
+    assert 'href="../../../s/89010-1.html"' in mun and 'href="../../../r/341140/m/89010.html"' in mun
+    assert 'id="kroz-izbore"' in mun and 'class="el-strip"' in mun
 
 
 def test_results_by_settlement(site, archive):
@@ -674,3 +679,19 @@ def test_incremental_build_matches_a_full_build(tmp_path, archive, monkeypatch):
     assert not (tmp_path / "b" / "site" / "r" / "341143").exists()
     run(tmp_path / "d" / "site", False)
     assert same(tmp_path / "d" / "site", tmp_path / "b" / "site")
+
+
+def test_city_page_adds_its_municipalities_up(site):
+    """Belgrade: RIK has no row for the city, the page adds its 17 municipalities up, in two groups with subtotals and
+    the whole city, maps them by the leading list and links each; the municipality's page points back."""
+    page = (site / "g/beograd.html").read_text(encoding="utf-8")
+    assert "<h1>Beograd</h1>" in page and "17 opština" in page
+    links = re.findall(r'<td><a href="\.\./m/(\d+)\.html">([^<]+)</a>', page)
+    assert len(links) == 17 and ("70203", "Palilula") in links and ("70092", "Barajevo") in links
+    assert page.index("Centralne opštine (10)") < page.index("Prigradske opštine (7)") < page.index("Ceo grad")
+    assert 'class="smap"' in page and page.count('class="mp mp-') == 17
+    assert "Kroz izbore" in page and "Lokalni 2024" in page  # Belgrade's own election counts too
+    mun = (site / "m/70203.html").read_text(encoding="utf-8")
+    assert '<a href="../g/beograd.html">deo grada Beograd (17 opština) →</a>' in mun
+    poz = (site / "g/pozarevac.html").read_text(encoding="utf-8")
+    assert "(grad bez gradskih opština)" in poz and ("Kostolac" in poz)
