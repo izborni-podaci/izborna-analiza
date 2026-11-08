@@ -29,7 +29,7 @@ SITES_FILE = "municipal_sites.csv"
 STORE = "municipal_docs.json"
 AGENT = "izborna-analiza (https://github.com/izborni-podaci/izborna-analiza)"
 DOC_EXT = (".pdf", ".doc", ".docx")
-MAX_PAGES = 40  # per site and visit
+MAX_PAGES = 60  # per site and visit
 PAUSE = 0.7  # seconds between requests to one site
 SEARCHES = ("бирачких места", "biračkih mesta", "бирачки одбор", "birački odbor")
 
@@ -120,38 +120,54 @@ def crawl(domain: str, log=None, fetcher=fetch, sleep=time.sleep) -> dict[str, s
     """The commission's documents on one site: url → kind. The front page, then the pages it links to about
     elections or the commission (one level), then the site's search for each phrase in SEARCHES."""
     host = domain.lower()
-    roots = [f"https://{domain}/", f"https://www.{domain}/"]
+    # the front page: https, then www, then plain http (old sites)
+    roots = [f"https://{domain}/", f"https://www.{domain}/", f"http://{domain}/", f"http://www.{domain}/"]
     found: dict[str, str] = {}
     seen: set[str] = set()
-    queue: list[tuple[str, int]] = [(roots[0], 0)]
-    queue += [(f"{roots[0]}?s={urllib.parse.quote(q)}", 1) for q in SEARCHES]
-    pages = 0
-    while queue and pages < MAX_PAGES:
-        url, depth = queue.pop(0)
-        if url in seen:
-            continue
-        seen.add(url)
+    root = None
+    for r in roots:
         try:
-            html = fetcher(url)
-        except Exception as e:  # noqa: BLE001 - a page down must not stop the site
-            if log and depth == 0:
-                log(f"{domain}: {type(e).__name__}")
-            if depth == 0 and url == roots[0]:
-                queue.insert(0, (roots[1], 0))
-            continue
-        pages += 1
-        sleep(PAUSE)
+            html = fetcher(r)
+            root = r
+            break
+        except Exception as e:  # noqa: BLE001 - try the next spelling
+            err = type(e).__name__
+    if root is None:
+        if log:
+            log(f"{domain}: {err}")
+        return found
+    sleep(PAUSE)
+    queue: list[tuple[str, int, str | None]] = [(f"{root}?s={urllib.parse.quote(q)}", 2, None) for q in SEARCHES]
+    pages = 1
+
+    def take(html: str, url: str, depth: int) -> None:
         for href, text in links_of(html, url):
             u = urllib.parse.urlsplit(href)
             if u.netloc.lower().removeprefix("www.") != host.removeprefix("www."):
                 continue
             path = u.path.lower()
+            about = fold(text + " " + urllib.parse.unquote(path))
             if path.endswith(DOC_EXT):
                 kind = kind_of(text + " " + urllib.parse.unquote(path.rsplit("/", 1)[-1]))
                 if kind and href not in found:
                     found[href] = kind
-            elif depth == 0 and any(w in fold(text + " " + urllib.parse.unquote(path)) for w in PAGE_WORDS):
-                queue.append((href, 1))
+            elif depth < 2 and any(w in about for w in PAGE_WORDS):
+                # an election page, and the pages it links to about elections ("Избори" → "Избори 2026")
+                queue.append((href, depth + 1, None))
+
+    take(html, root, 0)
+    while queue and pages < MAX_PAGES:
+        url, depth, _ = queue.pop(0)
+        if url in seen:
+            continue
+        seen.add(url)
+        try:
+            html = fetcher(url)
+        except Exception:  # noqa: BLE001 - a page down must not stop the site
+            continue
+        pages += 1
+        sleep(PAUSE)
+        take(html, url, depth)
     return found
 
 
