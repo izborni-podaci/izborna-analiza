@@ -488,3 +488,15 @@ def test_odd_stations_name_a_lost_slot():
     cov["70513/9"] = lists(1, 2, 3, 7)  # one list more is not odd
     cov["80241/1"] = lists(1)  # too few stations read to say
     assert odd_stations(cov) == {"70513": [("70513/4", [3])]}
+
+
+def test_garbled_numbers_and_proposals_still_read(contestants):
+    """Zrenjanin 1 and Novi Sad 4 (8 Nov 2026): the first slot's number read as letters, and "предлог" garbled in
+    a text layer with "подносиоца" intact."""
+    a, b, c = LISTS
+    text = HEAD + (f"xx, члан Петар Петровић\nзаменик члана __ Марко Марковић\n\nна предлог подносиоца Изборне листе {a};\n"
+                   f"2. члан Јован Јовић\n\nзаменик члана Ана Анић\nна xxx подносиоца Изборне листе {b};\n"
+                   f"3. члан Лука Лукић\n\nзаменик члана Мина Минић\n\nна предлог подносиоца Изборне листе {c};\n") + TAIL
+    assert lists_of(parse_decision(text), contestants) == {1: (True, True), 2: (True, True), 3: (True, True)}
+    # the garbage of a bad text layer has numbers and colons but no "члан": not slots
+    assert parse_decision("БИРАЧКО МЕСТО БРОЈ 1\n6. xxxx: yyy\n7. zzzz: www на предлог ...").slots == []

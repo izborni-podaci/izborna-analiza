@@ -479,6 +479,13 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   nothing was lost. The real losses were three layouts (Žabalj, Zrenjanin, Novi Sad). So the daily merge now logs
   `odd_stations`: stations lacking a list that 90% of their municipality's stations have, computed on the union,
   the honest version of the per-document statistic.
+  Reading version 3 was a regression: its looser slot pattern also passed the sanity check that picks a PDF's
+  text layer over OCR, so bad text layers (whole commissions: Čoka, Trstenik, Žitorađa…) were taken for the
+  decision and 4,700 slots vanished for an hour. Version 4: the strict pattern decides the text layer, the loose
+  one applies only inside a decision that has proper slots. Lesson: a pattern used as a sanity check must not be
+  the one you loosen. Version 4 also reads again (line by line, or OCR instead of the text layer) whenever a
+  decision names more members than slots were found, takes "подносиоца" as a proposal's mark, a slot whose number
+  OCR turned into letters, and a deputy's role without its colon.
 - **8 Nov 2026, "(naselje nije utvrđeno)".** Marko asked which six Novi Sad stations had no settlement and why.
   Two had an address whose building OCR mangled a little ("ЂУРАДАНИЧИЋ", "ІІСВЕТИ CABAіІ"), so the building rule
   (`places.contradicts`) set the whole address aside, town included; it now tolerates a lost space or a letter or

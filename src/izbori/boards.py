@@ -137,10 +137,14 @@ def last_page(pagination_html: str) -> int:
 # --- reading a decision ------------------------------------------------------------------------
 
 LETTERS = re.compile(r"[A-Za-zА-Яа-яЂђЈјЉљЊњЋћЏџČčĆćŠšŽžĐđ]")
-# "1. члан:" or "1) - члан"; also "4. xxxx:" where OCR garbled the word "члан" — a slot's number, a short word and a
-# colon is a slot all the same (without this, the garbled slot's people and list ran into the slot before it)
-SLOT = re.compile(r"(?:^|\n)[\s\-–—~+•]*(\d{1,2})\s*[.,)][\s\-–—_|]*(?:(?:члан|clan|član)\b\s*:?|[^\W\d_]{3,6}\s*:)",
-                  re.IGNORECASE)
+# "1. члан:" or "1) - члан". SLOT_LOOSE also takes "4. xxxx:" where OCR garbled the word "члан" — a slot's number, a
+# short word and a colon is a slot all the same (without this, the garbled slot's people and list ran into the
+# slot before it) — but only inside a decision that has proper slots too: on its own it also matches the garbage
+# of a bad text layer, which the strict one is there to reject (reading version 3 lost 4,700 slots that way).
+SLOT = re.compile(r"(?:^|\n)[\s\-–—~+•]*(\d{1,2})\s*[.,)][\s\-–—_|]*(?:члан|clan|član)\b\s*:?", re.IGNORECASE)
+# … and "xx, члан" where OCR garbled the number itself (Zrenjanin, 2026): no number, but a slot
+SLOT_LOOSE = re.compile(r"(?:^|\n)[\s\-–—~+•]*(?:(\d{1,2})\s*[.,)][\s\-–—_|]*(?:(?:члан|clan|član)\b\s*:?|[^\W\d_]{3,6}\s*:)"
+                        r"|[^\W\d_]{1,2}\s*[.,)][\s\-–—_|]*(?:члан|clan|član)\b\s*:?)", re.IGNORECASE)
 # Every member's or deputy's role, and every proposal, wherever they stand: for the layouts that don't number
 # each member ("- члан: …", or each list first and its people under it). "члана" alone (genitive, as in "на основу
 # члана 32") is never a role.
@@ -148,10 +152,14 @@ ROLE = re.compile(r"\b(заменик\s+члана|zamenik\s+[čc]lana|члан|
 
 STATION = re.compile(r"(?:БИРАЧКО\s+МЕСТО\s+БРОЈ|BIRAČKO\s+MESTO\s+BROJ|BIRACKO\s+MESTO\s+BROJ)\s*[:.]?\s*(\d+)", re.I)
 END = re.compile(r"\n\s*(?:2\s*[.,]\s*Ово\s+решење|2\s*[.,]\s*Ovo\s+rešenje|Образложење|Obrazloženje)", re.I)
-DEPUTY = re.compile(r"заменик[^:]{0,20}:|zamenik[^:]{0,20}:", re.I)
+DEPUTY_COLON = re.compile(r"заменик[^:\n]{0,20}:|zamenik[^:\n]{0,20}:", re.I)  # "заменик члана:" introduces the deputy
+# … or the role without its colon ("заменик члана __ <name>", Zrenjanin 2026); the per-role table layout is told
+# apart by the colon's absence, so it keeps to DEPUTY_COLON
+DEPUTY = re.compile(r"заменик[^:\n]{0,20}:|zamenik[^:\n]{0,20}:|заменик\s+члана\b[\s_\-–—]*|zamenik\s+[čc]lana\b[\s_\-–—]*", re.I)
 # "на предлог": OCR often misreads the short word before it ("ха", "иа", "па"), so a proposal is "предлог" with
 # whatever short word stands before it; without this, a slot whose "на" was misread was dropped altogether
-PROPOSER = re.compile(r"(?:\S{1,3}\s+)?(?:предлог|predlog)", re.I)
+# "подносиоца" (the proposer) marks a proposal too, for the text layers that garble "предлог" itself (Novi Sad)
+PROPOSER = re.compile(r"(?:\S{1,3}\s+)?(?:предлог|predlog)(?:\s+(?:подносиоца|podnosioca))?|подносиоца|podnosioca", re.I)
 
 
 @dataclass
@@ -246,15 +254,17 @@ def parse_decision(text: str) -> Decision:
     if end:
         body = text[:end.start()]
     starts = list(SLOT.finditer(body))
+    if starts:  # a decision with proper slots: a garbled "члан" between them still starts a slot
+        starts = list(SLOT_LOOSE.finditer(body))
     raws = [body[sm.end(): starts[k + 1].start() if k + 1 < len(starts) else len(body)] for k, sm in enumerate(starts)]
     # each role with its own proposal, the deputy's not introduced by "заменик члана:" as in other layouts; a row's
     # proposal may stand on the line above its slot's number, so the decision's layout is told by any slot
-    per_role = any(len(PROPOSER.findall(r)) > 1 and DEPUTY_ROLE.search(r) and not DEPUTY.search(r) for r in raws)
+    per_role = any(len(PROPOSER.findall(r)) > 1 and DEPUTY_ROLE.search(r) and not DEPUTY_COLON.search(r) for r in raws)
     slots = []
     for sm, raw in zip(starts, raws):
         chunk = " ".join(raw.split())
-        if per_role and DEPUTY_ROLE.search(chunk) and not DEPUTY.search(chunk):
-            slots.extend(_per_role(int(sm.group(1)), raw))
+        if per_role and DEPUTY_ROLE.search(chunk) and not DEPUTY_COLON.search(chunk):
+            slots.extend(_per_role(int(sm.group(1)) if sm.group(1) else 0, raw))
             continue
         prop = PROPOSER.search(chunk)
         if not prop:
@@ -529,7 +539,10 @@ def decision_text(pdf: bytes) -> str:
 # older reading is read again (plan() lists them), a few hundred per daily run until all are current.
 # 2: a proposal is "предлог" with whatever short word before it (OCR misread "на" and dropped the slot).
 # 3: a slot starts at "N. <short word>:" even when OCR garbled "члан" (the slot ran into the one before it).
-PARSER = 3
+# 4: that only inside a decision with proper slots; version 3 took a bad text layer's garbage for slots. Also:
+#    a slot whose number OCR garbled ("xx, члан"), "подносиоца" as a proposal's mark, and a second reading
+#    (line by line, or OCR instead of a text layer) when a decision names more members than slots were found.
+PARSER = 4
 
 
 def slot_list(slot: Slot, contestants: list[dict]) -> int | None:
@@ -537,11 +550,32 @@ def slot_list(slot: Slot, contestants: list[dict]) -> int | None:
                                                                                                 contestants)
 
 
+MEMBER_LINE = re.compile(r"(?:^|\n)[^\n]{0,8}(?:члан|clan|član)\b\s*:?\s", re.I)
+
+
+def best_reading(pdf: bytes) -> Decision:
+    """The decision as read, and, when it names more members than the slots found (a number or a word OCR
+    garbled), read again line by line (and by OCR where the text layer was used): the reading with most slots
+    wins. Žabalj and Novi Sad, 2026: the second reading had every slot the first had lost."""
+    text = decision_text(pdf)
+    decision = parse_decision(text)
+    members = len(MEMBER_LINE.findall(_normalize(text)))
+    if len(decision.slots) >= members or members == 0:
+        return decision
+    for kw in ({"ocr": True, "psm": 6}, {"ocr": True}):
+        again = pdf_text(pdf, **kw)
+        if again.strip():
+            other = parse_decision(again)
+            if len(other.slots) > len(decision.slots):
+                decision = other
+    return decision
+
+
 def read_doc(doc: BoardDoc, pdf: bytes, contestants: list[dict], station_key: str | None,
              diagnose: bool = False) -> dict:
     """What the store keeps about one decision: no names, only lists, yes/no and the address."""
     text = decision_text(pdf)
-    decision = parse_decision(text)
+    decision = best_reading(pdf)
     slots = []
     unmatched = 0
     for s in decision.slots:
