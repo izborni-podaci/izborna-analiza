@@ -385,3 +385,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   variant (a big line, a sentence, the figures below), with a palette where a colour means a kind of content and
   never a list: ink, sand, amber, brick (only for unusual numbers), teal, and yellow on dark. Build order he set:
   home → the station's page → the municipality → analyses.
+- **8 Nov 2026, the palette for the whole site.** Three schemes were drawn on the canvas over the same home page and
+  a table: A ink and sand (what the home page had), B newsprint with one accent, C navy and gold. Marko chose **C**.
+  The roles are fixed in the tokens so every page follows: navy for the brand and the data, gold for the one thing
+  to look at, red only for warnings, teal for the lists; the header sits on navy with a gold rule; `--gold`,
+  `--gold-ink`, `--brand`, `--on-brand` and `--warn-track` were added, and warnings no longer share the data colour
+  (`td.warn`, `tr.flagged` use `--critical`). The first tab is *Početna*: a tab that brings you back should say so.
