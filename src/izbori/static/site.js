@@ -63,7 +63,7 @@
             // [folded label, folded label with former numbers, [label, url, sub-line]]
             const mun = j.m.map((m) => {
               const f = fold(m[0]);
-              return [f, f, [m[0], `m/${m[1]}.html`, d.munSub.replace('{n}', m[2])]];
+              return [f, f, [m[0], `r/${m[3]}/m/${m[1]}.html`, d.munSub.replace('{n}', m[2])]];
             });
             const st = j.s.map((s) => {
               const m = j.m[s[0]];

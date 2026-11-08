@@ -76,10 +76,10 @@ def test_site(site):
     assert 'id="podaci"' in (out / "about.html").read_text(encoding="utf-8")
     assert 'value="g-paper"' in (out / "r/680072/check.html").read_text(encoding="utf-8")  # the group's link lands
     # every municipality, in Serbian alphabetical order: Latin (lj after l, ć after c) and Cyrillic
-    names = re.findall(r'<td><a href="m/\d+\.html">([^<]+)</a>', (out / "municipalities.html").read_text(encoding="utf-8"))
+    names = re.findall(r'<td><a href="r/\d+/m/\d+\.html">([^<]+)</a>', (out / "municipalities.html").read_text(encoding="utf-8"))
     assert len(names) > 150 and names.index("Lučani") < names.index("Ljig")
     assert names.index("Crna Trava") < names.index("Ćićevac")
-    cyr = re.findall(r'<td><a href="\.\./cyr/m/\d+\.html">([^<]+)</a>',
+    cyr = re.findall(r'<td><a href="\.\./cyr/r/\d+/m/\d+\.html">([^<]+)</a>',
                      (out / "cyr/municipalities.html").read_text(encoding="utf-8"))
     assert cyr.index("Тутин") < cyr.index("Ћићевац") < cyr.index("Уб")
 
@@ -421,12 +421,13 @@ def test_site_station_pages_and_breadcrumbs(site):
 
 
 def test_search_leads_to_pages_across_elections(site):
-    """Every search result opens a page across all elections: a municipality page with a row per election, and a
-    page for every polling place, flagged or not."""
+    """A municipality found by the search opens its page in its newest election (the one with the map), which links
+    to its page across elections; a polling place opens its page across all elections, flagged or not."""
     for prefix in ("", "cyr/"):
         data = json.loads((site / prefix / "search.json").read_text(encoding="utf-8"))
-        assert all(len(m) == 3 and m[2] >= 1 for m in data["m"])
+        assert all(len(m) == 4 and m[2] >= 1 for m in data["m"])
         for m in data["m"]:
+            assert (site / prefix / f"r/{m[3]}/m/{m[1]}.html").exists(), m
             assert (site / prefix / f"m/{m[1]}.html").exists(), m
         for s in data["s"]:
             mi, number, _, page, k, n, _ = s

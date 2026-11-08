@@ -59,7 +59,7 @@
 {% endmacro %}
 
 {% block main %}
-{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(s.municipality), link('m/' ~ s.municipality_code ~ '.html')), (t('station_no') ~ ' ' ~ s.number, none)]) }}
+{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(s.municipality), link('r/' ~ rows[0].rid ~ '/m/' ~ s.municipality_code ~ '.html')), (t('station_no') ~ ' ' ~ s.number, none)]) }}
 <p class="kicker">{{ name(s.municipality) }} · {{ t('st_kicker') }} · {{ t('station_history') }}</p>
 <h1 class="station-title">{{ t('station_no') }} {{ s.number }}{% if s.name %} · {{ name(s.name) }}{% endif %}</h1>
 {% if address %}<p class="muted">{{ t('address') }}: {{ name(address) }}</p>{% endif %}

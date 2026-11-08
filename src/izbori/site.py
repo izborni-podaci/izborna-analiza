@@ -295,7 +295,7 @@ class Site:
                         + self.city_docs_of(r)[0].get(code, {}).get("n", 0))
             crid = next((r for r in rids if docs_in(r)), None)
             last = self.rids[-1]  # the archive's newest election: named only where a row refers to another one
-            rows.append({"code": code, "name": newest["name"], "n": len(rids), "stations": newest["stations"],
+            rows.append({"code": code, "name": newest["name"], "n": len(rids), "stations": newest["stations"], "rid": rids[0],
                          "latest": self.shorts[loc][rids[0]] if rids[0] != last else "", "crid": crid,
                          "cdocs": docs_in(crid) if crid else 0,
                          "cshort": self.shorts[loc][crid] if crid and crid != last else ""})
@@ -637,10 +637,11 @@ class Site:
                 "number": p.newest.number, "name": p.newest.name, "address": p.address or None, "elections": elections}
 
     def write_search(self, loc: str) -> None:
-        """search.json for the search on the home page, kept small. Municipalities: [name, code, elections]. Polling
-        places: [municipality, number, name, page, elections flagged, elections, former numbers], flagged ones first;
-        page is left out ("") when it is the municipality code and number. Both lead to their pages across all
-        elections; the page builds the labels and links."""
+        """search.json for the search on the home page, kept small. Municipalities: [name, code, elections, newest
+        election]. Polling places: [municipality, number, name, page, elections flagged, elections, former numbers],
+        flagged ones first; page is left out ("") when it is the municipality code and number. A municipality leads
+        to its page in its newest election (the coordinator's page, with the map); a place to its page across all
+        elections, which opens on the newest; the page builds the labels and links."""
         conv = (lambda text: text) if loc == "cyr" else latin
         names = {code: self.mun_rows[rids[0]][code]["name"] for code, rids in self.mun_rounds.items()}
         order = sorted(names, key=lambda code: latin(names[code]))
@@ -652,7 +653,8 @@ class Site:
             rows.append((-k, latin(names[p.code]), int(s.number) if s.number.isdigit() else 0, s.number,
                          [at[p.code], s.number, conv(s.name), page, k, len(p.rounds), ", ".join(p.former_numbers)]))
         rows.sort(key=lambda r: r[:4])
-        data = {"m": [[conv(names[c]), c, len(self.mun_rounds[c])] for c in order], "s": [r[4] for r in rows]}
+        data = {"m": [[conv(names[c]), c, len(self.mun_rounds[c]), self.mun_rounds[c][0]] for c in order],
+                "s": [r[4] for r in rows]}
         self.put(PREFIX[loc] + "search.json", json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
     def short_title(self, rnd, loc: str) -> str:
