@@ -19,7 +19,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from izbori import boards, feed, repeat, stats, svg
+from izbori import boards, feed, maps, repeat, stats, svg
 from izbori.checks import BY_CODE, CHECKS, GROUPS, RULES
 from izbori.config import REPO_URL, RIK_PUBLIC, SITE_URL
 from izbori.contests import Presidential, Proportional, contest_rules
@@ -396,6 +396,7 @@ class Site:
                 if self.notes_dir:
                     files.append(Path(self.notes_dir) / f"{r}.csv")
             files += [self.archive.dir(rid) / settlements.STORE] + [self.archive.root / f for f in settlements.FIGURE_TABLES]
+            files.append(self.archive.root / "geo" / geo.SETTLEMENT_FILE)  # the municipality's map by settlement
             links = hashlib.sha256("|".join(self.st_path(rid, s.key) for s in self.analyses[rid].round.stations).encode())
             links.update(repr(sorted(self.city_parts.items())).encode())  # from every election, later ones too
             self.round_keys[rid] = file_digest(*files) + links.hexdigest()
@@ -1011,6 +1012,11 @@ class Site:
             by_code[s.municipality_code].append(s)
         settl = self.settlements_of(rid)
         profiles = coordinator.profiles(self.mun_rows[rid], by_code, settl, self.figures)
+        shapes = geo.settlements_by_municipality(self.archive.root / "geo" / geo.SETTLEMENT_FILE)
+        ranks = {i: k + 1 for k, i in enumerate(sorted(range(len(a.round.contestants)), key=lambda i: -a.totals.votes[i]))}
+        short = {i: narrative.short_label(self.labels[rid][i]) for i in range(len(a.round.contestants))}
+        if loc == "en":
+            short = {i: latin(v) for i, v in short.items()}
         domestic = [m for m in municipalities if m["kind"] == "domestic"]
         country = {"turnout": a.totals.turnout, "invalid": a.totals.invalid_share,
                    "flagged_share": (sum(m["flagged"] for m in domestic) / sum(m["stations"] for m in domestic))
@@ -1061,12 +1067,18 @@ class Site:
             flag_text = {s.key: {f["code"]: f["text"] for f in r["flags"]} for s, r in zip(sts, rows)}
             villages = coordinator.by_settlement(sts, settl, self.figures, index)
             village_leaders = coordinator.leaders(villages)
+            results = {v["name"]: v for v in villages if v["name"]}
+            feats = shapes.get(m["code"], [])
+            village_map = maps.settlement_map(feats, results, ranks, short, m["name"],
+                                              lambda x: fmt_pct(x, loc, 1)) if feats and len(results) > 1 else ""
+            village_legend = maps.legend(results, ranks, short) if village_map else []
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
                        mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st, weak=weak, devs=devs,
                        index=index, number=number, compare=compare, mun_data=data.replace("<", "\\u003c"),
                        ctrl_of=coordinator.controller_of, rules=RULES, flag_text=flag_text, labels=self.labels[rid],
                        settlement_by_key={s.key: settlement_of(s) for s in sts}, villages=villages,
-                       village_leaders=village_leaders,
+                       village_leaders=village_leaders, village_map=village_map, village_legend=village_legend,
+                       mapped=sum(1 for f in feats if f["properties"].get("census") in results),
                        cdocs=self.commission_of(rid).get(m["code"], []),
                        citydocs=self.city_docs_of(rid)[0].get(m["code"]), **common)
 

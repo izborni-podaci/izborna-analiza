@@ -1,0 +1,91 @@
+"""A municipality's map by settlement, as SVG drawn when the site is built.
+
+The settlements' boundaries come from data/geo/settlements.json (geo.py, OpenStreetMap). Each settlement is a path
+coloured by the list that is first there: not by the list's identity but by its rank in the whole election, the
+same palette the seats use (--s1 … --s8), so a reader learns the colours once per election. A close win (under
+`CLOSE` points) is drawn lighter; a settlement without a result or without a census match is grey.
+"""
+from __future__ import annotations
+
+import math
+from html import escape
+
+WIDTH = 640  # CSS pixels of the drawing's width; the height follows the municipality's shape, within MAX_HEIGHT
+MAX_HEIGHT = 520
+CLOSE = 0.05  # the leader fewer than this many points ahead: a lighter fill
+PALETTE = 8  # lists ranked past this share the "other" colour
+
+
+def _rings(geometry: dict):
+    if geometry["type"] == "Polygon":
+        yield from geometry["coordinates"]
+    elif geometry["type"] == "MultiPolygon":
+        for poly in geometry["coordinates"]:
+            yield from poly
+
+
+def project(features: list[dict], width: int = WIDTH, max_height: int = MAX_HEIGHT):
+    """A function from (lon, lat) to drawing coordinates, and the drawing's height: an equirectangular projection
+    scaled by the cosine of the middle latitude, fitted to the width."""
+    xs, ys = [], []
+    for f in features:
+        for ring in _rings(f["geometry"]):
+            for lon, lat in ring:
+                xs.append(lon)
+                ys.append(lat)
+    if not xs:
+        return None, 0
+    lat0 = (min(ys) + max(ys)) / 2
+    k = math.cos(math.radians(lat0))
+    span_x = (max(xs) - min(xs)) * k or 1e-9
+    span_y = (max(ys) - min(ys)) or 1e-9
+    scale = min((width - 4) / span_x, (max_height - 4) / span_y)
+    height = round(span_y * scale + 4)
+    x0, y1 = min(xs), max(ys)
+
+    def to(lon: float, lat: float) -> tuple[float, float]:
+        return 2 + (lon - x0) * k * scale, 2 + (y1 - lat) * scale
+    return to, height
+
+
+def path_d(geometry: dict, to) -> str:
+    parts = []
+    for ring in _rings(geometry):
+        pts = [to(lon, lat) for lon, lat in ring]
+        parts.append("M" + "L".join(f"{x:.1f},{y:.1f}" for x, y in pts) + "Z")
+    return "".join(parts)
+
+
+def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[int, int], labels: dict[int, str],
+                   title: str, pct, width: int = WIDTH) -> str:
+    """The SVG. results: census settlement name → {"leader": list index or None, "share", "second"} (from
+    coordinator.by_settlement); ranks: list index → its rank in the election (1 = most votes); labels: list index →
+    display label. Empty string when there is nothing to draw."""
+    to, height = project(features, width)
+    if to is None:
+        return ""
+    paths = []
+    for f in sorted(features, key=lambda f: f["properties"].get("census") or ""):
+        p = f["properties"]
+        r = results.get(p.get("census") or "")
+        cls, tip = "mp-none", escape(p.get("census") or p.get("name") or "")
+        if r and r.get("leader") is not None:
+            rank = ranks.get(r["leader"], PALETTE + 1)
+            cls = f"mp-{min(rank, PALETTE + 1)}"
+            if r.get("second") is not None and r["share"] - r["second"] < CLOSE:
+                cls += " mp-close"
+            tip += f" · {escape(labels.get(r['leader'], ''))} {pct(r['share'])}"
+        paths.append(f'<path class="mp {cls}" d="{path_d(f["geometry"], to)}" data-set="{escape(p.get("census") or "")}">'
+                     f"<title>{tip}</title></path>")
+    return (f'<svg class="smap" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}">'
+            + "".join(paths) + "</svg>")
+
+
+def legend(results: dict[str, dict], ranks: dict[int, int], labels: dict[int, str]) -> list[dict]:
+    """Which lists lead somewhere, most settlements first: colour class, label, count."""
+    counts: dict[int, int] = {}
+    for r in results.values():
+        if r.get("leader") is not None:
+            counts[r["leader"]] = counts.get(r["leader"], 0) + 1
+    return [{"cls": f"mp-{min(ranks.get(i, PALETTE + 1), PALETTE + 1)}", "label": labels.get(i, ""), "n": n}
+            for i, n in sorted(counts.items(), key=lambda kv: (-kv[1], ranks.get(kv[0], PALETTE + 1)))]
