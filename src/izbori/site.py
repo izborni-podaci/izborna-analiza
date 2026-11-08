@@ -80,6 +80,7 @@ class Site:
                   "current": other == loc, "lang": LANG_ATTR[other]} for other in BUILT]
         return {
             "loc": loc, "lang": LANG_ATTR[loc], "root": root, "link": link, "langs": langs, "page": page,
+            "site_host": self.site_url.split("://", 1)[-1].rstrip("/"),
             "t": lambda key, **kw: t(key, loc, **kw), "i": lambda n: fmt_int(n, loc),
             "pct": lambda x, d=1: fmt_pct(x, loc, d), "num": lambda x, d=1: fmt_num(x, loc, d),
             "pval": lambda x: "< " + fmt_num(0.001, loc, 3) if x < 0.001 else fmt_num(x, loc, 3),

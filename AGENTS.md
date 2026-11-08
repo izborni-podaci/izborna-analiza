@@ -191,8 +191,12 @@ These are the project's promises to its readers. Never change them without the m
     per-link `rel`, and a `title` appears only where it adds something.
   - The municipality's lists keep to the documents of the vote. Decisions on polling boards are listed only on the
     place's page.
-- **Hosting:** GitHub Pages through Actions; the previous build is kept in the Actions cache.
-  - Planned: a custom domain, with Cloudflare in front for visitor counts at the edge.
+- **Hosting:** GitHub Pages through Actions at **izbornipodaci.rs** (since 8 Nov 2026); the previous build is kept
+  in the Actions cache. The domain is registered at Loopia; its DNS has the four GitHub Pages A records for the
+  apex and `www` as a CNAME to izborni-podaci.github.io. The custom domain is set in the repository's Pages
+  settings (an Actions deployment needs no CNAME file). `SITE_URL` in config.py is the only place the address
+  lives in code: feeds, the 404 page, the mail and the map image's source line all take it from there.
+  - Possible later: Cloudflare in front for visitor counts at the edge.
   - Cloudflare Pages' free plan doesn't fit, with its limit of 20,000 files. Workers' paid plan (100,000 files) or
     a VPS are the fallback if the site outgrows 1 GB.
 
@@ -222,7 +226,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 
 ## Known issues and open decisions
 
-- **Custom domain and hosting:** set aside until it is clear how useful the site is; GitHub Pages meanwhile.
 - **Belgrade 2024 decisions on polling boards (round 567956):** RIK's register holds only 129 decisions for its
   1,265 stations, listed under "Београд"; the station's name places them by district since 5 Nov 2026, and its 17
   decisions on the extended composition now read. The rest were never published there.
@@ -454,3 +457,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   (`#mun-data` carries each list's colour slot and country share, and the municipality's and country's turnout),
   so the image needs no server and no third party, and it is the same for every municipality and every list.
   The page itself does not gain the charts: the image is the thing people pass around, the page has the table.
+- **8 Nov 2026, custom domain.** The site moved to izbornipodaci.rs, the name of the GitHub organisation
+  spelled as one word; GitHub Pages stays the host and the old github.io address redirects. The address lives in
+  `SITE_URL` alone, and the image people download names the new host so a shared picture leads back to the site.

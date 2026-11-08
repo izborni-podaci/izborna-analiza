@@ -646,7 +646,7 @@ S: dict[str, tuple[str, str]] = {
     "vi_chart_country": ("цела земља", "whole country"),
     "vi_chart_mun": ("општина", "municipality"),
     "vi_png": ("Преузми слику (PNG)", "Download the image (PNG)"),
-    "vi_png_source": ("izborni-podaci.github.io/izborna-analiza · подаци: РИК · границе: OpenStreetMap (ODbL)", "izborni-podaci.github.io/izborna-analiza · data: RIK · boundaries: OpenStreetMap (ODbL)"),
+    "vi_png_source": ("{site} · подаци: РИК · границе: OpenStreetMap (ODbL)", "{site} · data: RIK · boundaries: OpenStreetMap (ODbL)"),
     "vi_legend_close": ("тесна победа (испод 5 поена)", "close win (under 5 points)"),
     "vi_legend_none": ("без резултата или без границе у попису", "no result or no census match"),
     "vi_map_note": ("Насеља са границом: {mapped} од {n}. Пређи преко насеља за назив и резултат.", "Settlements with a boundary: {mapped} of {n}. Hover a settlement for its name and result."),

@@ -92,7 +92,7 @@ def compose(state: dict, archive: Archive, site_url: str) -> EmailMessage:
             t("mail_final", "en", title="").rstrip(": ")
     msg["Subject"] = "[Izborni podaci] " + subject
     msg["Date"] = formatdate(localtime=False)
-    msg["Message-ID"] = make_msgid(domain="izborni-podaci.github.io")
+    msg["Message-ID"] = make_msgid(domain=site_url.split("://", 1)[-1].split("/", 1)[0])
     msg.set_content(body + "\n")
     return msg
 
