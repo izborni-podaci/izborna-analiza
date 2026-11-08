@@ -496,13 +496,19 @@ table.stations td b { font-weight: 600; }
 .mp-1 { fill: var(--s1) !important; } .mp-2 { fill: var(--s2) !important; } .mp-3 { fill: var(--s3) !important; }
 .mp-4 { fill: var(--s4) !important; } .mp-5 { fill: var(--s5) !important; } .mp-6 { fill: var(--s6) !important; }
 .mp-7 { fill: var(--s7) !important; } .mp-8 { fill: var(--s8) !important; } .mp-9 { fill: var(--ink-2) !important; }
-.smap .mp-close { fill-opacity: 0.5; }
+.smap .hatch .hb { fill: var(--page); }
+.smap .hatch .hf { fill: inherit; }
+.smap .mp-close.mp-1 { fill: url(#h1) !important; } .smap .mp-close.mp-2 { fill: url(#h2) !important; } .smap .mp-close.mp-3 { fill: url(#h3) !important; }
+.smap .mp-close.mp-4 { fill: url(#h4) !important; } .smap .mp-close.mp-5 { fill: url(#h5) !important; } .smap .mp-close.mp-6 { fill: url(#h6) !important; }
+.smap .mp-close.mp-7 { fill: url(#h7) !important; } .smap .mp-close.mp-8 { fill: url(#h8) !important; } .smap .mp-close.mp-9 { fill: url(#h9) !important; }
 .smap-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 4px; }
+.vi-facts { display: block; color: var(--ink); font-weight: 400; margin: 6px 0; }
+.vi-facts span { display: block; }
 .smap-legend .sw { display: inline-block; width: 14px; height: 10px; vertical-align: middle; margin-right: 5px; background: var(--axis); }
 .smap-legend .sw.mp-1 { background: var(--s1); } .smap-legend .sw.mp-2 { background: var(--s2); } .smap-legend .sw.mp-3 { background: var(--s3); }
 .smap-legend .sw.mp-4 { background: var(--s4); } .smap-legend .sw.mp-5 { background: var(--s5); } .smap-legend .sw.mp-6 { background: var(--s6); }
 .smap-legend .sw.mp-7 { background: var(--s7); } .smap-legend .sw.mp-8 { background: var(--s8); } .smap-legend .sw.mp-9 { background: var(--ink-2); }
-.smap-legend .sw.mp-close-sw { background: color-mix(in srgb, var(--s1) 50%, var(--page)); }
+.smap-legend .sw.mp-close-sw { background: repeating-linear-gradient(45deg, var(--ink-2) 0 2px, var(--page) 2px 5px); }
 table.villages td b { font-weight: 600; }
 
 /* phones: big touch targets, one column */

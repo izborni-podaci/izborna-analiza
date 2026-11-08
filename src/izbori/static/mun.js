@@ -120,18 +120,26 @@
     more.remove();
   });
 
-  // the map as a PNG: the SVG with its computed colours, a title, the legend and the source line, drawn on a
-  // canvas at twice the size and saved; everything happens in the browser, nothing is sent anywhere
+  // the map as a PNG: the SVG repainted in the light palette whatever theme the page is in (the image has a
+  // white background), a title, the legend, a few facts and the source line, drawn on a canvas at twice the
+  // size and saved; everything happens in the browser, nothing is sent anywhere
+  const LIGHT = { 1: '#2a78d6', 2: '#eb6834', 3: '#1baf7a', 4: '#eda100', 5: '#e87ba4', 6: '#008300', 7: '#6250d6',
+    8: '#e34948', 9: '#44607f', none: '#b9c9dc' }; // site.css :root --s1 … --s8, --ink-2, --axis
+  const colourOf = (el) => { const m = (el.getAttribute('class') || '').match(/mp-(\d|none)/); return m ? LIGHT[m[1]] : LIGHT.none; };
   const png = document.querySelector('[data-map-png]');
   const svg = document.querySelector('svg.smap');
   if (png && svg && window.URL && document.createElement('canvas').getContext) {
     png.hidden = false;
     png.addEventListener('click', () => {
       const copy = svg.cloneNode(true);
-      const paths = svg.querySelectorAll('path');
-      copy.querySelectorAll('path').forEach((p, k) => {
-        const cs = getComputedStyle(paths[k]);
-        p.setAttribute('fill', cs.fill); p.setAttribute('fill-opacity', cs.fillOpacity);
+      copy.querySelectorAll('pattern').forEach((pt) => {
+        pt.querySelector('.hb').setAttribute('fill', '#ffffff');
+        pt.querySelector('.hf').setAttribute('fill', colourOf(pt));
+      });
+      copy.querySelectorAll('path').forEach((p) => {
+        const close = /mp-close/.test(p.getAttribute('class') || '');
+        const k = ((p.getAttribute('class') || '').match(/mp-(\d)/) || [])[1];
+        p.setAttribute('fill', close && k ? 'url(#h' + k + ')' : colourOf(p));
         p.setAttribute('stroke', '#ffffff'); p.setAttribute('stroke-width', '1');
         p.querySelector('title') && p.removeChild(p.querySelector('title'));
       });
@@ -142,10 +150,18 @@
       });
       copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
       const [, , vw, vh] = copy.getAttribute('viewBox').split(' ').map(Number);
-      const scale = 2; const pad = 28; const top = 96;
-      const legend = [...document.querySelectorAll('.smap-legend > span')].map((sp) => ({ text: sp.textContent.trim(), color: getComputedStyle(sp.querySelector('.sw')).backgroundColor }));
-      const lines = Math.ceil(legend.length / 2);
-      const W = vw + 2 * pad; const H = top + vh + 24 + lines * 26 + 56;
+      const scale = 2; const pad = 28; const top = 96; const W = vw + 2 * pad;
+      const legend = [...document.querySelectorAll('.smap-legend > span')].map((sp) => {
+        const sw = sp.querySelector('.sw'); const cls = sw.getAttribute('class') || '';
+        return { text: sp.textContent.trim(), colour: /mp-close-sw/.test(cls) ? 'hatch' : colourOf(sw) };
+      });
+      const facts = [...document.querySelectorAll('.vi-facts [data-fact]')].map((f) => f.textContent.trim());
+      const rows = Math.ceil(legend.length / 2);
+      // wrap a fact to the width of the image
+      const probe = document.createElement('canvas').getContext('2d'); probe.font = '14px system-ui, sans-serif';
+      const lines = [];
+      facts.forEach((f) => { let line = ''; f.split(' ').forEach((w) => { const tryLine = line ? line + ' ' + w : w; if (probe.measureText(tryLine).width > W - 2 * pad - 20 && line) { lines.push(line); line = w; } else line = tryLine; }); if (line) lines.push(line); });
+      const H = top + vh + 24 + rows * 26 + (lines.length ? 16 + lines.length * 22 : 0) + 56;
       const canvas = document.createElement('canvas'); canvas.width = W * scale; canvas.height = H * scale;
       const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
@@ -164,9 +180,20 @@
         legend.forEach((g, k) => {
           const x = pad + (k % 2) * (W / 2 - pad);
           if (k && k % 2 === 0) y += 26;
-          ctx.fillStyle = g.color; ctx.fillRect(x, y - 11, 16, 12);
+          if (g.colour === 'hatch') {
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y - 11, 16, 12);
+            ctx.strokeStyle = '#44607f'; ctx.lineWidth = 1.5; ctx.beginPath();
+            for (let d = -12; d < 16; d += 4) { ctx.moveTo(x + d, y + 1); ctx.lineTo(x + d + 12, y - 11); }
+            ctx.save(); ctx.beginPath(); ctx.rect(x, y - 11, 16, 12); ctx.clip(); ctx.beginPath();
+            for (let d = -12; d < 16; d += 4) { ctx.moveTo(x + d, y + 1); ctx.lineTo(x + d + 12, y - 11); }
+            ctx.stroke(); ctx.restore();
+          } else { ctx.fillStyle = g.colour; ctx.fillRect(x, y - 11, 16, 12); }
           ctx.fillStyle = '#0f1f33'; ctx.fillText(g.text, x + 22, y);
         });
+        if (lines.length) {
+          y += 16; ctx.fillStyle = '#0f1f33'; ctx.font = '14px system-ui, sans-serif';
+          lines.forEach((l) => { y += 22; ctx.fillText('· ' + l, pad, y); });
+        }
         ctx.fillStyle = '#44607f'; ctx.font = '12px system-ui, sans-serif';
         ctx.fillText(png.dataset.source, pad, H - 20);
         canvas.toBlob((out) => {

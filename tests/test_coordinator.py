@@ -98,3 +98,18 @@ def test_result_by_settlement(tmp_path):
     assert selo["leader"] == 1 and abs(selo["share"] - 110 / 200) < 1e-9 and abs(selo["mine"] - 90 / 200) < 1e-9
     assert rows[1]["leader"] == 1 and rows[1]["population"] is None
     assert coordinator.leaders(rows) == [(1, ["Село", "Град"])]  # the unplaced stations don't count as a settlement
+
+
+def test_facts_name_extremes(tmp_path):
+    a = new_archive(tmp_path)
+    sts = [station("1", registered=500, voted=400, l1=300, l2=100, invalid=0), station("2", registered=500, voted=250, l1=50, l2=200, invalid=0),
+           station("3", registered=50, voted=50, l1=50, l2=0, invalid=0)]  # too small to count
+    a.add_snapshot("1", make_csv(sts), fetched="2026-10-25T20:00:00+00:00")
+    rnd = a.load("1")
+    joined = {"70000/1": {"u": "Тест", "s": "Село"}, "70000/2": {"u": "Тест", "s": "Град"}, "70000/3": {"u": "Тест", "s": "Засеок"}}
+    rows = coordinator.by_settlement(rnd.stations, joined, {}, None)
+    facts = coordinator.facts(rows, [0, 1])
+    assert [f["kind"] for f in facts] == ["turnout", "list", "list"]
+    assert facts[0]["hi"] == "Село" and facts[0]["lo"] == "Град"
+    assert facts[1]["index"] == 0 and facts[1]["hi"] == "Село" and abs(facts[1]["hv"] - 0.75) < 1e-9
+    assert facts[2]["hi"] == "Град" and facts[2]["lo"] == "Село"

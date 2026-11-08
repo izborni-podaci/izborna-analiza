@@ -104,7 +104,12 @@ def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[i
             tip += f" · {escape(labels.get(r['leader'], ''))} {pct(r['share'])}"
         paths.append(f'<path class="mp {cls}" d="{path_d(f["geometry"], to)}" data-set="{escape(p.get("census") or "")}">'
                      f"<title>{tip}</title></path>")
-    return (f'<svg class="smap" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}">'
+    # a close win is hatched in the list's colour rather than painted lighter: two shades of one colour were
+    # too alike, and stripes survive print and a dark page
+    defs = "".join(f'<pattern id="h{k}" class="hatch mp-{k}" patternUnits="userSpaceOnUse" width="7" height="7" '
+                   f'patternTransform="rotate(45)"><rect class="hb" width="7" height="7"/>'
+                   f'<rect class="hf" width="3.5" height="7"/></pattern>' for k in range(1, PALETTE + 2))
+    return (f'<svg class="smap" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}"><defs>{defs}</defs>'
             + "".join(paths) + "".join(texts) + "</svg>")
 
 

@@ -1072,12 +1072,21 @@ class Site:
             village_map = maps.settlement_map(feats, results, ranks, short, m["name"],
                                               lambda x: fmt_pct(x, loc, 1)) if feats and len(results) > 1 else ""
             village_legend = maps.legend(results, ranks, short) if village_map else []
+            top2 = sorted(range(len(votes)), key=lambda k: -votes[k])[:2] if any(votes) else []
+            village_facts = [tt("vi_fact_turnout", hi=f["hi"], hv=fmt_pct(f["hv"], loc, 1), lo=f["lo"], lv=fmt_pct(f["lv"], loc, 1))
+                             if f["kind"] == "turnout" else
+                             tt("vi_fact_list", list=short[f["index"]], hi=f["hi"], hv=fmt_pct(f["hv"], loc, 1), lo=f["lo"],
+                                lv=fmt_pct(f["lv"], loc, 1))
+                             for f in coordinator.facts(villages, top2)] if village_map else []
+            if village_map and m["turnout"] is not None and country["turnout"] is not None:
+                village_facts.append(tt("vi_fact_mun", t=fmt_pct(m["turnout"], loc, 1), c=fmt_pct(country["turnout"], loc, 1)))
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
                        mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st, weak=weak, devs=devs,
                        index=index, number=number, compare=compare, mun_data=data.replace("<", "\\u003c"),
                        ctrl_of=coordinator.controller_of, rules=RULES, flag_text=flag_text, labels=self.labels[rid],
                        settlement_by_key={s.key: settlement_of(s) for s in sts}, villages=villages,
                        village_leaders=village_leaders, village_map=village_map, village_legend=village_legend,
+                       village_facts=village_facts,
                        mapped=sum(1 for f in feats if f["properties"].get("census") in results),
                        cdocs=self.commission_of(rid).get(m["code"], []),
                        citydocs=self.city_docs_of(rid)[0].get(m["code"]), **common)

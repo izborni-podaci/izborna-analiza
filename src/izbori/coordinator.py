@@ -175,13 +175,35 @@ def by_settlement(stations: list, settlements: dict, figures: dict, index: int |
         order = sorted(range(n), key=lambda i: (-votes[i], i)) if valid else []
         f = figures.get(units.get(name)) if name else None
         rows.append({"name": name, "stations": len(sts), "counted": len(counted), "population": f.pop2022 if f else None,
-                     "registered": reg, "turnout": voted / reg if reg else None, "valid": valid,
+                     "registered": reg, "turnout": voted / reg if reg else None, "valid": valid, "votes": votes,
                      "leader": order[0] if order and votes[order[0]] else None,
                      "share": votes[order[0]] / valid if order and valid else None,
                      "second": votes[order[1]] / valid if len(order) > 1 and valid else None,
                      "mine": votes[index] / valid if index is not None and valid and index < n else None})
     rows.sort(key=lambda r: (r["name"] == "", -r["registered"]))
     return rows
+
+
+FACT_MIN_REGISTERED = 100  # a settlement smaller than this says little about a list's strength
+
+
+def facts(rows: list[dict], top: list[int]) -> list[dict]:
+    """A few things worth saying about the settlements, for the image people share: the highest and lowest
+    turnout, and for each of the lists in `top` (ballot indexes) where it is strongest and weakest. Only placed
+    settlements with at least FACT_MIN_REGISTERED registered voters; each fact is {"kind", ...} for the strings."""
+    named = [r for r in rows if r["name"] and r["registered"] >= FACT_MIN_REGISTERED and r["valid"]]
+    out = []
+    if len(named) >= 2:
+        hi = max(named, key=lambda r: r["turnout"] or 0)
+        lo = min(named, key=lambda r: r["turnout"] or 0)
+        if hi is not lo:
+            out.append({"kind": "turnout", "hi": hi["name"], "hv": hi["turnout"], "lo": lo["name"], "lv": lo["turnout"]})
+        for i in top:
+            share = lambda r: (r["votes"][i] if i < len(r["votes"]) else 0) / r["valid"]  # noqa: E731
+            hi, lo = max(named, key=share), min(named, key=share)
+            if hi is not lo:
+                out.append({"kind": "list", "index": i, "hi": hi["name"], "hv": share(hi), "lo": lo["name"], "lv": share(lo)})
+    return out
 
 
 def leaders(rows: list[dict]) -> list[tuple[int, list[str]]]:
