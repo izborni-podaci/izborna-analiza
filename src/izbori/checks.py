@@ -41,6 +41,8 @@ CHECKS = [
     Check("invalid_spike", "unusual", 2),
     Check("turnout_jump", "unusual", 2),
     Check("turnout_drop", "unusual", 1),
+    Check("registered_jump", "unusual", 1),
+    Check("turnout_apart", "unusual", 1),
     Check("near_unanimity", "unusual", 1),
     Check("high_turnout", "unusual", 1),
     Check("identical_results", "unusual", 2),
@@ -63,6 +65,10 @@ RULES = {
     "invalid_rel_share": 0.04,
     "turnout_jump": 0.25,
     "jump_min_registered": 100,
+    "registered_jump": 0.15,  # registered voters grew this much more than at the municipality's other stations
+    "registered_redrawn": 0.40,  # above this the station's area was most likely redrawn: not compared
+    "turnout_apart": 0.20,  # turnout this far from the median of the other stations in the same settlement
+    "apart_min_peers": 2,  # with fewer other stations in the settlement there is no surroundings to compare with
     "identical_min_votes": 50,  # with a few lists and this many votes, two stations rarely match by chance
     "identical_min_lists": 3,  # two lists with votes match by chance too often (a two-way race)
 }
@@ -207,9 +213,10 @@ def history_flags(rnd: Round, previous: list[Round], links=None) -> list[Flag]:
     """Turnout at a station compared with the same place in the last earlier round that has it (same kind of
     election first). The place is followed by address, name and number (places.py), so a renumbered station is
     still compared with itself and a new station on an old number is not. The baseline is the median change at the
-    municipality's other stations, so regional swings and a different kind of election don't count. Registered
-    voters are compared per municipality instead (see stats.register_changes): station areas are redrawn between
-    elections, which moves voters around.
+    municipality's other stations, so regional swings and a different kind of election don't count. The register
+    is compared the same way (registered_jump), with a ceiling: a rise past `registered_redrawn` is most likely a
+    redrawn station area, which moves voters around and says nothing, so it is not compared. The municipality's
+    own register change is in stats.register_changes.
 
     links: the places across these rounds (report.analyze passes them with addresses and manual corrections);
     without them, the rounds are followed by name and number alone, taking `previous` newest first."""
@@ -230,9 +237,13 @@ def history_flags(rnd: Round, previous: list[Round], links=None) -> list[Flag]:
             break
     by_mun: dict[tuple, list[float]] = defaultdict(list)
     by_round: dict[str, list[float]] = defaultdict(list)
+    reg_mun: dict[tuple, list[float]] = defaultdict(list)
+    reg_round: dict[str, list[float]] = defaultdict(list)
     for s, p, prev in pairs:
         by_mun[(prev.id, s.municipality_code)].append(s.turnout - p.turnout)
         by_round[prev.id].append(s.turnout - p.turnout)
+        reg_mun[(prev.id, s.municipality_code)].append(s.registered / p.registered - 1)
+        reg_round[prev.id].append(s.registered / p.registered - 1)
     out = []
     for s, p, prev in pairs:
         local = by_mun[(prev.id, s.municipality_code)]
@@ -241,6 +252,37 @@ def history_flags(rnd: Round, previous: list[Round], links=None) -> list[Flag]:
         if abs(shift) >= RULES["turnout_jump"]:
             code = "turnout_jump" if shift > 0 else "turnout_drop"
             out.append(Flag(s.key, code, {"before": p.turnout, "now": s.turnout, "base": base, "round": prev.id}))
+        # the register: a sudden rise at one station, beyond the municipality's drift, is a known sign of voters
+        # registered where they don't live; a rise past "redrawn" is most likely a new boundary and says nothing
+        growth = s.registered / p.registered - 1
+        local = reg_mun[(prev.id, s.municipality_code)]
+        reg_base = median(local) if len(local) >= 5 else median(reg_round[prev.id])
+        if growth - reg_base >= RULES["registered_jump"] and growth < RULES["registered_redrawn"]:
+            out.append(Flag(s.key, "registered_jump", {"before": p.registered, "now": s.registered, "growth": growth,
+                                                        "base": reg_base, "round": prev.id}))
+    return out
+
+
+def neighbour_flags(rnd: Round, settlements: dict[str, dict] | None) -> list[Flag]:
+    """Turnout at a station against the other stations in the same settlement (settlements.py: the census
+    settlement each station was placed in). A village that votes like its neighbours is unremarkable whatever the
+    municipality's towns do; a station far from its own settlement is a question. Settlements with fewer other
+    stations than `apart_min_peers` have no surroundings to compare with, so nothing is said about them."""
+    if not settlements:
+        return []
+    by_settlement: dict[tuple, list] = defaultdict(list)
+    for s in rnd.stations:
+        e = settlements.get(s.key)
+        if s.counted and s.kind == "domestic" and s.registered >= RULES["min_registered"] and e and e.get("s"):
+            by_settlement[(s.municipality_code, e["s"])].append(s)
+    out = []
+    for group in by_settlement.values():
+        if len(group) <= RULES["apart_min_peers"]:
+            continue
+        for s in group:
+            base = median(x.turnout for x in group if x is not s)
+            if abs(s.turnout - base) >= RULES["turnout_apart"]:
+                out.append(Flag(s.key, "turnout_apart", {"now": s.turnout, "base": base, "peers": len(group) - 1}))
     return out
 
 
@@ -268,7 +310,8 @@ def review_flags(reviews: dict) -> list[Flag]:
 
 
 def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[Round] | None = None,
-                  links=None, documents: dict | None = None, reviews: dict | None = None) -> list[Flag]:
+                  links=None, documents: dict | None = None, reviews: dict | None = None,
+                  settlements: dict | None = None) -> list[Flag]:
     counted = [s for s in rnd.stations if s.counted]
     by_mun: dict[str, list[Station]] = defaultdict(list)
     by_addr: dict[tuple, list[Station]] = defaultdict(list)
@@ -288,6 +331,7 @@ def station_flags(rnd: Round, changes: list[dict] | None = None, previous: list[
         flags.extend(change_flags(changes, {s.key: s for s in rnd.stations}))
     if previous:
         flags.extend(history_flags(rnd, previous, links))
+    flags.extend(neighbour_flags(rnd, settlements))
     if documents or reviews:
         stations = {s.key for s in rnd.stations}
         flags.extend(f for f in document_flags(documents or {}) + review_flags(reviews or {}) if f.station in stations)

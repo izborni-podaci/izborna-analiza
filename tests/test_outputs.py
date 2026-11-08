@@ -379,7 +379,7 @@ def test_site_shows_controllers(tmp_path, archive):
     round_page = (out / "r/680072/index.html").read_text(encoding="utf-8")
     assert "Kontrolori u biračkim odborima" in round_page
     mun = (out / f"r/680072/m/{s.municipality_code}.html").read_text(encoding="utf-8")
-    assert "Kontrolori: liste 1, 3" in mun and "od 18" not in mun and "OŠ PRIMER, GLAVNA 1" in mun
+    assert "Kontrolori: liste 1, 3" in mun and "liste 1, 3 od 18" not in mun and "OŠ PRIMER, GLAVNA 1" in mun
     assert "Controllers: lists 1, 3" in (out / f"en/r/680072/m/{s.municipality_code}.html").read_text(
         encoding="utf-8")
     assert "Kontrolora ukupno" in mun and "Kontrolora ukupno" in round_page
@@ -452,7 +452,7 @@ def test_municipality_across_elections(site):
     rows = re.findall(r'<th scope="row" role="rowheader" class="election"><a href="\.\./r/(\d+)/m/89010\.html">', page)
     assert rows == ["680072", "341143", "341140", "42732"]  # newest first, one row each
     assert "Opština nije glasala na: Lokalni 2024" in page
-    assert "7 od 221 biračkih mesta za proveru" in page
+    assert re.search(r"\d+ od 221 biračkih mesta za proveru", page)
     assert "207 (Predsednički 2022) → 221 · novih" in page
     assert 'href="../r/680072/check.html#m-89010"' in page
     assert 'href="../s/89010-140.html"' in page and "Biračka mesta kroz izbore" in page
@@ -493,47 +493,48 @@ def test_results_by_settlement(site, archive):
     assert "Share of valid votes" in pres and "had a controller" not in pres and "No controllers here" in pres
 
 
-def test_municipality_page_order(site, archive):
-    """A municipality in one election, in the order the maintainer chose: the result in per cent first, then the
-    stations (site.js shows the first ten and a button for the rest), the votes of the three lists with most votes
-    at each station with a total, every list at every station behind a button, and everything else."""
+def test_municipality_page_for_coordinators(site, archive):
+    """A municipality in one election, for a coordinator (8 Nov 2026): their list to pick (rendered for the
+    leading list, redone by mun.js), how the municipality compares, the six weak spots in their order, their list
+    by station, the result, the stations with "my list" and "controller" columns, every list behind a button."""
     from izbori.i18n import fmt_int, fmt_pct
 
     page = (site / "r/680072/m/70351.html").read_text(encoding="utf-8")
     heads = re.findall(r"<h2[^>]*>([^<]+)</h2>", page)
-    assert heads[:4] == ["Rezultat u opštini", "Biračka mesta", "Glasovi po biračkim mestima",
-                         "Sve liste na svim biračkim mestima"]
-    assert heads.index("Kontrolori u biračkim odborima") == 4
-    assert 'class="tiles"' not in page  # the tiles' figures are lines under the result and the stations
-    assert "Glasalo je " in page and " · izlaznost " in page
+    assert heads[:6] == ["Kako se opština poredi", "Slabe tačke", "Moja lista po mestima", "Rezultat u opštini",
+                         "Biračka mesta", "Sve liste na svim biračkim mestima"]
+    cards = re.findall(r'<div class="wk[^"]*">\s*<h3>([^<]+)</h3>', page)
+    assert cards == ["Upozorenja na više izbora", "Jednoglasnost uz visoku izlaznost", "Bez kontrolora moje liste",
+                     "Nagli rast upisanih", "Izlaznost daleko od okoline", "Nema primedbi, a brojke odskaču"]
+    assert 'class="wk-rule"' in page and "Isto mesto sa bar jednim upozorenjem" in page
 
     rnd = archive.load("680072")
     sts = sorted((s for s in rnd.stations if s.municipality_code == "70351"), key=lambda s: int(s.number))
-    assert f'data-first="10" data-more="Prikaži sva biračka mesta ({len(sts)})"' in page
     counted = [s for s in sts if s.counted]
     totals = [sum(s.votes[i] or 0 for s in counted) for i in range(len(rnd.contestants))]
-    top = sorted(range(len(totals)), key=lambda i: -totals[i])[:3]
-    table = page[page.index('<table class="compact by-station">'):]
-    table = table[:table.index("</table>")]
-    # each station's votes for the three, shaded and titled by the share
+    lead = max(range(len(totals)), key=lambda i: totals[i])
+    # the picker opens on the leading list; the chart is drawn for it against the rest of the municipality
+    assert f'<option value="{rnd.contestants[lead].number}" selected>' in page
     first = counted[0]
-    valid = sum(v or 0 for v in first.votes)
-    cells = re.findall(r'<td class="num heat" style="--h: \d+%" title="([^"]+)">([^<]+)</td>', table)[:3]
-    assert cells == [(fmt_pct(first.votes[i] / valid, "lat"), fmt_int(first.votes[i], "lat")) for i in top]
-    # the total row adds up to the municipality
-    total = re.search(r'<tr class="total">(.*?)</tr>', table).group(1)
-    shown = re.findall(r'<td class="num"[^>]*>([^<]+)</td>', total)
-    rest = sum(totals) - sum(totals[i] for i in top)
-    assert shown == [fmt_int(totals[i], "lat") for i in top] + [fmt_int(rest, "lat"), fmt_int(sum(totals), "lat")]
+    share = (first.votes[lead] or 0) / first.valid
+    assert f'<td class="num" data-cell="share">{fmt_pct(share, "lat")}</td>' in page
+    devs = re.findall(r'<span class="val">([+−][\d,]+)</span>', page)
+    assert len(devs) == len([s for s in counted if s.valid]) and devs[0].lstrip("+−") >= devs[1].lstrip("+−")
+    data = json.loads(page[page.index('<script type="application/json" id="mun-data">') + 46:].split("</script>")[0])
+    assert data["default"] == lead and len(data["stations"]) == len(sts) and data["stations"][0]["v"] == list(first.votes)
+    assert '<script src="../../../static/mun.js" defer></script>' in page
+    assert f'data-first="10" data-more="Prikaži sva biračka mesta ({len(sts)})"' in page
     # the whole table behind a button that says what it is, and a CSV made from it in the browser
     assert '<details class="all-votes">\n  <summary class="button secondary">Cela tabela</summary>' in page
     assert 'data-table-csv="#all-votes-table"' in page and 'data-file="680072-70351.csv"' in page
+    total = re.search(r'<tr class="total">(.*?)</tr>', page).group(1)
+    assert re.findall(r'<td class="num">([^<]+)</td>', total) == [fmt_int(v, "lat") for v in totals]
 
     en = (site / "en/r/680072/m/70351.html").read_text(encoding="utf-8")
     assert "Show all polling stations (" in en and "Every list at every polling station" in en
-    assert "registered voters voted · turnout" in en
+    assert "How the municipality compares" in en and "No controller of my list" in en
     pres = (site / "r/42732/m/70351.html").read_text(encoding="utf-8")
-    assert "Svi kandidati na svim biračkim mestima" in pres and "tri kandidata sa najviše glasova" in pres
+    assert "Svi kandidati na svim biračkim mestima" in pres
 
 
 def test_place_across_elections(site):

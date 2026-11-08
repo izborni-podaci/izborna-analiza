@@ -5,11 +5,97 @@
 {{ mx.round_nav('') }}
 <p class="kicker">{{ rtitle }}{% if m.kind == 'domestic' %} · {{ name(m.district) }}{% endif %}</p>
 <h1>{{ name(m.name) }}</h1>
-<p class="across-link"><a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ t('mun_across_link') }}</a></p>
+<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }} · {{ t('registered') }}: {{ i(m.registered) }} · <a href="{{ link('m/' ~ m.code ~ '.html') }}">{{ t('mun_across_link') }}</a></p>
 {{ mx.data_note() }}
 
-{# The page in the order the maintainer chose (6 Nov 2026): the result first, then the stations (the first ones, a
-   button for the rest), the votes of the three largest at each station, the whole table, and everything else. #}
+{# The page for a coordinator (8 Nov 2026, drawn on the canvas and approved): their list, how the municipality
+   compares, the weak spots in their order, their list by station, the result, the stations. The parts marked
+   data-mine are rendered for the leading list and redone by mun.js for the list the reader picks. #}
+{% if index is not none %}
+<div class="mine" data-mine-bar>
+  <label for="my-list"><strong>{{ t('co_mine_label') }}</strong></label>
+  <select id="my-list" data-my-list>
+    {% for c in rnd.contestants %}<option value="{{ c.number }}"{% if loop.index0 == index %} selected{% endif %}>{{ c.number }}. {{ name(labels[loop.index0]) }}{% if loop.index0 == index %} ({{ t('co_mine_default') }}){% endif %}</option>{% endfor %}
+  </select>
+  <span class="muted small">{{ t('co_mine_note') }}</span>
+</div>
+{% endif %}
+
+{% set sim = compare.similar %}
+{% set co = compare.country %}
+<section class="co-compare">
+  <div class="sec-head"><h2>{{ t('co_compare_heading') }}</h2><span class="muted">{% if sim %}{{ t('co_compare_note', n=i(sim.n), kind=(t('co_kind_urban') if sim.urban else t('co_kind_rural') if sim.urban is not none else '')) }}{% else %}{{ t('co_compare_note_short') }}{% endif %}</span></div>
+  <div class="tiles co-tiles">
+    <div class="tile"><p class="tile-label">{{ t('turnout') }}</p><p class="tile-value">{{ pct(m.turnout, 1) }}</p><p class="tile-sub">{% if co.turnout is not none %}{{ t('co_country', v=pct(co.turnout, 1)) }}{% endif %}{% if sim and sim.turnout is not none %} · {{ t('co_similar', v=pct(sim.turnout, 1)) }}{% endif %}{% if compare.rank_turnout %} · {{ t('co_rank', r=compare.rank_turnout[0], n=i(compare.rank_turnout[1])) }}{% endif %}</p></div>
+    <div class="tile"><p class="tile-label">{{ t('co_tile_flagged') }}</p><p class="tile-value">{{ t('co_n_of', n=i(m.flagged), of=i(m.stations)) }}</p><p class="tile-sub">{{ pct(m.flagged_share, 0) }}{% if co.flagged_share is not none %} · {{ t('co_country', v=pct(co.flagged_share, 1)) }}{% endif %}{% if sim and sim.flagged_share is not none %} · {{ t('co_similar', v=pct(sim.flagged_share, 1)) }}{% endif %}</p></div>
+    <div class="tile"><p class="tile-label">{{ t('invalid') }}</p><p class="tile-value">{{ pct(m.invalid, 1) }}</p><p class="tile-sub">{% if co.invalid is not none %}{{ t('co_country', v=pct(co.invalid, 1)) }}{% endif %}{% if sim and sim.invalid is not none %} · {{ t('co_similar', v=pct(sim.invalid, 1)) }}{% endif %}{% if compare.rank_invalid %} · {{ t('co_rank', r=compare.rank_invalid[0], n=i(compare.rank_invalid[1])) }}{% endif %}</p></div>
+    <div class="tile"><p class="tile-label">{{ t('registered') }}</p><p class="tile-value">{{ i(m.registered) }}</p><p class="tile-sub">{% if compare.prev_registered %}{% set chg = m.registered / compare.prev_registered - 1 %}{{ t('co_prev_reg', year=co.prev_year, n=i(compare.prev_registered), chg=('+' if chg >= 0 else '−') ~ pct(chg|abs, 1)) }}{% if co.registered_change is not none %} · {{ t('co_country', v=('+' if co.registered_change >= 0 else '−') ~ pct(co.registered_change|abs, 1)) }}{% endif %}{% endif %}</p></div>
+  </div>
+</section>
+
+{% macro card(title, rule, n, of, items, more_href, more_text, cls='') %}
+<div class="wk {{ cls }}">
+  <h3>{{ title }}</h3>
+  <p class="wk-n{% if n == 0 %} ok{% endif %}">{{ i(n) }}<small>{{ of }}</small></p>
+  <p class="wk-rule">{{ rule }}</p>
+  {% if items %}<ul class="wk-list">{% for it in items %}<li>{{ it }}</li>{% endfor %}</ul>{% endif %}
+  {% if caller is defined %}{{ caller() }}{% endif %}
+  {% if more_href %}<a class="wk-more" href="{{ more_href }}">{{ more_text }}</a>{% endif %}
+</div>
+{% endmacro %}
+
+{% if weak %}
+<section class="co-weak" id="weak">
+  <div class="sec-head"><h2>{{ t('co_weak_heading') }}</h2><span class="muted">{{ t('co_weak_note') }}</span></div>
+  <div class="weak">
+    {% set items = [] %}{% for r in weak.repeated[:5] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, r.s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ r.s.number ~ '</b> ' ~ name(r.s.name) ~ '</a> · ' ~ t('co_w1_item', n=r.n, of=r.of))|safe) %}{% endfor %}
+    {{ card(t('co_w1_title'), t('co_w1_rule'), weak.repeated|length, t('co_stations_word'), items, link('m/' ~ m.code ~ '.html'), t('co_w1_more')) }}
+
+    {% set items = [] %}{% for s in weak.unanimous[:5] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ s.number ~ '</b> ' ~ name(s.name) ~ '</a> · ' ~ t('co_w2_item', share=pct((s.votes|max) / s.valid if s.valid else 0, 1), turnout=pct(s.turnout, 1)))|safe) %}{% endfor %}
+    {{ card(t('co_w2_title'), t('co_w2_rule', near=pct(rules.near_share, 0), high=pct(rules.high_turnout, 0)), weak.unanimous|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more')) }}
+
+    {% if ctrl_known %}
+    {% set items = [] %}{% for settlement, group in weak.without_groups[:5] %}{% set _ = items.append(('<b>' ~ (name(settlement) if settlement else name(m.name)) ~ '</b> · ' ~ t('station_no') ~ ' ' ~ (group|map(attribute='number')|join(', ')))|safe) %}{% endfor %}
+    <div data-mine="without">
+    {{ card(t('co_w3_title'), t('co_w3_rule', number=number), weak.without|length, t('co_w3_of', n=i(weak.ctrl_read)) if weak.ctrl_read else t('co_stations_word'), items, '#stations', t('co_w3_more')) }}
+    </div>
+    {% else %}
+    {{ card(t('co_w3_title'), t('co_w3_unknown'), 0, '', [], none, '', 'wk-unknown') }}
+    {% endif %}
+
+    {% set items = [] %}{% for s in weak.register[:5] %}{% set f = flag_text[s.key]['registered_jump'] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ s.number ~ '</b> ' ~ name(s.name) ~ '</a> · ' ~ f)|safe) %}{% endfor %}
+    {{ card(t('co_w4_title'), t('co_w4_rule', jump=pct(rules.registered_jump, 0), redrawn=pct(rules.registered_redrawn, 0)), weak.register|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more')) }}
+
+    {% set items = [] %}{% for s in weak.apart[:5] %}{% set f = flag_text[s.key]['turnout_apart'] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ s.number ~ '</b> ' ~ name(s.name) ~ '</a> · ' ~ f)|safe) %}{% endfor %}
+    {{ card(t('co_w5_title'), t('co_w5_rule', pts=num(100 * rules.turnout_apart, 0)), weak.apart|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more')) }}
+
+    {% set items = [] %}{% for s in weak.silent[:5] %}{% set _ = items.append(('<a href="' ~ link(st_path(rnd.id, s.key)) ~ '"><b>' ~ t('station_no') ~ ' ' ~ s.number ~ '</b> ' ~ name(s.name) ~ '</a>')|safe) %}{% endfor %}
+    {% if not weak.silent %}{% set items = [t('co_w6_none')] %}{% endif %}
+    {{ card(t('co_w6_title'), t('co_w6_rule'), weak.silent|length, t('co_stations_word'), items, link(base + 'check.html') ~ '#m-' ~ m.code, t('co_check_more')) }}
+  </div>
+</section>
+{% endif %}
+
+{% if devs %}
+{% set avg = mvotes[index] / (mvotes|sum) if mvotes|sum else 0 %}
+{% set span = (devs[0].dev|abs) if devs[0].dev else 0.01 %}
+<section class="co-dev" id="my-list-chart" data-mine="chart">
+  <div class="sec-head"><h2>{{ t('co_dev_heading') }}</h2><span class="muted" data-dev-note>{{ t('co_dev_note', avg=pct(avg, 1)) }}</span></div>
+  <div class="dev" data-dev-rows data-first="{{ 12 }}" data-rest="{{ t('co_dev_rest', n='{n}') }}">
+    {% for d in devs %}
+    {% set c = ctrl_of(ctrl.get(d.s.key), number) %}
+    <div class="dv{% if loop.index > 12 %} dv-rest{% endif %}">
+      <a class="lab" href="{{ link(st_path(rnd.id, d.s.key)) }}"><b>{{ t('station_no') }} {{ d.s.number }}</b> {{ name(settlement_by_key[d.s.key] or d.s.name) }}</a>
+      <span class="ax">{% if d.dev >= 0 %}<i style="left: 50%; width: {{ '%.1f'|format(50 * d.dev / span) }}%"></i>{% else %}<i class="neg" style="right: 50%; width: {{ '%.1f'|format(50 * -d.dev / span) }}%"></i>{% endif %}{% if c == 'none' %}<span class="nc" title="{{ t('co_legend_nc') }}"></span>{% endif %}</span>
+      <span class="val">{{ ('+' if d.dev >= 0 else '−') ~ num(100 * (d.dev|abs), 1) }}</span>
+    </div>
+    {% endfor %}
+    {% if devs|length > 12 %}<button type="button" class="link-button dev-more" data-dev-more>{{ t('co_dev_rest', n=i(devs|length - 12)) }}</button>{% endif %}
+  </div>
+  <p class="legend small muted"><span><i class="sw"></i>{{ t('co_legend_above') }}</span><span><i class="sw neg"></i>{{ t('co_legend_below') }}</span>{% if ctrl_known %}<span><span class="nc"></span>{{ t('co_legend_nc') }}</span>{% endif %}<span>{{ t('co_legend_note') }}</span></p>
+</section>
+{% endif %}
+
 <h2>{{ t('mun_result_heading') }}</h2>
 <p class="mun-line">{{ t('mun_turnout_line', voted=i(m.voted), registered=i(m.registered), turnout=pct(m.turnout, 1), invalid=pct(m.invalid, 1)) }}</p>
 <p class="rule">{{ t('mun_result_note') }}</p>
@@ -31,60 +117,34 @@
 </ul></details>{% endif %}
 
 <h2 id="stations">{{ t('stations_heading') }}</h2>
-<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }}{% if m.flagged %} · <a href="{{ link(base + 'check.html') }}#m-{{ m.code }}">{{ t('mun_flagged', n=i(m.flagged)) }}</a>{% endif %}</p>
+<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }}{% if m.flagged %} · <a href="{{ link(base + 'check.html') }}#m-{{ m.code }}">{{ t('mun_flagged', n=i(m.flagged)) }}</a>{% endif %}{% if index is not none %} · <span class="small muted">{{ t('co_table_note') }}</span>{% endif %}</p>
 <div class="table-wrap">
 <table class="stations" id="station-list" data-first="10" data-more="{{ t('stations_more', n=i(rows|length)) }}" data-less="{{ t('stations_less') }}">
   <thead><tr>
-    <th class="num">{{ t('station_no') }}</th><th>{{ t('station') }}</th>
-    <th class="num">{{ t('registered') }}</th><th class="num">{{ t('voted') }}</th><th class="num">{{ t('turnout') }}</th>
-    <th class="num">{{ t('ballots') }}</th><th class="num">{{ t('invalid') }}</th><th>{{ t('flags') }}</th>
+    <th class="num">{{ t('station_no') }}</th><th>{{ t('co_col_place') }}</th>
+    <th class="num">{{ t('registered') }}</th><th class="num">{{ t('turnout') }}</th><th class="num">{{ t('invalid') }}</th>
+    {% if index is not none %}<th class="num" data-mine="col-share">{{ t('co_col_mine') }}</th>{% if ctrl_known %}<th data-mine="col-ctrl">{{ t('co_col_ctrl') }}</th>{% endif %}{% endif %}
+    <th>{{ t('flags') }}</th>
   </tr></thead>
   <tbody>
   {% for r in rows %}
     {% set s = r.s %}
-    <tr id="bm-{{ s.number }}"{% if r.flags %} class="flagged"{% endif %}>
+    <tr id="bm-{{ s.number }}"{% if r.flags %} class="flagged"{% endif %} data-bm="{{ s.number }}">
       <td class="num">{{ s.number }}</td>
-      <td><a href="{{ link(st_path(rnd.id, s.key)) }}">{{ name(s.name) or t('station_details') }}</a>{% if ctrl_known %}{{ mx.controllers(ctrl.get(s.key), rnd.contestants|length) }}{% endif %}<div class="docs small">{{ mx.doc_links(r.docs) }}</div></td>
+      <td>{% if r.settlement %}<b>{{ name(r.settlement) }}</b> · {% endif %}<a href="{{ link(st_path(rnd.id, s.key)) }}">{{ name(s.name) or t('station_details') }}</a>{% if ctrl_known %}{{ mx.controllers(ctrl.get(s.key), rnd.contestants|length) }}{% endif %}<div class="docs small">{{ mx.doc_links(r.docs) }}</div></td>
       {% if s.counted %}
-      <td class="num">{{ i(s.registered) }}</td><td class="num">{{ i(s.voted) }}</td><td class="num">{{ pct(s.turnout, 1) }}</td>
-      <td class="num">{{ i(s.ballots) }}</td><td class="num">{{ i(s.invalid) }}</td>
+      <td class="num">{{ i(s.registered) }}</td><td class="num">{{ pct(s.turnout, 1) }}</td><td class="num">{{ pct(s.invalid_share, 1) }}</td>
+      {% if index is not none %}<td class="num" data-cell="share">{{ pct((s.votes[index] or 0) / s.valid, 1) if s.valid else '' }}</td>{% endif %}
       {% else %}
-      <td class="num">{{ i(s.registered) }}</td><td colspan="4" class="muted">{{ t('not_counted') }}</td>
+      <td class="num">{{ i(s.registered) }}</td><td colspan="{{ 3 if index is not none else 2 }}" class="muted">{{ t('not_counted') }}</td>
       {% endif %}
+      {% if index is not none and ctrl_known %}{% set c = ctrl_of(ctrl.get(s.key), number) %}<td data-cell="ctrl" class="{{ 'ctrl-none' if c == 'none' else 'ctrl-yes' if c else 'muted' }}">{{ t('co_ctrl_' ~ c) if c else t('co_not_read') }}</td>{% endif %}
       <td>{% if r.flags %}{{ mx.chips(r.flags) }}{% endif %}{{ mx.notes_list(r.notes) }}</td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
 </div>
-
-{% if mtop %}
-{% set valid_all = mvotes|sum %}
-{% set top_all = mtop|sum(attribute='votes') %}
-<h2 id="by-station">{{ t('by_station_heading') }}</h2>
-<p class="rule">{{ t('by_station_note_pres') if rnd.kind == 'presidential' else t('by_station_note') }}</p>
-<div class="table-wrap">
-<table class="compact by-station">
-  <thead><tr>
-    <th class="num">{{ t('station_no') }}</th><th>{{ t('station') }}</th>
-    {% for r in mtop %}<th class="num">{{ r.number }}. {{ name(r.label) }}</th>{% endfor %}
-    <th class="num">{{ t('others_col') }}</th><th class="num">{{ t('valid') }}</th>
-  </tr></thead>
-  <tbody>
-  {% for b in mby %}
-    <tr>
-      <td class="num">{{ b.s.number }}</td>
-      <td><a href="{{ link(st_path(rnd.id, b.s.key)) }}">{{ name(b.s.name) or t('station_details') }}</a></td>
-      {% for share, n in b.cells %}<td class="num heat" style="--h: {{ '%.0f'|format(100 * (share or 0)) }}%" title="{{ pct(share, 1) }}">{{ i(n) }}</td>{% endfor %}
-      <td class="num muted" title="{{ pct(b.rest[0], 1) }}">{{ i(b.rest[1]) }}</td>
-      <td class="num">{{ i(b.valid) }}</td>
-    </tr>
-  {% endfor %}
-    <tr class="total"><td></td><td>{{ t('total') }}</td>{% for r in mtop %}<td class="num" title="{{ pct(r.share, 1) }}">{{ i(r.votes) }}</td>{% endfor %}<td class="num">{{ i(valid_all - top_all) }}</td><td class="num">{{ i(valid_all) }}</td></tr>
-  </tbody>
-</table>
-</div>
-{% endif %}
 
 <h2 id="all-votes">{{ t('all_votes_heading_pres' if rnd.kind == 'presidential' else 'all_votes_heading') }}</h2>
 <p class="rule">{{ t('all_votes_note_pres' if rnd.kind == 'presidential' else 'all_votes_note') }}</p>
@@ -129,4 +189,6 @@
 {% endif %}
 {% endif %}
 {% if m.kind == 'domestic' %}<p class="muted small"><a href="{{ link(base + 'commissions.html') }}#c-{{ m.code }}">{{ t('cm_row_link') }}</a></p>{% endif %}
+{% if index is not none %}<script type="application/json" id="mun-data">{{ mun_data|safe }}</script>{% endif %}
 {% endblock %}
+{% block scripts %}{% if index is not none %}<script src="{{ root }}static/mun.js" defer></script>{% endif %}{% endblock %}

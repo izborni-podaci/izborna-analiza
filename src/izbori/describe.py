@@ -37,6 +37,10 @@ _TEXT = {
                      "Turnout {before} → {now}; municipality's median change {base} points"),
     "turnout_drop": ("Излазност {before} → {now}; медијана промене у општини {base} поена",
                      "Turnout {before} → {now}; municipality's median change {base} points"),
+    "registered_jump": ("Уписаних {before} → {now} ({growth}); медијана промене у општини {base}",
+                        "Registered {before} → {now} ({growth}); municipality's median change {base}"),
+    "turnout_apart": ("Излазност {now}; медијана осталих {peers} места у насељу {base}",
+                      "Turnout {now}; median of the settlement's other {peers} stations {base}"),
     "near_unanimity": ("Излазност {turnout}; {contestant}: {share} важећих гласова",
                        "Turnout {turnout}; {contestant}: {share} of valid votes"),
     "high_turnout": ("Излазност {turnout}, уписано {registered}", "Turnout {turnout}, {registered} registered"),
@@ -100,6 +104,11 @@ def describe(flag: Flag, loc: str, contestant_label=lambda n: str(n), kind: str 
         n = 100 * d.get("base", d.get("national", 0))
         values = {"before": p(d["before"]), "now": p(d["now"]),
                   "base": ("+" if n > 0 else "−" if n < 0 else "") + fmt_num(abs(n), loc)}
+    elif flag.code == "registered_jump":
+        signed = lambda x: ("+" if x > 0 else "−" if x < 0 else "") + fmt_pct(abs(x), loc, 0)  # noqa: E731
+        values = {"before": i(d["before"]), "now": i(d["now"]), "growth": signed(d["growth"]), "base": signed(d["base"])}
+    elif flag.code == "turnout_apart":
+        values = {"now": p(d["now"]), "base": p(d["base"]), "peers": i(d["peers"])}
     elif flag.code in ("voting_annulled", "results_undetermined", "remark_filed"):
         forms = ", ".join(d.get("forms") or [])
         values = {"n": i(d.get("n", 1)), "forms": f" ({forms})" if forms else "", "first": fmt_time(d.get("first"), loc),

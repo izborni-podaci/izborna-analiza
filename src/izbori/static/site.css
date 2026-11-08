@@ -446,6 +446,48 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
 .el-fold .el-body { padding: 4px 16px 16px; border-top: 1px solid var(--grid); }
 .across .analysis { margin-top: 30px; }
 
+/* the municipality's page for a coordinator: my list, how it compares, the weak spots, my list by station */
+.mine { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; background: var(--surface); padding: 10px 14px; margin: 16px 0 0; font-size: 0.95rem; }
+.mine select { font: inherit; padding: 8px 10px; border: 1px solid var(--brand); background: var(--page); color: var(--ink); min-width: 240px; max-width: 100%; }
+.co-tiles { margin: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.co-tiles .tile { padding: 12px 14px; }
+.co-tiles .tile-value { font-family: var(--serif); font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+.co-tiles .tile-sub { font-size: 0.8rem; }
+.weak { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.wk { border: 1px solid var(--border); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.wk h3 { margin: 0; font-size: 1rem; }
+.wk-n { margin: 0; font-family: var(--serif); font-size: 1.9rem; font-weight: 700; line-height: 1; color: var(--critical); }
+.wk-n.ok { color: var(--teal-ink); }
+.wk-n small { font-family: var(--sans); font-size: 0.8rem; font-weight: 400; color: var(--ink-2); margin-left: 6px; }
+.wk-rule { margin: 0; font-size: 0.8rem; color: var(--ink-2); }
+.wk-list { margin: 4px 0 0; padding-left: 16px; font-size: 0.85rem; }
+.wk-list li { margin: 1px 0; }
+.wk-list a { text-decoration: none; }
+.wk-list a:hover { text-decoration: underline; }
+.wk-more { margin-top: auto; padding-top: 6px; font-size: 0.85rem; font-weight: 600; }
+.wk-unknown .wk-n { display: none; }
+.dev { margin-top: 10px; }
+.dv { display: grid; grid-template-columns: 220px minmax(0, 1fr) 64px; gap: 0 12px; align-items: center; font-size: 0.85rem; padding: 3px 0; border-bottom: 1px solid var(--surface); }
+.dv .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+.dv .lab:hover { text-decoration: underline; }
+.dv .ax { position: relative; height: 16px; }
+.dv .ax::before { content: ""; position: absolute; left: 50%; top: -4px; bottom: -4px; border-left: 1px solid var(--ink); }
+.dv .ax i { position: absolute; top: 3px; height: 10px; background: var(--accent); }
+.dv .ax i.neg { background: color-mix(in srgb, var(--accent) 50%, var(--page)); }
+.dv .ax .nc, .legend .nc { position: absolute; top: 1px; width: 12px; height: 12px; border: 2px solid var(--critical); border-radius: 50%; background: var(--page); box-sizing: border-box; }
+.dv .ax i:not(.neg) + .nc { left: calc(50% + var(--w, 0%) + 3px); }
+.dv .val { text-align: right; font-variant-numeric: tabular-nums; }
+.dv-rest { display: none; }
+.dev.open .dv-rest { display: grid; }
+.dev-more { margin-top: 6px; font-size: 0.85rem; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; margin: 8px 0 0; }
+.legend .sw { display: inline-block; width: 14px; height: 10px; background: var(--accent); vertical-align: middle; margin-right: 5px; }
+.legend .sw.neg { background: color-mix(in srgb, var(--accent) 50%, var(--page)); }
+.legend .nc { position: static; display: inline-block; vertical-align: middle; margin-right: 5px; }
+td.ctrl-none { color: var(--critical); font-weight: 700; }
+td.ctrl-yes { color: var(--teal-ink); }
+table.stations td b { font-weight: 600; }
+
 /* phones: big touch targets, one column */
 @media (max-width: 600px) {
   .wrap { padding: 0 16px; }
@@ -480,6 +522,12 @@ th[aria-sort="ascending"] button.sort::after { content: " ↑"; color: inherit; 
   .chip { min-height: 44px; }
   .hero { padding: 28px 0 24px; }
   .el-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .co-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .co-tiles .tile { padding: 8px 10px; }
+  .co-tiles .tile-value { font-size: 1.25rem; }
+  .weak { grid-template-columns: minmax(0, 1fr); }
+  .dv { grid-template-columns: 120px minmax(0, 1fr) 52px; gap: 0 8px; }
+  .mine select { min-width: 0; width: 100%; }
   .el-side { order: -1; }
   .res-row { grid-template-columns: minmax(0, 1fr) 56px 56px; }
   .res-bar { grid-column: 1 / -1; order: 3; margin-top: 4px; }

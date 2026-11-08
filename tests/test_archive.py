@@ -72,19 +72,36 @@ def test_history_flags_compare_the_same_station(tmp_path):
     a.add_snapshot("1", make_csv(stations), fetched="2026-10-25T20:00:00+00:00")
     a.save_meta("2", {"kind": "presidential", "title": "Later", "contestants": [{"name": "А"}, {"name": "Б"}]})
     later = [station(str(i), registered=500, voted=300) for i in range(1, 19)]
-    later.append(station("19", registered=620, voted=300))  # register jump
+    later.append(station("19", registered=620, voted=300))  # register +24%: a sudden rise
     later.append(station("20", registered=500, voted=460, l1=360, l2=95))  # turnout 60% -> 92%
     later[2] = station("3", registered=500, voted=120, l1=80, l2=35)  # turnout 60% -> 24%
+    later[3] = station("4", registered=800, voted=300)  # register +60%: most likely redrawn, not compared
     a.add_snapshot("2", make_csv(later), fetched="2026-12-20T20:00:00+00:00")
     rnd = a.load("2")
     flags = {(f.station, f.code) for f in station_flags(rnd, previous=[a.load("1")])}
     assert ("70000/20", "turnout_jump") in flags
     assert ("70000/3", "turnout_drop") in flags and ("70000/3", "turnout_jump") not in flags
-    assert not any(code == "register_jump" for _, code in flags)  # registers are compared per municipality
+    assert ("70000/19", "registered_jump") in flags
+    assert ("70000/4", "registered_jump") not in flags  # past the "redrawn" bound nothing is said
     assert not any(s == "70000/5" for s, _ in flags)
     from izbori.stats import register_changes
     national, rows = register_changes(rnd, a.load("1"), min_registered=0)
-    assert rows[0].code == "70000" and rows[0].now == 10120 and rows[0].before == 10000
+    assert rows[0].code == "70000" and rows[0].now == 10420 and rows[0].before == 10000
+
+
+def test_turnout_apart_from_the_settlement(tmp_path):
+    from izbori.checks import neighbour_flags
+    a = new_archive(tmp_path)
+    stations = [station(str(i), registered=500, voted=300) for i in range(1, 7)]
+    stations[2] = station("3", registered=500, voted=440, l1=300, l2=120)  # 88% among 60% neighbours
+    stations[5] = station("6", registered=500, voted=440, l1=300, l2=120)  # 88%, but its settlement has one other
+    a.add_snapshot("1", make_csv(stations), fetched="2026-10-25T20:00:00+00:00")
+    rnd = a.load("1")
+    joined = {"70000/1": {"s": "Село"}, "70000/2": {"s": "Село"}, "70000/3": {"s": "Село"}, "70000/4": {"s": "Село"},
+              "70000/5": {"s": "Засеок"}, "70000/6": {"s": "Засеок"}}
+    flags = {(f.station, f.code) for f in neighbour_flags(rnd, joined)}
+    assert flags == {("70000/3", "turnout_apart")}
+    assert neighbour_flags(rnd, None) == []
 
 
 def test_repeats_across_elections(tmp_path):

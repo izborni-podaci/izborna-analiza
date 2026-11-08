@@ -29,7 +29,8 @@ from izbori.links import safe_url
 from izbori.model import ABROAD, PRISONS, last_url
 from izbori.i18n import (BELGRADE, LANG_ATTR, LOCALES, PREFIX, S, check_name, check_rule, collate, fmt_date, fmt_int,
                          fmt_num, fmt_pct, fmt_time, keep, kind_name, latin_page, strip_keep, t)
-from izbori import bysettlement, commission, documents, geo, highlights, narrative, publishing, schedule, settlements
+from izbori import (bysettlement, commission, coordinator, documents, geo, highlights, narrative, publishing, schedule,
+                    settlements)
 from izbori.places import RULES_FILE, Place, contradicts, follow
 from izbori.report import Analysis, analyze, links
 from izbori.translit import latin
@@ -1010,15 +1011,61 @@ class Site:
         by_code: dict[str, list] = defaultdict(list)
         for s in a.round.stations:
             by_code[s.municipality_code].append(s)
+        settl = self.settlements_of(rid)
+        profiles = coordinator.profiles(self.mun_rows[rid], by_code, settl, self.figures)
+        domestic = [m for m in municipalities if m["kind"] == "domestic"]
+        country = {"turnout": a.totals.turnout, "invalid": a.totals.invalid_share,
+                   "flagged_share": (sum(m["flagged"] for m in domestic) / sum(m["stations"] for m in domestic))
+                   if domestic else None}
+        prev = a.previous[0] if a.previous else None
+        prev_rows = self.mun_rows.get(prev, {}) if prev else {}
+        both = [c for c in prev_rows if c in self.mun_rows[rid] and self.mun_rows[rid][c]["kind"] == "domestic"]
+        country["registered_change"] = (sum(self.mun_rows[rid][c]["registered"] for c in both)
+                                        / sum(prev_rows[c]["registered"] for c in both) - 1) if both and sum(
+            prev_rows[c]["registered"] for c in both) else None
+        country["prev_year"] = (self.dates.get(prev) or "")[:4] if prev else ""
+        settlement_of = lambda s: (settl.get(s.key) or {}).get("s", "")  # noqa: E731
         for m in municipalities:
             sts = sorted(by_code[m["code"]], key=lambda s: (int(s.number) if s.number.isdigit() else 0, s.number))
             rows = [{"s": s, "flags": self.flag_view(a, by_station.get(s.key, []), loc),
-                     "notes": a.notes.get(s.key, []), "docs": a.documents.get(s.key, [])} for s in sts]
+                     "notes": a.notes.get(s.key, []), "docs": a.documents.get(s.key, []),
+                     "settlement": settlement_of(s)} for s in sts]
             votes = self.mun_votes[rid][m["code"]]
             mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
             mres, top, by_st = vote_view(a.round.contestants, votes, a.totals, [s for s in sts if s.counted])
+            index = leading(votes)
+            number = a.round.contestants[index].number if index is not None else None
+            flags_of = {s.key: by_station.get(s.key, []) for s in sts}
+            root = "../" * (PREFIX[loc] + base + "m/x.html").count("/")
+            hrefs = {s.key: root + PREFIX[loc] + self.st_path(rid, s.key) for s in sts}
+            weak = coordinator.weak_spots(sts, flags_of, self.places.in_municipality(m["code"]), self.flagged,
+                                          ctrl, number, settlement_of, a.reviews) if number is not None else None
+            devs = coordinator.deviations(sts, votes, index) if index is not None else []
+            prev_m = prev_rows.get(m["code"])
+            compare = {"similar": coordinator.similar(m["code"], profiles, self.mun_rows[rid]), "country": country,
+                       "rank_turnout": rank_of(m["turnout"], self.peers[rid]["mun"]["turnout"]),
+                       "rank_invalid": rank_of(m["invalid"], self.peers[rid]["mun"]["invalid"]),
+                       "prev_registered": prev_m["registered"] if prev_m and prev_m["registered"] else None}
+            tt = lambda key, **kw: t(key, loc, **kw)  # noqa: E731
+            show = latin if loc == "en" else (lambda x: x)
+            data = json.dumps({"rid": rid, "default": index, "name": show(m["name"]),
+                               "lists": [{"n": c.number, "label": show(narrative.short_label(self.labels[rid][i]))}
+                                         for i, c in enumerate(a.round.contestants)],
+                               "i18n": {"rule3": tt("co_w3_rule", number="{number}"), "ofRead": tt("co_w3_of", n="{n}"),
+                                        "stations": tt("co_stations_word"), "stationNo": tt("station_no"),
+                                        "legendNc": tt("co_legend_nc"), "rest": tt("co_dev_rest", n="{n}"),
+                                        "devNote": tt("co_dev_note", avg="{avg}"), "member": tt("co_ctrl_member"),
+                                        "deputy": tt("co_ctrl_deputy"), "none": tt("co_ctrl_none"),
+                                        "notRead": tt("co_not_read")},
+                               "stations": coordinator.station_json(sts, ctrl, flags_of, settlement_of,
+                                                                    len(a.round.contestants), hrefs, show)},
+                              ensure_ascii=False, separators=(",", ":"))
+            flag_text = {s.key: {f["code"]: f["text"] for f in r["flags"]} for s, r in zip(sts, rows)}
             self.write(loc, base + f"m/{m['code']}.html", "municipality.html", m=m, rows=rows, mvotes=votes,
-                       mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st,
+                       mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st, weak=weak, devs=devs,
+                       index=index, number=number, compare=compare, mun_data=data.replace("<", "\\u003c"),
+                       ctrl_of=coordinator.controller_of, rules=RULES, flag_text=flag_text, labels=self.labels[rid],
+                       settlement_by_key={s.key: settlement_of(s) for s in sts},
                        cdocs=self.commission_of(rid).get(m["code"], []),
                        citydocs=self.city_docs_of(rid)[0].get(m["code"]), **common)
 

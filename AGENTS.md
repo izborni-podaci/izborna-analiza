@@ -411,3 +411,15 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   short" and the trends; then the earlier elections folded into the same block. The wide history table is gone
   from this page (it stays on the municipality's history page and in the JSON). Rules kept: every contestant alike
   (shown when at least 1% here, the first three always), names shortened by the same rule as in sentences.
+- **8 Nov 2026, the coordinator's municipality page, and two checks.** Third step of the build order, drawn on the
+  canvas ("Pregled opštine za koordinatora") and approved with the order as drawn, the sixth card kept, and similar
+  municipalities by five size classes × town/not. A look at izbori26.rs (notes in the project doc
+  `claude/izbori26-analiza.md`) fed two things: the per-list deviation chart against the municipality, and the
+  register check. New checks, same for every list: `registered_jump` (register up 15% more than the municipality's
+  median change at the same place, under 40%: above that the area was most likely redrawn) and `turnout_apart`
+  (20 points from the median of the other stations in the same census settlement, at least two of them). Both
+  weight 1, group "unusual". A municipality-wide fallback for `turnout_apart` was measured and dropped: towns differ
+  from villages everywhere and it flagged 400 stations in 2026 against 55 for the settlement rule. "My list" lives
+  only in the reader's browser (`viewed.lists`), consistent with the no-tracking principle; the page is rendered
+  for the leading list so it reads without scripts. The near-unanimity card is the `near_unanimity` rule alone,
+  since that rule already requires turnout of 90%.

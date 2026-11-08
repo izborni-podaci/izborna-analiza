@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 from pathlib import Path
 
-from izbori import boards, documents, observers
+from izbori import boards, documents, observers, settlements
 from izbori.checks import Flag, group_by_station, station_flags
 from izbori.contests import Presidential, Proportional, Totals, evaluate
 from izbori.history import Archive
@@ -62,7 +62,8 @@ def analyze(archive: Archive, rid: str, notes_dir: Path | None = None, cache: di
     changes = archive.changes(rid)
     docs = station_documents(archive, rnd, changes)
     reviews = observers.load_reviews(archive.dir(rid))
-    flags = station_flags(rnd, changes, previous, links(archive, rid, cache), docs, reviews)
+    flags = station_flags(rnd, changes, previous, links(archive, rid, cache), docs, reviews,
+                          settlements.load_store(archive.dir(rid)).get("stations"))
     totals, contest = evaluate(rnd)
     return Analysis(
         round=rnd, totals=totals, contest=contest, flags=flags, changes=changes,
