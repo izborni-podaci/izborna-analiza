@@ -591,6 +591,34 @@ def coverage(store: dict) -> dict[str, dict]:
     return out
 
 
+COMMON_SHARE = 0.9  # a list at this share of a municipality's stations is expected at every one of them
+ODD_MIN_STATIONS = 5
+
+
+def odd_stations(cov: dict[str, dict]) -> dict[str, list[tuple[str, list[int]]]]:
+    """Per municipality, the stations whose read decisions lack a list that almost every other station of the
+    municipality has (COMMON_SHARE): where a commission's layout loses a slot, this is what it looks like. Some of
+    it is real — a list need not appoint everywhere — so it is a list to look at, never a flag. Only stations with
+    a decision read count; municipalities with fewer than ODD_MIN_STATIONS of them are skipped."""
+    by_mun: dict[str, list[tuple[str, set]]] = {}
+    for key, c in cov.items():
+        if c.get("lists"):
+            by_mun.setdefault(key.split("/")[0], []).append((key, {int(n) for n in c["lists"]}))
+    out: dict[str, list[tuple[str, list[int]]]] = {}
+    for mun, stations in by_mun.items():
+        if len(stations) < ODD_MIN_STATIONS:
+            continue
+        counts: dict[int, int] = {}
+        for _, lists in stations:
+            for n in lists:
+                counts[n] = counts.get(n, 0) + 1
+        common = {n for n, k in counts.items() if k >= COMMON_SHARE * len(stations)}
+        odd = [(key, sorted(common - lists)) for key, lists in stations if common - lists]
+        if odd:
+            out[mun] = sorted(odd, key=lambda x: (-len(x[1]), x[0]))
+    return out
+
+
 def addresses(store: dict) -> dict[str, str]:
     """Per station: the address on its newest decision of any kind, where one was read."""
     out: dict[str, tuple[str, str]] = {}

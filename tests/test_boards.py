@@ -474,3 +474,14 @@ def test_retrying_unreadable_decisions_reaches_past_the_newest_page(tmp_path):
         ("819602", "14", "https://www.rik.parlament.gov.rs/extfile/sr/files/a/602.pdf")]
     # without the retry, only the decision read by the older reading is read again
     assert [d["id"] for d in plan(tmp_path, "680072", 2, {}, Client(), log=lambda m: None)["todo"]] == ["819602"]
+
+
+def test_odd_stations_name_a_lost_slot():
+    """A station lacking a list that almost every other station of its municipality has is listed to look at."""
+    from izbori.boards import odd_stations
+    lists = lambda *ns: {"lists": {str(n): {"member": True, "deputy": False} for n in ns}}  # noqa: E731
+    cov = {f"70513/{i}": lists(1, 2, 3) for i in range(1, 11)}
+    cov["70513/4"] = lists(1, 2)  # the Student list's slot lost here
+    cov["70513/9"] = lists(1, 2, 3, 7)  # one list more is not odd
+    cov["80241/1"] = lists(1)  # too few stations read to say
+    assert odd_stations(cov) == {"70513": [("70513/4", [3])]}

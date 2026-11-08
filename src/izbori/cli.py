@@ -414,6 +414,14 @@ def show_boards(archive: Archive, rid: str, contestants: list, n: int) -> None:
         log(f"{key}: lists with a member {members} of {len(contestants)}; unmatched {c['unmatched']}; "
             f"address: {latin(c['address'])}")
     log(f"stations with a decision read: {len(cov)}")
+    # where the reading may lose slots: stations lacking a list almost every other station of the municipality has
+    odd = boards.odd_stations(cov)
+    worst = sorted(odd.items(), key=lambda kv: -len(kv[1]))[:12]
+    if worst:
+        log(f"stations lacking a list common in their municipality: {sum(len(v) for v in odd.values())} in "
+            f"{len(odd)} municipalities; the most per municipality (station: lists missing):")
+        for mun, rows in worst:
+            log(f"  {mun}: {len(rows)} — " + "; ".join(f"{k.split('/')[1]}: {m}" for k, m in rows[:6]))
 
 
 def cmd_geo(args) -> int:

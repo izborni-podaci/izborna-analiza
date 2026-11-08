@@ -474,6 +474,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   pattern from the same municipality (station 16): OCR garbled the word "члан" in one slot's heading, the slot
   ran into the one before it, and the merged text named two lists; a slot now starts at any "N. <short word>:"
   (reading version 3, read again). Each new example Marko sends is worth a diagnosis before a guess.
+  Marko then checked nine suspect decisions by hand: two kinds of suspect. Decisions that add up (a supplement
+  or a mislabelled standing decision beside the real one) only looked thin per document — `coverage` unions them,
+  nothing was lost. The real losses were three layouts (Žabalj, Zrenjanin, Novi Sad). So the daily merge now logs
+  `odd_stations`: stations lacking a list that 90% of their municipality's stations have, computed on the union,
+  the honest version of the per-document statistic.
 - **8 Nov 2026, the search opens the newest election's municipality page.** Marko: whoever picks their
   municipality or station in the search should land on the page just built, with the map. A municipality in the
   search, in the municipalities index and in a station page's crumbs now opens `r/<newest>/m/<code>.html`; the page
