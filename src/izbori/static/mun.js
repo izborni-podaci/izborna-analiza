@@ -144,7 +144,10 @@
         p.querySelector('title') && p.removeChild(p.querySelector('title'));
       });
       copy.querySelectorAll('text').forEach((t) => {
-        t.setAttribute('font-family', 'system-ui, sans-serif'); t.setAttribute('font-size', '11'); t.setAttribute('fill', '#0f1f33');
+        const cls = t.getAttribute('class') || '';
+        t.setAttribute('font-family', 'system-ui, sans-serif'); t.setAttribute('fill', '#0f1f33');
+        t.setAttribute('font-size', /small/.test(cls) ? '9' : /num/.test(cls) ? '10' : '11');
+        if (/num/.test(cls)) t.setAttribute('font-weight', '700');
         t.setAttribute('text-anchor', 'middle'); t.setAttribute('dominant-baseline', 'middle');
         t.setAttribute('paint-order', 'stroke'); t.setAttribute('stroke', '#ffffff'); t.setAttribute('stroke-width', '3'); t.setAttribute('stroke-linejoin', 'round');
       });
@@ -155,7 +158,8 @@
         const sw = sp.querySelector('.sw'); const cls = sw.getAttribute('class') || '';
         return { text: sp.textContent.trim(), colour: /mp-close-sw/.test(cls) ? 'hatch' : colourOf(sw) };
       });
-      const facts = [...document.querySelectorAll('.vi-facts [data-fact]')].map((f) => f.textContent.trim());
+      const keyEl = document.querySelector('[data-map-key]');
+      const facts = (keyEl ? [keyEl.textContent.replace(/\s+/g, ' ').trim()] : []).concat([...document.querySelectorAll('.vi-facts [data-fact]')].map((f) => f.textContent.trim()));
       const rows = Math.ceil(legend.length / 2);
       // wrap a fact to the width of the image
       const probe = document.createElement('canvas').getContext('2d'); probe.font = '14px system-ui, sans-serif';

@@ -493,6 +493,9 @@ table.stations td b { font-weight: 600; }
 .smap .mp { stroke: var(--page); stroke-width: 1; fill: var(--axis); }
 .smap .mp:hover { stroke: var(--ink); stroke-width: 1.5; }
 .smap text { font: 11px var(--sans); fill: var(--ink); text-anchor: middle; dominant-baseline: middle; paint-order: stroke; stroke: var(--page); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.smap text.small { font-size: 9px; }
+.smap text.num { font-size: 10px; font-weight: 700; }
+.smap-key { display: block; margin: 4px 0; }
 .mp-1 { fill: var(--s1) !important; } .mp-2 { fill: var(--s2) !important; } .mp-3 { fill: var(--s3) !important; }
 .mp-4 { fill: var(--s4) !important; } .mp-5 { fill: var(--s5) !important; } .mp-6 { fill: var(--s6) !important; }
 .mp-7 { fill: var(--s7) !important; } .mp-8 { fill: var(--s8) !important; } .mp-9 { fill: var(--ink-2) !important; }

@@ -91,7 +91,10 @@ def test_kosovo_in_rik_s_division_by_name(tmp_path):
 def test_settlements_join_municipality_and_census(tmp_path):
     # one municipality, two settlements inside it (one with a census name, one with a name the census spells
     # differently and so unmatched), one outside every municipality
-    muns = [{"type": "Feature", "properties": {"code": "70513"},
+    muns = [{"type": "Feature", "properties": {"code": "79000"},  # a city around the municipality: the smaller wins
+             "geometry": {"type": "Polygon", "coordinates": [[[21.6, 43.0], [22.0, 43.0], [22.0, 43.4], [21.6, 43.4],
+                                                              [21.6, 43.0]]]}},
+            {"type": "Feature", "properties": {"code": "70513"},
              "geometry": {"type": "Polygon", "coordinates": [[[21.7, 43.1], [21.9, 43.1], [21.9, 43.3], [21.7, 43.3],
                                                               [21.7, 43.1]]]}}]
 

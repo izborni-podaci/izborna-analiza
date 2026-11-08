@@ -169,7 +169,7 @@ def settlement_features(data: dict, municipalities: list[dict], census_names, lo
         if not hits:
             outside += 1
             continue
-        mun = codes[hits[0]]
+        mun = codes[min(hits, key=lambda i: polys[i].area)]  # a city municipality lies inside its city: the smaller wins
         name = tags.get("name") or tags.get("name:sr") or ""
         names = census_names(mun)
         match = names.get(norm(name), "") if names else ""

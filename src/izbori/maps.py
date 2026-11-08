@@ -48,8 +48,9 @@ def project(features: list[dict], width: int = WIDTH, max_height: int = MAX_HEIG
     return to, height
 
 
-LABEL_MIN = 56  # a settlement narrower than this many pixels gets no name on the map (the tooltip still has it)
-LABEL_PX = 6.2  # about the width of a letter at the label's size, to tell whether a name fits
+LABEL_PX = 6.2  # about the width of a letter at the label's size (11 px), to tell whether a name fits
+SMALL_PX = 5.0  # at the smaller size (9 px)
+NUMBER_MIN = 22  # narrower than this, a settlement gets a number and its name goes in the key under the map
 
 
 def label_point(geometry: dict, to):
@@ -83,19 +84,20 @@ def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[i
                    title: str, pct, width: int = WIDTH) -> str:
     """The SVG. results: census settlement name → {"leader": list index or None, "share", "second"} (from
     coordinator.by_settlement); ranks: list index → its rank in the election (1 = most votes); labels: list index →
-    display label. Empty string when there is nothing to draw."""
+    display label. Returns the SVG and the key (the names of the settlements too narrow for their name, in the
+    order of their numbers); an empty string when there is nothing to draw."""
     to, height = project(features, width)
     if to is None:
-        return ""
-    paths, texts = [], []
+        return "", []
+    paths, texts, key = [], [], []
     for f in sorted(features, key=lambda f: f["properties"].get("census") or ""):
         p = f["properties"]
         r = results.get(p.get("census") or "")
         cls, tip = "mp-none", escape(p.get("census") or p.get("name") or "")
         label = p.get("census") or p.get("name") or ""
         spot = label_point(f["geometry"], to) if label else None
-        if spot and spot[2] >= LABEL_MIN and len(label) * LABEL_PX <= spot[2] + 12:
-            texts.append(f'<text x="{spot[0]:.1f}" y="{spot[1]:.1f}">{escape(label)}</text>')
+        if spot:
+            texts.append(name_label(label, spot, key))
         if r and r.get("leader") is not None:
             rank = ranks.get(r["leader"], PALETTE + 1)
             cls = f"mp-{min(rank, PALETTE + 1)}"
@@ -110,7 +112,38 @@ def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[i
                    f'patternTransform="rotate(45)"><rect class="hb" width="7" height="7"/>'
                    f'<rect class="hf" width="3.5" height="7"/></pattern>' for k in range(1, PALETTE + 2))
     return (f'<svg class="smap" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}"><defs>{defs}</defs>'
-            + "".join(paths) + "".join(texts) + "</svg>")
+            + "".join(paths) + "".join(texts) + "</svg>"), key
+
+
+def name_label(label: str, spot: tuple, key: list) -> str:
+    """Every settlement gets its name: on one line where it fits, on two where a two-word name fits that way,
+    smaller where it then fits, and as a number (with the name in `key`) where the shape is too narrow for any
+    of that. The tooltip always has the name."""
+    x, y, width = spot
+    room = width + 10  # a name may stick out a little
+    words = label.split()
+    lines = [label]
+    if len(label) * LABEL_PX > room and len(words) > 1:  # two lines, split where the halves are most even
+        k = min(range(1, len(words)), key=lambda k: abs(len(" ".join(words[:k])) - len(" ".join(words[k:]))))
+        lines = [" ".join(words[:k]), " ".join(words[k:])]
+    longest = max(len(line) for line in lines)
+    if longest * LABEL_PX <= room:
+        size = ""
+    elif longest * SMALL_PX <= room:
+        size = ' class="small"'
+    elif width >= NUMBER_MIN:
+        size = ' class="small"'
+        lines = lines if longest * SMALL_PX <= room + 14 else None
+    else:
+        lines = None
+    if lines is None:
+        key.append(label)
+        return f'<text x="{x:.1f}" y="{y:.1f}" class="num">{len(key)}</text>'
+    if len(lines) == 1:
+        return f'<text x="{x:.1f}" y="{y:.1f}"{size}>{escape(lines[0])}</text>'
+    step = 10 if size else 12
+    return (f'<text x="{x:.1f}" y="{y - step / 2:.1f}"{size}>{escape(lines[0])}</text>'
+            f'<text x="{x:.1f}" y="{y + step / 2:.1f}"{size}>{escape(lines[1])}</text>')
 
 
 def legend(results: dict[str, dict], ranks: dict[int, int], labels: dict[int, str]) -> list[dict]:
