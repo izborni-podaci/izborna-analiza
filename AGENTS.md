@@ -448,3 +448,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   election in `data/list_colours.csv` (round, number, colour), and every other list still takes the next free
   colour by rank. The rule is the same for every list — any list can be given a colour there — and it stays out
   of the checks, which never look at who gains. The file is in the round pages' fingerprint.
+- **8 Nov 2026, charts in the shared map image.** The PNG a reader downloads now has the map on the left and
+  two charts on the right: the municipality's result with the country's share as a tick, and turnout by
+  settlement with the municipality's turnout as a line. Both are drawn on the canvas from the page's own JSON
+  (`#mun-data` carries each list's colour slot and country share, and the municipality's and country's turnout),
+  so the image needs no server and no third party, and it is the same for every municipality and every list.
+  The page itself does not gain the charts: the image is the thing people pass around, the page has the table.

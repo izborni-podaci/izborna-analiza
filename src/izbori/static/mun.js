@@ -153,7 +153,19 @@
       });
       copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
       const [, , vw, vh] = copy.getAttribute('viewBox').split(' ').map(Number);
-      const scale = 2; const pad = 28; const top = 96; const W = vw + 2 * pad;
+      const scale = 2; const pad = 28; const top = 96; const gap = 36; const colW = 440;
+      const W = vw + 2 * pad + gap + colW;  // the map on the left, two charts on the right
+      // the charts' data: the municipality's result (top six lists, with the country's share as a tick) and
+      // turnout by settlement (the twelve largest, in order of turnout), from the page's own data
+      const counted = data.stations.filter((st) => st.valid);
+      const validAll = counted.reduce((a, st) => a + st.valid, 0);
+      const result = data.lists.map((l, i) => ({ label: l.label, slot: l.slot, country: l.country,
+        share: validAll ? counted.reduce((a, st) => a + (st.v[i] || 0), 0) / validAll : 0 }))
+        .sort((a, b) => b.share - a.share).slice(0, 6);
+      const bySet = new Map();
+      data.stations.forEach((st) => { if (!st.set || st.turnout === null) return; const g = bySet.get(st.set) || { name: st.set, reg: 0, voted: 0 }; g.reg += st.reg; g.voted += Math.round(st.turnout * st.reg); bySet.set(st.set, g); });
+      const turnout = [...bySet.values()].sort((a, b) => b.reg - a.reg).slice(0, 12).map((g) => ({ name: g.name, t: g.reg ? g.voted / g.reg : 0 })).sort((a, b) => b.t - a.t);
+      const chartH = 30 + result.length * 24 + 40 + 30 + turnout.length * 20 + 20;
       const legend = [...document.querySelectorAll('.smap-legend > span')].map((sp) => {
         const sw = sp.querySelector('.sw'); const cls = sw.getAttribute('class') || '';
         return { text: sp.textContent.trim(), colour: /mp-close-sw/.test(cls) ? 'hatch' : colourOf(sw) };
@@ -165,7 +177,8 @@
       const probe = document.createElement('canvas').getContext('2d'); probe.font = '14px system-ui, sans-serif';
       const lines = [];
       facts.forEach((f) => { let line = ''; f.split(' ').forEach((w) => { const tryLine = line ? line + ' ' + w : w; if (probe.measureText(tryLine).width > W - 2 * pad - 20 && line) { lines.push(line); line = w; } else line = tryLine; }); if (line) lines.push(line); });
-      const H = top + vh + 24 + rows * 26 + (lines.length ? 16 + lines.length * 22 : 0) + 56;
+      const mapH = vh + 24 + rows * 26;
+      const H = top + Math.max(mapH, chartH) + (lines.length ? 16 + lines.length * 22 : 0) + 56;
       const canvas = document.createElement('canvas'); canvas.width = W * scale; canvas.height = H * scale;
       const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
@@ -194,6 +207,41 @@
           } else { ctx.fillStyle = g.colour; ctx.fillRect(x, y - 11, 16, 12); }
           ctx.fillStyle = '#0f1f33'; ctx.fillText(g.text, x + 22, y);
         });
+        // the charts
+        const cx = pad + vw + gap; let cy = top + 8;
+        const barX = cx + 150; const barW = colW - 150 - 56;
+        ctx.fillStyle = '#0f1f33'; ctx.font = '600 15px system-ui, sans-serif'; ctx.fillText(L.chartResult, cx, cy); cy += 16;
+        const maxShare = Math.max(0.01, ...result.map((r) => Math.max(r.share, r.country || 0)));
+        ctx.font = '13px system-ui, sans-serif';
+        result.forEach((r) => {
+          const w = barW * r.share / maxShare;
+          ctx.fillStyle = LIGHT[r.slot] || LIGHT[9]; ctx.fillRect(barX, cy, w, 16);
+          let end = w;  // the value goes after the bar and after the country's tick, whichever is further
+          if (r.country !== null && r.country !== undefined) { const tw = barW * r.country / maxShare; ctx.fillStyle = '#0f1f33'; ctx.fillRect(barX + tw - 1, cy - 3, 2, 22); end = Math.max(end, tw); }
+          ctx.fillStyle = '#0f1f33'; ctx.textAlign = 'right'; ctx.fillText(r.label.length > 22 ? r.label.slice(0, 21) + '…' : r.label, barX - 8, cy + 12);
+          ctx.textAlign = 'left'; ctx.fillText(pct(r.share), barX + end + 6, cy + 12);
+          cy += 24;
+        });
+        ctx.fillStyle = '#44607f'; ctx.font = '12px system-ui, sans-serif';
+        ctx.fillRect(barX, cy + 2, 2, 12); ctx.fillText(L.country, barX + 8, cy + 12); cy += 40;
+        if (turnout.length > 1) {
+          ctx.fillStyle = '#0f1f33'; ctx.font = '600 15px system-ui, sans-serif'; ctx.fillText(L.chartTurnout, cx, cy); cy += 16;
+          const maxT = Math.max(0.01, ...turnout.map((g) => g.t), data.turnout.mun || 0);
+          ctx.font = '12px system-ui, sans-serif';
+          turnout.forEach((g) => {
+            const w = barW * g.t / maxT;
+            ctx.fillStyle = '#1e3a5f'; ctx.fillRect(barX, cy, w, 13);
+            ctx.fillStyle = '#0f1f33'; ctx.textAlign = 'right'; ctx.fillText(g.name.length > 22 ? g.name.slice(0, 21) + '…' : g.name, barX - 8, cy + 11);
+            ctx.textAlign = 'left'; ctx.fillText(pct(g.t), barX + w + 6, cy + 11);
+            cy += 20;
+          });
+          if (data.turnout.mun !== null) {
+            const mx = barX + barW * data.turnout.mun / maxT;
+            ctx.strokeStyle = '#c9971c'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(mx, cy - turnout.length * 20 - 4); ctx.lineTo(mx, cy); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle = '#8a6610'; ctx.fillText(L.municipality + ' ' + pct(data.turnout.mun), Math.min(mx + 6, cx + colW - 110), cy + 12);
+          }
+        }
+        y = top + Math.max(mapH, chartH) - 4;
         if (lines.length) {
           y += 16; ctx.fillStyle = '#0f1f33'; ctx.font = '14px system-ui, sans-serif';
           lines.forEach((l) => { y += 22; ctx.fillText('· ' + l, pad, y); });

@@ -1058,9 +1058,13 @@ class Site:
             tt = lambda key, **kw: t(key, loc, **kw)  # noqa: E731
             show = latin if loc == "en" else (lambda x: x)
             data = json.dumps({"rid": rid, "default": index, "name": show(m["name"]),
-                               "lists": [{"n": c.number, "label": show(narrative.short_label(self.labels[rid][i]))}
+                               "lists": [{"n": c.number, "label": show(narrative.short_label(self.labels[rid][i])),
+                                          "slot": ranks.get(i, 9), "country": a.totals.share_of_valid(i)}
                                          for i, c in enumerate(a.round.contestants)],
+                               "turnout": {"mun": m["turnout"], "country": country["turnout"]},
                                "i18n": {"rule3": tt("co_w3_rule", number="{number}"), "ofRead": tt("co_w3_of", n="{n}"),
+                                        "chartResult": tt("vi_chart_result"), "chartTurnout": tt("vi_chart_turnout"),
+                                        "country": tt("vi_chart_country"), "municipality": tt("vi_chart_mun"),
                                         "stations": tt("co_stations_word"), "stationNo": tt("station_no"),
                                         "legendNc": tt("co_legend_nc"), "rest": tt("co_dev_rest", n="{n}"),
                                         "devNote": tt("co_dev_note", avg="{avg}"), "member": tt("co_ctrl_member"),
