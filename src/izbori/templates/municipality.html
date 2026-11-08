@@ -305,7 +305,7 @@
       {% for p in history.places %}
         <tr{% if p.k %} class="flagged"{% endif %}>
           <td class="num">{{ p.number }}</td>
-          <td><a href="{{ link('s/' ~ p.id ~ '.html') }}">{{ name(p.name) or t('station_details') }}</a>{% if p.former %}<div class="small muted">{{ t('place_former', numbers=p.former|join(', ')) }}</div>{% endif %}{% if p.last %}<div class="small muted">{{ t('place_last', title=p.last) }}</div>{% endif %}</td>
+          <td><a href="{{ link(p.path) }}">{{ name(p.name) or t('station_details') }}</a>{% if p.former %}<div class="small muted">{{ t('place_former', numbers=p.former|join(', ')) }}</div>{% endif %}{% if p.last %}<div class="small muted">{{ t('place_last', title=p.last) }}</div>{% endif %}</td>
           <td class="num">{{ p.n }}</td>
           <td class="num">{{ p.k }}</td>
         </tr>

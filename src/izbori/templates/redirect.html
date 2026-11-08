@@ -1,8 +1,7 @@
-{% extends "base.html" %}
-{% block title %}{{ t('redirect_title') }}{% endblock %}
-{% block head %}<meta http-equiv="refresh" content="0; url={{ target }}">
-<link rel="canonical" href="{{ target }}">{% endblock %}
-{% block main %}
-{# The old address of a page that moved; the browser goes on at once, the link is for anyone it doesn't. #}
-<p>{{ t('redirect_text') }} <a href="{{ target }}">{{ target }}</a></p>
-{% endblock %}
+<!doctype html>
+{# The old address of a page that moved: as small as it can be (there are thousands), the browser goes on at once,
+   the link is for anyone it doesn't. #}
+<html lang="{{ lang }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('redirect_title') }}</title><meta http-equiv="refresh" content="0; url={{ target }}"><link rel="canonical" href="{{ target }}">
+<meta name="robots" content="noindex"></head>
+<body><p>{{ t('redirect_text') }} <a href="{{ target }}">{{ target }}</a></p></body></html>

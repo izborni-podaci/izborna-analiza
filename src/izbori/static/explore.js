@@ -593,10 +593,11 @@
     return geoLoading;
   };
   const munName = (code, d) => META.muns[code] || (d && d.municipalities[code] ? own(d.municipalities[code]) : code);
-  const munHref = (code) => `${SITE}m/${encodeURIComponent(code)}.html`;
-  const stHref = (d, i) => {
-    const p = d.stations.place[i];
-    return p ? `${SITE}s/${encodeURIComponent(p)}.html` : `${SITE}r/${d.id}/m/${encodeURIComponent(d.stations.mc[i])}.html`;
+  const munHref = (code) => (META.slugs && META.slugs[code] ? `${SITE}${META.slugs[code]}/` : `${SITE}m/${encodeURIComponent(code)}.html`);
+  const stHref = (d, i) => {  // a place's page is /<municipality>/<number>/; the place id is <code>-<number>[-<round>]
+    const p = d.stations.place[i]; const mc = d.stations.mc[i];
+    if (p && META.slugs && META.slugs[mc]) return `${SITE}${META.slugs[mc]}/${encodeURIComponent(p.slice(mc.length + 1))}/`;
+    return p ? `${SITE}s/${encodeURIComponent(p)}.html` : `${SITE}r/${d.id}/m/${encodeURIComponent(mc)}.html`;
   };
   const stName = (d, i) => own(d.stations.name[i]) || `${t('ex_col_no')} ${d.stations.no[i]}`;
 

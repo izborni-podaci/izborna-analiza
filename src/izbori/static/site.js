@@ -74,9 +74,9 @@
               const label = `${m[0]} · ${d.bm} ${s[1]}${s[2] ? ` · ${s[2]}` : ''}`;
               let sub = (s[4] ? d.flagged.replace('{k}', s[4]) : d.clean).replace('{n}', s[5]);
               if (s[6]) sub += ` · ${d.former.replace('{n}', s[6])}`;
-              const page = s[3] || `${m[1]}-${s[1].replace(/[^0-9A-Za-z_-]/g, '_')}`;
+              const tail = s[3] || s[1].replace(/[^0-9A-Za-z_-]/g, '_');  // /novi-sad/140/
               const f = fold(label);
-              return [f, s[6] ? `${f} ${fold(`${d.bm} ${s[6]}`)}` : f, [label, `s/${page}.html`, sub]];
+              return [f, s[6] ? `${f} ${fold(`${d.bm} ${s[6]}`)}` : f, [label, `${m[4]}/${tail}/`, sub]];
             });
             items = cities.concat(mun, st);
           })
@@ -388,7 +388,7 @@
   };
   const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const h1 = document.querySelector('main h1');
-  if (h1 && /\/s\/[^/]+\.html$/.test(location.pathname)) {
+  if (h1 && (document.querySelector('.el-latest') || /\/s\/[^/]+\.html$/.test(location.pathname))) {  // a place's page
     const v = memory.read();
     const places = (v.places || []).filter((p) => p.href !== location.pathname);
     places.unshift({ href: location.pathname, title: h1.textContent.trim() });

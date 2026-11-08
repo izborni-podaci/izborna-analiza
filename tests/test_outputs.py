@@ -36,8 +36,8 @@ def test_site(site):
 
     # Latin pages carry no Cyrillic except the name of the Cyrillic switch; English pages are not built (8 Nov 2026)
     assert not (out / "en").exists() and not (out / "feed.en.xml").exists()
-    for path in [*out.glob("*.html"), *(out / "r").rglob("*.html"), *(out / "s").glob("*.html"),
-                 *(out / "m").glob("*.html")]:
+    for path in [*out.glob("*.html"), *(out / "r").rglob("*.html"), *(p for p in out.glob("*/index.html") if p.parts[-2] != "cyr"),
+                 *(p for p in out.glob("*/*/index.html") if p.parts[-3] != "cyr")]:
         text = path.read_text(encoding="utf-8").replace("Ћирилица", "")
         assert not CYRILLIC.search(text), path
     assert CYRILLIC.search((out / "cyr/r/680072/index.html").read_text(encoding="utf-8"))
@@ -57,7 +57,7 @@ def test_site(site):
     home = (out / "index.html").read_text(encoding="utf-8")
     assert "Svako biračko mesto u Srbiji" in home and "data-next" not in home
     assert home.count('<article class="door') == 3 and "Za kontrolore i koordinatore" in home
-    assert 'Probajte: <a href="novi-sad/"' in home and 'href="s/' in home  # the largest municipality, by its name
+    assert 'Probajte: <a href="novi-sad/"' in home and re.search(r'href="[a-z0-9-]+/\d+/"', home)  # by name: a municipality, a place
     assert '<select id="opstina" name="m" data-base="">' in home and 'value="bujanovac/"' in home
     assert home.count('class="so-card') == 4
     assert "Šta odskače: Parlamentarni 2026" in home and "Lista sa najvećom razlikom između sela i grada" in home
@@ -384,8 +384,9 @@ def test_site_shows_controllers(tmp_path, archive):
     assert 'class="doc doc-observers"' in row and ">Posmatrači</a>" in row and ">Primedba</a>" in row
     assert "Primedba uz zapisnik" in row and "%D0%9F%D1%80%D0%B8%D0%BC%D0%B5%D0%B4%D0%B1%D0%B0" in row  # link encoded
     assert "Primedbe posmatrača" in row and "Gužva ispred biračkog mesta" in row and "pročitano 4.11.2026." in row
-    place = re.search(r'href="\.\./\.\./\.\./(s/[^"]+\.html)"', row).group(1)
-    page = (out / place).read_text(encoding="utf-8")
+    place = re.search(r'href="\.\./\.\./\.\./([a-z0-9-]+/[^"/]+/)"', row).group(1)  # /doljevac/23/
+    page = (out / place / "index.html").read_text(encoding="utf-8")
+    assert "0; url=../" + place in (out / "s/70513-23.html").read_text(encoding="utf-8")  # the old address leads there
     assert re.search(r"Zapisnik o posmatračima objavljen|O posmatračima za \d od \d izbora", page)
     # the decisions on its polling board are linked on its page, apart from the documents of the vote
     board = page[page.index("Rešenja o biračkom odboru:"):]
@@ -397,7 +398,7 @@ def test_site_shows_controllers(tmp_path, archive):
     assert "Dokumenti izborne komisije" in commission_part
     assert re.findall(r">([^<]+)</a>", commission_part)[:3] == ["3.11.2026. (1)", "3.11.2026. (2)", "14.10.2026."]
     assert "Zapisnici sa sednica" in commission_part and "%D0%97%201.pdf" in commission_part
-    api = json.loads((out / "api" / place.replace(".html", ".json")).read_text(encoding="utf-8"))
+    api = json.loads((out / "api/s/70513-23.json").read_text(encoding="utf-8"))
     kinds = [d["kind"] for e in api["elections"] if e["round"] == "680072" for d in e["documents"]]
     assert kinds == ["minutes", "observers", "remark", "board_standing", "board_extended"]
     assert "Zapisano na biračkom mestu" in (out / "about.html").read_text(encoding="utf-8")
@@ -412,8 +413,8 @@ def test_site_shows_controllers(tmp_path, archive):
 
 def test_site_station_pages_and_breadcrumbs(site):
     out = site
-    pages = sorted((out / "s").glob("*.html"))
-    assert pages, "a page for every polling place"
+    pages = sorted(out.glob("*/[0-9]*/index.html"))
+    assert pages, "a page for every polling place, at /<municipality>/<number>/"
     text = pages[0].read_text(encoding="utf-8")
     assert 'class="crumbs"' in text and "Kroz sve izbore" in text
     assert 'class="crumbs"' in (out / "r/680072/check.html").read_text(encoding="utf-8")
@@ -432,11 +433,11 @@ def test_search_leads_to_pages_across_elections(site):
             assert 'http-equiv="refresh" content="0; url=../' + m[4] + '/"' in (site / prefix / f"m/{m[1]}.html").read_text(encoding="utf-8")
         for s in data["s"]:
             mi, number, _, page, k, n, _ = s
-            page = page or f"{data['m'][mi][1]}-{re.sub(r'[^0-9A-Za-z_-]', '_', number)}"
-            assert (site / prefix / f"s/{page}.html").exists(), s
+            tail = page or re.sub(r'[^0-9A-Za-z_-]', '_', number)
+            assert (site / prefix / data["m"][mi][4] / tail / "index.html").exists(), s
             assert 0 <= k <= n
     data = json.loads((site / "search.json").read_text(encoding="utf-8"))
-    assert len(data["s"]) == len(list((site / "s").glob("*.html")))
+    assert len(data["s"]) == len(list((site / "s").glob("*.html")))  # one old address per place, each a redirect
     # the cities split into municipalities are found by their own name and open their own page
     assert [g[:2] for g in data["g"]] == [["Beograd", "beograd"], ["Niš", "nis"], ["Požarevac", "pozarevac"], ["Užice", "uzice"]]
     assert data["g"][0][2] == 17 and all((site / f"{g[1]}/index.html").exists() for g in data["g"])
@@ -456,11 +457,11 @@ def test_municipality_across_elections(site):
     assert re.search(r"\d+ od 221 biračkih mesta za proveru", page)
     assert "207 (Predsednički 2022) → 221 · novih" in page
     assert 'href="../r/680072/check.html#m-89010"' in page
-    assert 'href="../s/89010-140.html"' in page and "Biračka mesta kroz izbore" in page
+    assert 'href="../novi-sad/140/"' in page and "Biračka mesta kroz izbore" in page
     # round pages link to it, and their stations to their own pages
     mun = (site / "r/680072/m/89010.html").read_text(encoding="utf-8")
     # the same page for the newest election: the strip leads to the earlier ones, the history is here too
-    assert 'href="../../../s/89010-1.html"' in mun and 'href="../../../r/341140/m/89010.html"' in mun
+    assert 'href="../../../novi-sad/1/"' in mun and 'href="../../../r/341140/m/89010.html"' in mun
     assert 'href="../../../novi-sad/" aria-current="page"' in mun  # the strip's newest entry is the page by name
     assert 'id="kroz-izbore"' in mun and 'class="el-strip"' in mun
 
@@ -544,8 +545,8 @@ def test_municipality_page_for_coordinators(site, archive):
 
 def test_place_across_elections(site):
     # Zemun's gymnasium was station 10 until 2023 and is 14 since 2024: one place, found by its name
-    page = (site / "s/70157-14.html").read_text(encoding="utf-8")
-    rows = re.findall(r'<a href="\.\./r/(\d+)/m/70157\.html#bm-(\d+)">', page)
+    page = (site / "zemun/14/index.html").read_text(encoding="utf-8")
+    rows = re.findall(r'<a href="\.\./\.\./r/(\d+)/m/70157\.html#bm-(\d+)">', page)
     assert rows == [("680072", "14"), ("567956", "14"), ("341140", "10"), ("42732", "10")]
     assert "isto mesto po nazivu" in page
     # the latest election is open at the top, the three earlier ones fold into the same block, each with its result
@@ -564,12 +565,13 @@ def test_place_across_elections(site):
     # a school that held stations 134 and 140 in 2023 kept only 140 in 2026; station 134 of 2026 is another place
     # with another name, so the number alone doesn't join it to the school's old 134
     def stations(path):
-        return re.findall(r'<a href="\.\./r/(\d+)/m/89010\.html#bm-(\d+)">', (site / path).read_text(encoding="utf-8"))
-    assert stations("s/89010-140.html") == [("680072", "140"), ("341143", "140"), ("341140", "140"), ("42732", "140")]
-    assert stations("s/89010-134-341143.html") == [("341143", "134"), ("341140", "134"), ("42732", "134")]
-    assert stations("s/89010-134.html") == [("680072", "134")]
-    assert "JOVAN POPOVIĆ" in (site / "s/89010-134-341143.html").read_text(encoding="utf-8")
-    assert "RADOSNO DETINJSTVO" in (site / "s/89010-134.html").read_text(encoding="utf-8")
+        return re.findall(r'<a href="\.\./\.\./r/(\d+)/m/89010\.html#bm-(\d+)">', (site / path).read_text(encoding="utf-8"))
+    assert stations("novi-sad/140/index.html") == [("680072", "140"), ("341143", "140"), ("341140", "140"), ("42732", "140")]
+    assert stations("novi-sad/134-341143/index.html") == [("341143", "134"), ("341140", "134"), ("42732", "134")]
+    assert stations("novi-sad/134/index.html") == [("680072", "134")]
+    assert "JOVAN POPOVIĆ" in (site / "novi-sad/134-341143/index.html").read_text(encoding="utf-8")
+    assert "RADOSNO DETINJSTVO" in (site / "novi-sad/134/index.html").read_text(encoding="utf-8")
+    assert "0; url=../novi-sad/134-341143/" in (site / "s/89010-134-341143.html").read_text(encoding="utf-8")
     # the top three use names without the words every list's name starts with
     assert "1. ALEKSANDAR VUČIĆ - SRBIJA NE SME DA STANE" in page
     assert "IZBORNA LISTA KANDIDATA" not in page.split('title="')[0]

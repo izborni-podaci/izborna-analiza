@@ -513,3 +513,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   elections (and the newest, with `#bm-N` anchors from the check page). Size: the newest election's municipality
   page now exists twice (by name, and under r/); making the r/ copy a redirect would save ~30 MB but lose the
   anchors unless a script carries the hash — a lever if the budget tightens.
+  The same evening the polling places followed: `/<municipality>/<number>/` (`Site.place_path`), `s/<place>.html`
+  a redirect. A redirect page is a bare 300-byte file, not a page on the base template: with 8,000 places in two
+  scripts the template cost 60 MB.

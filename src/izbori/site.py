@@ -122,7 +122,13 @@ class Site:
     def st_path(self, rid: str, key: str) -> str:
         """The page of the place a round's station belongs to: that place in every election in the archive."""
         p = self.places.of(rid, key)
-        return f"s/{p.id}.html" if p else ""
+        return self.place_path(p) if p else ""
+
+    def place_path(self, p) -> str:
+        """A polling place's address: its municipality's name and its newest number, /novi-sad/140/ (the election's
+        id after the number where another place in the municipality has the same newest number). The old
+        s/<place>.html is a one-line page that leads here."""
+        return f"{self.slugs[p.code]}/{p.id[len(p.code) + 1:]}/" if getattr(self, "slugs", None) else f"s/{p.id}.html"
 
     def ctrl_of(self, rid: str) -> dict:
         if rid not in self.ctrl_cache:
@@ -283,7 +289,7 @@ class Site:
         strings.update({f"group_{g}": t(f"group_{g}", loc) for g in GROUPS})
         # the settlements' classes, named as on the round's page by kind of settlement
         strings.update({f"ex_{k}": t(k, loc) for k in S if k.startswith(("sx_type_", "sx_size_", "sx_change_"))})
-        return {"loc": loc, "rounds": rounds, "muns": muns, "groups": GROUPS, "t": strings,
+        return {"loc": loc, "rounds": rounds, "muns": muns, "slugs": self.slugs, "groups": GROUPS, "t": strings,
                 "abroad": ABROAD.strip("/"), "prisons": PRISONS.strip("/"), "classes": bysettlement.CLASSES}
 
     def municipality_index(self, loc: str) -> list[dict]:
@@ -342,7 +348,9 @@ class Site:
         newest first, every election alike, each linking to the station's row in that election."""
         group_of = {c.code: c.group for c in CHECKS}
         for p in self.places.places:
-            if self.keep(loc, f"s/{p.id}.html", self.place_inputs(p, loc)):
+            path = self.place_path(p)
+            self.redirect(loc, f"s/{p.id}.html", "../" + path)
+            if self.keep(loc, path + "index.html", self.place_inputs(p, loc)):
                 continue
             rows, codes, story = [], set(), []
             for i, rid in enumerate(p.rounds):
@@ -366,7 +374,7 @@ class Site:
                                                   for r in p.rounds[i + 1:i + 3] if p.stations[r].registered]})
                 story.append(e)
             hints = sorted(codes, key=strength)
-            self.write(loc, f"s/{p.id}.html", "station.html", p=p, s=p.newest, rows=rows, address=p.address,
+            self.write(loc, path + "index.html", "station.html", p=p, s=p.newest, rows=rows, address=p.address,
                        hints=hints, group_of=group_of,
                        analysis=narrative.place(story, [cols[r]["short"] for r in self.mun_rounds[p.code]
                                                         if r not in p.stations], loc),
@@ -492,8 +500,8 @@ class Site:
         mine = self.places.in_municipality(code)
         for p in mine:
             s = p.newest
-            places.append({"id": p.id, "number": s.number, "name": s.name, "former": p.former_numbers,
-                           "n": len(p.rounds), "k": self.flagged_in(p),
+            places.append({"id": p.id, "path": self.place_path(p), "number": s.number, "name": s.name,
+                           "former": p.former_numbers, "n": len(p.rounds), "k": self.flagged_in(p),
                            "last": self.shorts[loc][p.rounds[0]] if p.rounds[0] != rids[0] else "",
                            "order": (p.rounds[0] != rids[0], int(s.number) if s.number.isdigit() else 10 ** 9,
                                      s.number, newest_first.index(p.rounds[0]))})
@@ -766,7 +774,7 @@ class Site:
         rows = []
         for p in self.places.places:
             s, k = p.newest, self.flagged_in(p)
-            page = "" if p.id == station_path(s.key)[2:-5] else p.id
+            page = "" if p.id == station_path(s.key)[2:-5] else p.id[len(p.code) + 1:]  # the tail of its address
             rows.append((-k, latin(names[p.code]), int(s.number) if s.number.isdigit() else 0, s.number,
                          [at[p.code], s.number, conv(s.name), page, k, len(p.rounds), ", ".join(p.former_numbers)]))
         rows.sort(key=lambda r: r[:4])
