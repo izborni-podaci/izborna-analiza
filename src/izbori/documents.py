@@ -32,7 +32,7 @@ FILE = "documents.json"
 
 # Kinds of document, in the order a station's documents are listed. The first rule a label matches decides. The
 # decisions on the polling board come from another register (boards.station_docs).
-KINDS = ["minutes", "observers", "remark", "correction", "annulled", "undetermined", "audit", "other",
+KINDS = ["minutes", "minutes_previous", "observers", "remark", "correction", "annulled", "undetermined", "audit", "other",
          "board_standing", "board_standing_change", "board_extended", "board_extended_change", "board_refused",
          "board_other"]
 BOARD_KINDS = frozenset(k for k in KINDS if k.startswith("board_"))

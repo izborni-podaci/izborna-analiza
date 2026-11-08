@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from collections import defaultdict
 from pathlib import Path
 
 from izbori import boards, documents, observers
 from izbori.checks import Flag, group_by_station, station_flags
 from izbori.contests import Presidential, Proportional, Totals, evaluate
 from izbori.history import Archive
-from izbori.model import Round
+from izbori.model import Round, links as link_pairs
 from izbori.notes import Note, load_notes
 from izbori.places import RULES_FILE, Places, contradicts, follow, load_rules
 
@@ -59,7 +60,7 @@ def analyze(archive: Archive, rid: str, notes_dir: Path | None = None, cache: di
     previous_ids.sort(key=lambda r: archive.meta(r).get("kind") != kind)
     previous = [load(r) for r in previous_ids]
     changes = archive.changes(rid)
-    docs = station_documents(archive, rnd)
+    docs = station_documents(archive, rnd, changes)
     reviews = observers.load_reviews(archive.dir(rid))
     flags = station_flags(rnd, changes, previous, links(archive, rid, cache), docs, reviews)
     totals, contest = evaluate(rnd)
@@ -70,12 +71,25 @@ def analyze(archive: Archive, rid: str, notes_dir: Path | None = None, cache: di
     )
 
 
-def station_documents(archive: Archive, rnd: Round) -> dict[str, list]:
-    """Each station's documents: those in the results file and those in RIK's register of minutes, each once."""
+def station_documents(archive: Archive, rnd: Round, changes: list[dict] | None = None) -> dict[str, list]:
+    """Each station's documents: those in the results file and those in RIK's register of minutes, each once.
+    When the results file's link to the minutes changed, the earlier minutes stay on the station as a document,
+    so both versions can be opened and compared; a replacement is not a warning (a commission re-uploading its
+    whole municipality's minutes says nothing about any one station's numbers)."""
     register = documents.load(archive.dir(rnd.id))
+    previous: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
+    for e in changes or []:
+        if e["f"] == "zapisnik_link" and e["o"] and e["n"] != e["o"]:
+            previous[e["s"]].extend((label, url, e["t"]) for label, url in link_pairs(e["o"]))
     out = {}
     for s in rnd.stations:
         docs = documents.for_station(s.minutes_links + s.correction_links, register.get(s.key))
+        seen = {documents.path_of(d.url) for d in docs}
+        for label, url, when in previous.get(s.key, []):
+            if documents.path_of(url) not in seen:
+                seen.add(documents.path_of(url))
+                docs.append(documents.Doc("minutes_previous", documents.doc(label, url).repeat, label, url, when))
+        docs = documents.order(docs)
         if docs:
             out[s.key] = docs
     return out

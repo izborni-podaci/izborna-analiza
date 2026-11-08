@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from xml.sax.saxutils import escape, quoteattr
 
-from izbori.checks import GROUPS, Flag
+from izbori.checks import BY_CODE, GROUPS, Flag
 from izbori.describe import describe
 from izbori.history import Archive
 from izbori.i18n import PREFIX, check_name, fmt_int, kind_name, latin_page, t
@@ -72,6 +72,8 @@ def flag_lines(entry: dict, loc: str, archive: Archive, limit: int | None = SHOW
     lines = []
     items = entry["flags"] if limit is None else entry["flags"][:limit]
     for x in items:
+        if x["code"] not in BY_CODE:  # a check retired after the entry was kept: the entry stays, the line goes
+            continue
         f = Flag(x["station"], x["code"], x["data"])
         place = f"{x['m']}, БМ {x['no']}" if loc != "en" else f"{latin(x['m'])}, station {x['no']}"
         lines.append(f"{place}: {check_name(x['code'], loc)}. {describe(f, loc, label, entry.get('kind', ''))}")

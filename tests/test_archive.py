@@ -57,8 +57,13 @@ def test_changes_and_change_flags(tmp_path):
     assert ("70000/1", "lista_1") in fields and ("70000/1", "lista_2") in fields
     flags = {(f.station, f.code) for f in station_flags(a.load("1"), a.changes("1"))}
     assert ("70000/1", "changed") in flags
-    assert ("70000/2", "minutes_replaced") in flags
+    assert not any(code == "minutes_replaced" for _, code in flags)  # a replaced link is a document, not a warning
     assert ("70000/3", "correction_unapplied") in flags
+    from izbori.report import station_documents
+    docs = station_documents(a, a.load("1"), a.changes("1"))
+    kinds = [d.kind for d in docs["70000/2"]]
+    assert kinds == ["minutes", "minutes_previous"], kinds  # the current minutes first, the earlier version after
+    assert "6ade9d70be16f" in docs["70000/2"][1].url
 
 
 def test_history_flags_compare_the_same_station(tmp_path):

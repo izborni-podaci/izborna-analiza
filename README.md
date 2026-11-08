@@ -89,7 +89,6 @@ Every check treats every contestant the same way. A station is followed across e
 | Flag | Rule | Weight |
 |---|---|---|
 | Numbers changed after publication | A number at the station differs from the first value the archive saw. | 3 |
-| Minutes replaced | The link to the minutes changed. The link carries an upload stamp, so every replacement shows. | 2 |
 | Correction published, numbers unchanged | A correction ruling appeared after first publication, and no number has changed since. | 3 |
 
 **Recorded at the station.** Remarks and rulings RIK published with the station's minutes (see [Documents per polling station](#documents-per-polling-station)). The flag says the document exists; what it says is only in the document.
@@ -131,7 +130,7 @@ RIK's register of minutes ("Записници", e.g. [parliamentary 2026](https
 2. keeps, per station, each document's label, link and upload time in `data/rounds/<id>/documents.json`;
 3. never stores names: the register has none, and the documents themselves (which name board members and observers) are linked, never copied.
 
-Station pages, the lists to check and the JSON name each document by its kind. Remarks and the RG-8 and RG-9 rulings become flags (see [Station checks](#station-checks)); the observers' record is linked on every row, and the "In short" text says in which elections it exists. Remarks written by hand inside the observers' record become flags once a person has read them (see [Observers' records](#observers-records)).
+Station pages, the lists to check and the JSON name each document by its kind. When the results export's link to the minutes changes, the earlier minutes stay on the station as **earlier minutes**, so both versions can be opened and compared; a replacement is not a flag (8 Nov 2026: a commission re-uploading a whole municipality's minutes had flagged every one of its stations, which said nothing about any station's numbers). Remarks and the RG-8 and RG-9 rulings become flags (see [Station checks](#station-checks)); the observers' record is linked on every row, and the "In short" text says in which elections it exists. Remarks written by hand inside the observers' record become flags once a person has read them (see [Observers' records](#observers-records)).
 
 The first reading of a round, and any reading of a round older than 60 days, is recorded without a feed entry; new flags from documents of a recent round go to the feed like any others. The register uses today's municipality names, so names from every archived election map to the codes (the 2022 table writes "Ниш-Медијана" for "Градска општина Медијана").
 

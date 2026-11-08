@@ -27,7 +27,6 @@ _TEXT = {
                           "All {registered} registered voted; municipality median turnout {median}"),
     "correction_still_odd": ("Решење о исправци {form}", "Correction ruling {form}"),
     "changed": ("Промењено: {items}", "Changed: {items}"),
-    "minutes_replaced": ("Последња замена {last}, укупно {count}", "Last replaced {last}, {count} in total"),
     "correction_unapplied": ("Решење {form} појавило се {appeared}", "Ruling {form} appeared {appeared}"),
     "invalid_spike": ("Неважећих: {invalid} ({share})", "Invalid: {invalid} ({share})"),
     "invalid_spike_address": ("Неважећих: {invalid} ({share}); медијана на истој адреси {median}",
@@ -92,8 +91,6 @@ def describe(flag: Flag, loc: str, contestant_label=lambda n: str(n), kind: str 
         if len(d["fields"]) > 3:
             parts.append("…")
         values = {"items": "; ".join(parts)}
-    elif flag.code == "minutes_replaced":
-        values = {"last": fmt_time(d["last"], loc), "count": i(d["count"])}
     elif flag.code == "correction_unapplied":
         values = {"form": d.get("form") or "", "appeared": fmt_time(d["appeared"], loc)}
     elif flag.code == "invalid_spike":

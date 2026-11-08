@@ -33,7 +33,6 @@ CHECKS = [
     Check("full_turnout_typo", "paper", 2),
     Check("correction_still_odd", "paper", 3),
     Check("changed", "change", 3),
-    Check("minutes_replaced", "change", 2),
     Check("correction_unapplied", "change", 3),
     Check("voting_annulled", "records", 3),
     Check("results_undetermined", "records", 3),
@@ -190,9 +189,6 @@ def change_flags(changes: list[dict], stations: dict[str, Station]) -> list[Flag
                 last[e["f"]] = e["n"]
             out.append(Flag(key, "changed", {"fields": sorted(first), "first": first, "now": last,
                                              "times": sorted({e["t"] for e in numbers})}))
-        replaced = [e for e in events if e["f"] == "zapisnik_link" and e["o"] and e["n"] != e["o"]]
-        if replaced:
-            out.append(Flag(key, "minutes_replaced", {"count": len(replaced), "last": replaced[-1]["t"]}))
         corrections = [e for e in events if e["f"] == "korekcija_dokument_link" and e["n"]]
         if corrections:
             appeared = corrections[0]["t"]

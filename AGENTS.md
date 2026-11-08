@@ -391,3 +391,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   to look at, red only for warnings, teal for the lists; the header sits on navy with a gold rule; `--gold`,
   `--gold-ink`, `--brand`, `--on-brand` and `--warn-track` were added, and warnings no longer share the data colour
   (`td.warn`, `tr.flagged` use `--critical`). The first tab is *Početna*: a tab that brings you back should say so.
+- **8 Nov 2026, replaced minutes are a document, not a warning.** Marko asked why a replaced minutes document
+  counted as a warning: it lifted some municipalities' averages without saying anything about the numbers (Bački
+  Petrovac stood at 11 of 11 flagged in 2026 only because its commission re-uploaded every set of minutes). The
+  `minutes_replaced` check is retired; the earlier minutes stay on the station as a document (*Ранији записник*,
+  "Earlier minutes"), so both versions can still be opened and compared, and old feed entries keep the entry but
+  drop that line. Remarks on the minutes stay a flag (he accepts that one, with some doubt: it says a document
+  exists, not what it says).
