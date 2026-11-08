@@ -109,6 +109,42 @@
     renderChart(idx);
     renderTable(idx);
     renderVillages(idx);
+    renderPanel(idx);
+  }
+
+  // a click on a settlement of the map: its polling stations under the map (link, turnout, my list, controller)
+  const panel = document.querySelector('[data-village-panel]');
+  const smap = document.querySelector('svg.smap');
+  let shownSet = null;
+  function renderPanel(idx) {
+    if (!panel || shownSet === null) return;
+    const sts = data.stations.filter((st) => (st.set || '') === shownSet);
+    const row = (st) => {
+      const c = ctrlOf(st, idx);
+      const ctrl = c === 'm' ? L.member : c === 'd' ? L.deputy : c === 'n' ? L.none : L.notRead;
+      return '<tr><td><a href="' + esc(st.href) + '"><b>' + esc(L.stationNo) + ' ' + esc(st.n) + '</b> ' + esc(st.name || '') + '</a></td>'
+        + '<td class="num">' + (st.turnout === null ? '' : esc(pct(st.turnout))) + '</td>'
+        + '<td class="num">' + (st.valid ? esc(pct((st.v[idx] || 0) / st.valid)) : '') + '</td>'
+        + '<td class="' + (c === 'n' ? 'ctrl-none' : c ? 'ctrl-yes' : 'muted') + '">' + esc(ctrl) + '</td></tr>';
+    };
+    panel.innerHTML = '<div class="vi-panel-head"><strong>' + esc(fill(L.panelTitle, { name: shownSet, n: num(sts.length, 0) })) + '</strong>'
+      + '<button type="button" class="link-button" data-panel-close>' + esc(L.panelClose) + '</button></div>'
+      + '<table class="compact"><thead><tr><th>' + esc(L.station) + '</th><th class="num">' + esc(L.turnout) + '</th><th class="num">' + esc(L.myList) + '</th><th>' + esc(L.controller) + '</th></tr></thead><tbody>'
+      + sts.map(row).join('') + '</tbody></table>';
+    panel.hidden = false;
+  }
+  if (smap && panel) {
+    smap.querySelectorAll('path[data-set]').forEach((p) => { if (p.dataset.set) { p.setAttribute('tabindex', '0'); p.setAttribute('role', 'button'); } });
+    const pick = (p) => {
+      smap.querySelectorAll('.mp-active').forEach((x) => x.classList.remove('mp-active'));
+      if (shownSet === p.dataset.set) { shownSet = null; panel.hidden = true; return; }
+      shownSet = p.dataset.set; p.classList.add('mp-active');
+      renderPanel(indexOf(select.value));
+    };
+    smap.addEventListener('click', (e) => { const p = e.target.closest('path[data-set]'); if (p && p.dataset.set) pick(p); });
+    smap.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { const p = e.target.closest('path[data-set]'); if (p && p.dataset.set) { e.preventDefault(); pick(p); } } });
+    panel.addEventListener('click', (e) => { if (e.target.closest('[data-panel-close]')) { shownSet = null; panel.hidden = true; smap.querySelectorAll('.mp-active').forEach((x) => x.classList.remove('mp-active')); } });
+    const hint = document.createElement('p'); hint.className = 'small muted vi-hint'; hint.textContent = L.panelHint; panel.before(hint);
   }
 
   document.addEventListener('click', (e) => {

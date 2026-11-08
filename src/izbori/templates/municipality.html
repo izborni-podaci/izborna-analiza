@@ -159,6 +159,7 @@
       <button type="button" class="link-button" data-map-png data-title="{{ name(m.name) }} · {{ rshort }}" data-file="{{ rnd.id }}-{{ m.code }}-naselja.png" data-source="{{ t('vi_png_source', site=site_host) }}" hidden>{{ t('vi_png') }}</button>
     </figcaption>
   </figure>
+  <div class="vi-panel" data-village-panel hidden></div>
   {% endif %}
   <div class="table-wrap">
   <table class="villages" id="village-list" data-first="12" data-more="{{ t('vi_more', n=i(villages|length)) }}" data-less="{{ t('vi_less') }}">

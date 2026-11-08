@@ -479,6 +479,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   nothing was lost. The real losses were three layouts (Žabalj, Zrenjanin, Novi Sad). So the daily merge now logs
   `odd_stations`: stations lacking a list that 90% of their municipality's stations have, computed on the union,
   the honest version of the per-document statistic.
+- **8 Nov 2026, "(naselje nije utvrđeno)".** Marko asked which six Novi Sad stations had no settlement and why.
+  Two had an address whose building OCR mangled a little ("ЂУРАДАНИЧИЋ", "ІІСВЕТИ CABAіІ"), so the building rule
+  (`places.contradicts`) set the whole address aside, town included; it now tolerates a lost space or a letter or
+  two. The other four had no usable address line at all (no address, no town in it, or the building and the town
+  run together) and got rows in `data/settlements.csv` with the reason. The map's settlements are clickable: a
+  settlement's stations list under the map, from the page's own JSON.
 - **8 Nov 2026, the search opens the newest election's municipality page.** Marko: whoever picks their
   municipality or station in the search should land on the page just built, with the map. A municipality in the
   search, in the municipalities index and in a station page's crumbs now opens `r/<newest>/m/<code>.html`; the page

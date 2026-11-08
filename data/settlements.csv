@@ -3,3 +3,7 @@ round,municipality_code,number,settlement,note
 680072,89010,119,Ковиљ,"Културна станица Ковиљ, see 118"
 680072,89010,120,Ковиљ,"ОШ „Лаза Костић“ is Kovilj's primary school; the seat rule had put it in Novi Sad"
 680072,89010,121,Ковиљ,"ОШ „Лаза Костић“, see 120"
+680072,89010,3,Футог,"Културни центар „Младост“ is Futog's cultural centre; the decision gave no address"
+680072,89010,35,Нови Сад,"МЗ „Јужни Телеп“ is in Novi Sad (Telep); the decision's address names the school next door, so the building rule set it aside"
+680072,89010,54,Нови Сад,"ОШ „Прва војвођанска бригада“ is in Novi Sad; the decision's address line has no town"
+680072,89010,213,Нови Сад,"КС „Свилара“ is in Novi Sad (Podbara); the decision's address line ran the building and the town together"

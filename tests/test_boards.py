@@ -368,6 +368,9 @@ def test_an_address_naming_another_building_is_not_used():
     assert not contradicts('ОШ "ЛАЗАР САВАТИЋ"', 'ОШ"ЛАЗАР САВАТИЋ", КЕЈ ОСЛОБОЂЕЊА БР.27')
     assert not contradicts("ПРАВНО ПОСЛОВНА ШКОЛА", 'ПРАВНО-ПОСЛОВНА ШКОЛА "ДИМИТРИЈЕ ДАВИДОВИЋ", ТОШИН БУНАР')
     assert not contradicts("", "ГЛАВНА 1") and not contradicts("МЕСНА ЗАЈЕДНИЦА", "ГЛАВНА 1")  # nothing to compare
+    # OCR mangled the building a little: the space lost, a letter or two off (Novi Sad 100 and 70, 8 Nov 2026)
+    assert not contradicts('ОШ "ЂУРА ДАНИЧИЋ"', "ОШ ЂУРАДАНИЧИЋ , НОВИ САД, ДУШАНАВАСИГbЕВАБР. 19")
+    assert not contradicts('ОШ "СВЕТИ САВА"', "ОШ ІІСВЕТИ CABAіІ , РУМЕНКА, ЈОВАНА ЈОВАНОВИЋА ЗМАЈА БР. 24")
 
 
 def test_reading_split_across_jobs_ends_like_one_run(tmp_path, monkeypatch):

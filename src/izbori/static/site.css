@@ -510,6 +510,12 @@ table.stations td b { font-weight: 600; }
 .smap { display: block; width: 100%; max-width: 640px; height: auto; }
 .smap .mp { stroke: var(--page); stroke-width: 1; fill: var(--axis); }
 .smap .mp:hover { stroke: var(--ink); stroke-width: 1.5; }
+.smap path[role="button"] { cursor: pointer; }
+.smap .mp.mp-active { stroke: var(--gold); stroke-width: 2.5; }
+.vi-hint { margin: -8px 0 10px; }
+.vi-panel { border: 1px solid var(--border); border-left: 4px solid var(--gold); padding: 10px 14px 6px; margin: 0 0 18px; }
+.vi-panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+.vi-panel table { margin: 0; }
 .smap text { font: 11px var(--sans); fill: var(--ink); text-anchor: middle; dominant-baseline: middle; paint-order: stroke; stroke: var(--page); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
 .smap text.small { font-size: 9px; }
 .smap text.num { font-size: 10px; font-weight: 700; }

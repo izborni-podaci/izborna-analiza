@@ -151,10 +151,21 @@ def _differ(a: frozenset, b: frozenset) -> bool:
     return bool(a and b and not a & b)
 
 
+def _alike(x: str, y: str) -> bool:
+    """Two words OCR may have read differently: equal, one inside the other ("DJURADANICIC" holds "DJURA", the space
+    lost), or close enough ("CABA" read for "SAVA" is not, but "SVET1" for "SVETI" is)."""
+    if x == y or (len(x) >= 4 and (x in y or y in x)):
+        return True
+    from difflib import SequenceMatcher
+    return min(len(x), len(y)) >= 5 and SequenceMatcher(None, x, y).ratio() >= 0.8
+
+
 def contradicts(name: str, address: str) -> bool:
     """Whether an address read from a decision names another building than the station's name in the results (a
-    decision filed under the wrong station, or a line that is only the town): such an address isn't used."""
-    return _differ(words(name), words(address))
+    decision filed under the wrong station, or a line that is only the town): such an address isn't used. Words
+    OCR mangled a little still count as the same (Novi Sad 70 and 100, 8 Nov 2026)."""
+    a, b = words(name), words(address)
+    return bool(a and b and not any(_alike(x, y) for x in a for y in b))
 
 
 def match(places: list[Place], stations: list[Station], addresses: dict[str, str], rid: str = "",
