@@ -250,8 +250,11 @@ class Census:
 
 @dataclass
 class Rules:
-    """Manual corrections: (round, station key) → settlement."""
+    """Manual corrections: (round, station key) → settlement; and (round, municipality code) → the settlement every
+    station of the municipality that no rule places belongs to (number "*" in the file: the maintainer checked
+    that the commission writes bare building names for the town's stations only)."""
     settlement: dict[tuple[str, str], str] = field(default_factory=dict)
+    rest: dict[tuple[str, str], str] = field(default_factory=dict)
 
 
 def load_rules(path: Path | None, log=None) -> Rules:
@@ -265,7 +268,10 @@ def load_rules(path: Path | None, log=None) -> Rules:
                 if log:
                     log(f"{path}:{n}: needs a round, a municipality, a station number and a settlement")
                 continue
-            rules.settlement[(row["round"], f"{row['municipality_code']}/{row['number']}")] = row["settlement"]
+            if row["number"] == "*":
+                rules.rest[(row["round"], row["municipality_code"])] = row["settlement"]
+            else:
+                rules.settlement[(row["round"], f"{row['municipality_code']}/{row['number']}")] = row["settlement"]
     return rules
 
 
@@ -349,6 +355,14 @@ def join(stations: list[Station], census: Census, addresses: dict[str, str], rid
         hit = match(s, us, addresses.get(s.key, ""))
         if hit:
             out[s.key] = {"u": hit[0].key, "s": hit[1], "m": hit[2]}
+            continue
+        rest = rules.rest.get((rid, s.municipality_code))
+        if rest:  # the maintainer's rule for the municipality's stations no other rule places
+            found = [u for u in us if rest in u.settlements]
+            if found:
+                out[s.key] = {"u": found[0].key, "s": rest, "m": "rest"}
+            elif log:
+                log(f"{RULES_FILE}: {rid} {s.municipality_code}/*: {rest} is not a settlement of {s.municipality}")
     return out
 
 

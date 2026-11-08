@@ -127,6 +127,20 @@ def test_a_manual_correction_comes_first(tmp_path):
     assert len(logged) == 2
 
 
+def test_a_municipality_rule_for_the_stations_nothing_places(tmp_path):
+    """A row with number "*": the stations of the municipality no other rule places are in that settlement (the
+    maintainer checked the commission writes bare building names for the town's stations only)."""
+    c = census(tmp_path)
+    (tmp_path / "settlements.csv").write_text(
+        "round,municipality_code,number,settlement,note\n"
+        "r1,80357,*,Стара Пазова,the commission writes only the building for the town's stations\n", encoding="utf-8")
+    rules = S.load_rules(tmp_path / "settlements.csv")
+    stations = [st("1", "ДОМ КУЛТУРЕ"), st("2", "МЗ СТАРИ БАНОВЦИ")]
+    got = S.join(stations, c, {}, "r1", rules)
+    assert got["80357/1"] == {"u": "Стара Пазова", "s": "Стара Пазова", "m": "rest"}
+    assert got["80357/2"]["m"] == "station"  # a station a rule places keeps its own settlement
+
+
 def test_the_same_place_in_another_election(tmp_path):
     c = census(tmp_path)
     old = [st("5", "МЗ СТАРИ БАНОВЦИ"), st("6", "ОШ СВЕТИ САВА")]
