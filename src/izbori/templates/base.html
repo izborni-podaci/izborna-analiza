@@ -20,7 +20,8 @@
     <a class="brand" href="{{ link('index.html') }}">{{ t('site_name') }}</a>
     <nav class="main-nav" aria-label="{{ t('nav_main') }}">
       <a href="{{ link('index.html') }}"{% if page == 'index.html' %} aria-current="page"{% endif %}>{{ t('nav_home') }}</a>
-      <a href="{{ link('municipalities.html') }}" data-short="{{ t('nav_coord_short') }}"{% if page == 'municipalities.html' or page.startswith('m/') or page.startswith('r/') or page == 'elections.html' %} aria-current="page"{% endif %}>{{ t('nav_coord') }}</a>
+      <a href="{{ link('elections.html') }}"{% if page == 'elections.html' or (page.startswith('r/') and '/m/' not in page) %} aria-current="page"{% endif %}>{{ t('nav_elections') }}</a>
+      <a href="{{ link('municipalities.html') }}" data-short="{{ t('nav_coord_short') }}"{% if page == 'municipalities.html' or page.startswith('m/') or '/m/' in page %} aria-current="page"{% endif %}>{{ t('nav_coord') }}</a>
       <a href="{{ link('explore.html') }}" data-short="{{ t('nav_analyses_short') }}"{% if page == 'explore.html' %} aria-current="page"{% endif %}>{{ t('nav_analyses') }}</a>
       <a href="{{ link('guide.html') }}" data-short="{{ t('nav_guide_short') }}"{% if page == 'guide.html' %} aria-current="page"{% endif %}>{{ t('nav_guide') }}</a>
     </nav>

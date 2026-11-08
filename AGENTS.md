@@ -401,3 +401,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 - **8 Nov 2026, "upozorenje" on every page.** The Serbian pages now say *upozorenje* for a flag everywhere (the
   strings, the about page, the guide); English keeps "flag". Neuter noun, so the adjectives and verbs around it
   changed with it ("isto upozorenje", "pojavilo").
+- **8 Nov 2026, Izbori back in the header.** Marko asked for it: *Početna · Izbori · Za kontrolore i koordinatore ·
+  Analize i podaci · Vodič*. Izbori is current on the elections page and every round page; the coordinators' tab
+  on the municipalities' pages. Five tabs fit a 390 px phone with the short names; at 360 px the row scrolls.

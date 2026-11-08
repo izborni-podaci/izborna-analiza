@@ -70,7 +70,7 @@ def test_site(site):
     # the guide's link reads its whole name; phones show the short one from the attribute, not a second text
     assert '<a href="guide.html" data-short="Vodič">Vodič za kontrolore i posmatrače</a>' in home
     nav = re.search(r'<nav class="main-nav".*?</nav>', home, re.S).group(0)
-    assert [a for a in re.findall(r">([^<]+)</a>", nav)] == ["Početna", "Za kontrolore i koordinatore",
+    assert [a for a in re.findall(r">([^<]+)</a>", nav)] == ["Početna", "Izbori", "Za kontrolore i koordinatore",
                                                                "Analize i podaci", "Vodič za kontrolore i posmatrače"]
     for target in ('href="municipalities.html"', 'href="about.html#podaci"', 'href="elections.html"',
                    'href="repeat.html"', 'href="about.html"'):
