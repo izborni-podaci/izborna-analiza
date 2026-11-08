@@ -34,3 +34,15 @@ def test_names_fit_or_become_numbers():
     assert 'class="small"' in maps.name_label("Степановићево", (100, 50, 60), key)  # one long word: smaller
     assert maps.name_label("Лединци", (100, 50, 12), key) == '<text x="100.0" y="50.0" class="num">1</text>'
     assert key == ["Лединци"]
+
+
+def test_slots_keep_the_maintainers_colours(tmp_path):
+    ranks = {0: 2, 1: 3, 2: 1, 3: 4}  # list 2 has most votes, then 0, 1, 3
+    assert maps.slots(ranks, {}) == {2: 1, 0: 2, 1: 3, 3: 4}
+    assert maps.slots(ranks, {2: 8, 0: 1}) == {2: 8, 0: 1, 1: 2, 3: 3}  # red and blue set by hand, the rest shift
+    many = {i: i + 1 for i in range(10)}
+    assert maps.slots(many, {})[9] == 9  # past the palette
+    f = tmp_path / "list_colours.csv"
+    f.write_text("round,number,colour,note\n1,3,red,x\n1,1,blue,y\n1,5,mauve,no such colour\n", encoding="utf-8")
+    assert maps.load_colours(f) == {("1", 3): 8, ("1", 1): 1}
+    assert maps.load_colours(tmp_path / "none.csv") == {}

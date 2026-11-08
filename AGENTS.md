@@ -442,3 +442,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   where they fit, and "Download the image (PNG)" drawn on a canvas in the browser. `og:image` still needs a raster
   made at build time; not done. Known gap seen on Novi Sad: Kovilj's stations are not placed in Kovilj
   (settlements.py), so it draws grey.
+- **8 Nov 2026, lists' colours on the maps.** Marko asked for the Student list in red and United Serbia in blue
+  on the settlement maps. The maps had coloured by rank in the election to keep colour from meaning a list; a
+  map people share is read against what they expect, so the two largest lists' colours are now set by hand per
+  election in `data/list_colours.csv` (round, number, colour), and every other list still takes the next free
+  colour by rank. The rule is the same for every list — any list can be given a colour there — and it stays out
+  of the checks, which never look at who gains. The file is in the round pages' fingerprint.

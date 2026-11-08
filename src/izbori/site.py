@@ -397,6 +397,7 @@ class Site:
                     files.append(Path(self.notes_dir) / f"{r}.csv")
             files += [self.archive.dir(rid) / settlements.STORE] + [self.archive.root / f for f in settlements.FIGURE_TABLES]
             files.append(self.archive.root / "geo" / geo.SETTLEMENT_FILE)  # the municipality's map by settlement
+            files.append(self.archive.root / maps.COLOURS_FILE)
             links = hashlib.sha256("|".join(self.st_path(rid, s.key) for s in self.analyses[rid].round.stations).encode())
             links.update(repr(sorted(self.city_parts.items())).encode())  # from every election, later ones too
             self.round_keys[rid] = file_digest(*files) + links.hexdigest()
@@ -806,6 +807,7 @@ class Site:
                          for a in oldest_first}  # municipality code → its stations with an observers' record
         self.mun_rows, self.mun_votes = {}, {}
         self.mun_rounds: dict[str, list[str]] = defaultdict(list)  # municipality code → round ids, newest first
+        self.list_colours = maps.load_colours(self.archive.root / maps.COLOURS_FILE)
         self.peers: dict[str, dict] = {}  # round id → sorted values to rank stations and municipalities by
         for a in rounds:
             rid = a.round.id
@@ -1014,6 +1016,9 @@ class Site:
         profiles = coordinator.profiles(self.mun_rows[rid], by_code, settl, self.figures)
         shapes = geo.settlements_by_municipality(self.archive.root / "geo" / geo.SETTLEMENT_FILE)
         ranks = {i: k + 1 for k, i in enumerate(sorted(range(len(a.round.contestants)), key=lambda i: -a.totals.votes[i]))}
+        manual = {i: self.list_colours[(rid, c.number)] for i, c in enumerate(a.round.contestants)
+                  if (rid, c.number) in self.list_colours}
+        ranks = maps.slots(ranks, manual)  # from here on: each list's colour slot, the maintainer's where set
         short = {i: narrative.short_label(self.labels[rid][i]) for i in range(len(a.round.contestants))}
         if loc == "en":
             short = {i: latin(v) for i, v in short.items()}

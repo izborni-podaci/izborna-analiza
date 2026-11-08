@@ -645,7 +645,7 @@ S: dict[str, tuple[str, str]] = {
     "vi_png_source": ("izborni-podaci.github.io/izborna-analiza · подаци: РИК · границе: OpenStreetMap (ODbL)", "izborni-podaci.github.io/izborna-analiza · data: RIK · boundaries: OpenStreetMap (ODbL)"),
     "vi_legend_close": ("тесна победа (испод 5 поена)", "close win (under 5 points)"),
     "vi_legend_none": ("без резултата или без границе у попису", "no result or no census match"),
-    "vi_map_note": ("Насеља са границом: {mapped} од {n}. Боја је редослед листе у целој земљи на овим изборима, не листа сама; пређи преко насеља за назив и резултат.", "Settlements with a boundary: {mapped} of {n}. The colour is the list's rank in the whole election, not the list itself; hover a settlement for its name and result."),
+    "vi_map_note": ("Насеља са границом: {mapped} од {n}. Пређи преко насеља за назив и резултат.", "Settlements with a boundary: {mapped} of {n}. Hover a settlement for its name and result."),
     "st_intro": ("Избора на овом месту у архиви: {n} · уписаних бирача на последњим: {reg}", "Elections at this place in the archive: {n} · registered voters at the latest: {reg}"),
     "st_mun_link": ("{mun} на овим изборима: сва места →", "{mun} in this election: every station →"),
     "st_latest_note": ("последњи избори на овом месту", "the latest election at this place"),

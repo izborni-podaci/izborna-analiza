@@ -14,6 +14,35 @@ WIDTH = 640  # CSS pixels of the drawing's width; the height follows the municip
 MAX_HEIGHT = 520
 CLOSE = 0.05  # the leader fewer than this many points ahead: a lighter fill
 PALETTE = 8  # lists ranked past this share the "other" colour
+COLOURS = {"blue": 1, "orange": 2, "green": 3, "yellow": 4, "pink": 5, "darkgreen": 6, "purple": 7, "red": 8}  # --s1 … --s8
+COLOURS_FILE = "list_colours.csv"  # round, number, colour, note: the maintainer's colours for a list in an election
+
+
+def load_colours(path) -> dict[tuple[str, int], int]:
+    """(round id, ballot number) → palette slot, from data/list_colours.csv; empty without the file."""
+    import csv
+    from pathlib import Path
+    out = {}
+    if path is None or not Path(path).exists():
+        return out
+    with open(path, encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            slot = COLOURS.get((row.get("colour") or "").strip().lower())
+            if slot and (row.get("number") or "").strip().isdigit():
+                out[((row.get("round") or "").strip(), int(row["number"]))] = slot
+    return out
+
+
+def slots(ranks: dict[int, int], manual: dict[int, int]) -> dict[int, int]:
+    """Each list's palette slot: the maintainer's colour where one is set (manual: list index → slot), and the
+    rest by rank in the election over the slots left; past the palette, the "other" slot."""
+    out = dict(manual)
+    free = [k for k in range(1, PALETTE + 1) if k not in set(manual.values())]
+    for i in sorted(ranks, key=lambda i: ranks[i]):
+        if i in out:
+            continue
+        out[i] = free.pop(0) if free else PALETTE + 1
+    return out
 
 
 def _rings(geometry: dict):
@@ -83,7 +112,7 @@ def path_d(geometry: dict, to) -> str:
 def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[int, int], labels: dict[int, str],
                    title: str, pct, width: int = WIDTH) -> str:
     """The SVG. results: census settlement name → {"leader": list index or None, "share", "second"} (from
-    coordinator.by_settlement); ranks: list index → its rank in the election (1 = most votes); labels: list index →
+    coordinator.by_settlement); ranks: list index → its palette slot (see slots(); 1–8, 9 for "other"); labels: list index →
     display label. Returns the SVG and the key (the names of the settlements too narrow for their name, in the
     order of their numbers); an empty string when there is nothing to draw."""
     to, height = project(features, width)
