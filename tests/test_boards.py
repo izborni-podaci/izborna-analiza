@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from izbori.boards import (BoardDoc, classify, coverage, match_list, municipality_key, named_most, parse_decision,
+from izbori.boards import (PARSER, BoardDoc, classify, coverage, match_list, municipality_key, named_most, parse_decision,
                            parse_index_records, pdf_text, read_columns, slot_list, standing_under_extended)
 
 FIX = Path(__file__).parent / "fixtures"
@@ -66,6 +66,17 @@ def test_decisions_in_other_layouts(contestants):
     # the address and the station are read as before
     d = parse_decision(list_first)
     assert (d.station, d.address) == ("21", "ОШ \"ПРИМЕР\", ГЛАВНА 1")
+
+
+def test_a_misread_na_before_predlog_keeps_the_slot(contestants):
+    """Mali Iđoš, 8 Nov 2026: OCR read "на предлог" as "ха предлог" or "иа предлог" in three of six slots, and those
+    three slots (the Student list's among them) were dropped, so the station showed no controller of theirs."""
+    a, b, c = LISTS
+    text = HEAD + (f"1. члан: Петар Петровић и\n\n- заменик члана: Марко Марковић на предлог подносиоца Изборне листе "
+                   f"{a};\n\n2. члан: Јован Јовић и\n\n- заменик члана: Ана Анић ха предлог подносиоца Изборне листе "
+                   f"{b};\n\n3. члан: Лука Лукић и\n\n- заменик члана: Мина Минић иа предлог подносиоца Изборне листе "
+                   f"{c};\n") + TAIL
+    assert lists_of(parse_decision(text), contestants) == {1: (True, True), 2: (True, True), 3: (True, True)}
 
 
 def test_lists_match_despite_ocr_noise(contestants):
@@ -393,7 +404,8 @@ def test_reading_split_across_jobs_ends_like_one_run(tmp_path, monkeypatch):
     assert json.loads(only.read_text(encoding="utf-8"))["partial"]
     # a municipality's decisions already read are read again, once the reading learnt their layout
     (rnd / "boards.json").write_text(json.dumps({"complete": True, "docs": {
-        "819801": {"s": "70017/30", "k": "extended", "slots": [[1, True, False]], "u": "/x"}}}), encoding="utf-8")
+        "819801": {"s": "70017/30", "k": "extended", "slots": [[1, True, False]], "u": "/x", "v": PARSER}}}),
+        encoding="utf-8")
     again = tmp_path / "again.json"
     assert cli.main(["--data", str(data), "boards", "--round", "680072", "--plan", str(again), "--only", "70017"]) == 0
     assert [d["id"] for d in json.loads(again.read_text(encoding="utf-8"))["todo"]] == ["819802"]
@@ -433,9 +445,11 @@ def test_retrying_unreadable_decisions_reaches_past_the_newest_page(tmp_path):
     from izbori.boards import plan
     (tmp_path / "boards.json").write_text(json.dumps({"complete": True, "docs": {
         "819600": {"s": "70017/12", "k": "extended", "r": False, "t": "1", "u": "/extfile/sr/files/a/600.pdf",
-                   "slots": [], "unparsed": True},
+                   "slots": [], "unparsed": True, "v": PARSER},
         "819601": {"s": "70017/13", "k": "extended", "r": False, "t": "1", "u": "/extfile/sr/files/a/601.pdf",
-                   "slots": [[1, True, False]], "unparsed": False}}}), encoding="utf-8")
+                   "slots": [[1, True, False]], "unparsed": False, "v": PARSER},
+        "819602": {"s": "70017/14", "k": "extended", "r": False, "t": "1", "u": "/extfile/sr/files/a/602.pdf",
+                   "slots": [[1, True, False]], "unparsed": False}}}), encoding="utf-8")  # read by an older reading
 
     class Client:
         base = "https://rik.test"
@@ -445,5 +459,7 @@ def test_retrying_unreadable_decisions_reaches_past_the_newest_page(tmp_path):
 
     planned = plan(tmp_path, "680072", 2, {}, Client(), log=lambda m: None, retry_unparsed=True)
     assert [(d["id"], d["station"], d["url"]) for d in planned["todo"]] == [
-        ("819600", "12", "https://www.rik.parlament.gov.rs/extfile/sr/files/a/600.pdf")]
-    assert plan(tmp_path, "680072", 2, {}, Client(), log=lambda m: None)["todo"] == []
+        ("819600", "12", "https://www.rik.parlament.gov.rs/extfile/sr/files/a/600.pdf"),
+        ("819602", "14", "https://www.rik.parlament.gov.rs/extfile/sr/files/a/602.pdf")]
+    # without the retry, only the decision read by the older reading is read again
+    assert [d["id"] for d in plan(tmp_path, "680072", 2, {}, Client(), log=lambda m: None)["todo"]] == ["819602"]

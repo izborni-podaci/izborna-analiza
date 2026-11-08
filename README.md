@@ -169,7 +169,11 @@ first with its people under it ("На предлог … листе X: члан:
 member and each deputy, each with its own proposal (Ub, 2026), is read row by row: where OCR read such a page
 column by column (slots' numbers and roles alone on their lines), it reads it again line by line, and each
 numbered slot's list is the one its text names most, its own number first when it names that one. Only filled in
-or empty is kept for each list.
+or empty is kept for each list. A proposal is "предлог" with whatever short word OCR put before it: "на" is often
+misread ("ха", "иа"), and a slot whose proposal wasn't recognised used to be dropped, so the station showed no
+controller of that list. Every decision keeps the version of the reading that read it (`v`); when the reading
+learns to read more, the version is raised and the daily run reads the older decisions again by their links,
+the current ones untouched.
 
 What a decision is comes from RIK's register: the label the commission picked when it uploaded it, and the
 commission's own title. The label decides, but at a station with no decision on the standing composition and two

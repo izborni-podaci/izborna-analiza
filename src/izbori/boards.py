@@ -146,7 +146,9 @@ ROLE = re.compile(r"\b(заменик\s+члана|zamenik\s+[čc]lana|члан|
 STATION = re.compile(r"(?:БИРАЧКО\s+МЕСТО\s+БРОЈ|BIRAČKO\s+MESTO\s+BROJ|BIRACKO\s+MESTO\s+BROJ)\s*[:.]?\s*(\d+)", re.I)
 END = re.compile(r"\n\s*(?:2\s*[.,]\s*Ово\s+решење|2\s*[.,]\s*Ovo\s+rešenje|Образложење|Obrazloženje)", re.I)
 DEPUTY = re.compile(r"заменик[^:]{0,20}:|zamenik[^:]{0,20}:", re.I)
-PROPOSER = re.compile(r"на\s+предлог|na\s+predlog", re.I)
+# "на предлог": OCR often misreads the short word before it ("ха", "иа", "па"), so a proposal is "предлог" with
+# whatever short word stands before it; without this, a slot whose "на" was misread was dropped altogether
+PROPOSER = re.compile(r"(?:\S{1,3}\s+)?(?:предлог|predlog)", re.I)
 
 
 @dataclass
@@ -159,7 +161,7 @@ class Slot:
 
 
 # Where a person's part of a row ends: their home place ("из …"), a proposal, a quoted list, a deputy, a new line
-PERSON_END = re.compile(r"\bиз\b|\biz\b|на\s+предлог|na\s+predlog|[\"„“”«»]|заменик|zamenik|\n", re.I)
+PERSON_END = re.compile(r"\bиз\b|\biz\b|(?:\S{1,3}\s+)?(?:предлог|predlog)|[\"„“”«»]|заменик|zamenik|\n", re.I)
 DEPUTY_ROLE = re.compile(r"заменик\s+члана|zamenik\s+[čc]lana", re.I)
 # A page read column by column: a slot's number or a role alone on its line
 COLUMN_LINE = re.compile(r"^\s*(?:\d{1,2}\s*[.)]|члан|заменик\s+члана|clan|član|zamenik\s+[čc]lana)\s*$",
@@ -520,6 +522,12 @@ def decision_text(pdf: bytes) -> str:
     return text
 
 
+# The reading's version: raise it when parse_decision reads more than before, and every decision read by an
+# older reading is read again (plan() lists them), a few hundred per daily run until all are current.
+# 2: a proposal is "предлог" with whatever short word before it (OCR misread "на" and dropped the slot).
+PARSER = 2
+
+
 def slot_list(slot: Slot, contestants: list[dict]) -> int | None:
     return named_most(slot.list_text, contestants, slot.number) if slot.counted else match_list(slot.list_text,
                                                                                                 contestants)
@@ -539,7 +547,7 @@ def read_doc(doc: BoardDoc, pdf: bytes, contestants: list[dict], station_key: st
         slots.append([number, s.member, s.deputy])
     result = {"s": station_key, "k": doc.kind, "r": doc.repeat, "t": doc.published, "u": link_path(doc.url),
               "slots": slots, "unmatched": unmatched, "addr": decision.address, "unparsed": not slots,
-              "station_ok": decision.station is None or decision.station == doc.station}
+              "station_ok": decision.station is None or decision.station == doc.station, "v": PARSER}
     if diagnose and not slots:
         result["_shape"] = shape(text)
     return result
@@ -756,17 +764,19 @@ def plan(round_dir: Path, round_id: str, rik_type: int, stations, client, log=pr
         index.append({"id": d.id, "s": key, "k": d.kind, "r": d.repeat, "t": d.published, "u": link_path(d.url)})
         entry = known.get(d.id)
         again = reread and bool(only) and bool(key) and key.split("/")[0] in only
-        if d.kind == "extended" and (entry is None or entry.get("slots") is None or again
+        if d.kind == "extended" and (entry is None or entry.get("slots") is None or again or _stale(entry)
                                      or (retry_unparsed and entry.get("unparsed"))):
             todo.append({"id": d.id, "s": key, "station": d.station, "kind": d.kind, "repeat": d.repeat,
                          "published": d.published, "url": d.url})
-    if retry_unparsed:  # unreadable decisions deeper in the register than this pass went, read again by their link
-        listed = {d["id"] for d in todo}
-        for i, entry in sorted(known.items()):
-            if i not in listed and entry.get("k") == "extended" and entry.get("unparsed") and entry.get("u"):
-                todo.append({"id": i, "s": entry.get("s"), "station": (entry.get("s") or "/").split("/")[1],
-                             "kind": "extended", "repeat": bool(entry.get("r")), "published": entry.get("t") or "",
-                             "url": RIK_PUBLIC.rstrip("/") + entry["u"]})
+    # decisions the index didn't list this time (the register is paged only for new ones once it was read whole),
+    # read again by their link: those read by an older reading, and with retry_unparsed the unreadable ones
+    listed = {d["id"] for d in todo}
+    for i, entry in sorted(known.items()):
+        if i not in listed and entry.get("k") == "extended" and entry.get("u") and (
+                _stale(entry) or (retry_unparsed and entry.get("unparsed"))):
+            todo.append({"id": i, "s": entry.get("s"), "station": (entry.get("s") or "/").split("/")[1],
+                         "kind": "extended", "repeat": bool(entry.get("r")), "published": entry.get("t") or "",
+                         "url": RIK_PUBLIC.rstrip("/") + entry["u"]})
     if only:
         todo = [d for d in todo if (d["s"] or "/").split("/")[0] in only]
     log(f"{len(docs)} decisions indexed, {len(todo)} to read; placed: "
@@ -777,6 +787,11 @@ def plan(round_dir: Path, round_id: str, rik_type: int, stations, client, log=pr
         log(f"  not placed ({why}): {municipality!r}, title like {title!r}: {n}")
     # a run kept to some municipalities hasn't read everything: the store mustn't say it has
     return {"round": round_id, "whole": whole, "index": index, "todo": todo, "partial": bool(only)}
+
+
+def _stale(entry: dict) -> bool:
+    """Read (or found unreadable) by an older reading: read again."""
+    return "slots" in entry and entry.get("v", 1) < PARSER
 
 
 def apply_index(store: dict, planned: dict) -> None:

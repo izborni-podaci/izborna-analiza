@@ -128,6 +128,10 @@ These are the project's promises to its readers. Never change them without the m
   - The workflow reads in four jobs at once (about 1,600 decisions an hour each): `--plan` lists what to read,
     `--read --shard I/4` reads one share, `--merge` keeps everything and commits once. The plan and the parts are
     workflow artifacts, so they hold no names either.
+  - A reading's version (`boards.PARSER`) is kept with every decision read (`v`). Raise it when `parse_decision`
+    reads more than before: `plan()` then lists every decision read by an older version (by its kept link, since
+    the register is paged only for new decisions once read whole), and the daily run reads them again, about
+    1,600 an hour per job. Don't reread by hand per municipality for a parser fix; raise the version.
   - Layouts: the numbered parser ("1. члан:", "1) члан:") goes first, so nothing that read before changes; the
     unnumbered one (`_unnumbered`) takes over only where it finds no slot. A new layout comes from the masked
     layouts the read jobs log (`--diagnose`, or `--diagnose-ids` for decisions already read), never from a
@@ -460,3 +464,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 - **8 Nov 2026, custom domain.** The site moved to izbornipodaci.rs, the name of the GitHub organisation
   spelled as one word; GitHub Pages stays the host and the old github.io address redirects. The address lives in
   `SITE_URL` alone, and the image people download names the new host so a shared picture leads back to the site.
+- **8 Nov 2026, a misread "на" dropped controllers.** Mali Iđoš, station 1: the Student list's member and deputy
+  are in the decision, the station showed none. OCR had read "на предлог" as "ха предлог" in three of six slots and
+  the parser kept only slots with "на предлог", so those lists vanished without a trace (not "unparsed", just
+  fewer slots). A proposal is now "предлог" with any short word before it, and decisions carry the reading's
+  version so a parser fix rereads what the old reading read (8,700 decisions this time, one daily run). The
+  symptom to watch for: a municipality whose decisions read far fewer slots than its stations have lists.
