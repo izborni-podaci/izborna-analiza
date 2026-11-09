@@ -521,15 +521,18 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   split among the four largest lists in their map colours (Marko chose this of three drafts: the settlements named
   per leading list, which repeated the legend; the two largest lists' difference, one-sided where one list leads
   everywhere). Turnout stays in the facts under the map. The share beside each bar is in the leading list's colour (yellow and pink darkened), so it says whose it is.
-- **9 Nov 2026, shades on the settlement map.** Marko asked for gradients showing how strong a settlement is and
-  how much it gave one list. Two modes over the map (static/mun.js `paintMap`): "who leads" keeps the leader's
-  colour and sets its opacity by the leader's share in four fixed steps (fixed so maps compare across
-  municipalities); "my list" paints every settlement in the picked list's colour by its share, five equal steps up
-  to the list's best settlement (a small list would otherwise be all pale). Opacity over the page, not a mixed
-  colour, so dark and light themes both work; the PNG keeps the mode, its scale and a subtitle naming the list.
+- **9 Nov 2026, shades on the settlement map.** Marko asked for gradients showing how strong a settlement is. A
+  first version had two modes behind buttons ("who leads", "my list"); Marko wanted one map and one image showing
+  everything, no buttons for now. So: the leader's colour by opacity in four fixed steps of the leader's share
+  (`maps.LEAD_STEPS`, fixed so maps compare across municipalities), drawn at build time, the legend giving each list
+  its four shades and one line with the steps; the numbers per settlement are in the chart beside the map in the
+  image. Opacity over the page rather than a mixed colour, so both themes work.
 - **9 Nov 2026, Novi Sad by its quarters.** Marko wants the city of Novi Sad drawn by its quarters (Telep, Novo
   naselje…), not as one settlement. First a probe (`izbori geo --quarters-inspect`) of what OpenStreetMap has
-  inside the settlement; the stations would be placed by their address in the city's act on polling stations.
+  inside the settlement. It has 24 quarters with boundaries (Telep, Liman 1–4, Detelinara, Grbavica; Novo naselje as
+  Bistrica) and 31 local communities (admin_level 10, finer). Marko left the choice to me: quarters, the names he
+  used. `--quarters` keeps them in data/geo/quarters.json with public buildings' names → quarter, to place each
+  station by its building's name where the city's act gives no address.
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);

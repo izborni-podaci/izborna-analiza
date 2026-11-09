@@ -24,7 +24,7 @@ on:
         type: boolean
         default: false
       quarters:
-        description: "Only list the quarters OpenStreetMap has inside this settlement (its Cyrillic name, e.g. Нови Сад)"
+        description: "A settlement by its quarters: code=Cyrillic name (89010=Нови Сад); without commit only lists them"
         type: string
         default: ""
 
@@ -56,8 +56,8 @@ jobs:
           SETTLEMENTS: ${{ inputs.settlements }}
           QUARTERS: ${{ inputs.quarters }}
         run: |
-          if [ -n "$QUARTERS" ]; then
-            uv run izbori geo --quarters-inspect "$QUARTERS"
+          if [ -n "$QUARTERS" ] && [ "$COMMIT" != "true" ]; then
+            uv run izbori geo --quarters-inspect "${QUARTERS#*=}"
             exit 0
           fi
           if [ "$INSPECT" = "true" ]; then
@@ -69,5 +69,6 @@ jobs:
           args=()
           [ "$KIM" = "true" ] && args+=(--kim)
           [ "$SETTLEMENTS" = "true" ] && args+=(--settlements)
+          [ -n "$QUARTERS" ] && args+=(--quarters "$QUARTERS")
           [ "$COMMIT" = "true" ] && args+=(--commit --push --dispatch-pages)
           uv run --with "shapely>=2.0" --with "pyshp>=2.3" izbori geo "${args[@]}"

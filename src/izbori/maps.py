@@ -14,6 +14,22 @@ WIDTH = 640  # CSS pixels of the drawing's width; the height follows the municip
 MAX_HEIGHT = 520
 CLOSE = 0.05  # the leader fewer than this many points ahead: a lighter fill
 PALETTE = 8  # lists ranked past this share the "other" colour
+# the leader's colour is stronger the more it leads with (9 Nov 2026): opacity by the leader's share, in fixed steps
+# so maps compare across municipalities: (share under, opacity); the last step has no upper bound
+LEAD_STEPS = ((0.40, 0.45), (0.50, 0.65), (0.60, 0.85), (None, 1.0))
+
+
+def lead_alpha(share: float) -> float:
+    return next(a for u, a in LEAD_STEPS if u is None or share < u)
+
+
+def lead_ramp(pct) -> list[tuple[str, float]]:
+    """The steps as the legend names them: ("< 40%", 0.45), ("40–50%", 0.65) … ("≥ 60%", 1.0)."""
+    out, low = [], None
+    for u, a in LEAD_STEPS:
+        out.append((f"< {pct(u)}" if low is None else f"≥ {pct(low)}" if u is None else f"{pct(low)}–{pct(u)}", a))
+        low = u
+    return out
 COLOURS = {"blue": 1, "orange": 2, "green": 3, "yellow": 4, "pink": 5, "darkgreen": 6, "purple": 7, "red": 8}  # --s1 … --s8
 COLOURS_FILE = "list_colours.csv"  # round, number, colour, note: the maintainer's colours for a list in an election
 
@@ -164,14 +180,15 @@ def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[i
     for f in sorted(features, key=lambda f: f["properties"].get("census") or ""):
         p = f["properties"]
         r = results.get(p.get("census") or "")
-        cls, tip = "mp-none", escape(p.get("census") or p.get("name") or "")
+        cls, tip, style = "mp-none", escape(p.get("census") or p.get("name") or ""), ""
         if r and r.get("leader") is not None:
             rank = ranks.get(r["leader"], PALETTE + 1)
             cls = f"mp-{min(rank, PALETTE + 1)}"
             if r.get("second") is not None and r["share"] - r["second"] < CLOSE:
                 cls += " mp-close"
             tip += f" · {escape(labels.get(r['leader'], ''))} {pct(r['share'])}"
-        paths.append(f'<path class="mp {cls}" d="{path_d(f["geometry"], to)}" data-set="{escape(p.get("census") or "")}">'
+            style = f' style="fill-opacity:{lead_alpha(r["share"])}"'
+        paths.append(f'<path class="mp {cls}"{style} d="{path_d(f["geometry"], to)}" data-set="{escape(p.get("census") or "")}">'
                      f"<title>{tip}</title></path>")
     # a close win is hatched in the list's colour rather than painted lighter: two shades of one colour were
     # too alike, and stripes survive print and a dark page

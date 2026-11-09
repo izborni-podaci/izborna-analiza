@@ -110,7 +110,6 @@
     renderTable(idx);
     renderVillages(idx);
     renderPanel(idx);
-    if (typeof paintMap === 'function') paintMap(idx);
   }
 
   // a click on a settlement of the map: its polling stations under the map (link, turnout, my list, controller)
@@ -146,72 +145,6 @@
     smap.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { const p = e.target.closest('path[data-set]'); if (p && p.dataset.set) { e.preventDefault(); pick(p); } } });
     panel.addEventListener('click', (e) => { if (e.target.closest('[data-panel-close]')) { shownSet = null; panel.hidden = true; smap.querySelectorAll('.mp-active').forEach((x) => x.classList.remove('mp-active')); } });
     const hint = document.createElement('p'); hint.className = 'small muted vi-hint'; hint.textContent = L.panelHint; panel.before(hint);
-  }
-
-  // the map's shades (9 Nov 2026): "who leads" paints each settlement in its leading list's colour, stronger where
-  // the list leads with more; "my list" paints every settlement in the picked list's colour by that list's share
-  // there. The steps of "who leads" are fixed (maps.py LEAD_STEPS draws them the same without the script); those of
-  // "my list" are equal steps up to the list's best settlement, so a small list's map is not all pale.
-  const LEAD_STEPS = [[0.4, 0.45], [0.5, 0.65], [0.6, 0.85], [Infinity, 1]];  // share under → opacity
-  const leadAlpha = (x) => LEAD_STEPS.find(([u]) => x < u)[1];
-  const sets = new Map();
-  data.stations.forEach((st) => {
-    if (!st.set || !st.valid) return;
-    const g = sets.get(st.set) || { valid: 0, v: data.lists.map(() => 0) };
-    g.valid += st.valid; st.v.forEach((x, i) => { g.v[i] += x || 0; }); sets.set(st.set, g);
-  });
-  let mapMode = 'lead';
-  const legendEl = document.querySelector('.smap-legend');
-  function mineSteps(idx) {
-    const best = Math.max(0, ...[...sets.values()].map((g) => g.v[idx] / g.valid));
-    const step = [0.01, 0.02, 0.05, 0.1, 0.15, 0.2].find((s) => s * 5 >= best) || 0.2;
-    return { step, alpha: (x) => [0.2, 0.4, 0.6, 0.8, 1][Math.min(4, Math.floor(x / step))] };
-  }
-  function paintMap(idx) {
-    if (!smap || !legendEl) return;
-    const slot = data.lists[idx].slot;
-    const m = mineSteps(idx);
-    smap.querySelectorAll('path[data-set]').forEach((p) => {
-      if (!p.dataset.cls) p.dataset.cls = p.getAttribute('class');
-      const g = sets.get(p.dataset.set);
-      if (!g) return;
-      if (mapMode === 'lead') {
-        p.setAttribute('class', p.dataset.cls);
-        const lead = Math.max(...g.v) / g.valid;
-        p.style.fillOpacity = /mp-\d/.test(p.dataset.cls) ? String(leadAlpha(lead)) : '';
-      } else {
-        p.setAttribute('class', 'mp mp-' + slot + (p.classList.contains('mp-active') ? ' mp-active' : ''));
-        p.style.fillOpacity = String(m.alpha(g.v[idx] / g.valid));
-      }
-    });
-    legendEl.querySelectorAll('[data-lead-legend]').forEach((sp) => { sp.hidden = mapMode !== 'lead'; });
-    legendEl.querySelectorAll('[data-ramp]').forEach((sp) => sp.remove());
-    const ramp = [];
-    if (mapMode === 'lead') {
-      ramp.push([L.rampLead, null, null]);
-      LEAD_STEPS.forEach(([u, a], k) => ramp.push([k === 0 ? '< ' + pct(u, 0) : u === Infinity ? '≥ ' + pct(LEAD_STEPS[k - 1][0], 0) : pct(LEAD_STEPS[k - 1][0], 0) + '–' + pct(u, 0), 9, a]));
-    } else {
-      ramp.push([fill(L.rampMine, { list: data.lists[idx].label }), null, null]);
-      [0, 1, 2, 3, 4].forEach((k) => ramp.push([k < 4 ? pct(k * m.step, 0) + '–' + pct((k + 1) * m.step, 0) : '≥ ' + pct(4 * m.step, 0), slot, [0.2, 0.4, 0.6, 0.8, 1][k]]));
-    }
-    const box = document.createElement('span'); box.className = 'smap-ramp'; box.setAttribute('data-ramp', '');
-    box.innerHTML = ramp.map(([t, k, a]) => k === null ? '<b>' + esc(t) + '</b>'
-      : '<span><i class="sw mp-' + k + '" style="opacity:' + a + '"></i>' + esc(t) + '</span>').join('');
-    legendEl.appendChild(box);
-  }
-  if (smap && legendEl) {
-    legendEl.querySelectorAll(':scope > span').forEach((sp) => sp.setAttribute('data-lead-legend', ''));
-    const sw = document.createElement('p'); sw.className = 'smap-modes small';
-    sw.innerHTML = esc(L.modeLabel) + ' <button type="button" class="chip" data-mode="lead" aria-pressed="true">' + esc(L.modeLead)
-      + '</button> <button type="button" class="chip" data-mode="mine" aria-pressed="false">' + esc(L.modeMine) + '</button>';
-    smap.closest('figure').before(sw);
-    sw.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-mode]'); if (!b) return;
-      mapMode = b.dataset.mode === 'mine' ? 'mine' : 'lead';
-      sw.querySelectorAll('[data-mode]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-      paintMap(indexOf(select.value));
-    });
-    paintMap(indexOf(select.value) < 0 ? data.default : indexOf(select.value));
   }
 
   document.addEventListener('click', (e) => {
@@ -327,8 +260,12 @@
           });
           return;
         }
-        const sw = sp.querySelector('.sw'); const cls = sw.getAttribute('class') || '';
-        legend.push({ text: sp.textContent.trim(), colour: /mp-close-sw/.test(cls) ? 'hatch' : colourOf(sw), alpha: 1 });
+        const sws = [...sp.querySelectorAll('.sw')]; const cls = sws[0].getAttribute('class') || '';
+        if (sws.length > 1) {  // a list's shades: one small swatch per step
+          legend.push({ text: sp.textContent.trim(), colour: colourOf(sws[0]), steps: sws.map((x) => Number(x.style.opacity || 1)) });
+          return;
+        }
+        legend.push({ text: sp.textContent.trim(), colour: /mp-close-sw/.test(cls) ? 'hatch' : colourOf(sws[0]), alpha: Number(sws[0].style.opacity || 1) });
       });
       // the numbers' key goes beside the map, under the charts, small and in two columns
       const keyItems = [...document.querySelectorAll('[data-map-key] > span')].map((sp) => sp.textContent.trim());
@@ -338,7 +275,7 @@
       const lprobe = document.createElement('canvas').getContext('2d'); lprobe.font = '14px system-ui, sans-serif';
       let lx = pad; let rows = 1;
       legend.forEach((g, k) => {
-        const w = (g.colour ? 22 : 0) + lprobe.measureText(g.text).width + (g.colour ? 22 : 12);
+        const w = (g.steps ? g.steps.length * 9 + 6 : g.colour ? 22 : 0) + lprobe.measureText(g.text).width + (g.colour ? 22 : 12);
         if (k && (g.br || lx + w > W - pad)) { rows += 1; lx = pad; }
         g.x = lx; g.row = rows - 1; lx += w;
       });
@@ -355,7 +292,7 @@
       ctx.fillStyle = '#0f1f33'; ctx.font = '600 24px Georgia, serif';
       ctx.fillText(png.dataset.title, pad, 40);
       ctx.font = '15px system-ui, sans-serif'; ctx.fillStyle = '#44607f';
-      ctx.fillText(mapMode === 'mine' ? fill(L.rampMine, { list: data.lists[indexOf(select.value) < 0 ? data.default : indexOf(select.value)].label }).replace(/:$/, '') : document.querySelector('.villages .sec-head h2').textContent, pad, 68);
+      ctx.fillText(document.querySelector('.villages .sec-head h2').textContent, pad, 68);
       const img = new Image();
       const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -374,8 +311,11 @@
             ctx.save(); ctx.beginPath(); ctx.rect(x, y - 11, 16, 12); ctx.clip(); ctx.beginPath();
             for (let d = -12; d < 16; d += 4) { ctx.moveTo(x + d, y + 1); ctx.lineTo(x + d + 12, y - 11); }
             ctx.stroke(); ctx.restore();
+          } else if (g.steps) {
+            g.steps.forEach((a, k) => { ctx.globalAlpha = a; ctx.fillStyle = g.colour; ctx.fillRect(x + k * 9, y - 11, 8, 12); });
+            ctx.globalAlpha = 1;
           } else if (g.colour) { ctx.globalAlpha = g.alpha; ctx.fillStyle = g.colour; ctx.fillRect(x, y - 11, 16, 12); ctx.globalAlpha = 1; }
-          ctx.fillStyle = '#0f1f33'; ctx.fillText(g.text, g.colour ? x + 22 : x, y);
+          ctx.fillStyle = '#0f1f33'; ctx.fillText(g.text, g.steps ? x + g.steps.length * 9 + 6 : g.colour ? x + 22 : x, y);
         });
         // the charts
         const cx = pad + vw + gap; let cy = top + 8;

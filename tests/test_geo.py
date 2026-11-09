@@ -120,3 +120,23 @@ def test_settlements_join_municipality_and_census(tmp_path):
     grouped = geo.settlements_by_municipality(out)
     assert list(grouped) == ["70513"] and len(grouped["70513"]) == 2
     assert geo.settlements_by_municipality(tmp_path / "nowhere.json") == {}
+
+
+def test_quarters_take_the_first_drawn_and_place_buildings():
+    def rel(name, tags, ring):
+        return {"type": "relation", "tags": dict(name=name, **tags),
+                "members": [{"type": "way", "role": "outer", "geometry": [{"lon": x, "lat": y} for x, y in ring]}]}
+
+    def sq(x0, y0, x1, y1):
+        return [(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)]
+    els = [rel("Нови Сад", {"admin_level": "9", "boundary": "administrative"}, sq(0, 0, 10, 10)),
+           rel("Телеп", {"place": "quarter"}, sq(0, 0, 5, 5)),
+           rel("Лиман", {"place": "suburb"}, sq(5, 0, 10, 5)),
+           rel("Лиман 1", {"place": "quarter"}, sq(5, 0, 8, 5)),
+           rel("Шира", {"place": "suburb"}, sq(0, 4, 6, 10)),
+           rel("Братство-Телеп", {"admin_level": "10", "boundary": "administrative"}, sq(1, 1, 2, 2)),
+           {"type": "node", "lon": 6, "lat": 1, "tags": {"name": "Основна школа „Вељко Петровић“", "amenity": "school"}},
+           {"type": "node", "lon": 9, "lat": 9, "tags": {"name": "Нигде", "amenity": "school"}}]
+    feats, points = geo.quarter_features({"elements": els}, "Нови Сад", log=lambda *_: None)
+    assert [f["properties"]["name"] for f in feats] == ["Телеп", "Лиман 1", "Шира"]  # Liman is mostly Liman 1
+    assert points == [["Основна школа „Вељко Петровић“", "Лиман 1"], ["месна заједница Братство-Телеп", "Телеп"]]

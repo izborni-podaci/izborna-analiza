@@ -49,7 +49,7 @@
   <figure class="smap-wrap">
     {{ city_map|safe }}
     <figcaption class="small muted">
-      <span class="smap-legend">{% for g in legend %}<span><i class="sw {{ g.cls }}"></i>{{ name(g.label) }} ({{ i(g.n) }})</span>{% endfor %}<span><i class="sw mp-close-sw"></i>{{ t('vi_legend_close') }}</span></span>
+      <span class="smap-legend">{% for g in legend %}<span>{% for _, a in lead_ramp %}<i class="sw sw-step {{ g.cls }}" style="opacity:{{ a }}"></i>{% endfor %}{{ name(g.label) }} ({{ i(g.n) }})</span>{% endfor %}<span><i class="sw mp-close-sw"></i>{{ t('vi_legend_close') }}</span><span class="smap-ramp" data-ramp><b>{{ t('vi_ramp_lead') }}</b>{% for lab, a in lead_ramp %}<span><i class="sw mp-9" style="opacity:{{ a }}"></i>{{ lab }}</span>{% endfor %}</span></span>
       {% if map_key %}<span class="smap-key">{% for nm in map_key %}<span>{{ loop.index }} {{ name(nm) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
       {{ t('city_map_source') }}
     </figcaption>

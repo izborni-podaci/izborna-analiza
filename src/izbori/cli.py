@@ -427,6 +427,17 @@ def show_boards(archive: Archive, rid: str, contestants: list, n: int) -> None:
 def cmd_geo(args) -> int:
     """Municipal boundaries from OpenStreetMap for the map on the Explore page (data/geo/municipalities.json)."""
     from izbori import geo
+    if args.quarters:  # one settlement by its quarters (code=name), into data/geo/quarters.json
+        code, _, sname = args.quarters.partition("=")
+        feats, points = geo.quarter_features(geo.fetch(geo.QUARTER_FETCH.replace("{name}", sname), timeout=960), sname, log)
+        if not feats:
+            return 1
+        qout = Path(args.data) / "geo" / geo.QUARTERS_FILE
+        geo.write_quarters(qout, code, sname, feats, points, time.strftime("%Y-%m-%d"))
+        if args.commit and commit([str(qout)], f"Data: the quarters of {latin(sname)} from OpenStreetMap"):
+            if args.push and push() and args.dispatch_pages:
+                dispatch_pages()
+        return 0
     if args.quarters_inspect:  # what OpenStreetMap has below one settlement (Novi Sad's quarters); changes nothing
         geo.quarters_inspect(args.quarters_inspect, log)
         return 0
@@ -933,6 +944,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="add Kosovo and Metohija's municipalities in RIK's division (needs pyshp and shapely)")
     g.add_argument("--settlements", action="store_true",
                    help="the settlements' boundaries (admin_level 9) into <data>/geo/settlements.json (needs shapely)")
+    g.add_argument("--quarters", metavar="CODE=SETTLEMENT",
+                   help="a settlement by its quarters, e.g. 89010=Нови Сад, into <data>/geo/quarters.json (needs shapely)")
     g.add_argument("--quarters-inspect", metavar="SETTLEMENT",
                    help="list the local communities and quarters OpenStreetMap has inside a settlement (by its name)")
     g.add_argument("--kim-inspect", action="store_true",

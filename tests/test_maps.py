@@ -16,8 +16,8 @@ def test_settlement_map_colours_by_rank():
     svg, key = maps.settlement_map(feats, results, ranks, labels, "Тест", lambda x: f"{100 * x:.1f}%")
     assert key == []  # every square is wide enough for its name
     assert svg.startswith('<svg class="smap" viewBox="0 0 640 ') and svg.count("<path") == 3
-    assert 'class="mp mp-2" d="M' in svg and "<title>Село · A 90.0%</title>" in svg
-    assert 'class="mp mp-3 mp-close"' in svg and "Град · C 40.0%" in svg  # two points ahead: a lighter fill
+    assert 'class="mp mp-2" style="fill-opacity:1.0" d="M' in svg and "<title>Село · A 90.0%</title>" in svg  # 90%: full
+    assert 'class="mp mp-3 mp-close" style="fill-opacity:0.65"' in svg and "Град · C 40.0%" in svg  # two points ahead: a lighter fill
     assert 'class="mp mp-none"' in svg and "<title>Непознато</title>" in svg
     # the drawing keeps the shape: three squares in a row at 43° N are about 2.2 times as wide as tall
     height = int(svg.split('viewBox="0 0 640 ')[1].split('"')[0])
@@ -57,3 +57,8 @@ def test_a_name_that_would_cover_another_becomes_a_number():
               "geometry": {"type": "Polygon", "coordinates": [[[21.09, 43.09], [21.11, 43.09], [21.11, 43.11], [21.09, 43.11], [21.09, 43.09]]]}}]
     svg, key = maps.settlement_map(feats, {}, {}, {}, "x", str)
     assert key == ["Мало Поље"] and ">Велико Село<" in svg and 'class="num">1<' in svg
+
+
+def test_lead_steps():
+    assert [maps.lead_alpha(x) for x in (0.3, 0.4, 0.55, 0.6, 0.9)] == [0.45, 0.65, 0.85, 1.0, 1.0]
+    assert [lab for lab, _ in maps.lead_ramp(lambda x: f"{round(100 * x)}%")] == ["< 40%", "40%–50%", "50%–60%", "≥ 60%"]

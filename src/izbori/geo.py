@@ -444,3 +444,115 @@ def quarters_inspect(name: str, log=print) -> None:
         log(f"{kind:24} {e['type']:9} {t.get('name', '')} | {t.get('name:sr-Latn', '')}")
     for (k, typ), n in sorted(kinds.items()):
         log(f"= {k} {typ}: {n}")
+
+
+# --- a city settlement by its quarters ------------------------------------------------------------------------------
+# A census settlement such as Novi Sad holds most of its municipality's stations in one shape. OpenStreetMap draws
+# the city's quarters (place=quarter: Telep, Liman 1–4, Detelinara, Grbavica, Bistrica …) inside it; `izbori geo
+# --quarters 89010=Нови Сад` keeps those shapes (clipped to the settlement, the overlaps given to the first drawn:
+# quarters, then suburbs and neighbourhoods where no quarter is) and, to place the polling stations, the names of
+# the public buildings inside the settlement (schools, kindergartens, community centres, local communities' halls),
+# each with the quarter its point falls in. No coordinates of buildings are kept, only name → quarter.
+
+QUARTER_FETCH = """[out:json][timeout:900];
+rel["boundary"="administrative"]["admin_level"="9"]["name"="{name}"]->.s;
+.s out geom;
+.s map_to_area->.a;
+(
+  rel(area.a)["place"~"^(suburb|quarter|neighbourhood)$"];
+  way(area.a)["place"~"^(suburb|quarter|neighbourhood)$"];
+  rel(area.a)["boundary"="administrative"]["admin_level"="10"];
+);
+out geom;
+(
+  nwr(area.a)["name"]["amenity"~"^(school|kindergarten|community_centre|college|university|library|arts_centre|social_facility|townhall|clinic|hospital|doctors|theatre|cinema|fire_station|police)$"];
+  nwr(area.a)["name"]["building"~"^(school|kindergarten|civic|public|college|university)$"];
+  nwr(area.a)["name"]["office"="government"];
+  nwr(area.a)["name"]["club"];
+  nwr(area.a)["name"]["leisure"~"^(sports_centre|sports_hall)$"];
+);
+out center tags;"""
+QUARTER_KINDS = ("quarter", "suburb", "neighbourhood")  # the order the shapes are taken in
+QUARTERS_FILE = "quarters.json"
+
+
+def quarter_features(data: dict, name: str, log=print) -> tuple[list[dict], list[list[str]]]:
+    """The quarters of one settlement (features: name, geometry) and the public buildings' names with their
+    quarter ([name, quarter])."""
+    from shapely import set_precision
+    from shapely.geometry import Point, Polygon, mapping
+    from shapely.ops import unary_union
+
+    els = data.get("elements", [])
+    city = next((geometry(e) for e in els if e["type"] == "relation"
+                 and e.get("tags", {}).get("admin_level") == "9" and e.get("tags", {}).get("name") == name), None)
+    if city is None:
+        log(f"{name}: no settlement boundary")
+        return [], []
+    shapes = []
+    for e in els:
+        t = e.get("tags", {})
+        if t.get("place") not in QUARTER_KINDS or not t.get("name"):
+            continue
+        if e["type"] == "relation":
+            g = geometry(e)
+        elif e["type"] == "way" and len(e.get("geometry") or []) >= 4:
+            pts = [(p["lon"], p["lat"]) for p in e["geometry"]]
+            g = Polygon(pts) if pts[0] == pts[-1] else None
+        else:
+            g = None
+        if g is None or g.is_empty:
+            continue
+        g = g.buffer(0).intersection(city)
+        if g.area > 0:
+            shapes.append((QUARTER_KINDS.index(t["place"]), t["name"], g))
+    shapes.sort(key=lambda s: (s[0], -s[2].area))
+    taken, quarters = None, []
+    for kind, qname, g in shapes:
+        own = g if taken is None else g.difference(taken)
+        if own.area < 0.5 * g.area:  # mostly inside a quarter already drawn (Liman around Liman 1–4)
+            continue
+        quarters.append((qname, own))
+        taken = own if taken is None else unary_union([taken, own])
+    rest = city.difference(taken) if taken is not None else city
+    log(f"{name}: {len(quarters)} quarters, {100 * (1 - rest.area / city.area):.0f}% of the settlement covered")
+
+    def quarter_of(pt) -> str | None:
+        hits = [q for q, g in quarters if g.covers(pt)]
+        return hits[0] if hits else None
+
+    points: dict[str, str] = {}
+    for e in els:
+        t = e.get("tags", {})
+        if e["type"] == "relation" and t.get("admin_level") == "10" and t.get("name"):  # a local community
+            g = geometry(e)
+            q = quarter_of(g.representative_point()) if g is not None else None
+            if q:
+                points.setdefault("месна заједница " + t["name"], q)
+            continue
+        c = e.get("center") or ({"lon": e["lon"], "lat": e["lat"]} if "lon" in e else None)
+        if not c or not t.get("name") or t.get("place"):
+            continue
+        q = quarter_of(Point(c["lon"], c["lat"]))
+        if q:
+            points.setdefault(t["name"], q)
+    feats = []
+    for qname, g in quarters:
+        g = set_precision(g.simplify(SETTLEMENT_TOLERANCE / 2, preserve_topology=True), 10 ** -(DIGITS + 1))
+        if g.is_empty:
+            continue
+        shp = mapping(g)
+        feats.append({"type": "Feature", "properties": {"name": qname},
+                      "geometry": {"type": shp["type"], "coordinates": _round(shp["coordinates"])}})
+    log(f"{name}: {len(points)} named buildings placed in a quarter")
+    return feats, sorted([k, v] for k, v in points.items())
+
+
+def write_quarters(path: Path, code: str, settlement: str, feats: list[dict], points: list, fetched: str) -> None:
+    """data/geo/quarters.json: per municipality code, the settlement split into quarters and the buildings' names."""
+    data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    data.update({"attribution": ATTRIBUTION, "license": LICENSE,
+                 "source": f"OpenStreetMap through the Overpass API, {fetched}; place=quarter/suburb/neighbourhood"})
+    data.setdefault("areas", {})[code] = {"settlement": settlement, "features": feats, "points": points}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
