@@ -20,7 +20,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
+OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter",
+            "https://overpass.private.coffee/api/interpreter"]
 QUERY = """[out:json][timeout:900];
 (
   relation["boundary"="administrative"]["ref:RS:opstina"];
@@ -38,7 +39,7 @@ def fetch(query: str = QUERY, timeout: int = 960) -> dict:
     """The relations with their member ways' geometry, from the first Overpass server that answers."""
     body = urllib.parse.urlencode({"data": query}).encode()
     last = None
-    for attempt, url in enumerate(OVERPASS * 2):
+    for attempt, url in enumerate(OVERPASS * 2):  # each server twice; a 504 at a busy hour is common
         try:
             req = urllib.request.Request(url, data=body, headers={"User-Agent": AGENT})
             with urllib.request.urlopen(req, timeout=timeout) as r:

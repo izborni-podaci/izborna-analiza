@@ -570,6 +570,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   from the commissions' own documents — board decisions for controllers by list, then the results tables — on
   Pančevo first (1,082 documents: 2023/11–12 and 2024/04 uploads), plus the new acts on polling stations for the
   stations still without a settlement. `local.py` starts with a masked probe of the layouts (workflow **local**).
+- **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
+  "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
+  **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**
+  failures were the station-list bugs fixed the same hour.
 - **8 Nov 2026, the search opens the newest election's municipality page.** Marko: whoever picks their
   municipality or station in the search should land on the page just built, with the map. A municipality in the
   search, in the municipalities index and in a station page's crumbs now opens `r/<newest>/m/<code>.html`; the page
