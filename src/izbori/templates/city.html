@@ -50,8 +50,9 @@
     {{ city_map|safe }}
     <figcaption class="small muted">
       <span class="smap-legend">{% for g in legend %}<span>{% for _, a in lead_ramp %}<i class="sw sw-step {{ g.cls }}{% if loop.last %} sw-deep{% endif %}" style="opacity:{{ a }}"></i>{% endfor %}{{ name(g.label) }} ({{ i(g.n) }})</span>{% endfor %}<span><i class="sw mp-close-sw"></i>{{ t('vi_legend_close') }}</span><span class="smap-ramp" data-ramp><b>{{ t('vi_ramp_lead') }}</b>{% for lab, a in lead_ramp %}<span><i class="sw mp-9{% if loop.last %} sw-deep{% endif %}" style="opacity:{{ a }}"></i>{{ lab }}</span>{% endfor %}</span></span>
-      {% if map_key %}<span class="smap-key">{% for nm in map_key %}<span>{{ loop.index }} {{ name(nm) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
+      {% if map_key %}<span class="smap-key" data-map-key>{% for nm in map_key %}<span>{{ loop.index }} {{ name(nm) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
       {{ t('city_map_source') }}
+      <button type="button" class="link-button" data-map-png data-title="{{ name(city.name) }} · {{ rshort }}" data-file="{{ rnd.id }}-{{ slug }}-opstine.png" data-source="{{ t('vi_png_source', site=site_host ~ '/' ~ slug) }}" hidden>{{ t('vi_png') }}</button>
     </figcaption>
   </figure>
   <div class="vi-panel" data-city-panel hidden></div>
@@ -119,4 +120,4 @@
 <p class="rule">{{ t('city_rule') }}</p>
 {% if city_map %}<script type="application/json" id="city-data">{{ city_data|safe }}</script>{% endif %}
 {% endblock %}
-{% block scripts %}{% if city_map %}<script src="{{ root }}static/city.js" defer></script>{% endif %}{% endblock %}
+{% block scripts %}{% if city_map %}<script src="{{ root }}static/mapimg.js" defer></script><script src="{{ root }}static/city.js" defer></script>{% endif %}{% endblock %}

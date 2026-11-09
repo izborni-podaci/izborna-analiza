@@ -623,7 +623,16 @@ class Site:
                                      "stations": [[s.number, show(s.name), round(s.turnout, 4) if s.counted and s.turnout is not None else None,
                                                    len(sh["by_station"].get(s.key, [])),
                                                    root + PREFIX[loc] + self.st_path(rid, s.key)] for s in sts]}
-            city_data = json.dumps({"muns": muns, "i18n": {"title": tt("city_panel_title", name="{name}", n="{n}"),
+                mv = self.mun_votes[rid][m["code"]]
+                muns[show(label)].update({"reg": sum(s.registered for s in sts if s.counted),
+                                          "valid": sum(s.valid or 0 for s in sts if s.counted), "v": list(mv)})
+            city_data = json.dumps({"muns": muns,
+                                    "lists": [{"label": show(sh["short"][i]), "slot": sh["ranks"].get(i, 9),
+                                               "country": a.totals.share_of_valid(i)} for i in range(len(a.round.contestants))],
+                                    "i18n": {"title": tt("city_panel_title", name="{name}", n="{n}"),
+                                             "chartResult": tt("city_chart_result"), "chartPlaces": tt("city_chart_places"),
+                                             "chartPlacesNote": tt("city_chart_places_note"), "country": tt("vi_chart_country"),
+                                             "countryShort": tt("vi_chart_country_short"), "keyLabel": tt("vi_key_label"),
                                                             "close": tt("vi_panel_close"), "station": tt("station"),
                                                             "turnout": tt("turnout"), "flags": tt("co_tile_flagged"),
                                                             "page": tt("city_panel_page"), "stationNo": tt("station_no"),

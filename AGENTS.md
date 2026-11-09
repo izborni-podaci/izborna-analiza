@@ -549,6 +549,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   same page over the city's stations, quarters as its settlements, no similar-municipality ranks, no history strip.
   RIK's name "Град Нови Сад" is shown as "Општина Нови Сад" (`display_names`, `mname` in station/check/repeat/
   changes); the data files keep RIK's name.
+  Same day, Marko asked why /beograd/ had no PNG: the export lived in mun.js, which a city's page doesn't load. It
+  moved to `static/mapimg.js` (`window.mapImage(figure, data)`), used by mun.js and city.js; the city's JSON gained
+  each municipality's registered, valid and votes and the lists' colours, and the image says "the city" and "the
+  largest municipalities".
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);

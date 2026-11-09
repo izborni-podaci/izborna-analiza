@@ -40,4 +40,12 @@
     if (e.target.closest('[data-panel-more]') && shown) render(shown, true);
   });
   const hint = document.createElement('p'); hint.className = 'small muted vi-hint'; hint.textContent = L.hint; panel.before(hint);
+  // the map as a PNG (static/mapimg.js), the municipalities as its places
+  const fig = smap.closest('figure');
+  if (window.mapImage && fig) {
+    const units = Object.keys(data.muns).map((k) => ({ name: k, reg: data.muns[k].reg, valid: data.muns[k].valid, v: data.muns[k].v }));
+    const total = { valid: units.reduce((a, u) => a + u.valid, 0), v: data.lists.map((_, i) => units.reduce((a, u) => a + (u.v[i] || 0), 0)) };
+    const h = document.querySelector('#mapa .sec-head h2');
+    window.mapImage(fig, { lists: data.lists, total, units, L, heading: h ? h.textContent : '' });
+  }
 })();
