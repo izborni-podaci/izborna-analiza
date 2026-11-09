@@ -593,6 +593,13 @@ def cmd_local(args) -> int:
     """Local elections from the municipalities' documents; for now the masked probe of their layouts."""
     from izbori import local, watch
     root = Path(args.data)
+    if args.classify:  # what each document is, from its first page, into data/local_docs.json
+        codes = set(args.classify.split(",")) if args.classify != "all" else None
+        n = local.run_classify(root, codes, log, budget_seconds=args.budget * 60)
+        if n and args.commit and commit([str(root / local.STORE)], f"Data: {n} municipal documents classified"):
+            if args.push:
+                push()
+        return 0
     docs = watch.load_store(root)["docs"]
     local.probe(docs, args.probe, args.kind or None, args.limit, log, path_has=args.path_has)
     return 0
@@ -894,7 +901,11 @@ def main(argv: list[str] | None = None) -> int:
     i.set_defaults(fn=cmd_import)
 
     lo = sub.add_parser("local", help="local elections from the municipalities' documents (probe of their layouts)")
-    lo.add_argument("--probe", required=True, metavar="CODE", help="a municipality's code")
+    lo.add_argument("--probe", metavar="CODE", help="a municipality's code: log its documents' masked layouts")
+    lo.add_argument("--classify", metavar="CODES", help="classify the documents of these municipalities (codes, or all)")
+    lo.add_argument("--budget", type=int, default=240, help="minutes of classifying in one run")
+    lo.add_argument("--commit", action="store_true")
+    lo.add_argument("--push", action="store_true")
     lo.add_argument("--kind", default="", help="stations, boards or commission")
     lo.add_argument("--limit", type=int, default=40)
     lo.add_argument("--path-has", default="", help="only documents whose address holds this (e.g. 2023/12)")

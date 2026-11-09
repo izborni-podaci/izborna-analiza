@@ -575,6 +575,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   results of a local election weren't among them: the watch kept only documents about stations, boards or "the
   commission", and a results report names none of those. It now also keeps "results" (rezultat + izbor, odbornici,
   zapisnik, izveštaj) and "lists" (list + proglašenje, zbirna, kandidati, odbornici).
+  Marko asked how to handle 145 sites that all differ. Not a project or an analyser per site: the law fixes the
+  documents, the sites differ in where they put them. So three layers in this repo — discovery the same for every
+  site (a site's quirks as data in municipal_sites.csv, code only where nothing else works), classification by the
+  first page's words of the form (`local.classify`, data/local_docs.json), readers per kind of document, not per
+  site, a new layout a new variant of the reader. Unclassified documents go to a list for a person, coverage per
+  municipality is shown as a fact. Order: classification, Pančevo end to end, then Temerin and Sečanj.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

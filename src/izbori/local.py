@@ -76,3 +76,116 @@ def probe(docs: dict, code: str, kind: str | None = None, limit: int = 40, log=p
             continue
         log(f"[{k}] {docs[u]['k']} {urllib.parse.urlsplit(u).path.rsplit('/', 1)[0]}/{shape(name, 120)} "
             f"({len(text)} characters)\n{shape(text)}\n")
+
+
+# --- what a document is, from its first page ---------------------------------------------------------------------
+# A link's text or file name says little (Pančevo's "board" documents were the boards' minutes of the vote), so a
+# document is told by the words of its form on the first page, in folded Latin (watch.fold). Kept per link in
+# data/local_docs.json: the kind, which election it belongs to and that election's day where the page gives it;
+# nothing of the text. Kinds, first match wins:
+KINDS = (
+    ("minutes", (("zapisnik",), ("o radu birackog odbora", "rad birackog odbora", "birackog odbora"))),
+    ("results", (("izvestaj", "zapisnik", "rezultat"), ("o ukupnim rezultatima", "ukupni rezultati", "utvrdjivanju rezultata", "rezultatima izbora"))),
+    ("lists", (("zbirn", "proglas", "lista kandidata"), ("izborn", "list"))),
+    ("boards", (("resenje", "resenja"), ("imenovanju", "razresenju", "imenovanje"))),
+    ("stations", (("odluk", "resenje"), ("odredjivanju birackih mesta", "utvrdjivanju birackih mesta", "birackih mesta"))),
+    ("session", (("zapisnik",), ("sednic",))),
+)
+ELECTIONS = (  # which election, by what the form says it is for
+    ("local", ("odbornika", "odbornike", "skupstine opstine", "skupstine grada", "skupstinu opstine", "skupstinu grada",
+               "gradske opstine")),
+    ("provincial", ("pokrajine", "ap vojvodine", "autonomne pokrajine")),
+    ("presidential", ("predsednika republike",)),
+    ("parliamentary", ("narodnih poslanika", "narodne poslanike", "narodni poslanici")),
+)
+MONTHS = {"januar": 1, "februar": 2, "mart": 3, "april": 4, "maj": 5, "jun": 6, "jul": 7, "avgust": 8,
+          "septemb": 9, "oktob": 10, "novemb": 11, "decemb": 12}  # stems: "oktobra", "decembra"
+DATE = re.compile(r"(\d{1,2})\s*\.\s*(?:(\d{1,2})\s*\.|(" + "|".join(MONTHS) + r")[a-z]*)\s*(20\d\d)")
+STORE = "local_docs.json"
+
+
+def classify(text: str) -> dict:
+    """{"k": kind or "other", "e": election or None, "d": its day (YYYY-MM-DD) or None} from a first page."""
+    f = watch.fold(text)
+    # a title set in spaced capitals ("Р Е Ш Е Њ Е") read as one word
+    f = re.sub(r"(?<![a-z])((?:[a-z]{1,2} ){3,}[a-z]{1,2})(?![a-z])", lambda m: m.group(1).replace(" ", ""), f)
+    kind = "other"
+    for k, (first, second) in KINDS:
+        if any(w in f for w in first) and any(w in f for w in second):
+            kind = k
+            break
+    election = next((e for e, words in ELECTIONS if any(w in f for w in words)), None)
+    return {"k": kind, "e": election, "d": election_day(f)}
+
+
+def election_day(folded: str) -> str | None:
+    """The day of the election a form is about: the first date within a short reach after "izbor" ("izbora
+    održanih 17. decembra 2023", "izbori raspisani za 2.6.2024"); None when no such date."""
+    for m in re.finditer(r"izbor", folded):
+        d = DATE.search(folded, m.end(), m.end() + 160)
+        if d:
+            day = int(d.group(1))
+            month = int(d.group(2)) if d.group(2) else MONTHS[d.group(3)]
+            if 1 <= day <= 31 and 1 <= month <= 12:
+                return f"{d.group(4)}-{month:02d}-{day:02d}"
+    return None
+
+
+def first_page(url: str, fetch=None) -> str:
+    data = (fetch or download)(url)
+    return text_of(data, url, pages=1)
+
+
+def _one(url: str) -> tuple[str, dict | None, str | None]:
+    try:
+        return url, classify(first_page(url)), None
+    except Exception as e:  # noqa: BLE001 - a document down: left for the next run
+        return url, None, type(e).__name__
+
+
+def load_store(root) -> dict:
+    import json
+    from pathlib import Path
+    p = Path(root) / STORE
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {"docs": {}}
+
+
+def save_store(root, store: dict) -> None:
+    from pathlib import Path
+    from izbori import jsonfile
+    (Path(root) / STORE).write_text(jsonfile.dumps(store, "docs"), encoding="utf-8")
+
+
+def run_classify(root, codes: set | None = None, log=print, workers: int = 4, budget_seconds: float = 4 * 3600,
+                 one=_one) -> int:
+    """Classify every document the watch found and this store lacks (of the given municipalities); saved as it
+    goes, so a run cut short by its budget resumes. Returns how many were classified."""
+    import time as _time
+    from concurrent.futures import ProcessPoolExecutor
+    docs = watch.load_store(root)["docs"]
+    store = load_store(root)
+    todo = [u for u, v in sorted(docs.items()) if u not in store["docs"] and (not codes or v["m"] in codes)]
+    log(f"{len(todo)} documents to classify")
+    start, done = _time.time(), 0
+    pool = ProcessPoolExecutor(workers) if workers > 1 else None
+    try:
+        results = pool.map(one, todo) if pool else map(one, todo)
+        for url, got, err in results:
+            if got:
+                store["docs"][url] = {"m": docs[url]["m"], **got}
+                done += 1
+            if done and done % 100 == 0:
+                save_store(root, store)
+                log(f"{done} classified")
+            if _time.time() - start > budget_seconds:
+                log("time budget used; the next run continues")
+                break
+    finally:
+        if pool:
+            pool.shutdown(cancel_futures=True)
+    save_store(root, store)
+    from collections import Counter
+    mine = [v for v in store["docs"].values() if not codes or v["m"] in codes]
+    log(f"{done} classified now; kinds: {dict(Counter(v['k'] for v in mine))}; "
+        f"elections: {dict(Counter((v['e'], v['d']) for v in mine).most_common(12))}")
+    return done
