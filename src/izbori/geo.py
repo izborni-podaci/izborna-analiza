@@ -416,3 +416,31 @@ def kim_features(data: bytes, wanted: dict[str, str], years=("1999", "1998"), lo
     log(f"{len(feats)} boundaries in RIK's division from {base}"
         + (f", {len(others)} of them with no station" if others else ""))
     return feats
+
+
+# What OpenStreetMap has inside one census settlement below the settlement: local communities (mesne zajednice,
+# admin_level 10) and named quarters (place=suburb/quarter/neighbourhood), to see whether a city settlement such
+# as Novi Sad can be split into its quarters (9 Nov 2026). Only names, kinds and counts are logged.
+QUARTERS_QUERY = """[out:json][timeout:600];
+rel["boundary"="administrative"]["admin_level"="9"]["name"="{name}"]->.s;
+.s map_to_area->.a;
+(
+  rel(area.a)["boundary"="administrative"]["admin_level"~"^1[01]$"];
+  nwr(area.a)["place"~"^(suburb|quarter|neighbourhood|city_block)$"];
+  rel(area.a)["boundary"]["boundary"!="administrative"];
+);
+out tags center;"""
+
+
+def quarters_inspect(name: str, log=print) -> None:
+    data = fetch(QUARTERS_QUERY.replace("{name}", name), timeout=700)
+    from collections import Counter
+    kinds = Counter()
+    for e in data.get("elements", []):
+        t = e.get("tags", {})
+        kind = (f"admin_level={t['admin_level']}" if t.get("boundary") == "administrative"
+                else f"place={t['place']}" if t.get("place") else f"boundary={t.get('boundary')}")
+        kinds[(kind, e["type"])] += 1
+        log(f"{kind:24} {e['type']:9} {t.get('name', '')} | {t.get('name:sr-Latn', '')}")
+    for (k, typ), n in sorted(kinds.items()):
+        log(f"= {k} {typ}: {n}")

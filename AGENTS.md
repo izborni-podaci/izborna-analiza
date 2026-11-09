@@ -521,6 +521,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   split among the four largest lists in their map colours (Marko chose this of three drafts: the settlements named
   per leading list, which repeated the legend; the two largest lists' difference, one-sided where one list leads
   everywhere). Turnout stays in the facts under the map. The share beside each bar is in the leading list's colour (yellow and pink darkened), so it says whose it is.
+- **9 Nov 2026, Novi Sad by its quarters.** Marko wants the city of Novi Sad drawn by its quarters (Telep, Novo
+  naselje…), not as one settlement. First a probe (`izbori geo --quarters-inspect`) of what OpenStreetMap has
+  inside the settlement; the stations would be placed by their address in the city's act on polling stations.
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);

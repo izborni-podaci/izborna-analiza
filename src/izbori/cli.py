@@ -427,6 +427,9 @@ def show_boards(archive: Archive, rid: str, contestants: list, n: int) -> None:
 def cmd_geo(args) -> int:
     """Municipal boundaries from OpenStreetMap for the map on the Explore page (data/geo/municipalities.json)."""
     from izbori import geo
+    if args.quarters_inspect:  # what OpenStreetMap has below one settlement (Novi Sad's quarters); changes nothing
+        geo.quarters_inspect(args.quarters_inspect, log)
+        return 0
     if args.kim_inspect:  # what the dataset with Kosovo's municipalities in RIK's division holds; changes nothing
         geo.inspect(geo.kim_archive(log), log)
         return 0
@@ -930,6 +933,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="add Kosovo and Metohija's municipalities in RIK's division (needs pyshp and shapely)")
     g.add_argument("--settlements", action="store_true",
                    help="the settlements' boundaries (admin_level 9) into <data>/geo/settlements.json (needs shapely)")
+    g.add_argument("--quarters-inspect", metavar="SETTLEMENT",
+                   help="list the local communities and quarters OpenStreetMap has inside a settlement (by its name)")
     g.add_argument("--kim-inspect", action="store_true",
                    help="list what the dataset of Kosovo's municipalities in RIK's division holds (needs pyshp)")
     g.set_defaults(fn=cmd_geo)

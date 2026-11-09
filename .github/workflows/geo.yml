@@ -23,6 +23,10 @@ on:
         description: "Only the settlements' boundaries (admin_level 9), into data/geo/settlements.json"
         type: boolean
         default: false
+      quarters:
+        description: "Only list the quarters OpenStreetMap has inside this settlement (its Cyrillic name, e.g. Нови Сад)"
+        type: string
+        default: ""
 
 permissions:
   contents: write  # commit the boundaries
@@ -50,7 +54,12 @@ jobs:
           INSPECT: ${{ inputs.inspect }}
           KIM: ${{ inputs.kim }}
           SETTLEMENTS: ${{ inputs.settlements }}
+          QUARTERS: ${{ inputs.quarters }}
         run: |
+          if [ -n "$QUARTERS" ]; then
+            uv run izbori geo --quarters-inspect "$QUARTERS"
+            exit 0
+          fi
           if [ "$INSPECT" = "true" ]; then
             uv run --with "pyshp>=2.3" izbori geo --kim-inspect
             exit 0
