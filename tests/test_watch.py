@@ -42,3 +42,39 @@ def test_crawl_follows_election_pages_and_keeps_documents(tmp_path):
     assert all(set(v) == {"m", "k", "seen"} for v in store["docs"].values())  # no titles, no text
     assert any("candidate for station_lists.csv" in m for m in logged)
     assert watch.run(tmp_path, "2026-11-09", logged.append, fetcher, lambda s: None) == 0  # nothing new the next time
+
+
+def test_crawl_reads_wordpress_uploads_and_sitemaps():
+    pages = {
+        "https://primer.rs/": "<p>почетна</p>",
+        "https://primer.rs/sitemap.xml": "<sitemapindex><sitemap><loc>https://primer.rs/page-sitemap.xml</loc></sitemap></sitemapindex>",
+        "https://primer.rs/page-sitemap.xml": "<urlset><url><loc>https://primer.rs/izborna-komisija/</loc></url>"
+                                              "<url><loc>https://primer.rs/files/odluka-o-odredjivanju-birackih-mesta.pdf</loc></url>"
+                                              "<url><loc>https://primer.rs/turizam/</loc></url></urlset>",
+        "https://primer.rs/izborna-komisija/": '<a href="/files/resenje-bo-bm-4.pdf">Решење о именовању бирачког одбора</a>',
+    }
+    asked = []
+
+    def fetcher(url):
+        asked.append(url)
+        if "wp-json/wp/v2/media" in url and "search=%D0%B1%D0%B8%D1%80%D0%B0%D1%87%D0%BA" in url:
+            return ('[{"source_url": "https://primer.rs/wp-content/uploads/2026/09/BM.pdf",'
+                    ' "title": {"rendered": "Решење о утврђивању бирачких места"}},'
+                    ' {"source_url": "https://drugi.rs/x.pdf", "title": {"rendered": "Решење о утврђивању бирачких места"}}]')
+        if "wp-json" in url:
+            return "[]"
+        if url in pages:
+            return pages[url]
+        raise OSError("404")
+
+    found = watch.crawl("primer.rs", fetcher=fetcher, sleep=lambda s: None)
+    assert found == {"https://primer.rs/wp-content/uploads/2026/09/BM.pdf": "stations",
+                     "https://primer.rs/files/odluka-o-odredjivanju-birackih-mesta.pdf": "stations",
+                     "https://primer.rs/files/resenje-bo-bm-4.pdf": "boards"}
+    assert "https://primer.rs/turizam/" not in asked
+
+
+def test_why_says_what_failed():
+    import urllib.error
+    assert watch.why(urllib.error.URLError("timed out")) == "URLError timed out"
+    assert watch.why(urllib.error.HTTPError("u", 403, "Forbidden", {}, None)).startswith("HTTPError Forbidden")

@@ -27,14 +27,20 @@ from izbori.translit import latin
 
 SITES_FILE = "municipal_sites.csv"
 STORE = "municipal_docs.json"
-AGENT = "izborna-analiza (https://github.com/izborni-podaci/izborna-analiza)"
+# a browser-like start, as some municipal sites refuse a bare client name (403), and who we are after it
+AGENT = "Mozilla/5.0 (compatible; izborna-analiza; +https://izbornipodaci.rs)"
 DOC_EXT = (".pdf", ".doc", ".docx")
-MAX_PAGES = 60  # per site and visit
-PAUSE = 0.7  # seconds between requests to one site
+MAX_PAGES = 100  # per site and visit
+DEPTH = 3  # links followed from the front page: Izbori → Izbori 2026 → Odluke
+PAUSE = 0.5  # seconds between requests to one site
 SEARCHES = ("бирачких места", "biračkih mesta", "бирачки одбор", "birački odbor")
 
 # what a link must speak of to be followed (a page) or kept (a document); compared in folded Latin
-PAGE_WORDS = ("izbor", "komisij", "birack", "glasan")
+PAGE_WORDS = ("izbor", "komisij", "birack", "glasan", "dokument", "oglasn", "sluzben", "odluk", "akti")
+# the site's own index of uploads where it has one: WordPress's media search (uploads by title), and the sitemaps
+MEDIA_SEARCHES = ("бирачк", "birack", "biračk", "изборн", "izborn", "одбор")
+SITEMAPS = ("wp-sitemap.xml", "sitemap.xml", "sitemap_index.xml")
+MAX_SITEMAPS = 25
 KINDS = (  # first match wins
     ("stations", ("birack", "mest"), ("odredjivanj", "utvrdjivanj", "odluka", "resenj")),
     ("boards", ("birack", "odbor"), ()),
@@ -102,10 +108,13 @@ def links_of(html: str, base: str) -> list[tuple[str, str]]:
     return out
 
 
-def fetch(url: str, timeout: int = 30) -> str:
+TEXT_TYPES = ("text/html", "application/xhtml+xml", "application/json", "application/xml", "text/xml", "")
+
+
+def fetch(url: str, timeout: int = 45) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": AGENT, "Accept-Language": "sr"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        if r.headers.get("Content-Type", "").split(";")[0] not in ("text/html", "application/xhtml+xml", ""):
+        if r.headers.get("Content-Type", "").split(";")[0] not in TEXT_TYPES:
             return ""
         data = r.read(2_000_000)
     for enc in ("utf-8", "cp1251", "latin-1"):
@@ -114,6 +123,12 @@ def fetch(url: str, timeout: int = 30) -> str:
         except UnicodeDecodeError:
             continue
     return ""
+
+
+def why(e: Exception) -> str:
+    """A failure in a few words for the log: the kind and its reason (a certificate, a timeout, a name not found)."""
+    reason = getattr(e, "reason", None) or getattr(e, "code", None) or ""
+    return f"{type(e).__name__} {str(reason)[:80]}".strip()
 
 
 def crawl(domain: str, log=None, fetcher=fetch, sleep=time.sleep) -> dict[str, str]:
@@ -131,7 +146,7 @@ def crawl(domain: str, log=None, fetcher=fetch, sleep=time.sleep) -> dict[str, s
             root = r
             break
         except Exception as e:  # noqa: BLE001 - try the next spelling
-            err = type(e).__name__
+            err = why(e)
     if root is None:
         if log:
             log(f"{domain}: {err}")
@@ -151,11 +166,51 @@ def crawl(domain: str, log=None, fetcher=fetch, sleep=time.sleep) -> dict[str, s
                 kind = kind_of(text + " " + urllib.parse.unquote(path.rsplit("/", 1)[-1]))
                 if kind and href not in found:
                     found[href] = kind
-            elif depth < 2 and any(w in about for w in PAGE_WORDS):
-                # an election page, and the pages it links to about elections ("Избори" → "Избори 2026")
+            elif depth < DEPTH and any(w in about for w in PAGE_WORDS):
+                # an election page, and the pages it links to about elections ("Избори" → "Избори 2026" → "Одлуке")
                 queue.append((href, depth + 1, None))
 
     take(html, root, 0)
+    # the site's own indexes: WordPress's search of its uploads, then its sitemaps
+    for q in MEDIA_SEARCHES:
+        try:
+            items = json.loads(fetcher(f"{root}wp-json/wp/v2/media?search={urllib.parse.quote(q)}&per_page=100"
+                                       "&_fields=source_url,title") or "[]")
+        except Exception:  # noqa: BLE001 - not WordPress, or its API closed: the pages remain
+            break
+        pages += 1
+        sleep(PAUSE)
+        if not isinstance(items, list):
+            break
+        for it in items:
+            src = (it or {}).get("source_url") or ""
+            title = ((it or {}).get("title") or {}).get("rendered") or ""
+            u = urllib.parse.urlsplit(src)
+            if u.path.lower().endswith(DOC_EXT) and u.netloc.lower().removeprefix("www.") == host.removeprefix("www."):
+                kind = kind_of(title + " " + urllib.parse.unquote(u.path.rsplit("/", 1)[-1]))
+                if kind and src not in found:
+                    found[src] = kind
+    maps, read_maps = [f"{root}{m}" for m in SITEMAPS], 0
+    while maps and read_maps < MAX_SITEMAPS:
+        sm = maps.pop(0)
+        try:
+            xml = fetcher(sm)
+        except Exception:  # noqa: BLE001 - no such sitemap
+            continue
+        read_maps += 1
+        sleep(PAUSE)
+        for loc in re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", xml or ""):
+            loc = loc.replace("&amp;", "&")
+            path = urllib.parse.urlsplit(loc).path.lower()
+            if path.endswith(".xml"):
+                if loc not in maps:
+                    maps.append(loc)
+            elif path.endswith(DOC_EXT):
+                kind = kind_of(urllib.parse.unquote(path.rsplit("/", 1)[-1]))
+                if kind and loc not in found:
+                    found[loc] = kind
+            elif any(w in fold(urllib.parse.unquote(path)) for w in ("izbor", "birack", "komisij")):
+                queue.append((loc, 1, None))
     while queue and pages < MAX_PAGES:
         url, depth, _ = queue.pop(0)
         if url in seen:

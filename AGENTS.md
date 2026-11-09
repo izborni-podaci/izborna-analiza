@@ -561,6 +561,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   street index for "where do I vote", feeds that announce new commission documents, and a size/time measurement
   with dozens of simultaneous rounds. Not a dry run on Belgrade 2024: Marko expects Belgrade's commission to be the
   best-run; a small municipality's local election is the better test.
+  9 Nov: the first pass left 100 of 148 sites with nothing — 28 didn't answer (24 URLError, 4 HTTP 403/5xx),
+  72 answered with nothing found. Marko asked for both now. The watch goes three links deep (pages about documents,
+  notices and decisions too, up to 100 pages), reads WordPress's upload search and the sitemaps, sends a
+  browser-like client name, and logs why a site failed, so a certificate problem can be told from a site that is
+  down. Run by hand for those 100 (`only`).
 - **8 Nov 2026, the search opens the newest election's municipality page.** Marko: whoever picks their
   municipality or station in the search should land on the page just built, with the map. A municipality in the
   search, in the municipalities index and in a station page's crumbs now opens `r/<newest>/m/<code>.html`; the page
