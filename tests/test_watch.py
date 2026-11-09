@@ -114,3 +114,16 @@ def test_others_only_skips_the_domain_itself(tmp_path):
     assert not any("valjevo.org.rs" in u for u in asked) and any("valjevo.rs" in u for u in asked)
     assert not any("primer" in u for u in asked)
     assert any("no other spelling of valjevo.org.rs answers" in m for m in logged)
+
+
+def test_a_broken_link_or_a_crash_does_not_stop_the_run(tmp_path):
+    assert watch.links_of('<a href="http://[broken/x.pdf">x</a><a href="/a.pdf">a</a>', "https://p.rs/") == [("https://p.rs/a.pdf", "a")]
+    (tmp_path / "municipal_sites.csv").write_text(
+        "municipality_code,name,domain,note\n70017,Први,prvi.rs,\n70025,Други,drugi.rs,\n", encoding="utf-8")
+
+    def fetcher(url):
+        if "prvi" in url:
+            return '<a href="/izbori/">Избори</a>' if url.endswith("prvi.rs/") else 1 / 0
+        return '<a href="/o.pdf">Одлука о одређивању бирачких места</a>'
+    logged = []
+    assert watch.run(tmp_path, "2026-11-09", logged.append, fetcher, lambda s: None) == 1

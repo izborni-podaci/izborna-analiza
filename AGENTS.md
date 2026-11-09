@@ -584,6 +584,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   Marko: Valjevo's site is valjevo.rs, not the mail's valjevo.org.rs, "and some sites may be like that". A domain
   that doesn't answer is now tried as name.rs, name.org.rs, name.ls.gov.rs, name.gov.rs; the one that answers is
   written back to municipal_sites.csv with the old one in the note, so the file stays the record of where to look.
+  The deeper pass over the 100 sites crashed after 2.5 hours on one malformed link ("Invalid IPv6 URL") and kept
+  nothing, since the store was written only at the end. Now a link that doesn't parse is skipped, a site that
+  throws is logged and passed, and the store is written after every site with finds.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

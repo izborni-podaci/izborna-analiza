@@ -107,7 +107,12 @@ def links_of(html: str, base: str) -> list[tuple[str, str]]:
     for href, text in p.links:
         if not href or href.startswith(("mailto:", "javascript:", "#", "tel:")):
             continue
-        out.append((urllib.parse.urljoin(base, href.strip()), text))
+        try:  # a broken link ("http://[…") must not stop the site, let alone the run (9 Nov 2026, after 2.5 hours)
+            url = urllib.parse.urljoin(base, href.strip())
+            urllib.parse.urlsplit(url)
+        except ValueError:
+            continue
+        out.append((url, text))
     return out
 
 
@@ -293,11 +298,17 @@ def run(root: Path, today: str, log=print, fetcher=fetch, sleep=time.sleep, only
             elif others_only:
                 log(f"{s['municipality_code']} {latin(s['name'])}: no other spelling of {s['domain']} answers")
                 continue
-        found = crawl(s["domain"], log, fetcher, sleep)
+        try:
+            found = crawl(s["domain"], log, fetcher, sleep)
+        except Exception as e:  # noqa: BLE001 - one site's oddity must not lose the others' finds
+            log(f"{s['municipality_code']} {latin(s['name'])}: stopped, {why(e)}")
+            continue
         fresh = {u: k for u, k in found.items() if u not in store["docs"]}
         for u, k in fresh.items():
             store["docs"][u] = {"m": s["municipality_code"], "k": k, "seen": today}
         new += len(fresh)
+        if fresh:
+            save_store(root, store)  # as it goes: a run cut short keeps what it found
         if fresh:
             log(f"{s['municipality_code']} {latin(s['name'])}: {len(fresh)} new ({', '.join(sorted(set(fresh.values())))})")
             for u, k in fresh.items():
