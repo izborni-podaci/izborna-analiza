@@ -39,6 +39,7 @@ def shape(text: str, limit: int = 1200) -> str:
 
 
 def download(url: str, timeout: int = 90) -> bytes:
+    url = urllib.parse.quote(url, safe="/:?&=%@+,;~!$'()*")  # Cyrillic in a link
     req = urllib.request.Request(url, headers={"User-Agent": watch.AGENT})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read(30_000_000)

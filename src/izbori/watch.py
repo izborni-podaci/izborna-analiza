@@ -45,6 +45,9 @@ KINDS = (  # first match wins
     ("stations", ("birack", "mest"), ("odredjivanj", "utvrdjivanj", "odluka", "resenj")),
     ("boards", ("birack", "odbor"), ()),
     ("commission", ("izborn", "komisij"), ()),
+    # what only the local commission publishes for a local election: its results and the lists it proclaimed
+    ("results", ("rezultat",), ("izbor", "odborni", "glasan", "zapisnik", "izvestaj")),
+    ("lists", ("list",), ("proglas", "zbirn", "kandidat", "odborni")),
 )
 
 

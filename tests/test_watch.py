@@ -10,6 +10,9 @@ def test_kind_of_links():
     assert watch.kind_of("Пословник Општинске изборне комисије") == "commission"
     assert watch.kind_of("Јавни позив за легализацију објеката") is None
     assert watch.kind_of("Бирачка места – обавештење") is None  # about stations but no act
+    assert watch.kind_of("Извештај о укупним резултатима избора за одборнике Скупштине града") == "results"
+    assert watch.kind_of("Збирна изборна листа кандидата за одборнике") == "lists"
+    assert watch.kind_of("Резултати такмичења") is None
 
 
 def test_crawl_follows_election_pages_and_keeps_documents(tmp_path):

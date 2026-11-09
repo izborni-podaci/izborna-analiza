@@ -570,6 +570,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   from the commissions' own documents — board decisions for controllers by list, then the results tables — on
   Pančevo first (1,082 documents: 2023/11–12 and 2024/04 uploads), plus the new acts on polling stations for the
   stations still without a settlement. `local.py` starts with a masked probe of the layouts (workflow **local**).
+  The first probe of Pančevo's 121 commission documents: minutes of the commission's sessions and proposals of
+  lists, many of them of the 2026 parliamentary election (the site's upload folders don't follow the dates). The
+  results of a local election weren't among them: the watch kept only documents about stations, boards or "the
+  commission", and a results report names none of those. It now also keeps "results" (rezultat + izbor, odbornici,
+  zapisnik, izveštaj) and "lists" (list + proglašenje, zbirna, kandidati, odbornici).
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**
