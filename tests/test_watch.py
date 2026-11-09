@@ -99,3 +99,18 @@ def test_other_spellings_of_a_site(tmp_path):
     sites = watch.load_sites(tmp_path / "municipal_sites.csv")
     assert sites[0]["domain"] == "valjevo.rs" and "was valjevo.org.rs" in sites[0]["note"]
     assert any("valjevo.org.rs doesn't answer, valjevo.rs does" in m for m in logged)
+
+
+def test_others_only_skips_the_domain_itself(tmp_path):
+    (tmp_path / "municipal_sites.csv").write_text(
+        "municipality_code,name,domain,note\n70360,Ваљево,valjevo.org.rs,\n70017,Пример,primer.rs,\n", encoding="utf-8")
+    asked = []
+
+    def fetcher(url):
+        asked.append(url)
+        raise OSError("down")
+    logged = []
+    watch.run(tmp_path, "2026-11-09", logged.append, fetcher, lambda s: None, only={"70360"}, others_only=True)
+    assert not any("valjevo.org.rs" in u for u in asked) and any("valjevo.rs" in u for u in asked)
+    assert not any("primer" in u for u in asked)
+    assert any("no other spelling of valjevo.org.rs answers" in m for m in logged)

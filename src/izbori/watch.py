@@ -271,10 +271,12 @@ def save_sites(path: Path, sites: list[dict]) -> None:
         w.writerows(sites)
 
 
-def run(root: Path, today: str, log=print, fetcher=fetch, sleep=time.sleep, only: set | None = None) -> int:
+def run(root: Path, today: str, log=print, fetcher=fetch, sleep=time.sleep, only: set | None = None,
+        others_only: bool = False) -> int:
     """Visit every site with a domain; keep new documents; return how many are new. A site whose domain doesn't
     answer is looked for under its other spellings (`variants`); one that answers replaces it in
-    municipal_sites.csv, the old one named in the note."""
+    municipal_sites.csv, the old one named in the note. others_only: skip the domain itself (just tried by another
+    run) and look only under the other spellings."""
     all_sites = load_sites(Path(root) / SITES_FILE)
     sites = [s for s in all_sites if s.get("domain")]
     if only:
@@ -282,12 +284,15 @@ def run(root: Path, today: str, log=print, fetcher=fetch, sleep=time.sleep, only
     store = load_store(root)
     new, moved = 0, False
     for s in sites:
-        if not answers(s["domain"], fetcher):
+        if others_only or not answers(s["domain"], fetcher):
             alt = next((v for v in variants(s["domain"]) if answers(v, fetcher)), None)
             if alt:
                 log(f"{s['municipality_code']} {latin(s['name'])}: {s['domain']} doesn't answer, {alt} does")
                 s["note"] = (s.get("note", "") + f"; was {s['domain']}, found by the watch {today}").strip("; ")
                 s["domain"], moved = alt, True
+            elif others_only:
+                log(f"{s['municipality_code']} {latin(s['name'])}: no other spelling of {s['domain']} answers")
+                continue
         found = crawl(s["domain"], log, fetcher, sleep)
         fresh = {u: k for u, k in found.items() if u not in store["docs"]}
         for u, k in fresh.items():

@@ -11,6 +11,10 @@ on:
       only:
         description: "Only these municipalities (codes, comma-separated)"
         default: ""
+      others_only:
+        description: "Skip the domains themselves; try only their other spellings (.rs, .org.rs, .ls.gov.rs, .gov.rs)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -29,9 +33,11 @@ jobs:
       - name: Look at the sites
         env:
           ONLY: ${{ inputs.only }}
+          OTHERS_ONLY: ${{ inputs.others_only }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           args=(--commit --push)
           [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          [ "$OTHERS_ONLY" = "true" ] && args+=(--others-only)
           uv run izbori watch "${args[@]}"

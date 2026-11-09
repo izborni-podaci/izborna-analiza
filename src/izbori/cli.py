@@ -609,7 +609,8 @@ def cmd_watch(args) -> int:
     """Look at the municipalities' sites for the electoral commissions' documents (data/municipal_docs.json)."""
     from izbori import watch
     root = Path(args.data)
-    new = watch.run(root, now_iso()[:10], log, only=set(args.only.split(",")) if args.only else None)
+    new = watch.run(root, now_iso()[:10], log, only=set(args.only.split(",")) if args.only else None,
+                    others_only=args.others_only)
     if args.commit and commit([str(root / watch.STORE), str(root / watch.SITES_FILE)],
                               f"Data: {new} documents found on the municipalities' sites"):
         if args.push:
@@ -989,6 +990,7 @@ def main(argv: list[str] | None = None) -> int:
     w.add_argument("--only", metavar="CODES", help="only these municipalities (codes, comma-separated)")
     w.add_argument("--commit", action="store_true")
     w.add_argument("--push", action="store_true")
+    w.add_argument("--others-only", action="store_true", help="skip the domains themselves, try only their other spellings")
     w.set_defaults(fn=cmd_watch)
 
     sl = sub.add_parser("stationlist", help="read the commissions' decisions on polling stations listed in "
