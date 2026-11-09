@@ -527,6 +527,7 @@ table.stations td b { font-weight: 600; }
 .smap-ramp { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; flex-basis: 100%; }
 .smap-ramp b { font-weight: 600; }
 .smap-legend .sw.sw-step { width: 7px; margin-right: 1px; }
+.smap .mp.mp-deep, .smap-legend .sw.sw-deep { filter: brightness(0.72); }  /* 70% and over: darker than full */
 .smap-legend .sw.sw-step:last-of-type { margin-right: 5px; }
 .mp-1 { fill: var(--s1) !important; } .mp-2 { fill: var(--s2) !important; } .mp-3 { fill: var(--s3) !important; }
 .mp-4 { fill: var(--s4) !important; } .mp-5 { fill: var(--s5) !important; } .mp-6 { fill: var(--s6) !important; }

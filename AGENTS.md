@@ -540,6 +540,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   So the quarters no longer replace the settlement: `Site.quarter_zoom` draws a second map (own hatch pattern ids,
   "zh1…", so it paints while the first steps aside; the first is hidden by visibility, not display, for the same
   reason), the page data carries `q` (station number → quarter) for its panel and its PNG.
+  Same day, Marko: make similar shades easier to tell apart. Five steps instead of four (60–70% and 70%+ apart, as
+  most of Novi Sad's quarters sat in one step), opacities evenly spaced, and the top step darkened
+  (brightness 0.72, `mp-deep`; mun.js darkens the same in the PNG) since opacity alone can't go past full.
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);

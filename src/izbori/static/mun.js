@@ -182,6 +182,9 @@
   // size and saved; everything happens in the browser, nothing is sent anywhere
   const LIGHT = { 1: '#2a78d6', 2: '#eb6834', 3: '#1baf7a', 4: '#eda100', 5: '#e87ba4', 6: '#008300', 7: '#6250d6',
     8: '#e34948', 9: '#44607f', none: '#e6e3de' }; // site.css :root --s1 … --s8, --ink-2, --mp-none (a grey with no blue in it)
+  // the top step (maps.DEEP) is the colour darkened, as site.css does with brightness(0.72)
+  const deepen = (hex) => '#' + [1, 3, 5].map((k) => Math.round(parseInt(hex.slice(k, k + 2), 16) * 0.72).toString(16).padStart(2, '0')).join('');
+  const isDeep = (el) => /(^|\s)(mp-deep|sw-deep)(\s|$)/.test(el.getAttribute('class') || '');
   const colourOf = (el) => { const m = (el.getAttribute('class') || '').match(/mp-(\d|none)/); return m ? LIGHT[m[1]] : LIGHT.none; };
   // how the largest settlements voted, beside the map in the PNG (9 Nov 2026, in place of turnout by settlement):
   // the twelve largest by registered voters, each a bar of 100% split among the municipality's four largest lists
@@ -233,7 +236,7 @@
       copy.querySelectorAll('path').forEach((p) => {
         const close = /mp-close/.test(p.getAttribute('class') || '');
         const k = ((p.getAttribute('class') || '').match(/mp-(\d)/) || [])[1];
-        p.setAttribute('fill', close && k ? 'url(#' + copy.querySelector('pattern.mp-' + k).id + ')' : colourOf(p));
+        p.setAttribute('fill', close && k ? 'url(#' + copy.querySelector('pattern.mp-' + k).id + ')' : isDeep(p) ? deepen(colourOf(p)) : colourOf(p));
         p.setAttribute('stroke', '#ffffff'); p.setAttribute('stroke-width', '1');
         p.querySelector('title') && p.removeChild(p.querySelector('title'));
       });
@@ -283,13 +286,13 @@
         if (sp.hasAttribute('data-ramp')) {
           sp.querySelectorAll(':scope > b, :scope > span').forEach((x) => {
             const sw = x.querySelector('.sw');
-            legend.push(sw ? { text: x.textContent.trim(), colour: colourOf(sw), alpha: Number(sw.style.opacity || 1) } : { text: x.textContent.trim(), colour: null, br: true });
+            legend.push(sw ? { text: x.textContent.trim(), colour: isDeep(sw) ? deepen(colourOf(sw)) : colourOf(sw), alpha: Number(sw.style.opacity || 1) } : { text: x.textContent.trim(), colour: null, br: true });
           });
           return;
         }
         const sws = [...sp.querySelectorAll('.sw')]; const cls = sws[0].getAttribute('class') || '';
         if (sws.length > 1) {  // a list's shades: one small swatch per step
-          legend.push({ text: sp.textContent.trim(), colour: colourOf(sws[0]), steps: sws.map((x) => Number(x.style.opacity || 1)) });
+          legend.push({ text: sp.textContent.trim(), colour: colourOf(sws[0]), steps: sws.map((x) => Number(x.style.opacity || 1)), deep: sws.map(isDeep) });
           return;
         }
         legend.push({ text: sp.textContent.trim(), colour: /mp-close-sw/.test(cls) ? 'hatch' : colourOf(sws[0]), alpha: Number(sws[0].style.opacity || 1) });
@@ -339,7 +342,7 @@
             for (let d = -12; d < 16; d += 4) { ctx.moveTo(x + d, y + 1); ctx.lineTo(x + d + 12, y - 11); }
             ctx.stroke(); ctx.restore();
           } else if (g.steps) {
-            g.steps.forEach((a, k) => { ctx.globalAlpha = a; ctx.fillStyle = g.colour; ctx.fillRect(x + k * 9, y - 11, 8, 12); });
+            g.steps.forEach((a, k) => { ctx.globalAlpha = a; ctx.fillStyle = g.deep[k] ? deepen(g.colour) : g.colour; ctx.fillRect(x + k * 9, y - 11, 8, 12); });
             ctx.globalAlpha = 1;
           } else if (g.colour) { ctx.globalAlpha = g.alpha; ctx.fillStyle = g.colour; ctx.fillRect(x, y - 11, 16, 12); ctx.globalAlpha = 1; }
           ctx.fillStyle = '#0f1f33'; ctx.fillText(g.text, g.steps ? x + g.steps.length * 9 + 6 : g.colour ? x + 22 : x, y);

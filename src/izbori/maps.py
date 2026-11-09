@@ -16,7 +16,8 @@ CLOSE = 0.05  # the leader fewer than this many points ahead: a lighter fill
 PALETTE = 8  # lists ranked past this share the "other" colour
 # the leader's colour is stronger the more it leads with (9 Nov 2026): opacity by the leader's share, in fixed steps
 # so maps compare across municipalities: (share under, opacity); the last step has no upper bound
-LEAD_STEPS = ((0.40, 0.45), (0.50, 0.65), (0.60, 0.85), (None, 1.0))
+LEAD_STEPS = ((0.40, 0.3), (0.50, 0.48), (0.60, 0.66), (0.70, 0.83), (None, 1.0))  # five, evenly apart
+DEEP = 0.70  # from this share the colour is also darkened (class mp-deep), so the top step stands apart
 
 
 def lead_alpha(share: float) -> float:
@@ -188,6 +189,8 @@ def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[i
                 cls += " mp-close"
             tip += f" · {escape(labels.get(r['leader'], ''))} {pct(r['share'])}"
             style = f' style="fill-opacity:{lead_alpha(r["share"])}"'
+            if r["share"] >= DEEP:
+                cls += " mp-deep"
         paths.append(f'<path class="mp {cls}"{style} d="{path_d(f["geometry"], to)}" data-set="{escape(p.get("census") or "")}">'
                      f"<title>{tip}</title></path>")
     # a close win is hatched in the list's colour rather than painted lighter: two shades of one colour were
