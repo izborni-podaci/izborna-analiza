@@ -1182,7 +1182,7 @@ class Site:
                                     "panelTitle": tt("vi_panel_title", name="{name}", n="{n}"),
                                     "panelClose": tt("vi_panel_close"), "turnout": tt("turnout"), "station": tt("station"),
                                     "myList": tt("co_col_mine"), "controller": tt("co_col_ctrl"),
-                                    "panelHint": tt("vi_panel_hint"),
+                                    "panelHint": tt("vi_panel_hint"), "modeLabel": tt("vi_mode_label"), "modeLead": tt("vi_mode_lead"), "modeMine": tt("vi_mode_mine"), "rampLead": tt("vi_ramp_lead"), "rampMine": tt("vi_ramp_mine", list="{list}"),
                                     "legendNc": tt("co_legend_nc"), "rest": tt("co_dev_rest", n="{n}"),
                                     "devNote": tt("co_dev_note", avg="{avg}"), "member": tt("co_ctrl_member"),
                                     "deputy": tt("co_ctrl_deputy"), "none": tt("co_ctrl_none"),

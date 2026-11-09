@@ -521,6 +521,11 @@ table.stations td b { font-weight: 600; }
 .smap text.small { font-size: 9px; }
 .smap text.num { font-size: 10px; font-weight: 700; }
 .smap-key { display: block; margin: 4px 0; }
+.smap-modes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 8px; color: var(--ink-2); }
+.smap-modes .chip { font: inherit; cursor: pointer; min-height: 32px; }
+.smap-modes .chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--page); font-weight: 600; }
+.smap-ramp { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; flex-basis: 100%; }
+.smap-ramp b { font-weight: 600; }
 .mp-1 { fill: var(--s1) !important; } .mp-2 { fill: var(--s2) !important; } .mp-3 { fill: var(--s3) !important; }
 .mp-4 { fill: var(--s4) !important; } .mp-5 { fill: var(--s5) !important; } .mp-6 { fill: var(--s6) !important; }
 .mp-7 { fill: var(--s7) !important; } .mp-8 { fill: var(--s8) !important; } .mp-9 { fill: var(--ink-2) !important; }
