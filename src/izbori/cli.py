@@ -589,6 +589,15 @@ def cmd_stationlist(args) -> int:
     return 0
 
 
+def cmd_local(args) -> int:
+    """Local elections from the municipalities' documents; for now the masked probe of their layouts."""
+    from izbori import local, watch
+    root = Path(args.data)
+    docs = watch.load_store(root)["docs"]
+    local.probe(docs, args.probe, args.kind or None, args.limit, log, path_has=args.path_has)
+    return 0
+
+
 def cmd_watch(args) -> int:
     """Look at the municipalities' sites for the electoral commissions' documents (data/municipal_docs.json)."""
     from izbori import watch
@@ -884,6 +893,12 @@ def main(argv: list[str] | None = None) -> int:
     i.add_argument("--rik-time", help="RIK's timestamp for the file")
     i.set_defaults(fn=cmd_import)
 
+    lo = sub.add_parser("local", help="local elections from the municipalities' documents (probe of their layouts)")
+    lo.add_argument("--probe", required=True, metavar="CODE", help="a municipality's code")
+    lo.add_argument("--kind", default="", help="stations, boards or commission")
+    lo.add_argument("--limit", type=int, default=40)
+    lo.add_argument("--path-has", default="", help="only documents whose address holds this (e.g. 2023/12)")
+    lo.set_defaults(func=cmd_local)
     u = sub.add_parser("update", help="check RIK, archive what changed; with --watch, keep going while counting")
     u.add_argument("--watch", action="store_true")
     u.add_argument("--every", type=int, default=180, help="seconds between checks while watching")

@@ -1,0 +1,47 @@
+# By hand: local elections from the municipalities' own documents (data/municipal_docs.json). For now the probe:
+# a municipality's documents of one kind, each logged with every word that isn't a word of the forms masked.
+name: local
+
+on:
+  workflow_dispatch:
+    inputs:
+      code:
+        description: "Municipality code (e.g. 80314 for Pančevo)"
+        required: true
+      kind:
+        description: "stations, boards or commission (empty: all)"
+        default: ""
+      limit:
+        description: "How many documents to log"
+        default: "40"
+      path_has:
+        description: "Only documents whose address holds this (e.g. 2023/12)"
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: local
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils >/dev/null
+          pip install uv && uv sync --frozen
+      - name: Probe
+        env:
+          CODE: ${{ inputs.code }}
+          KIND: ${{ inputs.kind }}
+          LIMIT: ${{ inputs.limit }}
+          PATH_HAS: ${{ inputs.path_has }}
+        run: uv run izbori local --probe "$CODE" --kind "$KIND" --limit "$LIMIT" --path-has "$PATH_HAS"

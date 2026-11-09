@@ -566,6 +566,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   notices and decisions too, up to 100 pages), reads WordPress's upload search and the sitemaps, sends a
   browser-like client name, and logs why a site failed, so a certificate problem can be told from a site that is
   down. Run by hand for those 100 (`only`).
+  9 Nov, what to do with what the watch found (2,607 documents, 48 municipalities): Marko chose local elections
+  from the commissions' own documents — board decisions for controllers by list, then the results tables — on
+  Pančevo first (1,082 documents: 2023/11–12 and 2024/04 uploads), plus the new acts on polling stations for the
+  stations still without a settlement. `local.py` starts with a masked probe of the layouts (workflow **local**).
 - **8 Nov 2026, the search opens the newest election's municipality page.** Marko: whoever picks their
   municipality or station in the search should land on the page just built, with the map. A municipality in the
   search, in the municipalities index and in a station page's crumbs now opens `r/<newest>/m/<code>.html`; the page
