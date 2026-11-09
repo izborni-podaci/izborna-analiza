@@ -17,3 +17,8 @@ def test_probe_logs_folders_and_masked_layouts():
     local.probe(docs, "80314", kind="boards", log=logged.append, fetch=lambda u: b"PK not a docx")
     assert logged[0].startswith("80314: 1 documents of kind boards; by folder: /up/2023/12 1")
     assert len(logged) == 2  # the one document, which failed to read as a .docx
+
+
+def test_the_command_runs(tmp_path):
+    from izbori import cli
+    assert cli.main(["--data", str(tmp_path), "local", "--probe", "80314"]) == 0

@@ -898,7 +898,7 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--kind", default="", help="stations, boards or commission")
     lo.add_argument("--limit", type=int, default=40)
     lo.add_argument("--path-has", default="", help="only documents whose address holds this (e.g. 2023/12)")
-    lo.set_defaults(func=cmd_local)
+    lo.set_defaults(fn=cmd_local)
     u = sub.add_parser("update", help="check RIK, archive what changed; with --watch, keep going while counting")
     u.add_argument("--watch", action="store_true")
     u.add_argument("--every", type=int, default=180, help="seconds between checks while watching")
