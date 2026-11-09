@@ -511,6 +511,7 @@ def cmd_census(args) -> int:
 def cmd_stationlist(args) -> int:
     """Read the local commissions' decisions on polling stations listed in data/station_lists.csv, for each
     station's settlement (data/rounds/<id>/station_lists.json)."""
+    import urllib.parse
     import urllib.request
     from izbori import settlements, stationlist
     archive = Archive(args.data)
@@ -537,7 +538,8 @@ def cmd_stationlist(args) -> int:
                 if "parlament.gov.rs" in url:
                     data = client.get_bytes(url)
                 else:
-                    req = urllib.request.Request(url, headers={"User-Agent": "izborna-analiza"})
+                    safe = urllib.parse.quote(url, safe="/:?&=%@+,;~!$'()*")  # Cyrillic in a link
+                    req = urllib.request.Request(safe, headers={"User-Agent": "izborna-analiza"})
                     with urllib.request.urlopen(req, timeout=120) as r:
                         data = r.read()
                 text = stationlist.document_text(data, url)
