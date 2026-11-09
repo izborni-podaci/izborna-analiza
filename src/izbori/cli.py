@@ -610,7 +610,8 @@ def cmd_watch(args) -> int:
     from izbori import watch
     root = Path(args.data)
     new = watch.run(root, now_iso()[:10], log, only=set(args.only.split(",")) if args.only else None)
-    if new and args.commit and commit([str(root / watch.STORE)], f"Data: {new} documents found on the municipalities' sites"):
+    if args.commit and commit([str(root / watch.STORE), str(root / watch.SITES_FILE)],
+                              f"Data: {new} documents found on the municipalities' sites"):
         if args.push:
             push()
     return 0

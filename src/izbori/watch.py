@@ -238,14 +238,56 @@ def save_store(root: Path, store: dict) -> None:
     (Path(root) / STORE).write_text(jsonfile.dumps(store, "docs"), encoding="utf-8")
 
 
+def variants(domain: str) -> list[str]:
+    """Other spellings of a municipality's site, for when the commission's e-mail domain doesn't answer: Valjevo's
+    mail is at valjevo.org.rs, its site at valjevo.rs. The same name under .rs, .org.rs and .ls.gov.rs."""
+    d = domain.lower().removeprefix("www.")
+    for tail in (".ls.gov.rs", ".org.rs", ".gov.rs", ".rs"):
+        if d.endswith(tail):
+            base = d[: -len(tail)]
+            break
+    else:
+        return []
+    if "." in base:  # grad.zrenjanin.rs, obrenovac.bg.ls.gov.rs: a name inside another; left as it is
+        return []
+    return [f"{base}{t}" for t in (".rs", ".org.rs", ".ls.gov.rs", ".gov.rs") if f"{base}{t}" != d]
+
+
+def answers(domain: str, fetcher=fetch) -> bool:
+    for r in (f"https://{domain}/", f"https://www.{domain}/", f"http://{domain}/", f"http://www.{domain}/"):
+        try:
+            fetcher(r)
+            return True
+        except Exception:  # noqa: BLE001 - the next spelling
+            continue
+    return False
+
+
+def save_sites(path: Path, sites: list[dict]) -> None:
+    cols = list(sites[0].keys()) if sites else ["municipality_code", "name", "domain", "note"]
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=cols, lineterminator="\n")
+        w.writeheader()
+        w.writerows(sites)
+
+
 def run(root: Path, today: str, log=print, fetcher=fetch, sleep=time.sleep, only: set | None = None) -> int:
-    """Visit every site with a domain; keep new documents; return how many are new."""
-    sites = [s for s in load_sites(Path(root) / SITES_FILE) if s.get("domain")]
+    """Visit every site with a domain; keep new documents; return how many are new. A site whose domain doesn't
+    answer is looked for under its other spellings (`variants`); one that answers replaces it in
+    municipal_sites.csv, the old one named in the note."""
+    all_sites = load_sites(Path(root) / SITES_FILE)
+    sites = [s for s in all_sites if s.get("domain")]
     if only:
         sites = [s for s in sites if s["municipality_code"] in only]
     store = load_store(root)
-    new = 0
+    new, moved = 0, False
     for s in sites:
+        if not answers(s["domain"], fetcher):
+            alt = next((v for v in variants(s["domain"]) if answers(v, fetcher)), None)
+            if alt:
+                log(f"{s['municipality_code']} {latin(s['name'])}: {s['domain']} doesn't answer, {alt} does")
+                s["note"] = (s.get("note", "") + f"; was {s['domain']}, found by the watch {today}").strip("; ")
+                s["domain"], moved = alt, True
         found = crawl(s["domain"], log, fetcher, sleep)
         fresh = {u: k for u, k in found.items() if u not in store["docs"]}
         for u, k in fresh.items():
@@ -257,5 +299,7 @@ def run(root: Path, today: str, log=print, fetcher=fetch, sleep=time.sleep, only
                 if k == "stations":
                     log(f"  candidate for station_lists.csv: <round>,{s['municipality_code']},{u},\"found on the site\"")
     save_store(root, store)
+    if moved:
+        save_sites(Path(root) / SITES_FILE, all_sites)
     log(f"{len(sites)} sites visited, {new} new documents, {len(store['docs'])} kept")
     return new

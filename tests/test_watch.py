@@ -81,3 +81,21 @@ def test_why_says_what_failed():
     import urllib.error
     assert watch.why(urllib.error.URLError("timed out")) == "URLError timed out"
     assert watch.why(urllib.error.HTTPError("u", 403, "Forbidden", {}, None)).startswith("HTTPError Forbidden")
+
+
+def test_other_spellings_of_a_site(tmp_path):
+    assert watch.variants("valjevo.org.rs") == ["valjevo.rs", "valjevo.ls.gov.rs", "valjevo.gov.rs"]
+    assert watch.variants("bojnik.ls.gov.rs")[0] == "bojnik.rs"
+    assert watch.variants("grad.zrenjanin.rs") == []
+    (tmp_path / "municipal_sites.csv").write_text(
+        "municipality_code,name,domain,note\n70360,Ваљево,valjevo.org.rs,rik-adresar\n", encoding="utf-8")
+
+    def fetcher(url):
+        if "valjevo.rs" not in url:
+            raise OSError("down")
+        return '<a href="/izbori/odluka-o-odredjivanju-birackih-mesta.pdf">Одлука о одређивању бирачких места</a>'
+    logged = []
+    assert watch.run(tmp_path, "2026-11-09", logged.append, fetcher, lambda s: None) == 1
+    sites = watch.load_sites(tmp_path / "municipal_sites.csv")
+    assert sites[0]["domain"] == "valjevo.rs" and "was valjevo.org.rs" in sites[0]["note"]
+    assert any("valjevo.org.rs doesn't answer, valjevo.rs does" in m for m in logged)
