@@ -10,7 +10,7 @@ municipality_code,name,domain,note
 70092,Градска општина Барајево,barajevo.bg.ls.gov.rs,rik-adresar
 70106,Градска општина Вождовац,vozdovac.rs,rik-adresar
 70114,Градска општина Врачар,vracar.rs,rik-adresar
-70122,Градска општина Гроцка,grocka.org.rs,rik-adresar
+70122,Градска општина Гроцка,grocka.rs,"rik-adresar; was grocka.org.rs, found by the watch 2026-11-09"
 70149,Градска општина Звездара,zvezdara.org.rs,rik-adresar
 70157,Градска општина Земун,zemun.rs,rik-adresar
 70165,Градска општина Лазаревац,lazarevac.rs,rik-adresar
@@ -24,8 +24,8 @@ municipality_code,name,domain,note
 70246,Градска општина Стари Град,starigrad.org.rs,rik-adresar
 70254,Градска општина Чукарица,cukarica.rs,rik-adresar
 70262,Блаце,blace.org.rs,rik-adresar
-70289,Богатић,bogatic.ls.gov.rs,rik-adresar
-70297,Бојник,bojnik.ls.gov.rs,rik-adresar
+70289,Богатић,bogatic.rs,"rik-adresar; was bogatic.ls.gov.rs, found by the watch 2026-11-09"
+70297,Бојник,bojnik.rs,"rik-adresar; was bojnik.ls.gov.rs, found by the watch 2026-11-09"
 70319,Бољевац,opstinaboljevac.rs,rik-adresar
 70327,Град Бор,bor.rs,rik-adresar
 70335,Босилеград,,"rik-adresar: a webmail address, site to find"
@@ -42,7 +42,7 @@ municipality_code,name,domain,note
 70459,Врњачка Бања,vrnjackabanja.gov.rs,rik-adresar
 70467,Гаџин Хан,gadzinhan.rs,rik-adresar
 70475,Голубац,golubac.org.rs,rik-adresar
-70483,Горњи Милановац,gornjimilanovac.ls.gov.rs,rik-adresar
+70483,Горњи Милановац,gornjimilanovac.rs,"rik-adresar; was gornjimilanovac.ls.gov.rs, found by the watch 2026-11-09"
 70491,Деспотовац,,"rik-adresar: a webmail address, site to find"
 70505,Димитровград,dimitrovgrad.rs,rik-adresar
 70513,Дољевац,opstinadoljevac.rs,rik-adresar
@@ -50,7 +50,7 @@ municipality_code,name,domain,note
 70530,Жагубица,opstinazagubica.rs,rik-adresar
 70548,Житорађа,zitoradja.org,rik-adresar
 70556,Град Зајечар,zajecar.info,rik-adresar
-70564,Ивањица,ivanjica.ls.gov.rs,rik-adresar
+70564,Ивањица,ivanjica.rs,"rik-adresar; was ivanjica.ls.gov.rs, found by the watch 2026-11-09"
 70572,Кладово,kladovo.org.rs,rik-adresar
 70599,Кнић,knic.rs,rik-adresar
 70602,Књажевац,knjazevac.rs,rik-adresar
@@ -75,15 +75,15 @@ municipality_code,name,domain,note
 70815,Медвеђа,medvedja.ls.gov.rs,rik-adresar
 70823,Мерошина,,"rik-adresar: a webmail address, site to find"
 70831,Мионица,mionica.rs,rik-adresar
-70840,Неготин,negotin.rs,"rik-adresar: a webmail address; the site found by search"
+70840,Неготин,negotin.rs,rik-adresar: a webmail address; the site found by search
 70866,Нова Варош,novavaros.rs,rik-adresar
 70874,Град Нови Пазар,novipazar.org.rs,rik-adresar
-70882,Осечина,osecina.rs,rik-adresar
+70882,Осечина,osecina.ls.gov.rs,"rik-adresar; was osecina.rs, found by the watch 2026-11-09"
 70904,Параћин,paracin.rs,rik-adresar
 70912,Петровац на Млави,petrovacnamlavi.rs,rik-adresar
 70939,Град Пирот,pirot.rs,rik-adresar
 70947,Град Пожаревац,pozarevac.rs,rik-adresar
-70955,Пожега,pozega.ls.gov.rs,rik-adresar
+70955,Пожега,pozega.org.rs,"rik-adresar; was pozega.ls.gov.rs, found by the watch 2026-11-09"
 70963,Прешево,presevo.rs,rik-adresar
 70971,Прибој,priboj.rs,rik-adresar
 70980,Пријепоље,prijepolje.ls.gov.rs,rik-adresar
