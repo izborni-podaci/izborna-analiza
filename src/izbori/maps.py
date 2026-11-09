@@ -119,14 +119,38 @@ def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[i
     if to is None:
         return "", []
     paths, texts, key = [], [], []
+    # names are placed widest settlement first; a name whose box would cover one already placed becomes a number
+    # with the name in the key (Vranje: 90 settlements, a crowd of names in the south)
+    spots = {}
+    for f in features:
+        label = f["properties"].get("census") or f["properties"].get("name") or ""
+        if label:
+            spot = label_point(f["geometry"], to)
+            if spot:
+                spots[id(f)] = (label, spot)
+    placed: list[tuple[float, float, float, float]] = []
+    numbered: list[tuple[str, tuple]] = []
+    for f in sorted(features, key=lambda f: -(spots[id(f)][1][2] if id(f) in spots else 0)):
+        if id(f) not in spots:
+            continue
+        label, spot = spots[id(f)]
+        if _lines(label, spot)[0] is None:
+            numbered.append((label, spot))
+            continue
+        box = label_box(label, spot, EXPORT_SCALE)
+        if any(_overlap(box, b) for b in placed):
+            numbered.append((label, spot))
+            continue
+        texts.append(name_label(label, spot, []))
+        placed.append(box)
+    # the numbers read from the top left, row by row, so a reader finds 12 near 11
+    for label, spot in sorted(numbered, key=lambda ls: (round(ls[1][1] / 40), ls[1][0])):
+        key.append(label)
+        texts.append(f'<text x="{spot[0]:.1f}" y="{spot[1]:.1f}" class="num">{len(key)}</text>')
     for f in sorted(features, key=lambda f: f["properties"].get("census") or ""):
         p = f["properties"]
         r = results.get(p.get("census") or "")
         cls, tip = "mp-none", escape(p.get("census") or p.get("name") or "")
-        label = p.get("census") or p.get("name") or ""
-        spot = label_point(f["geometry"], to) if label else None
-        if spot:
-            texts.append(name_label(label, spot, key))
         if r and r.get("leader") is not None:
             rank = ranks.get(r["leader"], PALETTE + 1)
             cls = f"mp-{min(rank, PALETTE + 1)}"
@@ -142,6 +166,45 @@ def settlement_map(features: list[dict], results: dict[str, dict], ranks: dict[i
                    f'<rect class="hf" width="3.5" height="7"/></pattern>' for k in range(1, PALETTE + 2))
     return (f'<svg class="smap" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}"><defs>{defs}</defs>'
             + "".join(paths) + "".join(texts) + "</svg>"), key
+
+
+def _overlap(a: tuple, b: tuple, gap: float = 1.0) -> bool:
+    return a[0] < b[2] + gap and b[0] < a[2] + gap and a[1] < b[3] + gap and b[1] < a[3] + gap
+
+
+EXPORT_SCALE = 1.6  # the shared image draws the map this much larger with names at their size (static/mun.js MAP_K)
+
+
+def label_box(label: str, spot: tuple, scale: float = 1.0) -> tuple[float, float, float, float] | None:
+    """The box name_label's text would take (x0, y0, x1, y1) in drawing units, the text `scale` times smaller than
+    its place (the shared image), or None when it would be a number anyway."""
+    lines, small = _lines(label, spot)
+    if lines is None:
+        return None
+    px, step = (SMALL_PX, 10) if small else (LABEL_PX, 12)
+    w = max(len(line) for line in lines) * px / scale
+    h = step * len(lines) / scale
+    x, y = spot[0], spot[1]
+    return (x - w / 2, y - h / 2, x + w / 2, y + h / 2)
+
+
+def _lines(label: str, spot: tuple) -> tuple[list[str] | None, bool]:
+    """name_label's choice: the lines of the name and whether small, or None for a number."""
+    x, y, width = spot
+    room = width + 10
+    words = label.split()
+    lines = [label]
+    if len(label) * LABEL_PX > room and len(words) > 1:
+        k = min(range(1, len(words)), key=lambda k: abs(len(" ".join(words[:k])) - len(" ".join(words[k:]))))
+        lines = [" ".join(words[:k]), " ".join(words[k:])]
+    longest = max(len(line) for line in lines)
+    if longest * LABEL_PX <= room:
+        return lines, False
+    if longest * SMALL_PX <= room:
+        return lines, True
+    if width >= NUMBER_MIN and longest * SMALL_PX <= room + 14:
+        return lines, True
+    return None, False
 
 
 def name_label(label: str, spot: tuple, key: list) -> str:

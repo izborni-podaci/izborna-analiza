@@ -1174,7 +1174,7 @@ class Site:
                            "turnout": {"mun": m["turnout"], "country": country["turnout"]},
                            "i18n": {"rule3": tt("co_w3_rule", number="{number}"), "ofRead": tt("co_w3_of", n="{n}"),
                                     "chartResult": tt("vi_chart_result"), "chartTurnout": tt("vi_chart_turnout"),
-                                    "country": tt("vi_chart_country"), "municipality": tt("vi_chart_mun"),
+                                    "country": tt("vi_chart_country"), "countryShort": tt("vi_chart_country_short"), "keyLabel": tt("vi_key_label"), "municipality": tt("vi_chart_mun"),
                                     "stations": tt("co_stations_word"), "stationNo": tt("station_no"),
                                     "panelTitle": tt("vi_panel_title", name="{name}", n="{n}"),
                                     "panelClose": tt("vi_panel_close"), "turnout": tt("turnout"), "station": tt("station"),

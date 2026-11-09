@@ -12,6 +12,7 @@
   --ink-2: #44607f;
   --grid: #e5ebf2;
   --axis: #b9c9dc;
+  --mp-none: #e6e3de;
   --border: #c5d2e2;
   --link: #1e3a5f;
   --link-hover: #8a6610;
@@ -36,7 +37,7 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #0b1526; --surface: #12213a; --ink: #e8eef6; --ink-2: #a9b9cc; --grid: #1f3250; --axis: #3a5578;
+  --page: #0b1526; --surface: #12213a; --ink: #e8eef6; --ink-2: #a9b9cc; --grid: #1f3250; --axis: #3a5578; --mp-none: #3b3a38;
   --border: #2a4060; --link: #e8eef6; --link-hover: #e4b94a;
   --brand: #142a47; --brand-2: #a9b9cc; --on-brand: #ffffff;
   --accent: #7fa6d6; --accent-track: #1f3250; --gold: #e4b94a; --gold-ink: #e4b94a;
@@ -49,7 +50,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --page: #0b1526; --surface: #12213a; --ink: #e8eef6; --ink-2: #a9b9cc; --grid: #1f3250; --axis: #3a5578;
+    --page: #0b1526; --surface: #12213a; --ink: #e8eef6; --ink-2: #a9b9cc; --grid: #1f3250; --axis: #3a5578; --mp-none: #3b3a38;
     --border: #2a4060; --link: #e8eef6; --link-hover: #e4b94a;
     --brand: #142a47; --brand-2: #a9b9cc; --on-brand: #ffffff;
     --accent: #7fa6d6; --accent-track: #1f3250; --gold: #e4b94a; --gold-ink: #e4b94a;
@@ -508,7 +509,7 @@ table.stations td b { font-weight: 600; }
 .vi-summary { max-width: 80ch; margin: 0 0 12px; }
 .smap-wrap { margin: 0 0 16px; }
 .smap { display: block; width: 100%; max-width: 640px; height: auto; }
-.smap .mp { stroke: var(--page); stroke-width: 1; fill: var(--axis); }
+.smap .mp { stroke: var(--page); stroke-width: 1; fill: var(--mp-none); }  /* no result: a grey with no blue in it */
 .smap .mp:hover { stroke: var(--ink); stroke-width: 1.5; }
 .smap path[role="button"] { cursor: pointer; }
 .smap .mp.mp-active { stroke: var(--gold); stroke-width: 2.5; }
@@ -531,7 +532,7 @@ table.stations td b { font-weight: 600; }
 .smap-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 4px; }
 .vi-facts { display: block; color: var(--ink); font-weight: 400; margin: 6px 0; }
 .vi-facts span { display: block; }
-.smap-legend .sw { display: inline-block; width: 14px; height: 10px; vertical-align: middle; margin-right: 5px; background: var(--axis); }
+.smap-legend .sw { display: inline-block; width: 14px; height: 10px; vertical-align: middle; margin-right: 5px; background: var(--mp-none); }
 .smap-legend .sw.mp-1 { background: var(--s1); } .smap-legend .sw.mp-2 { background: var(--s2); } .smap-legend .sw.mp-3 { background: var(--s3); }
 .smap-legend .sw.mp-4 { background: var(--s4); } .smap-legend .sw.mp-5 { background: var(--s5); } .smap-legend .sw.mp-6 { background: var(--s6); }
 .smap-legend .sw.mp-7 { background: var(--s7); } .smap-legend .sw.mp-8 { background: var(--s8); } .smap-legend .sw.mp-9 { background: var(--ink-2); }

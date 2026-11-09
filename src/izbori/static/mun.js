@@ -158,7 +158,7 @@
   // white background), a title, the legend, a few facts and the source line, drawn on a canvas at twice the
   // size and saved; everything happens in the browser, nothing is sent anywhere
   const LIGHT = { 1: '#2a78d6', 2: '#eb6834', 3: '#1baf7a', 4: '#eda100', 5: '#e87ba4', 6: '#008300', 7: '#6250d6',
-    8: '#e34948', 9: '#44607f', none: '#b9c9dc' }; // site.css :root --s1 … --s8, --ink-2, --axis
+    8: '#e34948', 9: '#44607f', none: '#e6e3de' }; // site.css :root --s1 … --s8, --ink-2, --mp-none (a grey with no blue in it)
   const colourOf = (el) => { const m = (el.getAttribute('class') || '').match(/mp-(\d|none)/); return m ? LIGHT[m[1]] : LIGHT.none; };
   const png = document.querySelector('[data-map-png]');
   const svg = document.querySelector('svg.smap');
@@ -177,16 +177,27 @@
         p.setAttribute('stroke', '#ffffff'); p.setAttribute('stroke-width', '1');
         p.querySelector('title') && p.removeChild(p.querySelector('title'));
       });
+      // the map is drawn MAP_K times its size on the page with its names at their size, so the settlements get
+      // more room around their names (Vranje: 90 settlements in 640 px were a crowd)
+      const MAP_K = 1.6;
+      copy.querySelectorAll('path').forEach((p) => p.setAttribute('stroke-width', String(1 / MAP_K)));
       copy.querySelectorAll('text').forEach((t) => {
         const cls = t.getAttribute('class') || '';
         t.setAttribute('font-family', 'system-ui, sans-serif'); t.setAttribute('fill', '#0f1f33');
-        t.setAttribute('font-size', /small/.test(cls) ? '9' : /num/.test(cls) ? '10' : '11');
+        t.setAttribute('font-size', String((/small/.test(cls) ? 9 : /num/.test(cls) ? 10 : 11) / MAP_K));
         if (/num/.test(cls)) t.setAttribute('font-weight', '700');
         t.setAttribute('text-anchor', 'middle'); t.setAttribute('dominant-baseline', 'middle');
-        t.setAttribute('paint-order', 'stroke'); t.setAttribute('stroke', '#ffffff'); t.setAttribute('stroke-width', '3'); t.setAttribute('stroke-linejoin', 'round');
+        t.setAttribute('paint-order', 'stroke'); t.setAttribute('stroke', '#ffffff'); t.setAttribute('stroke-width', String(3 / MAP_K)); t.setAttribute('stroke-linejoin', 'round');
       });
       copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      const [, , vw, vh] = copy.getAttribute('viewBox').split(' ').map(Number);
+      // the drawing cropped to the municipality's own outline: a narrow one left the right of the box empty
+      let bb = null;
+      try { bb = svg.getBBox(); } catch (e) { bb = null; }
+      if (bb && bb.width > 0 && bb.height > 0) {
+        copy.setAttribute('viewBox', [bb.x - 4, bb.y - 4, bb.width + 8, bb.height + 8].map((x) => x.toFixed(1)).join(' '));
+      }
+      const [, , vw0, vh0] = copy.getAttribute('viewBox').split(' ').map(Number);
+      const vw = vw0 * MAP_K; const vh = vh0 * MAP_K;
       const scale = 2; const pad = 28; const top = 96; const gap = 36; const colW = 440;
       const W = vw + 2 * pad + gap + colW;  // the map on the left, two charts on the right
       // the charts' data: the municipality's result (top six lists, with the country's share as a tick) and
@@ -199,20 +210,23 @@
       const bySet = new Map();
       data.stations.forEach((st) => { if (!st.set || st.turnout === null) return; const g = bySet.get(st.set) || { name: st.set, reg: 0, voted: 0 }; g.reg += st.reg; g.voted += Math.round(st.turnout * st.reg); bySet.set(st.set, g); });
       const turnout = [...bySet.values()].sort((a, b) => b.reg - a.reg).slice(0, 12).map((g) => ({ name: g.name, t: g.reg ? g.voted / g.reg : 0 })).sort((a, b) => b.t - a.t);
-      const chartH = 30 + result.length * 24 + 40 + 30 + turnout.length * 20 + 20;
+      const chartH = 30 + result.length * 24 + 40 + 30 + turnout.length * 20 + 20 + 32;
       const legend = [...document.querySelectorAll('.smap-legend > span')].map((sp) => {
         const sw = sp.querySelector('.sw'); const cls = sw.getAttribute('class') || '';
         return { text: sp.textContent.trim(), colour: /mp-close-sw/.test(cls) ? 'hatch' : colourOf(sw) };
       });
-      const keyEl = document.querySelector('[data-map-key]');
-      const facts = (keyEl ? [keyEl.textContent.replace(/\s+/g, ' ').trim()] : []).concat([...document.querySelectorAll('.vi-facts [data-fact]')].map((f) => f.textContent.trim()));
+      // the numbers' key goes beside the map, under the charts, small and in two columns
+      const keyItems = [...document.querySelectorAll('[data-map-key] > span')].map((sp) => sp.textContent.trim());
+      const keyH = keyItems.length ? 24 + Math.ceil(keyItems.length / 2) * 17 : 0;
+      const facts = [...document.querySelectorAll('.vi-facts [data-fact]')].map((f) => f.textContent.trim());
       const rows = Math.ceil(legend.length / 2);
       // wrap a fact to the width of the image
       const probe = document.createElement('canvas').getContext('2d'); probe.font = '14px system-ui, sans-serif';
       const lines = [];
       facts.forEach((f) => { let line = ''; f.split(' ').forEach((w) => { const tryLine = line ? line + ' ' + w : w; if (probe.measureText(tryLine).width > W - 2 * pad - 20 && line) { lines.push(line); line = w; } else line = tryLine; }); if (line) lines.push(line); });
       const mapH = vh + 24 + rows * 26;
-      const H = top + Math.max(mapH, chartH) + (lines.length ? 16 + lines.length * 22 : 0) + 56;
+      const sideH = chartH + (keyH ? 24 + keyH : 0);
+      const H = top + Math.max(mapH, sideH) + (lines.length ? 16 + lines.length * 22 : 0) + 56;
       const canvas = document.createElement('canvas'); canvas.width = W * scale; canvas.height = H * scale;
       const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
@@ -244,7 +258,10 @@
         // the charts
         const cx = pad + vw + gap; let cy = top + 8;
         const barX = cx + 150; const barW = colW - 150 - 56;
-        ctx.fillStyle = '#0f1f33'; ctx.font = '600 15px system-ui, sans-serif'; ctx.fillText(L.chartResult, cx, cy); cy += 16;
+        ctx.fillStyle = '#0f1f33'; ctx.font = '600 15px system-ui, sans-serif'; ctx.fillText(L.chartResult, cx, cy); cy += 18;
+        // what the upright tick is, said before the bars: the list's result in the whole country
+        ctx.fillStyle = '#0f1f33'; ctx.fillRect(cx, cy - 9, 2, 14);
+        ctx.fillStyle = '#44607f'; ctx.font = '12px system-ui, sans-serif'; ctx.fillText(L.country, cx + 8, cy + 2); cy += 14;
         const maxShare = Math.max(0.01, ...result.map((r) => Math.max(r.share, r.country || 0)));
         ctx.font = '13px system-ui, sans-serif';
         result.forEach((r) => {
@@ -254,10 +271,14 @@
           if (r.country !== null && r.country !== undefined) { const tw = barW * r.country / maxShare; ctx.fillStyle = '#0f1f33'; ctx.fillRect(barX + tw - 1, cy - 3, 2, 22); end = Math.max(end, tw); }
           ctx.fillStyle = '#0f1f33'; ctx.textAlign = 'right'; ctx.fillText(r.label.length > 22 ? r.label.slice(0, 21) + '…' : r.label, barX - 8, cy + 12);
           ctx.textAlign = 'left'; ctx.fillText(pct(r.share), barX + end + 6, cy + 12);
+          if (r === result[0] && r.country !== null && r.country !== undefined) {  // the first tick named in place
+            ctx.fillStyle = '#44607f'; ctx.font = '11px system-ui, sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(L.countryShort + ' ' + pct(r.country), barX + barW * r.country / maxShare, cy - 6);
+            ctx.textAlign = 'left'; ctx.font = '13px system-ui, sans-serif'; ctx.fillStyle = '#0f1f33';
+          }
           cy += 24;
         });
-        ctx.fillStyle = '#44607f'; ctx.font = '12px system-ui, sans-serif';
-        ctx.fillRect(barX, cy + 2, 2, 12); ctx.fillText(L.country, barX + 8, cy + 12); cy += 40;
+        cy += 26;
         if (turnout.length > 1) {
           ctx.fillStyle = '#0f1f33'; ctx.font = '600 15px system-ui, sans-serif'; ctx.fillText(L.chartTurnout, cx, cy); cy += 16;
           const maxT = Math.max(0.01, ...turnout.map((g) => g.t), data.turnout.mun || 0);
@@ -275,7 +296,15 @@
             ctx.fillStyle = '#8a6610'; ctx.fillText(L.municipality + ' ' + pct(data.turnout.mun), Math.min(mx + 6, cx + colW - 110), cy + 12);
           }
         }
-        y = top + Math.max(mapH, chartH) - 4;
+        if (keyItems.length) {  // the key of the numbers on the map
+          cy += 36;
+          ctx.textAlign = 'left'; ctx.fillStyle = '#44607f'; ctx.font = '600 12px system-ui, sans-serif';
+          ctx.fillText(L.keyLabel, cx, cy); cy += 20;
+          ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = '#0f1f33';
+          const half = Math.ceil(keyItems.length / 2);
+          keyItems.forEach((k, i) => ctx.fillText(k, cx + (i < half ? 0 : colW / 2), cy + (i % half) * 17));
+        }
+        y = top + Math.max(mapH, sideH) - 4;
         if (lines.length) {
           y += 16; ctx.fillStyle = '#0f1f33'; ctx.font = '14px system-ui, sans-serif';
           lines.forEach((l) => { y += 22; ctx.fillText('· ' + l, pad, y); });

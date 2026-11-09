@@ -46,3 +46,13 @@ def test_slots_keep_the_maintainers_colours(tmp_path):
     f.write_text("round,number,colour,note\n1,3,red,x\n1,1,blue,y\n1,5,mauve,no such colour\n", encoding="utf-8")
     assert maps.load_colours(f) == {("1", 3): 8, ("1", 1): 1}
     assert maps.load_colours(tmp_path / "none.csv") == {}
+
+
+def test_a_name_that_would_cover_another_becomes_a_number():
+    """Two wide settlements side by side whose names would overlap: the wider keeps its name, the other a number."""
+    feats = [{"type": "Feature", "properties": {"code": "1", "name": "Велико Село", "census": "Велико Село"},
+              "geometry": square(21, 43, 0.2)},
+             {"type": "Feature", "properties": {"code": "2", "name": "Мало Поље", "census": "Мало Поље"},
+              "geometry": {"type": "Polygon", "coordinates": [[[21.09, 43.09], [21.11, 43.09], [21.11, 43.11], [21.09, 43.11], [21.09, 43.09]]]}}]
+    svg, key = maps.settlement_map(feats, {}, {}, {}, "x", str)
+    assert key == ["Мало Поље"] and ">Велико Село<" in svg and 'class="num">1<' in svg

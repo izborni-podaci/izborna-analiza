@@ -506,6 +506,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   cell of several lines puts the start of a row's address above its number in the extracted text. Now both
   alignments are read and the one agreeing with more of the board decisions' explicit addresses is kept; an act
   agreeing with under 60% of at least four is set aside whole, and an explicit address beats the act's row.
+- **9 Nov 2026, the shared map image.** Marko: the numbered settlements looked like a bug (a key with no heading,
+  among the facts), the country tick wasn't explained, Vranje's 90 settlements were a crowd, and the no-result grey
+  was too close to the blue list. Now: the map is drawn 1.6× with names at their size and cropped to the outline;
+  a name that would cover a wider settlement's name becomes a number (`maps.label_box`, judged at that scale),
+  numbered row by row; the key sits beside the map under the charts, small, with a heading; the tick is explained
+  under the chart's title and labelled on the first bar; `--mp-none` is a neutral grey (light #e6e3de, dark #3b3a38).
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);
