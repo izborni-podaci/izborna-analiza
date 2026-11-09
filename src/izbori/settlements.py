@@ -352,13 +352,16 @@ def join(stations: list[Station], census: Census, addresses: dict[str, str], rid
                 continue
             if log:
                 log(f"{RULES_FILE}: {rid} {s.key}: {manual} is not a settlement of {s.municipality}")
-        in_act = (listed or {}).get(s.key)  # the commission's decision on polling stations names the settlement
-        if in_act:
+        hit = match(s, us, addresses.get(s.key, ""))
+        # the commission's decision on polling stations names the settlement; but an address read from the board
+        # decision that names one itself wins: cutting an act into rows is the weaker reading (Barajevo, 2026: the
+        # act's rows came out shifted and put four village stations in their neighbours' villages)
+        in_act = (listed or {}).get(s.key)
+        if in_act and not (hit and hit[2] == "address"):
             found = [u for u in us if in_act in u.settlements]
             if found:
                 out[s.key] = {"u": found[0].key, "s": in_act, "m": "list"}
                 continue
-        hit = match(s, us, addresses.get(s.key, ""))
         if hit:
             out[s.key] = {"u": hit[0].key, "s": hit[1], "m": hit[2]}
             continue

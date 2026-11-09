@@ -101,17 +101,53 @@ def settlement_in(row: str, known: list[tuple[str, str, object]]) -> str | None:
     return min(found, key=found.get)  # one name, or the first in the row (the area column comes last)
 
 
-def read_act(text: str, stations: list, units: list) -> dict[str, dict]:
+AGREE_MIN = 0.6  # an act whose rows agree with fewer of the explicit addresses than this is set aside
+AGREE_CHECKS = 4  # … when at least this many stations have one to compare
+
+
+def read_act(text: str, stations: list, units: list, checks: dict[str, str] | None = None,
+             report: dict | None = None) -> dict[str, dict]:
     """Per station key, the settlement its row of the act names. The act's row for a station must also share a
     word with the station's name in the results (or that name is a bare kind of building), so a renumbering
-    between the act and the vote doesn't put a station in another station's settlement."""
+    between the act and the vote doesn't put a station in another station's settlement.
+
+    checks: station key → the settlement an address in its board decision names explicitly. A table's cells of
+    several lines put the start of a row's address above its number in the extracted text, so a row can belong
+    to the text before its number, not after (Barajevo, Varvarin, Dimitrovgrad, Odžaci 2026: every village one
+    station off). Both readings are tried and the one agreeing with more of the checks is kept; an act agreeing
+    with too few is set aside whole (AGREE_MIN). `report` gets the reading kept and its agreement."""
+    by_number = {int(s.number): s for s in stations if s.number.isdigit()}
+    if not by_number:
+        return {}
+    after = rows(text, max(by_number))
+    before = {n: after[n - 1] for n in after if n - 1 in after}
+    if 1 in after:
+        before[1] = text[: text.find(after[1])] if after[1] in text else ""
+    best, best_score = {}, (-1, 0)
+    for name, cut in (("after", after), ("before", before)):
+        got = _read_rows(cut, by_number, units)
+        compared = [k for k in got if checks and k in checks]
+        agree = sum(1 for k in compared if got[k]["s"] == checks[k])
+        score = (agree, -len(compared))
+        if report is not None:
+            report[name] = (agree, len(compared))
+        if score > best_score:
+            best, best_score, kept = got, score, name
+    compared = report[kept][1] if report is not None else 0
+    if report is not None:
+        report["kept"] = kept
+    if compared >= AGREE_CHECKS and best_score[0] < AGREE_MIN * compared:
+        if report is not None:
+            report["kept"] = None
+        return {}
+    return best
+
+
+def _read_rows(cut: dict[int, str], by_number: dict, units: list) -> dict[str, dict]:
     from izbori.places import words
     known = names(units)
-    by_number = {int(s.number): s for s in stations if s.number.isdigit()}
     out: dict[str, dict] = {}
-    if not by_number:
-        return out
-    for n, row in rows(text, max(by_number)).items():
+    for n, row in cut.items():
         s = by_number.get(n)
         if s is None:
             continue

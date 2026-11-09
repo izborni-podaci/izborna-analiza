@@ -258,5 +258,28 @@ def test_a_decision_on_polling_stations_names_each_settlement(tmp_path):
     rows = stationlist.rows("1. Школа, Голубинци 2\n2. Дом, кућни број 12\n3. Трећи", 3)
     assert rows == {1: " Школа, Голубинци 2", 2: " Дом, кућни број 12", 3: " Трећи"}  # 12 and 2 inside rows pass
     # the join takes the act's settlement before the address, and passes it on like any certain rule
-    got = S.join(stations[:2], c, {"80357/2": "Дом културе, Стара Пазова"}, "r1", listed={"80357/2": "Голубинци"})
+    got = S.join(stations[:2], c, {"80357/2": "Дом културе, Путиначка 2"}, "r1", listed={"80357/2": "Голубинци"})
     assert got["80357/2"] == {"u": "Стара Пазова", "s": "Голубинци", "m": "list"} and "list" in S.DIRECT
+    # an address that names a settlement itself wins over the act's row (rows can come out shifted)
+    got = S.join(stations[:2], c, {"80357/2": "Дом културе, Голубинци, Путиначка 2"}, "r1", listed={"80357/2": "Нови Бановци"})
+    assert got["80357/2"]["s"] == "Голубинци" and got["80357/2"]["m"] == "address"
+
+
+def test_an_act_whose_rows_sit_above_their_numbers(tmp_path):
+    """Cells of several lines put a row's address above its number in the extracted text (Barajevo 2026): the
+    reading agreeing with the board decisions' explicit addresses is kept, and an act agreeing with too few of
+    them is set aside."""
+    from izbori import stationlist
+    c = census(tmp_path)
+    units = c.for_round([st("1")])["80357"]
+    act = ("РЕШЕЊЕ\nДом културе Голубинци\n1\nМесна заједница Нови Бановци\n2\nДом Стари Бановци\n3\nкрај\n")
+    stations = [st("1", "ДОМ КУЛТУРЕ"), st("2", "МЕСНА ЗАЈЕДНИЦА"), st("3", "ДОМ")]
+    checks = {"80357/1": "Голубинци", "80357/2": "Нови Бановци", "80357/3": "Стари Бановци"}
+    rep = {}
+    got = stationlist.read_act(act, stations, units, checks, rep)
+    assert rep["kept"] == "before" and {k: v["s"] for k, v in got.items()} == checks
+    act5 = act.replace("крај", "Школа Голубинци\n4\nШкола Нови Бановци\n5\nкрај")
+    wrong = {f"80357/{n}": "Стара Пазова" for n in range(1, 6)}
+    rep = {}
+    more = stations + [st("4", "ШКОЛА"), st("5", "ШКОЛА")]
+    assert stationlist.read_act(act5, more, units, wrong, rep) == {} and rep["kept"] is None

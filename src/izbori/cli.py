@@ -523,12 +523,20 @@ def cmd_stationlist(args) -> int:
         return 0
     table = Path(args.data) / settlements.TABLE
     census = settlements.Census(settlements.load_units(table))
+    from izbori import boards
     client = Client()
     written = []
     for rid in sorted({a["round"] for a in acts}):
         rnd = archive.load(rid)
         units = census.for_round(rnd.stations)
         store = stationlist.load_store(archive.dir(rid))
+        # the settlements the board decisions' addresses name explicitly, to tell an act's two readings apart
+        addresses = boards.addresses(boards.load_store(archive.dir(rid)))
+        checks = {}
+        for s in rnd.stations:
+            hit = settlements.match(s, units.get(s.municipality_code, []), addresses.get(s.key, ""))
+            if hit and hit[2] == "address":
+                checks[s.key] = hit[1]
         changed = False
         for act in (a for a in acts if a["round"] == rid):
             code, url = act["municipality_code"], act["url"]
@@ -547,11 +555,13 @@ def cmd_stationlist(args) -> int:
                 log(f"{rid} {code}: {url}: {type(e).__name__}")
                 continue
             stations = [s for s in rnd.stations if s.municipality_code == code]
-            found = stationlist.read_act(text, stations, units.get(code, []))
+            rep: dict = {}
+            found = stationlist.read_act(text, stations, units.get(code, []), checks, rep)
             ok = sum(1 for v in found.values() if v["ok"])
             log(f"{rid} {code}: {len(stations)} stations, rows with a settlement {len(found)}, matching the station's "
-                f"name {ok}")
-            store["docs"][url] = {"m": code, "rows": len(found), "ok": ok}
+                f"name {ok}; agreeing with the addresses: after the number {rep.get('after')}, before it "
+                f"{rep.get('before')}, kept {rep.get('kept')}")
+            store["docs"][url] = {"m": code, "rows": len(found), "ok": ok, "read": rep.get("kept")}
             store["stations"] = {k: v for k, v in store["stations"].items() if not k.startswith(code + "/")}
             store["stations"].update(found)
             changed = True

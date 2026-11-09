@@ -502,6 +502,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   address rule, passed on to other elections), the **stations** workflow runs it. An act of 2023 serves 2026
   through the places. Rows must look like the station (a shared word in the name) so a renumbering can't move a
   station to another's settlement.
+  9 Nov: the first reads put whole villages one station off (Barajevo, Varvarin, Dimitrovgrad, Odžaci): a table
+  cell of several lines puts the start of a row's address above its number in the extracted text. Now both
+  alignments are read and the one agreeing with more of the board decisions' explicit addresses is kept; an act
+  agreeing with under 60% of at least four is set aside whole, and an explicit address beats the act's row.
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);
