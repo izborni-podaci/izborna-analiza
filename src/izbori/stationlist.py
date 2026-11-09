@@ -90,17 +90,15 @@ def rows(text: str, count: int) -> dict[int, str]:
 def settlement_in(row: str, known: list[tuple[str, str, object]]) -> str | None:
     """The census settlement a row names: the first one found (longest names first) whose whole words stand in the
     row; None when none or several different ones."""
-    found: list[str] = []
+    found: dict[str, int] = {}  # printed name → where its (compared) name first stands in the row
     r = f" {norm(row)} "
     for n, printed, _ in known:
-        if f" {n} " in r and printed not in found:
-            found.append(printed)
-    if len(found) == 1:
-        return found[0]
-    if len(found) > 1:  # the first in the row's text, when clearly before the others (the area column comes last)
-        first = min(found, key=lambda p: r.index(f" {norm(p)} "))
-        return first
-    return None
+        at = r.find(f" {n} ")
+        if at >= 0 and printed not in found:
+            found[printed] = at
+    if not found:
+        return None
+    return min(found, key=found.get)  # one name, or the first in the row (the area column comes last)
 
 
 def read_act(text: str, stations: list, units: list) -> dict[str, dict]:
