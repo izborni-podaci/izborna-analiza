@@ -23,3 +23,7 @@ def test_stations_go_to_their_buildings_quarter():
     assert got == {"1": "Лиман 1", "2": "Адице", "3": "Телеп", "4": "Грбавица", "8": "Грбавица",
                    "9": "Ново насеље", "10": "Телеп"}  # 9: the primary school, by the name people use
     # 5: a school of that name in two quarters; 6: a community hall named like a school; 7: another settlement
+
+
+def test_names():
+    assert quarters.names(AREA) == ("Општина Нови Сад", "Град Нови Сад")

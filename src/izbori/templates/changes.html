@@ -29,7 +29,7 @@
   {% for c in changes %}
     <tr>
       <td>{{ time(c.t) }}</td>
-      <td>{% if c.s %}<a href="{{ link(base + 'm/' ~ c.s.municipality_code ~ '.html') }}#bm-{{ c.s.number }}">{{ name(c.s.municipality) }} · {{ c.s.number }}</a>{% else %}{{ c.key }}{% endif %}</td>
+      <td>{% if c.s %}<a href="{{ link(base + 'm/' ~ c.s.municipality_code ~ '.html') }}#bm-{{ c.s.number }}">{{ name(mname(c.s.municipality)) }} · {{ c.s.number }}</a>{% else %}{{ c.key }}{% endif %}</td>
       <td>{{ c.field }}</td>
       <td class="num">{% if c.before_url %}<a href="{{ c.before_url }}" target="_blank">{{ t('minutes_old') }}</a>{% else %}{{ c.before or '—' }}{% endif %}</td>
       <td class="num">{% if c.now_url %}<a href="{{ c.now_url }}" target="_blank">{{ t('minutes_new') }}</a>{% else %}{{ c.now or '—' }}{% endif %}</td>

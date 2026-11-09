@@ -2,10 +2,14 @@
 {% import "_macros.html" as mx with context %}
 {% block title %}{{ name(m.name) }}{% if not canonical %} · {{ rtitle }}{% endif %}{% endblock %}
 {% block main %}
+{% set q = '_q' if part else '' %}
 {# One page per municipality (8 Nov 2026): at m/<code>.html (canonical) the newest election in full with the other
    elections at the end; at r/<id>/m/<code>.html the same page for that election, the history only when it is the
    newest. The strip under the title moves between them. #}
-{% if canonical %}
+{% if part %}
+{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(part_info.whole), mun_href(m.code)), (name(m.name), none)]) }}
+<p class="kicker">{{ name(m.district) }} · {{ t('part_kicker', whole=name(part_info.whole)) }}</p>
+{% elif canonical %}
 {{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(m.name), none)]) }}
 <p class="kicker">{% if m.kind == 'domestic' %}{{ name(m.district) }} · {% endif %}{{ t('mun_kicker') }}</p>
 {% else %}
@@ -13,9 +17,9 @@
 <p class="kicker">{{ rtitle }}{% if m.kind == 'domestic' %} · {{ name(m.district) }}{% endif %}</p>
 {% endif %}
 <h1>{{ name(m.name) }}</h1>
-<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }} · {{ t('registered') }}: {{ i(m.registered) }}{% if history %} · {{ t('mun_in_elections', n=i(history.n)) if history.n > 1 else t('mun_in_one_election') }} · <a href="{{ root }}feed/{{ m.code }}.{{ 'en' if loc == 'en' else 'sr' }}.xml" type="application/atom+xml">{{ t('mun_feed_short') }}</a> · <a href="{{ root }}api/m/{{ m.code }}.json" type="application/json">{{ t('json_link') }}</a>{% else %} · <a href="{{ mun_href(m.code) }}">{{ t('mun_across_link') }}</a>{% endif %}{% if city %} · <a href="{{ city_href(city.slug) }}">{{ t('mun_city_own' if city.own else 'mun_city_link', city=name(city.name), n=i(city.n)) }}</a>{% endif %}</p>
+<p class="mun-line">{{ t('mun_stations', n=i(m.stations)) if m.counted == m.stations else t('mun_stations_counted', n=i(m.stations), counted=i(m.counted)) }} · {{ t('registered') }}: {{ i(m.registered) }}{% if history %} · {{ t('mun_in_elections', n=i(history.n)) if history.n > 1 else t('mun_in_one_election') }} · <a href="{{ root }}feed/{{ m.code }}.{{ 'en' if loc == 'en' else 'sr' }}.xml" type="application/atom+xml">{{ t('mun_feed_short') }}</a> · <a href="{{ root }}api/m/{{ m.code }}.json" type="application/json">{{ t('json_link') }}</a>{% elif part %} · <a href="{{ mun_href(m.code) }}">{{ name(part_info.whole) }}</a>{% else %} · <a href="{{ mun_href(m.code) }}">{{ t('mun_across_link') }}</a>{% endif %}{% if city %} · <a href="{{ city_href(city.slug) }}">{{ t('mun_city_own' if city.own else 'mun_city_link', city=name(city.name), n=i(city.n)) }}</a>{% endif %}</p>
 <nav class="toc" aria-label="{{ t('on_this_page') }}">
-  <a href="#compare">{{ t('co_compare_heading') }}</a>{% if weak %} · <a href="#weak">{{ t('co_weak_heading') }}</a>{% endif %}{% if devs %} · <a href="#my-list-chart">{{ t('co_dev_heading') }}</a>{% endif %} · <a href="#result">{{ t('mun_result_heading') }}</a>{% if villages|length > 1 %} · <a href="#naselja">{{ t('vi_heading') }}</a>{% endif %} · <a href="#stations">{{ t('stations_heading') }}</a>{% if history %} · <a href="#kroz-izbore">{{ t('mun_across_heading') }}</a>{% endif %}
+  <a href="#compare">{{ t('co_compare_heading') }}</a>{% if weak %} · <a href="#weak">{{ t('co_weak_heading') }}</a>{% endif %}{% if devs %} · <a href="#my-list-chart">{{ t('co_dev_heading') }}</a>{% endif %} · <a href="#result">{{ t('mun_result_heading') }}</a>{% if villages|length > 1 %} · <a href="#naselja">{{ t('vi_heading' ~ q) }}</a>{% endif %} · <a href="#stations">{{ t('stations_heading') }}</a>{% if history %} · <a href="#kroz-izbore">{{ t('mun_across_heading') }}</a>{% endif %}
 </nav>
 {% if strip|length > 1 %}
 <nav class="el-strip" aria-label="{{ t('mun_strip_label') }}">
@@ -142,46 +146,33 @@
 {% set placed = villages|selectattr('name')|list %}
 {% if placed|length > 1 %}
 <section class="villages" id="naselja">
-  <div class="sec-head"><h2>{{ t('vi_heading') }}</h2><span class="muted">{{ t('vi_note') }}</span></div>
+  <div class="sec-head"><h2>{{ t('vi_heading' ~ q) }}</h2><span class="muted">{{ t('vi_note' ~ q) }}</span></div>
   {% if village_leaders %}
   {% set parts = [] %}
   {% for li, names in village_leaders %}{% set shown = [] %}{% for nm in names %}{% set _ = shown.append(name(nm)) %}{% endfor %}{% set _ = parts.append(t('vi_part_one' if names|length == 1 else 'vi_part', list=name(labels[li]), n=i(names|length), names=shown|join(', '))) %}{% endfor %}
-  <p class="vi-summary">{{ t('vi_summary', n=i(placed|length), parts=parts|join('; ')) }}</p>
+  <p class="vi-summary">{{ t('vi_summary' ~ q, n=i(placed|length), parts=parts|join('; ')) }}</p>
   {% endif %}
   {% if village_map %}
-  <figure class="smap-wrap" data-map-main>
+  <figure class="smap-wrap" data-map-main{% if city_link %} data-city="{{ city_link.name }}" data-city-href="{{ mun_href(m.code) }}grad/"{% endif %}>
     {{ village_map|safe }}
     <figcaption class="small muted">
-      <span class="smap-legend">{% for g in village_legend %}<span>{% for _, a in lead_ramp %}<i class="sw sw-step {{ g.cls }}{% if loop.last %} sw-deep{% endif %}" style="opacity:{{ a }}"></i>{% endfor %}{{ name(g.label) }} ({{ i(g.n) }})</span>{% endfor %}<span><i class="sw mp-close-sw"></i>{{ t('vi_legend_close') }}</span><span><i class="sw mp-none"></i>{{ t('vi_legend_none') }}</span><span class="smap-ramp" data-ramp><b>{{ t('vi_ramp_lead') }}</b>{% for lab, a in lead_ramp %}<span><i class="sw mp-9{% if loop.last %} sw-deep{% endif %}" style="opacity:{{ a }}"></i>{{ lab }}</span>{% endfor %}</span></span>
+      <span class="smap-legend">{% for g in village_legend %}<span>{% for _, a in lead_ramp %}<i class="sw sw-step {{ g.cls }}{% if loop.last %} sw-deep{% endif %}" style="opacity:{{ a }}"></i>{% endfor %}{{ name(g.label) }} ({{ i(g.n) }})</span>{% endfor %}<span><i class="sw mp-close-sw"></i>{{ t('vi_legend_close') }}</span><span><i class="sw mp-none"></i>{{ t('vi_legend_none' ~ q) }}</span><span class="smap-ramp" data-ramp><b>{{ t('vi_ramp_lead') }}</b>{% for lab, a in lead_ramp %}<span><i class="sw mp-9{% if loop.last %} sw-deep{% endif %}" style="opacity:{{ a }}"></i>{{ lab }}</span>{% endfor %}</span></span>
       {% if village_key %}<span class="smap-key" data-map-key>{{ t('vi_key_label') }} {% for nm in village_key %}<span>{{ loop.index }} {{ name(nm) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
       {% if village_facts %}<span class="vi-facts">{% for f in village_facts %}<span data-fact>{{ name(f) }}</span>{% endfor %}</span>{% endif %}
-      {% if zoom_map %}<span class="smap-zoom-hint">{{ t('vi_zoom_hint', city=name(zoom_info.city)) }}</span>{% endif %}
-      {{ t('vi_map_note', mapped=i(mapped), n=i(placed|length)) }} {{ t('map_source') }}
-      <button type="button" class="link-button" data-map-png data-title="{{ name(m.name) }} · {{ rshort }}" data-file="{{ rnd.id }}-{{ m.code }}-naselja.png" data-source="{{ t('vi_png_source', site=mun_url(m.code)) }}" hidden>{{ t('vi_png') }}</button>
+      {% if city_link %}<a class="smap-zoom-hint" href="{{ mun_href(m.code) }}grad/">{{ t('vi_part_link', city=name(city_link.name), part=name(t('part_name', city=city_link.name))) }}</a>{% endif %}
+      {% if part %}{{ t('vi_zoom_note', placed=i(part_info.placed), n=i(part_info.n), city=name(part_info.city)) }} {{ t('quarters_source') }}{% else %}{{ t('vi_map_note', mapped=i(mapped), n=i(placed|length)) }} {{ t('map_source') }}{% endif %}
+      <button type="button" class="link-button" data-map-png data-title="{{ name(m.name) }} · {{ rshort }}" data-file="{{ rnd.id }}-{{ m.code }}-{{ 'cetvrti' if part else 'naselja' }}.png" data-source="{{ t('vi_png_source', site=share_url) }}" hidden>{{ t('vi_png') }}</button>
     </figcaption>
   </figure>
-  {% if zoom_map %}
-  {# the city settlement by its quarters (9 Nov 2026): opened by a click on it on the map above #}
-  <figure class="smap-wrap smap-zoom" data-map-zoom="{{ zoom_info.city }}" data-heading="{{ t('vi_zoom_title', city=name(zoom_info.city)) }}" hidden>
-    <p class="smap-zoom-head"><button type="button" class="link-button" data-zoom-back>{{ t('vi_zoom_back', name=name(m.name)) }}</button> · <strong>{{ t('vi_zoom_title', city=name(zoom_info.city)) }}</strong></p>
-    {{ zoom_map|safe }}
-    <figcaption class="small muted">
-      <span class="smap-legend">{% for g in zoom_info.legend %}<span>{% for _, a in lead_ramp %}<i class="sw sw-step {{ g.cls }}{% if loop.last %} sw-deep{% endif %}" style="opacity:{{ a }}"></i>{% endfor %}{{ name(g.label) }} ({{ i(g.n) }})</span>{% endfor %}<span><i class="sw mp-close-sw"></i>{{ t('vi_legend_close') }}</span><span><i class="sw mp-none"></i>{{ t('vi_zoom_none') }}</span><span class="smap-ramp" data-ramp><b>{{ t('vi_ramp_lead') }}</b>{% for lab, a in lead_ramp %}<span><i class="sw mp-9{% if loop.last %} sw-deep{% endif %}" style="opacity:{{ a }}"></i>{{ lab }}</span>{% endfor %}</span></span>
-      {% if zoom_key %}<span class="smap-key" data-map-key>{{ t('vi_key_label') }} {% for nm in zoom_key %}<span>{{ loop.index }} {{ name(nm) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
-      {{ t('vi_zoom_note', placed=i(zoom_info.placed), n=i(zoom_info.n), city=name(zoom_info.city)) }} {{ t('quarters_source') }}
-      <button type="button" class="link-button" data-map-png data-title="{{ name(m.name) }} · {{ rshort }}" data-file="{{ rnd.id }}-{{ m.code }}-cetvrti.png" data-source="{{ t('vi_png_source', site=mun_url(m.code)) }}" hidden>{{ t('vi_png') }}</button>
-    </figcaption>
-  </figure>
-  {% endif %}
   <div class="vi-panel" data-village-panel hidden></div>
   {% endif %}
   <div class="table-wrap">
-  <table class="villages" id="village-list" data-first="12" data-more="{{ t('vi_more', n=i(villages|length)) }}" data-less="{{ t('vi_less') }}">
-    <thead><tr><th>{{ t('vi_col_settlement') }}</th><th class="num">{{ t('vi_col_stations') }}</th><th class="num">{{ t('vi_col_pop') }}</th><th class="num">{{ t('registered') }}</th><th class="num">{{ t('turnout') }}</th><th>{{ t('vi_col_first') }}</th>{% if index is not none %}<th class="num" data-mine="col-share">{{ t('co_col_mine') }}</th>{% endif %}</tr></thead>
+  <table class="villages" id="village-list" data-first="12" data-more="{{ t('vi_more' ~ q, n=i(villages|length)) }}" data-less="{{ t('vi_less') }}">
+    <thead><tr><th>{{ t('vi_col_settlement' ~ q) }}</th><th class="num">{{ t('vi_col_stations') }}</th><th class="num">{{ t('vi_col_pop') }}</th><th class="num">{{ t('registered') }}</th><th class="num">{{ t('turnout') }}</th><th>{{ t('vi_col_first') }}</th>{% if index is not none %}<th class="num" data-mine="col-share">{{ t('co_col_mine') }}</th>{% endif %}</tr></thead>
     <tbody>
     {% for v in villages %}
     <tr data-set="{{ v.name }}">
-      <td>{% if v.name %}<b>{{ name(v.name) }}</b>{% else %}<span class="muted">{{ t('vi_unplaced') }}</span>{% endif %}</td>
+      <td>{% if v.name %}<b>{{ name(v.name) }}</b>{% else %}<span class="muted">{{ t('vi_unplaced' ~ q) }}</span>{% endif %}</td>
       <td class="num">{{ v.stations }}</td>
       <td class="num">{{ i(v.population) if v.population is not none else '–' }}</td>
       <td class="num">{{ i(v.registered) }}</td>

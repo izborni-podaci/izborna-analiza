@@ -41,6 +41,9 @@ SERIES = 8  # categorical colour slots in site.css
 LOOKALIKE = str.maketrans("AaEeOoPpCcXxKkMHTBy", "АаЕеОоРрСсХхКкМНТВу")  # Latin letters RIK sometimes types for Cyrillic
 
 
+PART = "grad"  # a municipality's city settlement by its quarters lives at <municipality's address>/grad/
+
+
 class Site:
     """The whole site. With incremental=True the previous build in `out` is kept, and a page is rendered again only
     when what it shows has changed: each page's inputs are fingerprinted and the fingerprints saved next to the
@@ -83,10 +86,11 @@ class Site:
             "site_host": self.site_url.split("://", 1)[-1].rstrip("/"),
             "mun_href": lambda code: link(self.slugs[code] + "/") if code in getattr(self, "slugs", {}) else link(f"m/{code}.html"),
             "city_href": lambda slug: link(slug + "/"),
+            "mname": lambda text: self.display_names.get(text, text) if hasattr(self, "display_names") else text,
+            "part_of": lambda key: self.part_keys.get(key) if hasattr(self, "part_keys") else None,
             "lead_ramp": maps.lead_ramp(lambda x: fmt_pct(x, loc, 0)),
             # the page's address as printed on a shared image: izbornipodaci.rs/pirot
-            "mun_url": lambda code: (self.site_url.split("://", 1)[-1].rstrip("/") + "/" + PREFIX[loc]
-                                     + self.slugs.get(code, f"m/{code}.html") if hasattr(self, "slugs") else ""),
+            "mun_url": lambda code: self.mun_url(loc, code) if hasattr(self, "slugs") else "",
             "t": lambda key, **kw: t(key, loc, **kw), "i": lambda n: fmt_int(n, loc),
             "pct": lambda x, d=1: fmt_pct(x, loc, d), "num": lambda x, d=1: fmt_num(x, loc, d),
             "pval": lambda x: "< " + fmt_num(0.001, loc, 3) if x < 0.001 else fmt_num(x, loc, 3),
@@ -631,21 +635,40 @@ class Site:
                        city_map=city_map, map_key=map_key, legend=legend, history=history,
                        country=sh["country"], short_name=cities.short_name, **sh["common"])
 
-    def quarter_zoom(self, code: str, sts: list, settlement_of) -> tuple[dict, list, str] | None:
-        """A city settlement by its quarters (data/geo/quarters.json, 9 Nov 2026), drawn apart from the
-        municipality's map and opened by a click on the settlement: the stations placed in a quarter by their
-        building (key → quarter, by the name people use), the quarters' shapes and the settlement's name."""
-        if not hasattr(self, "quarter_areas"):
-            self.quarter_areas = quarters.load(self.archive.root)
+    def quarter_split(self, code: str, sts: list, settlement_of) -> tuple[dict, list, str] | None:
+        """A city settlement by its quarters (data/geo/quarters.json, 9 Nov 2026), on a page of its own (Grad Novi
+        Sad, under the municipality's address + /grad/) that a click on the settlement on the municipality's map
+        opens: the stations placed in a quarter by their building (key → quarter, by the name people use), the
+        quarters' shapes and the settlement's name. None without quarters, or with fewer than two stations placed."""
         area = self.quarter_areas.get(code)
         if not area:
             return None
         placed = quarters.place(sts, settlement_of, area)
+        if len(placed) < 2:
+            return None
         feats = []
         for f in area.get("features", []):
             n = quarters.SPOKEN.get(f["properties"]["name"], f["properties"]["name"])
             feats.append({**f, "properties": {**f["properties"], "name": n, "census": n}})
         return placed, feats, area.get("settlement", "")
+
+    def part_row(self, a: Analysis, m: dict, sts: list) -> dict:
+        """A municipality's row for its city settlement alone: the same figures over its stations, its name the
+        city's ("Град Нови Сад")."""
+        counted = [s for s in sts if s.counted]
+        reg = sum(s.registered for s in counted)
+        voted = sum(s.voted for s in counted)
+        ballots = sum(s.ballots or 0 for s in counted)
+        invalid = sum(s.invalid or 0 for s in counted)
+        flagged = sum(1 for s in sts if s.key in a.by_station)
+        return {**m, "name": quarters.names(self.quarter_areas[m["code"]])[1], "stations": len(sts),
+                "counted": len(counted), "registered": reg, "voted": voted, "turnout": voted / reg if reg else None,
+                "invalid": invalid / ballots if ballots else None, "flagged": flagged,
+                "flagged_share": flagged / len(sts) if sts else None}
+
+    def mun_url(self, loc: str, code: str) -> str:
+        """A municipality's address as printed on a shared image: izbornipodaci.rs/pirot."""
+        return self.site_url.split("://", 1)[-1].rstrip("/") + "/" + PREFIX[loc] + self.slugs.get(code, f"m/{code}.html")
 
     def municipality_pages(self, loc: str) -> None:
         """One page per municipality at m/<code>.html, the address the search and the index open: the coordinator's
@@ -657,12 +680,19 @@ class Site:
             self.redirect(loc, f"m/{code}.html", f"../{slug}/")
             for other in cities.aliases(slug):
                 self.redirect(loc, f"{other}/index.html", f"../{slug}/")
-            if self.keep(loc, f"{slug}/index.html", self.round_key(rid) + self.history_inputs(loc, code)):
-                continue
             a = self.analyses[rid]
-            self.write(loc, f"{slug}/index.html", "municipality.html", canonical=True, city=self.city_link(code),
-                       **self.municipality_context(a, loc, self.mun_rows[rid][code], f"{slug}/index.html"),
-                       **self.history_context(loc, code, rid))
+            if not self.keep(loc, f"{slug}/index.html", self.round_key(rid) + self.history_inputs(loc, code)):
+                self.write(loc, f"{slug}/index.html", "municipality.html", canonical=True, city=self.city_link(code),
+                           **self.municipality_context(a, loc, self.mun_rows[rid][code], f"{slug}/index.html"),
+                           **self.history_context(loc, code, rid))
+            # the city settlement alone, by its quarters (Grad Novi Sad at /novi-sad/grad/)
+            if code in self.quarter_areas and not self.keep(loc, f"{slug}/{PART}/index.html", self.round_key(rid) + "|part"):
+                sh = self.round_shared(a, loc)
+                if self.quarter_split(code, sh["by_code"][code], sh["settlement_of"]):
+                    self.write(loc, f"{slug}/{PART}/index.html", "municipality.html", canonical=True, city=None,
+                               strip=[], history=None,
+                               **self.municipality_context(a, loc, self.mun_rows[rid][code], f"{slug}/{PART}/index.html",
+                                                           part=True))
 
     def redirect(self, loc: str, page: str, target: str) -> None:
         """A one-line page at an old address that leads to the new one (GitHub Pages has no server redirects)."""
@@ -679,7 +709,12 @@ class Site:
             rounds.append({"id": rid, "kind": rnd.kind, "date": self.dates[rid], "title": rnd.title,
                            "title_en": meta.get("title_en", ""),
                            "contestants": [{"number": c.number, "name": c.name, "short": c.short} for c in rnd.contestants]})
-        names = {code: self.mun_rows[rids[0]][code]["name"] for code, rids in self.mun_rounds.items()}
+        # the API keeps RIK's names (Град Нови Сад), not the site's split into Opština and Grad
+        rik = {}
+        for code, rids in self.mun_rounds.items():
+            shown = self.mun_rows[rids[0]][code]["name"]
+            rik[code] = next((r for r, d in self.display_names.items() if d == shown), shown)
+        names = rik
         index = {"rounds": rounds,
                  "municipalities": [{"code": c, "name": names[c], "rounds": self.mun_rounds[c]} for c in sorted(names)],
                  "places": [{"id": p.id, "municipality": p.code, "number": p.newest.number, "name": p.newest.name}
@@ -820,6 +855,8 @@ class Site:
         rows.sort(key=lambda r: r[:4])
         data = {"m": [[conv(names[c]), c, len(self.mun_rounds[c]), self.mun_rounds[c][0], self.slugs[c]] for c in order],
                 "g": [[conv(c.name), slug, len(c.codes)] for slug, c in sorted(self.cities.items())],
+                "u": [[conv(quarters.names(area)[1]), f"{self.slugs[code]}/{PART}", conv(names[code])]
+                      for code, area in sorted(self.quarter_areas.items()) if code in self.slugs],
                 "s": [r[4] for r in rows]}
         self.put(PREFIX[loc] + "search.json", json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
@@ -986,6 +1023,16 @@ class Site:
             for code in self.mun_rows[rid]:
                 self.mun_rounds[code].append(rid)
             self.peers[rid] = peer_values(a.round, self.mun_rows[rid])
+        # a municipality with its city settlement on a page of its own (9 Nov 2026): the whole is "Општина Нови Сад",
+        # the city by its quarters "Град Нови Сад", wherever either is named (RIK names the whole "Град Нови Сад")
+        self.quarter_areas = quarters.load(self.archive.root)
+        self.display_names: dict[str, str] = {}  # RIK's name of such a municipality → the whole's name
+        self.part_keys: dict[str, tuple[str, str]] = {}  # a station in the city settlement, newest election → (name, page)
+        for code, area in self.quarter_areas.items():
+            for rows in self.mun_rows.values():
+                if code in rows:
+                    self.display_names[rows[code]["name"]] = quarters.names(area)[0]
+                    rows[code] = {**rows[code], "name": quarters.names(area)[0]}
         # which city municipalities belong to a city, from every election's names and districts
         self.city_parts = commission.city_parts(s for a in rounds for s in a.round.stations)
         # the cities split into several municipalities (Belgrade, Niš, …): one page each, and an entry in the search
@@ -997,6 +1044,14 @@ class Site:
                                                          for c, rs in self.mun_rounds.items())}
         self.slugs = cities.slugs(newest_names, set(self.mun_rows[rids[-1]]) if rids else set(), set(self.cities),
                                   {c.own for c in self.cities.values() if c.own})
+        for code, area in self.quarter_areas.items():
+            if code not in self.mun_rounds or code not in self.slugs:
+                continue
+            rid = self.mun_rounds[code][0]
+            city, settl = area.get("settlement", ""), self.settlements_of(rid)
+            for st in self.analyses[rid].round.stations:
+                if st.municipality_code == code and (settl.get(st.key) or {}).get("s") == city:
+                    self.part_keys[st.key] = (quarters.names(area)[1], f"{self.slugs[code]}/{PART}/")
         top = max(overall["counts"].values(), default=0) or 1
         appear = [{"code": c.code, "group": c.group, "n": overall["counts"][c.code],
                    "w": 100 * overall["counts"][c.code] / top}
@@ -1157,19 +1212,30 @@ class Site:
         self.shared_cache[(rid, loc)] = sh
         return sh
 
-    def municipality_context(self, a: Analysis, loc: str, m: dict, page: str) -> dict:
+    def municipality_context(self, a: Analysis, loc: str, m: dict, page: str, part: bool = False) -> dict:
         """Everything municipality.html needs for one municipality in one election (the coordinator's page), written
-        at `page` (the stations' links in the page's JSON are relative to it)."""
+        at `page` (the stations' links in the page's JSON are relative to it). part: the page of the municipality's
+        city settlement alone (Grad Novi Sad, 9 Nov 2026): its stations only, by quarter instead of settlement."""
         sh = self.round_shared(a, loc)
         rid, base, by_code, settl, ctrl, by_station = sh["rid"], sh["base"], sh["by_code"], sh["settl"], sh["ctrl"], sh["by_station"]
         profiles, shapes, ranks, short, country, prev_rows = (sh["profiles"], sh["shapes"], sh["ranks"], sh["short"],
                                                               sh["country"], sh["prev_rows"])
         settlement_of, common = sh["settlement_of"], sh["common"]
         sts = sorted(by_code[m["code"]], key=lambda s: (int(s.number) if s.number.isdigit() else 0, s.number))
+        split = self.quarter_split(m["code"], sts, settlement_of)  # (placed, quarters' shapes, city) or None
+        share_url = self.mun_url(loc, m["code"]) + ("/" + PART if part else "")
+        if part:
+            placed, qfeats, city = split
+            sts = [s for s in sts if settlement_of(s) == city]
+            settlement_of = lambda s: placed.get(s.key, "")  # noqa: E731
+            settl = {k: {"s": q} for k, q in placed.items()}
+            shapes = {m["code"]: qfeats}
+            m = self.part_row(a, m, sts)
         rows = [{"s": s, "flags": self.flag_view(a, by_station.get(s.key, []), loc),
                  "notes": a.notes.get(s.key, []), "docs": a.documents.get(s.key, []),
                  "settlement": settlement_of(s)} for s in sts]
-        votes = self.mun_votes[rid][m["code"]]
+        votes = self.mun_votes[rid][m["code"]] if not part else [
+            sum((s.votes[i] or 0) for s in sts if s.counted and i < len(s.votes)) for i in range(len(a.round.contestants))]
         mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
         mres, top, by_st = vote_view(a.round.contestants, votes, a.totals, [s for s in sts if s.counted])
         index = leading(votes)
@@ -1180,28 +1246,28 @@ class Site:
         weak = coordinator.weak_spots(sts, flags_of, self.places.in_municipality(m["code"]), self.flagged,
                                       ctrl, number, settlement_of, a.reviews) if number is not None else None
         devs = coordinator.deviations(sts, votes, index) if index is not None else []
-        prev_m = prev_rows.get(m["code"])
-        compare = {"similar": coordinator.similar(m["code"], profiles, self.mun_rows[rid]), "country": country,
-                   "rank_turnout": rank_of(m["turnout"], self.peers[rid]["mun"]["turnout"]),
-                   "rank_invalid": rank_of(m["invalid"], self.peers[rid]["mun"]["invalid"]),
+        prev_m = prev_rows.get(m["code"]) if not part else None
+        compare = {"similar": coordinator.similar(m["code"], profiles, self.mun_rows[rid]) if not part else [],
+                   "country": country,
+                   # a city settlement isn't a municipality: not ranked among them
+                   "rank_turnout": rank_of(m["turnout"], self.peers[rid]["mun"]["turnout"]) if not part else None,
+                   "rank_invalid": rank_of(m["invalid"], self.peers[rid]["mun"]["invalid"]) if not part else None,
                    "prev_registered": prev_m["registered"] if prev_m and prev_m["registered"] else None}
         tt = lambda key, **kw: t(key, loc, **kw)  # noqa: E731
         show = latin if loc == "en" else (lambda x: x)
-        zoom = self.quarter_zoom(m["code"], sts, settlement_of) if shapes.get(m["code"]) else None
         data = json.dumps({"rid": rid, "default": index, "name": show(m["name"]),
-                           "q": {s.number: show(q) for s, q in ((s, zoom[0].get(s.key)) for s in sts) if q} if zoom else {},
                            "lists": [{"n": c.number, "label": show(narrative.short_label(self.labels[rid][i])),
                                       "slot": ranks.get(i, 9), "country": a.totals.share_of_valid(i)}
                                      for i, c in enumerate(a.round.contestants)],
                            "turnout": {"mun": m["turnout"], "country": country["turnout"]},
                            "i18n": {"rule3": tt("co_w3_rule", number="{number}"), "ofRead": tt("co_w3_of", n="{n}"),
-                                    "chartResult": tt("vi_chart_result"), "chartPlaces": tt("vi_chart_places"), "chartPlacesNote": tt("vi_chart_places_note"),
+                                    "chartResult": tt("vi_chart_result" + ("_q" if part else "")), "chartPlaces": tt("vi_chart_places" + ("_q" if part else "")), "chartPlacesNote": tt("vi_chart_places_note"),
                                     "country": tt("vi_chart_country"), "countryShort": tt("vi_chart_country_short"), "keyLabel": tt("vi_key_label"),
                                     "stations": tt("co_stations_word"), "stationNo": tt("station_no"),
                                     "panelTitle": tt("vi_panel_title", name="{name}", n="{n}"),
                                     "panelClose": tt("vi_panel_close"), "turnout": tt("turnout"), "station": tt("station"),
                                     "myList": tt("co_col_mine"), "controller": tt("co_col_ctrl"),
-                                    "panelHint": tt("vi_panel_hint"),
+                                    "panelHint": tt("vi_panel_hint" + ("_q" if part else "")),
                                     "legendNc": tt("co_legend_nc"), "rest": tt("co_dev_rest", n="{n}"),
                                     "devNote": tt("co_dev_note", avg="{avg}"), "member": tt("co_ctrl_member"),
                                     "deputy": tt("co_ctrl_deputy"), "none": tt("co_ctrl_none"),
@@ -1217,16 +1283,6 @@ class Site:
         village_map, village_key = maps.settlement_map(feats, results, ranks, short, m["name"], lambda x: fmt_pct(x, loc, 1)) \
             if feats and len(results) > 1 else ("", [])
         village_legend = maps.legend(results, ranks, short) if village_map else []
-        # the city settlement by its quarters, opened by a click on it on the map above
-        zoom_map, zoom_key, zoom_info = "", [], None
-        if zoom and village_map and len(zoom[0]) > 1:
-            placed, qfeats, city = zoom
-            qrows = coordinator.by_settlement([s for s in sts if s.key in placed], {k: {"s": q} for k, q in placed.items()},
-                                              self.figures, index)
-            zoom_map, zoom_key = maps.settlement_map(qfeats, {r["name"]: r for r in qrows if r["name"]}, ranks, short,
-                                                     city, lambda x: fmt_pct(x, loc, 1), ids="z")  # own pattern ids
-            zoom_info = {"city": city, "placed": len(placed), "n": sum(1 for s in sts if settlement_of(s) == city),
-                         "legend": maps.legend({r["name"]: r for r in qrows if r["name"]}, ranks, short)}
         top2 = sorted(range(len(votes)), key=lambda k: -votes[k])[:2] if any(votes) else []
         village_facts = [tt("vi_fact_turnout", hi=f["hi"], hv=fmt_pct(f["hv"], loc, 1), lo=f["lo"], lv=fmt_pct(f["lv"], loc, 1))
                          if f["kind"] == "turnout" else
@@ -1234,14 +1290,19 @@ class Site:
                             lv=fmt_pct(f["lv"], loc, 1))
                          for f in coordinator.facts(villages, top2)] if village_map else []
         if village_map and m["turnout"] is not None and country["turnout"] is not None:
-            village_facts.append(tt("vi_fact_mun", t=fmt_pct(m["turnout"], loc, 1), c=fmt_pct(country["turnout"], loc, 1)))
+            village_facts.append(tt("vi_fact_mun" + ("_q" if part else ""), t=fmt_pct(m["turnout"], loc, 1), c=fmt_pct(country["turnout"], loc, 1)))
         return dict(m=m, rows=rows, mvotes=votes,
                    mctrl=mctrl, mreadable=mreadable, mres=mres, mtop=top, mby=by_st, weak=weak, devs=devs,
                    index=index, number=number, compare=compare, mun_data=data.replace("<", "\\u003c"),
                    ctrl_of=coordinator.controller_of, rules=RULES, flag_text=flag_text, labels=self.labels[rid],
                    settlement_by_key={s.key: settlement_of(s) for s in sts}, villages=villages,
                    village_leaders=village_leaders, village_map=village_map, village_legend=village_legend,
-                   zoom_map=zoom_map, zoom_key=zoom_key, zoom_info=zoom_info,
+                   part=part, share_url=share_url,
+                   city_link={"name": split[2], "href": PART + "/", "placed": len(split[0]),
+                              "n": sum(1 for s in sts if settlement_of(s) == split[2])} if split and not part else None,
+                   part_info={"placed": len(split[0]), "n": len(sts), "whole": self.mun_rows[rid][m["code"]]["name"],
+                              "city": split[2]}
+                   if part else None,
                    village_facts=village_facts, village_key=village_key,
                    mapped=sum(1 for f in feats if f["properties"].get("census") in results),
                    cdocs=self.commission_of(rid).get(m["code"], []),

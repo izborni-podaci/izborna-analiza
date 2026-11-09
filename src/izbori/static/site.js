@@ -69,6 +69,11 @@
               const f = fold(g[0]);
               return [f, f, [g[0], `${g[1]}/`, d.citySub.replace('{n}', g[2])]];
             });
+            // a municipality's city settlement by its quarters (Grad Novi Sad, part of Opština Novi Sad)
+            const parts = (j.u || []).map((u) => {
+              const f = fold(u[0]);
+              return [f, f, [u[0], `${u[1]}/`, d.partSub.replace('{m}', u[2])]];
+            });
             const st = j.s.map((s) => {
               const m = j.m[s[0]];
               const label = `${m[0]} · ${d.bm} ${s[1]}${s[2] ? ` · ${s[2]}` : ''}`;
@@ -78,7 +83,7 @@
               const f = fold(label);
               return [f, s[6] ? `${f} ${fold(`${d.bm} ${s[6]}`)}` : f, [label, `${m[4]}/${tail}/`, sub]];
             });
-            items = cities.concat(mun, st);
+            items = cities.concat(parts, mun, st);
           })
           .catch(() => { items = []; });
       }

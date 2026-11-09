@@ -116,15 +116,10 @@
   const panel = document.querySelector('[data-village-panel]');
   const mainFig = document.querySelector('[data-map-main]');
   const smap = mainFig ? mainFig.querySelector('svg.smap') : null;
-  // the city settlement by its quarters (9 Nov 2026): a click on it on the municipality's map opens the city alone,
-  // larger, each quarter by its stations placed there (data.q: station number → quarter)
-  const zoomFig = document.querySelector('[data-map-zoom]');
-  const zmap = zoomFig ? zoomFig.querySelector('svg.smap') : null;
-  const quarterOf = (st) => (data.q || {})[st.n] || '';
-  let shownSet = null; let shownBy = 'set';
+  let shownSet = null;
   function renderPanel(idx) {
     if (!panel || shownSet === null) return;
-    const sts = data.stations.filter((st) => (shownBy === 'q' ? quarterOf(st) : (st.set || '')) === shownSet);
+    const sts = data.stations.filter((st) => (st.set || '') === shownSet);
     const row = (st) => {
       const c = ctrlOf(st, idx);
       const ctrl = c === 'm' ? L.member : c === 'd' ? L.deputy : c === 'n' ? L.none : L.notRead;
@@ -141,31 +136,21 @@
   }
   const clearActive = () => document.querySelectorAll('svg.smap .mp-active').forEach((x) => x.classList.remove('mp-active'));
   const closePanel = () => { shownSet = null; if (panel) panel.hidden = true; clearActive(); };
-  // the municipality's map steps aside without display:none, so the hatching patterns it holds still paint
-  function zoomTo(open) {
-    closePanel();
-    mainFig.classList.toggle('smap-off', open);
-    zoomFig.hidden = !open;
-    (open ? zoomFig : mainFig).scrollIntoView({ block: 'nearest' });
-  }
-  function wire(map, by) {
+  function wire(map) {
     map.querySelectorAll('path[data-set]').forEach((p) => { if (p.dataset.set) { p.setAttribute('tabindex', '0'); p.setAttribute('role', 'button'); } });
     const pick = (p) => {
-      if (by === 'set' && zoomFig && p.dataset.set === zoomFig.dataset.mapZoom) { zoomTo(true); return; }
+      // the city settlement with a page of its own by quarters (Novi Sad): the click opens that page
+      if (mainFig.dataset.city && p.dataset.set === mainFig.dataset.city) { location.href = mainFig.dataset.cityHref; return; }
       clearActive();
-      if (shownSet === p.dataset.set && shownBy === by) { closePanel(); return; }
-      shownSet = p.dataset.set; shownBy = by; p.classList.add('mp-active');
+      if (shownSet === p.dataset.set) { closePanel(); return; }
+      shownSet = p.dataset.set; p.classList.add('mp-active');
       renderPanel(indexOf(select.value));
     };
     map.addEventListener('click', (e) => { const p = e.target.closest('path[data-set]'); if (p && p.dataset.set) pick(p); });
     map.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { const p = e.target.closest('path[data-set]'); if (p && p.dataset.set) { e.preventDefault(); pick(p); } } });
   }
   if (smap && panel) {
-    wire(smap, 'set');
-    if (zmap) {
-      wire(zmap, 'q');
-      zoomFig.querySelector('[data-zoom-back]').addEventListener('click', () => zoomTo(false));
-    }
+    wire(smap);
     panel.addEventListener('click', (e) => { if (e.target.closest('[data-panel-close]')) closePanel(); });
     const hint = document.createElement('p'); hint.className = 'small muted vi-hint'; hint.textContent = L.panelHint; panel.before(hint);
   }
@@ -220,11 +205,9 @@
     } };
   }
 
-  // one export per map: the municipality's, and the city by its quarters where there is one
   document.querySelectorAll('figure.smap-wrap').forEach((fig) => {
   const png = fig.querySelector('[data-map-png]');
   const svg = fig.querySelector('svg.smap');
-  const byQuarter = fig.hasAttribute('data-map-zoom');
   if (png && svg && window.URL && document.createElement('canvas').getContext) {
     png.hidden = false;
     png.addEventListener('click', () => {
@@ -273,7 +256,7 @@
       // per settlement: registered, valid votes and each list's votes, from the page's own stations
       const bySet = new Map();
       data.stations.forEach((st) => {
-        const where = byQuarter ? quarterOf(st) : st.set;
+        const where = st.set;
         if (!where || !st.valid) return;
         const g = bySet.get(where) || { name: where, reg: 0, valid: 0, v: data.lists.map(() => 0) };
         g.reg += st.reg; g.valid += st.valid; st.v.forEach((x, i) => { g.v[i] += x || 0; }); bySet.set(where, g);

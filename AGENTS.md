@@ -543,6 +543,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   Same day, Marko: make similar shades easier to tell apart. Five steps instead of four (60–70% and 70%+ apart, as
   most of Novi Sad's quarters sat in one step), opacities evenly spaced, and the top step darkened
   (brightness 0.72, `mp-deep`; mun.js darkens the same in the PNG) since opacity alone can't go past full.
+  Same day, Marko: two names and two places instead of the in-page zoom — "Opština Novi Sad" (the whole, Novi Sad one
+  settlement) and "Grad Novi Sad" (the urban city by quarters) in the search, the labels and the references; a click
+  on Novi Sad on the Opština page goes to Grad. Grad is `municipality_context(part=True)` at /novi-sad/grad/: the
+  same page over the city's stations, quarters as its settlements, no similar-municipality ranks, no history strip.
+  RIK's name "Град Нови Сад" is shown as "Општина Нови Сад" (`display_names`, `mname` in station/check/repeat/
+  changes); the data files keep RIK's name.
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);

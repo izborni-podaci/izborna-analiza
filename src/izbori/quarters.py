@@ -34,6 +34,12 @@ def load(root: Path) -> dict:
     return json.loads(p.read_text(encoding="utf-8")).get("areas", {}) if p.exists() else {}
 
 
+def names(area: dict) -> tuple[str, str]:
+    """The whole municipality's name and its city settlement's: ("Општина Нови Сад", "Град Нови Сад")."""
+    city = area.get("settlement", "")
+    return f"Општина {city}", f"Град {city}"
+
+
 def kind_of(name: str) -> str | None:
     w = norm(name).split()
     for kind, marks in KINDS:

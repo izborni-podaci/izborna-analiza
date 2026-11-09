@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "_macros.html" as mx with context %}
-{% block title %}{{ name(s.municipality) }} · {{ t('station_no') }} {{ s.number }}{% endblock %}
+{% block title %}{{ name(mname(s.municipality)) }} · {{ t('station_no') }} {{ s.number }}{% endblock %}
 
 {# One election at this place: the result with bars, three tiles against the municipality, every flag as a
    sentence with what to check, then who sat on the board and what RIK published. The newest election is open
@@ -59,12 +59,12 @@
 {% endmacro %}
 
 {% block main %}
-{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(s.municipality), mun_href(s.municipality_code)), (t('station_no') ~ ' ' ~ s.number, none)]) }}
-<p class="kicker">{{ name(s.municipality) }} · {{ t('st_kicker') }} · {{ t('station_history') }}</p>
+{% set po = part_of(s.key) %}{{ mx.crumbs([(t('crumbs_home'), link('index.html')), (name(mname(s.municipality)), mun_href(s.municipality_code))] + ([(name(po[0]), link(po[1]))] if po else []) + [(t('station_no') ~ ' ' ~ s.number, none)]) }}
+<p class="kicker">{{ name(mname(s.municipality)) }} · {{ t('st_kicker') }} · {{ t('station_history') }}</p>
 <h1 class="station-title">{{ t('station_no') }} {{ s.number }}{% if s.name %} · {{ name(s.name) }}{% endif %}</h1>
 {% if address %}<p class="muted">{{ t('address') }}: {{ name(address) }}</p>{% endif %}
 <p class="muted">{{ t('st_intro', n=i(rows|length), reg=i(s.registered)) }}</p>
-<p class="tools small"><a href="{{ link('r/' ~ rows[0].rid ~ '/m/' ~ s.municipality_code ~ '.html') }}">{{ t('st_mun_link', mun=name(s.municipality)) }}</a> · <button type="button" class="link-button" data-print hidden>{{ t('print') }}</button></p>
+<p class="tools small"><a href="{{ link('r/' ~ rows[0].rid ~ '/m/' ~ s.municipality_code ~ '.html') }}">{{ t('st_mun_link', mun=name(mname(s.municipality))) }}</a> · <button type="button" class="link-button" data-print hidden>{{ t('print') }}</button></p>
 {% if rows|length > 1 %}
 <nav class="el-strip" aria-label="{{ t('st_strip_label') }}">
   {% for e in rows %}<a href="#e-{{ e.rid }}"{% if loop.first %} aria-current="page"{% endif %}>{{ e.short }}{% if loop.first %}<small>{{ e.date }} · {{ t('st_latest_note') }}</small>{% endif %}</a>{% endfor %}
