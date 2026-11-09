@@ -160,6 +160,40 @@
   const LIGHT = { 1: '#2a78d6', 2: '#eb6834', 3: '#1baf7a', 4: '#eda100', 5: '#e87ba4', 6: '#008300', 7: '#6250d6',
     8: '#e34948', 9: '#44607f', none: '#e6e3de' }; // site.css :root --s1 … --s8, --ink-2, --mp-none (a grey with no blue in it)
   const colourOf = (el) => { const m = (el.getAttribute('class') || '').match(/mp-(\d|none)/); return m ? LIGHT[m[1]] : LIGHT.none; };
+  // how the largest settlements voted, beside the map in the PNG (9 Nov 2026, in place of turnout by settlement):
+  // the twelve largest by registered voters, each a bar of 100% split among the municipality's four largest lists
+  // in their map colours, the rest grey, the leading list's share in the settlement on the right
+  const TEXT = { 4: '#a87200', 5: '#c4527e' };  // yellow and pink as text on white
+  function sideChart(sets, result) {
+    if (sets.length < 2) return null;
+    const slotOf = (i) => LIGHT[data.lists[i].slot] || LIGHT[9];
+    const big = sets.slice().sort((a, b) => b.reg - a.reg).slice(0, 12);
+    const top = result.slice(0, 4).map((r) => r.i);
+    return { h: 22 + big.length * 20 + 26 + 15, draw(ctx, cx, cy, barX, barW, colW) {
+      ctx.textAlign = 'left'; ctx.fillStyle = '#0f1f33'; ctx.font = '600 15px system-ui, sans-serif';
+      ctx.fillText(L.chartPlaces, cx, cy); cy += 14;
+      ctx.font = '12px system-ui, sans-serif';
+      big.forEach((g) => {
+        let x = barX;
+        top.forEach((i) => { const w = barW * g.v[i] / g.valid; ctx.fillStyle = slotOf(i); ctx.fillRect(x, cy, w, 14); x += w; });
+        ctx.fillStyle = '#d6d2cb'; ctx.fillRect(x, cy, barX + barW - x, 14);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(barX + barW * 0.5 - 0.5, cy - 2, 1, 18);  // half
+        ctx.fillStyle = '#0f1f33'; ctx.textAlign = 'right';
+        ctx.fillText(g.name.length > 20 ? g.name.slice(0, 19) + '…' : g.name, barX - 8, cy + 11);
+        // the share in the leading list's colour, so the number says whose it is (a light colour darkened to read)
+        ctx.textAlign = 'left'; ctx.font = '600 12px system-ui, sans-serif'; ctx.fillStyle = TEXT[data.lists[g.lead].slot] || slotOf(g.lead);
+        ctx.fillText(pct(g.share, 0), barX + barW + 6, cy + 11); ctx.font = '12px system-ui, sans-serif';
+        cy += 20;
+      });
+      // the note under the bars, on two lines when it doesn't fit the column
+      ctx.fillStyle = '#44607f'; ctx.font = '11px system-ui, sans-serif';
+      const parts = L.chartPlacesNote.split(' · ');
+      const one = ctx.measureText(L.chartPlacesNote).width <= colW;
+      (one ? [L.chartPlacesNote] : parts).forEach((t, k) => ctx.fillText(t, cx, cy + 6 + k * 15));
+      return cy + 26 + (one ? 0 : 15 * (parts.length - 1));
+    } };
+  }
+
   const png = document.querySelector('[data-map-png]');
   const svg = document.querySelector('svg.smap');
   if (png && svg && window.URL && document.createElement('canvas').getContext) {
@@ -200,17 +234,23 @@
       const vw = vw0 * MAP_K; const vh = vh0 * MAP_K;
       const scale = 2; const pad = 28; const top = 96; const gap = 36; const colW = 440;
       const W = vw + 2 * pad + gap + colW;  // the map on the left, two charts on the right
-      // the charts' data: the municipality's result (top six lists, with the country's share as a tick) and
-      // turnout by settlement (the twelve largest, in order of turnout), from the page's own data
+      // the charts' data: the municipality's result (top six lists, with the country's share as a tick) and how
+      // the settlements voted (sideChart), from the page's own data
       const counted = data.stations.filter((st) => st.valid);
       const validAll = counted.reduce((a, st) => a + st.valid, 0);
-      const result = data.lists.map((l, i) => ({ label: l.label, slot: l.slot, country: l.country,
+      const result = data.lists.map((l, i) => ({ i, label: l.label, slot: l.slot, country: l.country,
         share: validAll ? counted.reduce((a, st) => a + (st.v[i] || 0), 0) / validAll : 0 }))
         .sort((a, b) => b.share - a.share).slice(0, 6);
+      // per settlement: registered, valid votes and each list's votes, from the page's own stations
       const bySet = new Map();
-      data.stations.forEach((st) => { if (!st.set || st.turnout === null) return; const g = bySet.get(st.set) || { name: st.set, reg: 0, voted: 0 }; g.reg += st.reg; g.voted += Math.round(st.turnout * st.reg); bySet.set(st.set, g); });
-      const turnout = [...bySet.values()].sort((a, b) => b.reg - a.reg).slice(0, 12).map((g) => ({ name: g.name, t: g.reg ? g.voted / g.reg : 0 })).sort((a, b) => b.t - a.t);
-      const chartH = 30 + result.length * 24 + 40 + 30 + turnout.length * 20 + 20 + 32;
+      data.stations.forEach((st) => {
+        if (!st.set || !st.valid) return;
+        const g = bySet.get(st.set) || { name: st.set, reg: 0, valid: 0, v: data.lists.map(() => 0) };
+        g.reg += st.reg; g.valid += st.valid; st.v.forEach((x, i) => { g.v[i] += x || 0; }); bySet.set(st.set, g);
+      });
+      const sets = [...bySet.values()].map((g) => { const lead = g.v.indexOf(Math.max(...g.v)); return Object.assign(g, { lead, share: g.valid ? g.v[lead] / g.valid : 0 }); });
+      const side = sideChart(sets, result);
+      const chartH = 30 + result.length * 24 + 40 + (side ? side.h : 0) + 32;
       const legend = [...document.querySelectorAll('.smap-legend > span')].map((sp) => {
         const sw = sp.querySelector('.sw'); const cls = sw.getAttribute('class') || '';
         return { text: sp.textContent.trim(), colour: /mp-close-sw/.test(cls) ? 'hatch' : colourOf(sw) };
@@ -279,23 +319,7 @@
           cy += 24;
         });
         cy += 26;
-        if (turnout.length > 1) {
-          ctx.fillStyle = '#0f1f33'; ctx.font = '600 15px system-ui, sans-serif'; ctx.fillText(L.chartTurnout, cx, cy); cy += 16;
-          const maxT = Math.max(0.01, ...turnout.map((g) => g.t), data.turnout.mun || 0);
-          ctx.font = '12px system-ui, sans-serif';
-          turnout.forEach((g) => {
-            const w = barW * g.t / maxT;
-            ctx.fillStyle = '#1e3a5f'; ctx.fillRect(barX, cy, w, 13);
-            ctx.fillStyle = '#0f1f33'; ctx.textAlign = 'right'; ctx.fillText(g.name.length > 22 ? g.name.slice(0, 21) + '…' : g.name, barX - 8, cy + 11);
-            ctx.textAlign = 'left'; ctx.fillText(pct(g.t), barX + w + 6, cy + 11);
-            cy += 20;
-          });
-          if (data.turnout.mun !== null) {
-            const mx = barX + barW * data.turnout.mun / maxT;
-            ctx.strokeStyle = '#c9971c'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(mx, cy - turnout.length * 20 - 4); ctx.lineTo(mx, cy); ctx.stroke(); ctx.setLineDash([]);
-            ctx.fillStyle = '#8a6610'; ctx.fillText(L.municipality + ' ' + pct(data.turnout.mun), Math.min(mx + 6, cx + colW - 110), cy + 12);
-          }
-        }
+        if (side) cy = side.draw(ctx, cx, cy, barX, barW, colW);
         if (keyItems.length) {  // the key of the numbers on the map
           cy += 36;
           ctx.textAlign = 'left'; ctx.fillStyle = '#44607f'; ctx.font = '600 12px system-ui, sans-serif';

@@ -516,6 +516,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   colour. `maps.slots` now pushes a hand-set colour's look-alikes (`ALIKE`: red–orange–pink, blue–purple,
   green–dark green, orange–yellow) to the end of the free slots, and with colours set by hand takes yellow and green
   first (`PREFER`), apart from red and blue for most eyes. Without hand-set colours the order stays the seats'.
+  Same day: the image's source line names the page (izbornipodaci.rs/pirot, `mun_url`), so a shared image leads back
+  to it. The turnout chart beside the map gave way to how the twelve largest settlements voted: a 100% bar each,
+  split among the four largest lists in their map colours (Marko chose this of three drafts: the settlements named
+  per leading list, which repeated the legend; the two largest lists' difference, one-sided where one list leads
+  everywhere). Turnout stays in the facts under the map. The share beside each bar is in the leading list's colour (yellow and pink darkened), so it says whose it is.
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);
