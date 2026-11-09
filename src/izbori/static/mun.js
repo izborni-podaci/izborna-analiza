@@ -114,11 +114,17 @@
 
   // a click on a settlement of the map: its polling stations under the map (link, turnout, my list, controller)
   const panel = document.querySelector('[data-village-panel]');
-  const smap = document.querySelector('svg.smap');
-  let shownSet = null;
+  const mainFig = document.querySelector('[data-map-main]');
+  const smap = mainFig ? mainFig.querySelector('svg.smap') : null;
+  // the city settlement by its quarters (9 Nov 2026): a click on it on the municipality's map opens the city alone,
+  // larger, each quarter by its stations placed there (data.q: station number → quarter)
+  const zoomFig = document.querySelector('[data-map-zoom]');
+  const zmap = zoomFig ? zoomFig.querySelector('svg.smap') : null;
+  const quarterOf = (st) => (data.q || {})[st.n] || '';
+  let shownSet = null; let shownBy = 'set';
   function renderPanel(idx) {
     if (!panel || shownSet === null) return;
-    const sts = data.stations.filter((st) => (st.set || '') === shownSet);
+    const sts = data.stations.filter((st) => (shownBy === 'q' ? quarterOf(st) : (st.set || '')) === shownSet);
     const row = (st) => {
       const c = ctrlOf(st, idx);
       const ctrl = c === 'm' ? L.member : c === 'd' ? L.deputy : c === 'n' ? L.none : L.notRead;
@@ -133,17 +139,34 @@
       + sts.map(row).join('') + '</tbody></table>';
     panel.hidden = false;
   }
-  if (smap && panel) {
-    smap.querySelectorAll('path[data-set]').forEach((p) => { if (p.dataset.set) { p.setAttribute('tabindex', '0'); p.setAttribute('role', 'button'); } });
+  const clearActive = () => document.querySelectorAll('svg.smap .mp-active').forEach((x) => x.classList.remove('mp-active'));
+  const closePanel = () => { shownSet = null; if (panel) panel.hidden = true; clearActive(); };
+  // the municipality's map steps aside without display:none, so the hatching patterns it holds still paint
+  function zoomTo(open) {
+    closePanel();
+    mainFig.classList.toggle('smap-off', open);
+    zoomFig.hidden = !open;
+    (open ? zoomFig : mainFig).scrollIntoView({ block: 'nearest' });
+  }
+  function wire(map, by) {
+    map.querySelectorAll('path[data-set]').forEach((p) => { if (p.dataset.set) { p.setAttribute('tabindex', '0'); p.setAttribute('role', 'button'); } });
     const pick = (p) => {
-      smap.querySelectorAll('.mp-active').forEach((x) => x.classList.remove('mp-active'));
-      if (shownSet === p.dataset.set) { shownSet = null; panel.hidden = true; return; }
-      shownSet = p.dataset.set; p.classList.add('mp-active');
+      if (by === 'set' && zoomFig && p.dataset.set === zoomFig.dataset.mapZoom) { zoomTo(true); return; }
+      clearActive();
+      if (shownSet === p.dataset.set && shownBy === by) { closePanel(); return; }
+      shownSet = p.dataset.set; shownBy = by; p.classList.add('mp-active');
       renderPanel(indexOf(select.value));
     };
-    smap.addEventListener('click', (e) => { const p = e.target.closest('path[data-set]'); if (p && p.dataset.set) pick(p); });
-    smap.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { const p = e.target.closest('path[data-set]'); if (p && p.dataset.set) { e.preventDefault(); pick(p); } } });
-    panel.addEventListener('click', (e) => { if (e.target.closest('[data-panel-close]')) { shownSet = null; panel.hidden = true; smap.querySelectorAll('.mp-active').forEach((x) => x.classList.remove('mp-active')); } });
+    map.addEventListener('click', (e) => { const p = e.target.closest('path[data-set]'); if (p && p.dataset.set) pick(p); });
+    map.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { const p = e.target.closest('path[data-set]'); if (p && p.dataset.set) { e.preventDefault(); pick(p); } } });
+  }
+  if (smap && panel) {
+    wire(smap, 'set');
+    if (zmap) {
+      wire(zmap, 'q');
+      zoomFig.querySelector('[data-zoom-back]').addEventListener('click', () => zoomTo(false));
+    }
+    panel.addEventListener('click', (e) => { if (e.target.closest('[data-panel-close]')) closePanel(); });
     const hint = document.createElement('p'); hint.className = 'small muted vi-hint'; hint.textContent = L.panelHint; panel.before(hint);
   }
 
@@ -194,8 +217,11 @@
     } };
   }
 
-  const png = document.querySelector('[data-map-png]');
-  const svg = document.querySelector('svg.smap');
+  // one export per map: the municipality's, and the city by its quarters where there is one
+  document.querySelectorAll('figure.smap-wrap').forEach((fig) => {
+  const png = fig.querySelector('[data-map-png]');
+  const svg = fig.querySelector('svg.smap');
+  const byQuarter = fig.hasAttribute('data-map-zoom');
   if (png && svg && window.URL && document.createElement('canvas').getContext) {
     png.hidden = false;
     png.addEventListener('click', () => {
@@ -207,7 +233,7 @@
       copy.querySelectorAll('path').forEach((p) => {
         const close = /mp-close/.test(p.getAttribute('class') || '');
         const k = ((p.getAttribute('class') || '').match(/mp-(\d)/) || [])[1];
-        p.setAttribute('fill', close && k ? 'url(#h' + k + ')' : colourOf(p));
+        p.setAttribute('fill', close && k ? 'url(#' + copy.querySelector('pattern.mp-' + k).id + ')' : colourOf(p));
         p.setAttribute('stroke', '#ffffff'); p.setAttribute('stroke-width', '1');
         p.querySelector('title') && p.removeChild(p.querySelector('title'));
       });
@@ -244,15 +270,16 @@
       // per settlement: registered, valid votes and each list's votes, from the page's own stations
       const bySet = new Map();
       data.stations.forEach((st) => {
-        if (!st.set || !st.valid) return;
-        const g = bySet.get(st.set) || { name: st.set, reg: 0, valid: 0, v: data.lists.map(() => 0) };
-        g.reg += st.reg; g.valid += st.valid; st.v.forEach((x, i) => { g.v[i] += x || 0; }); bySet.set(st.set, g);
+        const where = byQuarter ? quarterOf(st) : st.set;
+        if (!where || !st.valid) return;
+        const g = bySet.get(where) || { name: where, reg: 0, valid: 0, v: data.lists.map(() => 0) };
+        g.reg += st.reg; g.valid += st.valid; st.v.forEach((x, i) => { g.v[i] += x || 0; }); bySet.set(where, g);
       });
       const sets = [...bySet.values()].map((g) => { const lead = g.v.indexOf(Math.max(...g.v)); return Object.assign(g, { lead, share: g.valid ? g.v[lead] / g.valid : 0 }); });
       const side = sideChart(sets, result);
       const chartH = 30 + result.length * 24 + 40 + (side ? side.h : 0) + 32;
       const legend = [];
-      document.querySelectorAll('.smap-legend > span:not([hidden])').forEach((sp) => {
+      fig.querySelectorAll('.smap-legend > span:not([hidden])').forEach((sp) => {
         if (sp.hasAttribute('data-ramp')) {
           sp.querySelectorAll(':scope > b, :scope > span').forEach((x) => {
             const sw = x.querySelector('.sw');
@@ -268,9 +295,9 @@
         legend.push({ text: sp.textContent.trim(), colour: /mp-close-sw/.test(cls) ? 'hatch' : colourOf(sws[0]), alpha: Number(sws[0].style.opacity || 1) });
       });
       // the numbers' key goes beside the map, under the charts, small and in two columns
-      const keyItems = [...document.querySelectorAll('[data-map-key] > span')].map((sp) => sp.textContent.trim());
+      const keyItems = [...fig.querySelectorAll('[data-map-key] > span')].map((sp) => sp.textContent.trim());
       const keyH = keyItems.length ? 24 + Math.ceil(keyItems.length / 2) * 17 : 0;
-      const facts = [...document.querySelectorAll('.vi-facts [data-fact]')].map((f) => f.textContent.trim());
+      const facts = [...fig.querySelectorAll('.vi-facts [data-fact]')].map((f) => f.textContent.trim());
       // the legend flows in lines under the map; a shade scale starts a line of its own
       const lprobe = document.createElement('canvas').getContext('2d'); lprobe.font = '14px system-ui, sans-serif';
       let lx = pad; let rows = 1;
@@ -292,7 +319,7 @@
       ctx.fillStyle = '#0f1f33'; ctx.font = '600 24px Georgia, serif';
       ctx.fillText(png.dataset.title, pad, 40);
       ctx.font = '15px system-ui, sans-serif'; ctx.fillStyle = '#44607f';
-      ctx.fillText(document.querySelector('.villages .sec-head h2').textContent, pad, 68);
+      ctx.fillText(fig.dataset.heading || document.querySelector('.villages .sec-head h2').textContent, pad, 68);
       const img = new Image();
       const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -365,6 +392,7 @@
       img.src = url;
     });
   }
+  });
 
   // the remembered list, when this election has it
   const remembered = (mem.read().lists || {})[data.rid];

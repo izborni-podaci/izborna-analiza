@@ -521,6 +521,9 @@ table.stations td b { font-weight: 600; }
 .smap text.small { font-size: 9px; }
 .smap text.num { font-size: 10px; font-weight: 700; }
 .smap-key { display: block; margin: 4px 0; }
+.smap-off { position: absolute; visibility: hidden; height: 0; overflow: hidden; pointer-events: none; }  /* keeps its patterns painting */
+.smap-zoom-head { margin: 0 0 8px; }
+.smap-zoom-hint { display: block; margin: 4px 0; font-weight: 600; color: var(--ink); }
 .smap-ramp { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; flex-basis: 100%; }
 .smap-ramp b { font-weight: 600; }
 .smap-legend .sw.sw-step { width: 7px; margin-right: 1px; }
@@ -528,6 +531,9 @@ table.stations td b { font-weight: 600; }
 .mp-1 { fill: var(--s1) !important; } .mp-2 { fill: var(--s2) !important; } .mp-3 { fill: var(--s3) !important; }
 .mp-4 { fill: var(--s4) !important; } .mp-5 { fill: var(--s5) !important; } .mp-6 { fill: var(--s6) !important; }
 .mp-7 { fill: var(--s7) !important; } .mp-8 { fill: var(--s8) !important; } .mp-9 { fill: var(--ink-2) !important; }
+.smap-zoom .smap .mp-close.mp-1 { fill: url(#zh1) !important; } .smap-zoom .smap .mp-close.mp-2 { fill: url(#zh2) !important; } .smap-zoom .smap .mp-close.mp-3 { fill: url(#zh3) !important; }
+.smap-zoom .smap .mp-close.mp-4 { fill: url(#zh4) !important; } .smap-zoom .smap .mp-close.mp-5 { fill: url(#zh5) !important; } .smap-zoom .smap .mp-close.mp-6 { fill: url(#zh6) !important; }
+.smap-zoom .smap .mp-close.mp-7 { fill: url(#zh7) !important; } .smap-zoom .smap .mp-close.mp-8 { fill: url(#zh8) !important; } .smap-zoom .smap .mp-close.mp-9 { fill: url(#zh9) !important; }
 .smap .hatch .hb { fill: var(--page); }
 .smap .hatch .hf { fill: inherit; }
 .smap .mp-close.mp-1 { fill: url(#h1) !important; } .smap .mp-close.mp-2 { fill: url(#h2) !important; } .smap .mp-close.mp-3 { fill: url(#h3) !important; }

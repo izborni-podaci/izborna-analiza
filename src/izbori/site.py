@@ -631,29 +631,21 @@ class Site:
                        city_map=city_map, map_key=map_key, legend=legend, history=history,
                        country=sh["country"], short_name=cities.short_name, **sh["common"])
 
-    def with_quarters(self, settl: dict, shapes: dict, by_code: dict) -> tuple[dict, dict]:
-        """A city settlement drawn by its quarters (data/geo/quarters.json, 9 Nov 2026): its stations placed in a
-        quarter by their building take the quarter's name as their settlement, and the quarters' shapes are drawn
-        over the settlement's, which goes grey; its stations not placed keep the settlement's name, without its
-        census population (it would be the whole city's)."""
+    def quarter_zoom(self, code: str, sts: list, settlement_of) -> tuple[dict, list, str] | None:
+        """A city settlement by its quarters (data/geo/quarters.json, 9 Nov 2026), drawn apart from the
+        municipality's map and opened by a click on the settlement: the stations placed in a quarter by their
+        building (key → quarter, by the name people use), the quarters' shapes and the settlement's name."""
         if not hasattr(self, "quarter_areas"):
             self.quarter_areas = quarters.load(self.archive.root)
-        if not self.quarter_areas:
-            return settl, shapes
-        settl, shapes = dict(settl), dict(shapes)
-        for code, area in self.quarter_areas.items():
-            city = area.get("settlement", "")
-            placed = quarters.place(by_code.get(code, []), lambda s: (settl.get(s.key) or {}).get("s", ""), area)
-            for s in by_code.get(code, []):
-                e = settl.get(s.key)
-                if e and e.get("s") == city:
-                    settl[s.key] = {**{k: v for k, v in e.items() if k != "u"}, "s": placed.get(s.key, city)}
-            base = [{**f, "properties": {**f["properties"], "census": "", "name": ""}}  # grey, unnamed, under the quarters
-                    if f["properties"].get("census") == city else f for f in shapes.get(code, [])]
-            spoken = [quarters.SPOKEN.get(f["properties"]["name"], f["properties"]["name"]) for f in area.get("features", [])]
-            shapes[code] = base + [{**f, "properties": {**f["properties"], "name": n, "census": n}}
-                                   for f, n in zip(area.get("features", []), spoken)]
-        return settl, shapes
+        area = self.quarter_areas.get(code)
+        if not area:
+            return None
+        placed = quarters.place(sts, settlement_of, area)
+        feats = []
+        for f in area.get("features", []):
+            n = quarters.SPOKEN.get(f["properties"]["name"], f["properties"]["name"])
+            feats.append({**f, "properties": {**f["properties"], "name": n, "census": n}})
+        return placed, feats, area.get("settlement", "")
 
     def municipality_pages(self, loc: str) -> None:
         """One page per municipality at m/<code>.html, the address the search and the index open: the coordinator's
@@ -1140,7 +1132,6 @@ class Site:
         settl = self.settlements_of(rid)
         profiles = coordinator.profiles(self.mun_rows[rid], by_code, settl, self.figures)
         shapes = geo.settlements_by_municipality(self.archive.root / "geo" / geo.SETTLEMENT_FILE)
-        settl, shapes = self.with_quarters(settl, shapes, by_code)
         ranks = {i: k + 1 for k, i in enumerate(sorted(range(len(a.round.contestants)), key=lambda i: -a.totals.votes[i]))}
         manual = {i: self.list_colours[(rid, c.number)] for i, c in enumerate(a.round.contestants)
                   if (rid, c.number) in self.list_colours}
@@ -1196,7 +1187,9 @@ class Site:
                    "prev_registered": prev_m["registered"] if prev_m and prev_m["registered"] else None}
         tt = lambda key, **kw: t(key, loc, **kw)  # noqa: E731
         show = latin if loc == "en" else (lambda x: x)
+        zoom = self.quarter_zoom(m["code"], sts, settlement_of) if shapes.get(m["code"]) else None
         data = json.dumps({"rid": rid, "default": index, "name": show(m["name"]),
+                           "q": {s.number: show(q) for s, q in ((s, zoom[0].get(s.key)) for s in sts) if q} if zoom else {},
                            "lists": [{"n": c.number, "label": show(narrative.short_label(self.labels[rid][i])),
                                       "slot": ranks.get(i, 9), "country": a.totals.share_of_valid(i)}
                                      for i, c in enumerate(a.round.contestants)],
@@ -1224,6 +1217,16 @@ class Site:
         village_map, village_key = maps.settlement_map(feats, results, ranks, short, m["name"], lambda x: fmt_pct(x, loc, 1)) \
             if feats and len(results) > 1 else ("", [])
         village_legend = maps.legend(results, ranks, short) if village_map else []
+        # the city settlement by its quarters, opened by a click on it on the map above
+        zoom_map, zoom_key, zoom_info = "", [], None
+        if zoom and village_map and len(zoom[0]) > 1:
+            placed, qfeats, city = zoom
+            qrows = coordinator.by_settlement([s for s in sts if s.key in placed], {k: {"s": q} for k, q in placed.items()},
+                                              self.figures, index)
+            zoom_map, zoom_key = maps.settlement_map(qfeats, {r["name"]: r for r in qrows if r["name"]}, ranks, short,
+                                                     city, lambda x: fmt_pct(x, loc, 1), ids="z")  # own pattern ids
+            zoom_info = {"city": city, "placed": len(placed), "n": sum(1 for s in sts if settlement_of(s) == city),
+                         "legend": maps.legend({r["name"]: r for r in qrows if r["name"]}, ranks, short)}
         top2 = sorted(range(len(votes)), key=lambda k: -votes[k])[:2] if any(votes) else []
         village_facts = [tt("vi_fact_turnout", hi=f["hi"], hv=fmt_pct(f["hv"], loc, 1), lo=f["lo"], lv=fmt_pct(f["lv"], loc, 1))
                          if f["kind"] == "turnout" else
@@ -1238,6 +1241,7 @@ class Site:
                    ctrl_of=coordinator.controller_of, rules=RULES, flag_text=flag_text, labels=self.labels[rid],
                    settlement_by_key={s.key: settlement_of(s) for s in sts}, villages=villages,
                    village_leaders=village_leaders, village_map=village_map, village_legend=village_legend,
+                   zoom_map=zoom_map, zoom_key=zoom_key, zoom_info=zoom_info,
                    village_facts=village_facts, village_key=village_key,
                    mapped=sum(1 for f in feats if f["properties"].get("census") in results),
                    cdocs=self.commission_of(rid).get(m["code"], []),

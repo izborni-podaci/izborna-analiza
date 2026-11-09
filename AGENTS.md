@@ -536,7 +536,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   First fetch: 25 quarters; 141 of the 153 stations in the settlement placed by building (schools, kindergartens,
   local communities' halls); the rest (a utility company, pensioners' clubs) stay "Novi Sad". Quarters are taken
   smallest first, so Sajlovo isn't swallowed by the industrial zone around it. Bistrica is shown as Novo naselje.
-  The city is small on the municipality's map; an inset of the city alone is a candidate next step.
+  Same day, Marko: keep the municipality's map as it was and open the urban city, larger, on a click on Novi Sad.
+  So the quarters no longer replace the settlement: `Site.quarter_zoom` draws a second map (own hatch pattern ids,
+  "zh1…", so it paints while the first steps aside; the first is hidden by visibility, not display, for the same
+  reason), the page data carries `q` (station number → quarter) for its panel and its PNG.
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);
