@@ -39,7 +39,8 @@ def test_names_fit_or_become_numbers():
 def test_slots_keep_the_maintainers_colours(tmp_path):
     ranks = {0: 2, 1: 3, 2: 1, 3: 4}  # list 2 has most votes, then 0, 1, 3
     assert maps.slots(ranks, {}) == {2: 1, 0: 2, 1: 3, 3: 4}
-    assert maps.slots(ranks, {2: 8, 0: 1}) == {2: 8, 0: 1, 1: 2, 3: 3}  # red and blue set by hand, the rest shift
+    # red and blue set by hand: the rest shift, and orange (like red) and purple (like blue) come last
+    assert maps.slots(ranks, {2: 8, 0: 1}) == {2: 8, 0: 1, 1: 4, 3: 3}  # yellow, then green
     many = {i: i + 1 for i in range(10)}
     assert maps.slots(many, {})[9] == 9  # past the palette
     f = tmp_path / "list_colours.csv"

@@ -512,6 +512,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   a name that would cover a wider settlement's name becomes a number (`maps.label_box`, judged at that scale),
   numbered row by row; the key sits beside the map under the charts, small, with a heading; the tick is explained
   under the chart's title and labelled on the first bar; `--mp-none` is a neutral grey (light #e6e3de, dark #3b3a38).
+  Same day: on Pirot's map the Student list (red, set by hand) and Faktor stabilnosti (orange, by rank) read as one
+  colour. `maps.slots` now pushes a hand-set colour's look-alikes (`ALIKE`: red–orange–pink, blue–purple,
+  green–dark green, orange–yellow) to the end of the free slots, and with colours set by hand takes yellow and green
+  first (`PREFER`), apart from red and blue for most eyes. Without hand-set colours the order stays the seats'.
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);

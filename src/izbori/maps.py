@@ -33,11 +33,25 @@ def load_colours(path) -> dict[tuple[str, int], int]:
     return out
 
 
+# colours that read as one on a map (on the dark page above all): a slot taken by hand pushes its look-alikes to
+# the end of the free slots, so no other list gets one while a distinct colour is left (Pirot 2026: the Student list
+# in red, the next list in orange, one colour to the eye)
+PREFER = (1, 4, 3, 7, 6, 2, 5, 8)
+ALIKE = {8: (2, 5), 2: (8, 4, 5), 5: (8, 2), 1: (7,), 7: (1, 5), 3: (6,), 6: (3,), 4: (2,)}
+
+
 def slots(ranks: dict[int, int], manual: dict[int, int]) -> dict[int, int]:
     """Each list's palette slot: the maintainer's colour where one is set (manual: list index → slot), and the
-    rest by rank in the election over the slots left; past the palette, the "other" slot."""
+    rest by rank in the election over the slots left, the look-alikes of a hand-set colour last; past the palette,
+    the "other" slot."""
     out = dict(manual)
-    free = [k for k in range(1, PALETTE + 1) if k not in set(manual.values())]
+    taken = set(manual.values())
+    near = {a for k in taken for a in ALIKE.get(k, ())}
+    # with colours set by hand the order is no longer the seats', so take the clearest first: yellow and green
+    # apart from red and blue for most eyes (red-green blindness included), then the rest
+    order = PREFER if manual else range(1, PALETTE + 1)
+    free = [k for k in order if k not in taken and k not in near]
+    free += [k for k in order if k not in taken and k in near]
     for i in sorted(ranks, key=lambda i: ranks[i]):
         if i in out:
             continue
