@@ -533,6 +533,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   Bistrica) and 31 local communities (admin_level 10, finer). Marko left the choice to me: quarters, the names he
   used. `--quarters` keeps them in data/geo/quarters.json with public buildings' names → quarter, to place each
   station by its building's name where the city's act gives no address.
+  First fetch: 25 quarters; 141 of the 153 stations in the settlement placed by building (schools, kindergartens,
+  local communities' halls); the rest (a utility company, pensioners' clubs) stay "Novi Sad". Quarters are taken
+  smallest first, so Sajlovo isn't swallowed by the industrial zone around it. Bistrica is shown as Novo naselje.
+  The city is small on the municipality's map; an inset of the city alone is a candidate next step.
 - **8 Nov 2026, preparing for local elections.** Marko asked how to prepare; agreed order: (1) a registry of the
   municipalities' sites and a weekly watch for the commissions' documents (done: `data/municipal_sites.csv` from
   RIK's address book — only the e-mail's domain is kept, never the address, phone or mailbox — and `watch.py`);

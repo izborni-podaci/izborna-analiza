@@ -19,7 +19,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from izbori import boards, feed, maps, repeat, stats, svg
+from izbori import boards, feed, maps, quarters, repeat, stats, svg
 from izbori.checks import BY_CODE, CHECKS, GROUPS, RULES
 from izbori.config import REPO_URL, RIK_PUBLIC, SITE_URL
 from izbori.contests import Presidential, Proportional, contest_rules
@@ -631,6 +631,30 @@ class Site:
                        city_map=city_map, map_key=map_key, legend=legend, history=history,
                        country=sh["country"], short_name=cities.short_name, **sh["common"])
 
+    def with_quarters(self, settl: dict, shapes: dict, by_code: dict) -> tuple[dict, dict]:
+        """A city settlement drawn by its quarters (data/geo/quarters.json, 9 Nov 2026): its stations placed in a
+        quarter by their building take the quarter's name as their settlement, and the quarters' shapes are drawn
+        over the settlement's, which goes grey; its stations not placed keep the settlement's name, without its
+        census population (it would be the whole city's)."""
+        if not hasattr(self, "quarter_areas"):
+            self.quarter_areas = quarters.load(self.archive.root)
+        if not self.quarter_areas:
+            return settl, shapes
+        settl, shapes = dict(settl), dict(shapes)
+        for code, area in self.quarter_areas.items():
+            city = area.get("settlement", "")
+            placed = quarters.place(by_code.get(code, []), lambda s: (settl.get(s.key) or {}).get("s", ""), area)
+            for s in by_code.get(code, []):
+                e = settl.get(s.key)
+                if e and e.get("s") == city:
+                    settl[s.key] = {**{k: v for k, v in e.items() if k != "u"}, "s": placed.get(s.key, city)}
+            base = [{**f, "properties": {**f["properties"], "census": "", "name": ""}}  # grey, unnamed, under the quarters
+                    if f["properties"].get("census") == city else f for f in shapes.get(code, [])]
+            spoken = [quarters.SPOKEN.get(f["properties"]["name"], f["properties"]["name"]) for f in area.get("features", [])]
+            shapes[code] = base + [{**f, "properties": {**f["properties"], "name": n, "census": n}}
+                                   for f, n in zip(area.get("features", []), spoken)]
+        return settl, shapes
+
     def municipality_pages(self, loc: str) -> None:
         """One page per municipality at m/<code>.html, the address the search and the index open: the coordinator's
         page in its newest election, with its other elections at the end (8 Nov 2026; before that this address held
@@ -1116,6 +1140,7 @@ class Site:
         settl = self.settlements_of(rid)
         profiles = coordinator.profiles(self.mun_rows[rid], by_code, settl, self.figures)
         shapes = geo.settlements_by_municipality(self.archive.root / "geo" / geo.SETTLEMENT_FILE)
+        settl, shapes = self.with_quarters(settl, shapes, by_code)
         ranks = {i: k + 1 for k, i in enumerate(sorted(range(len(a.round.contestants)), key=lambda i: -a.totals.votes[i]))}
         manual = {i: self.list_colours[(rid, c.number)] for i, c in enumerate(a.round.contestants)
                   if (rid, c.number) in self.list_colours}

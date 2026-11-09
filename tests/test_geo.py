@@ -138,5 +138,5 @@ def test_quarters_take_the_first_drawn_and_place_buildings():
            {"type": "node", "lon": 6, "lat": 1, "tags": {"name": "Основна школа „Вељко Петровић“", "amenity": "school"}},
            {"type": "node", "lon": 9, "lat": 9, "tags": {"name": "Нигде", "amenity": "school"}}]
     feats, points = geo.quarter_features({"elements": els}, "Нови Сад", log=lambda *_: None)
-    assert [f["properties"]["name"] for f in feats] == ["Телеп", "Лиман 1", "Шира"]  # Liman is mostly Liman 1
+    assert [f["properties"]["name"] for f in feats] == ["Лиман 1", "Телеп", "Шира"]  # smaller first; Liman is mostly Liman 1
     assert points == [["Основна школа „Вељко Петровић“", "Лиман 1"], ["месна заједница Братство-Телеп", "Телеп"]]

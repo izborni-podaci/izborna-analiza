@@ -506,7 +506,7 @@ def quarter_features(data: dict, name: str, log=print) -> tuple[list[dict], list
         g = g.buffer(0).intersection(city)
         if g.area > 0:
             shapes.append((QUARTER_KINDS.index(t["place"]), t["name"], g))
-    shapes.sort(key=lambda s: (s[0], -s[2].area))
+    shapes.sort(key=lambda s: (s[0], s[2].area))  # the smaller first: Sajlovo before the industrial zone around it
     taken, quarters = None, []
     for kind, qname, g in shapes:
         own = g if taken is None else g.difference(taken)
