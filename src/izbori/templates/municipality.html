@@ -156,7 +156,7 @@
       {% if village_key %}<span class="smap-key" data-map-key>{{ t('vi_key_label') }} {% for nm in village_key %}<span>{{ loop.index }} {{ name(nm) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
       {% if village_facts %}<span class="vi-facts">{% for f in village_facts %}<span data-fact>{{ name(f) }}</span>{% endfor %}</span>{% endif %}
       {{ t('vi_map_note', mapped=i(mapped), n=i(placed|length)) }} {{ t('map_source') }}
-      <button type="button" class="link-button" data-map-png data-title="{{ name(m.name) }} · {{ rshort }}" data-file="{{ rnd.id }}-{{ m.code }}-naselja.png" data-source="{{ t('vi_png_source', site=site_host) }}" hidden>{{ t('vi_png') }}</button>
+      <button type="button" class="link-button" data-map-png data-title="{{ name(m.name) }} · {{ rshort }}" data-file="{{ rnd.id }}-{{ m.code }}-naselja.png" data-source="{{ t('vi_png_source', site=mun_url(m.code)) }}" hidden>{{ t('vi_png') }}</button>
     </figcaption>
   </figure>
   <div class="vi-panel" data-village-panel hidden></div>

@@ -83,6 +83,9 @@ class Site:
             "site_host": self.site_url.split("://", 1)[-1].rstrip("/"),
             "mun_href": lambda code: link(self.slugs[code] + "/") if code in getattr(self, "slugs", {}) else link(f"m/{code}.html"),
             "city_href": lambda slug: link(slug + "/"),
+            # the page's address as printed on a shared image: izbornipodaci.rs/pirot
+            "mun_url": lambda code: (self.site_url.split("://", 1)[-1].rstrip("/") + "/" + PREFIX[loc]
+                                     + self.slugs.get(code, f"m/{code}.html") if hasattr(self, "slugs") else ""),
             "t": lambda key, **kw: t(key, loc, **kw), "i": lambda n: fmt_int(n, loc),
             "pct": lambda x, d=1: fmt_pct(x, loc, d), "num": lambda x, d=1: fmt_num(x, loc, d),
             "pval": lambda x: "< " + fmt_num(0.001, loc, 3) if x < 0.001 else fmt_num(x, loc, 3),
