@@ -659,8 +659,9 @@ CROP_END = re.compile(r"\b(?:ЧЛАН|ЗАМЕНИК|ПРЕДСЕДНИК|ПРИ
 CROP_DPI = 200
 
 
-def page_lines(png) -> tuple[list[tuple[str, int, int]], int, int]:
-    """A page image's lines as Tesseract finds them: (text, top, bottom) in pixels, and the page's width and height."""
+def page_lines(png) -> tuple[list[tuple[str, int, int, int]], int, int]:
+    """A page image's lines as Tesseract finds them: (text, top, bottom, centre x) in pixels, and the page's width
+    and height."""
     import os
     import subprocess
     r = subprocess.run(["tesseract", str(png), "-", "-l", "srp+srp_latn", "tsv"], capture_output=True, text=True,
@@ -671,50 +672,64 @@ def page_lines(png) -> tuple[list[tuple[str, int, int]], int, int]:
         f = row.split("\t")
         if len(f) < 12:
             continue
-        level, top, left, w, h = int(f[0]), int(f[7]), int(f[6]), int(f[8]), int(f[9])
+        level, left, top, w, h = int(f[0]), int(f[6]), int(f[7]), int(f[8]), int(f[9])
         if level == 1:
             width, height = w, h
         if level == 5 and f[11].strip():
-            cur = lines.setdefault((f[2], f[3], f[4]), [[], top, top + h])
+            cur = lines.setdefault((f[1], f[2], f[3], f[4]), [[], top, top + h, left, left + w])
             cur[0].append(f[11])
             cur[1], cur[2] = min(cur[1], top), max(cur[2], top + h)
-    return sorted(((" ".join(t), a, b) for t, a, b in lines.values()), key=lambda x: x[1]), width, height
+            cur[3], cur[4] = min(cur[3], left), max(cur[4], left + w)
+    return sorted(((" ".join(t), a, b, (x0 + x1) // 2) for t, a, b, x0, x1 in lines.values()),
+                  key=lambda x: x[1]), width, height
 
 
-def result_regions(pages: list[tuple[list[tuple[str, int, int]], int]]) -> list[tuple[int, int, int]]:
-    """Where the results section is: [(page index, top, bottom)], from its heading to the next part of the form,
-    onto the next page when it runs over; nothing when there is no heading."""
-    out = []
-    for i, (lines, height) in enumerate(pages):
-        start = next((k for k, (t, _, _) in enumerate(lines) if RESULTS_HEAD.search(t) and len(t.split()) <= 6), None)
+def columns(width: int, height: int) -> list[tuple[int, int]]:
+    """A scan of two pages side by side (wider than tall) is read as two columns, left first."""
+    return [(0, width // 2), (width // 2, width)] if width > height else [(0, width)]
+
+
+def result_regions(pages: list[tuple[list, int, int]]) -> list[tuple[int, int, int, int, int]]:
+    """Where the results section is: [(page index, top, bottom, x0, x1)], from its heading to the next part of the
+    form, in the heading's column (a spread of two pages is two columns), onto the next column when it runs over;
+    nothing when there is no heading."""
+    cols = [(i, x0, x1, h) for i, (lines, h, w) in enumerate(pages) for x0, x1 in columns(w, h)]
+
+    def col_lines(c):
+        i, x0, x1, _ = c
+        return [ln for ln in pages[i][0] if x0 <= ln[3] < x1]
+    for k, c in enumerate(cols):
+        lines = col_lines(c)
+        start = next((j for j, ln in enumerate(lines) if RESULTS_HEAD.search(ln[0]) and len(ln[0].split()) <= 6), None)
         if start is None:
             continue
+        i, x0, x1, h = c
         top = max(0, lines[start][1] - 15)
-        end = next((a for t, a, _ in lines[start + 1:] if CROP_END.search(t)), None)
+        end = next((ln[1] for ln in lines[start + 1:] if CROP_END.search(ln[0])), None)
         if end is not None:
-            return [(i, top, end - 5)]
-        out.append((i, top, height))
-        if i + 1 < len(pages):
-            nxt, nh = pages[i + 1]
-            stop = next((a for t, a, _ in nxt if CROP_END.search(t)), nh // 2)
+            return [(i, top, end - 5, x0, x1)]
+        out = [(i, top, h, x0, x1)]
+        if k + 1 < len(cols):
+            n = cols[k + 1]
+            stop = next((ln[1] for ln in col_lines(n) if CROP_END.search(ln[0])), n[3] // 2)
             if stop > 20:
-                out.append((i + 1, 0, stop - 5))
+                out.append((n[0], 0, stop - 5, n[1], n[2]))
         return out
-    return out
+    return []
 
 
 def crop_results(pdf: bytes, out_dir, stem: str, max_pages: int = 4) -> list:
-    """The minutes' results section as PNG images in out_dir (stem-p<page>.png); [] when it isn't found."""
-    import shutil
+    """The minutes' results section as PNG images in out_dir (stem-p<page>-<n>.png); [] when it isn't found."""
     import subprocess
     import tempfile
     from pathlib import Path
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    made = []
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "doc.pdf"
         path.write_bytes(pdf)
-        pages, widths = [], []
+        pages = []
         for p in range(1, max_pages + 1):
             prefix = Path(tmp) / f"p{p}"
             r = subprocess.run(["pdftoppm", "-r", str(CROP_DPI), "-gray", "-png", "-f", str(p), "-l", str(p),
@@ -723,18 +738,15 @@ def crop_results(pdf: bytes, out_dir, stem: str, max_pages: int = 4) -> list:
             if r.returncode != 0 or not images:
                 break
             lines, w, h = page_lines(images[0])
-            pages.append((lines, h))
-            widths.append(w)
+            pages.append((lines, h, w))
             images[0].unlink()
-        made = []
-        for i, top, bottom in result_regions(pages):
-            target = out_dir / f"{stem}-p{i + 1}"
+        for n, (i, top, bottom, x0, x1) in enumerate(result_regions(pages), 1):
+            target = out_dir / f"{stem}-p{i + 1}-{n}"
             subprocess.run(["pdftoppm", "-r", str(CROP_DPI), "-gray", "-png", "-singlefile", "-f", str(i + 1),
-                            "-l", str(i + 1), "-x", "0", "-y", str(top), "-W", str(widths[i]), "-H",
+                            "-l", str(i + 1), "-x", str(x0), "-y", str(top), "-W", str(x1 - x0), "-H",
                             str(max(1, bottom - top)), str(path), str(target)], capture_output=True)
             if Path(f"{target}.png").exists():
                 made.append(Path(f"{target}.png"))
-        shutil.rmtree(tmp, ignore_errors=True)
     return made
 
 
