@@ -4,6 +4,7 @@ settlements | site | targets | check."""
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import re
 import subprocess
@@ -650,39 +651,59 @@ def cmd_local(args) -> int:
             if args.push:
                 push()
         return 0
-    if args.results:  # a local election's results from the commission's report, as a draft round
-        store = local.load_store(root)
-        cands = local.report_candidates(store, args.results, args.date)
-        if args.hand:  # the stations read by eye from the minutes; the commission's report (its totals) is the source
-            report = next((u for u in cands if "ukup" in watch.fold(urllib.parse.unquote(u))), cands[0] if cands else "")
-            names = [] if local.hand_names(root, local.round_id(args.results, args.date)) else \
-                local.list_names(watch.load_store(root)["docs"], store, args.results, args.date)
-            local.build(root, args.results, args.date, args.name, report, None, [n for n, _ in names], log)
-            return 0
-        if args.url:
-            cands = [args.url]
-        best = None
-        for u in cands:
-            text = local.text_of(local.download(u), u, pages=20)
-            k, rows, aside = local.result_rows(text)
-            log(f"{u.rsplit('/', 1)[-1][:60]}: {k} lists, {len(rows)} rows, {len(aside)} set aside")
-            if rows and (best is None or len(rows) > best[2]):
-                best = (u, text, len(rows))
-        if not best:
-            log("no report of results read")
-            return 1
-        names = local.list_names(watch.load_store(root)["docs"], store, args.results, args.date)
-        for i, (nm, u) in enumerate(names, 1):
-            log(f"  list {i}: proclaimed in {u.rsplit('/', 1)[-1][:80]}")
-        summary = local.build(root, args.results, args.date, args.name, best[0], best[1], [n for n, _ in names], log)
-        if args.commit and commit([str(root / local.DRAFTS)], f"Data: draft of the local election {summary['round']}"):
+    if args.results:  # local elections' results from the commissions' reports, as draft rounds
+        codes = [c.strip() for c in args.results.split(",") if c.strip()]
+        names_of = {r["municipality_code"]: r["name"] for r in csv.DictReader(
+            open(root / watch.SITES_FILE, encoding="utf-8"))}
+        made = []
+        for code in codes:  # several municipalities of the same election day in one run, one failing not the rest
+            name = args.name if args.name and len(codes) == 1 else names_of.get(code, code)
+            log(f"== {code} {name}")
+            summary = local_results(root, code, args.date, name, args, log)
+            if summary:
+                made.append(summary["round"])
+        if made and args.commit and commit([str(root / local.DRAFTS)],
+                                           f"Data: draft of the local election {', '.join(made)}"):
             if args.push:
                 push()
-        return 0
+        return 0 if made else 1
     docs = watch.load_store(root)["docs"]
     local.probe(docs, args.probe, args.kind or None, args.limit, log, path_has=args.path_has, pages=args.pages,
                 chars=args.chars)
     return 0
+
+
+def local_results(root: Path, code: str, date: str, name: str, args, log) -> dict | None:
+    """One municipality's local results as a draft round: from the commission's report by station, or (--hand)
+    from the stations read by eye from the minutes."""
+    from izbori import local, watch
+    store = local.load_store(root)
+    cands = local.report_candidates(store, code, date)
+    if args.hand:  # the stations read by eye from the minutes; the commission's report (its totals) is the source
+        report = next((u for u in cands if "ukup" in watch.fold(urllib.parse.unquote(u))), cands[0] if cands else "")
+        names = [] if local.hand_names(root, local.round_id(code, date)) else \
+            local.list_names(watch.load_store(root)["docs"], store, code, date)
+        return local.build(root, code, date, name, report, None, [n for n, _ in names], log)
+    if args.url:
+        cands = [args.url]
+    best = None
+    for u in cands:
+        try:
+            text = local.text_of(local.download(u), u, pages=20)
+        except Exception as e:  # noqa: BLE001 - a report down: the next one
+            log(f"{u.rsplit('/', 1)[-1][:60]}: {type(e).__name__}")
+            continue
+        k, rows, aside = local.result_rows(text)
+        log(f"{u.rsplit('/', 1)[-1][:60]}: {k} lists, {len(rows)} rows, {len(aside)} set aside")
+        if rows and (best is None or len(rows) > best[2]):
+            best = (u, text, len(rows))
+    if not best:
+        log("no report of results read")
+        return None
+    names = local.list_names(watch.load_store(root)["docs"], store, code, date)
+    for i, (nm, u) in enumerate(names, 1):
+        log(f"  list {i}: proclaimed in {u.rsplit('/', 1)[-1][:80]}")
+    return local.build(root, code, date, name, best[0], best[1], [n for n, _ in names], log)
 
 
 def cmd_watch(args) -> int:
@@ -988,7 +1009,7 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--budget", type=int, default=240, help="minutes of classifying in one run")
     lo.add_argument("--shard", metavar="I/N", help="with --classify: only the I-th of N parts (from 0), split by municipality")
     lo.add_argument("--merge-parts", metavar="DIR", help="merge the parts' data/local_docs.json found under DIR")
-    lo.add_argument("--results", metavar="CODE", help="read a municipality's local results report into a draft round")
+    lo.add_argument("--results", metavar="CODES", help="read municipalities' local results reports into draft rounds (codes, comma-separated, of one election day)")
     lo.add_argument("--date", default="", help="the local election's day (YYYY-MM-DD)")
     lo.add_argument("--overview", action="store_true", help="per municipality and local election, what we have")
     lo.add_argument("--crops", metavar="CODE", help="cut the results section out of a municipality's boards' minutes")

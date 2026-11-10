@@ -33,13 +33,13 @@ on:
         description: "Probe: characters of each masked layout logged"
         default: "1200"
       results:
-        description: "Results: a municipality code whose local results report to read into a draft round (with kind boards: a local round id, e.g. L80314-20240602)"
+        description: "Results: municipality codes (comma-separated, one election day) whose local results reports to read into draft rounds (with kind boards: a local round id, e.g. L80314-20240602)"
         default: ""
       date:
         description: "Results: the local election's day (YYYY-MM-DD)"
         default: ""
       name:
-        description: "Results: the municipality's name for the title, in Cyrillic (e.g. Панчево)"
+        description: "Results: the municipality's name for the title, in Cyrillic (e.g. Панчево); empty, or several codes: the sites file's"
         default: ""
 
 permissions:

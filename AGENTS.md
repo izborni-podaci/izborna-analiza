@@ -784,4 +784,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   documents read) were left as before. Now an entry is taken only when the store lacks it or the part read it
   by a newer classifier version, which doesn't depend on the parts' order; that run's parts were merged again
   (`kind` merge).
+- **10 Nov 2026, several municipalities' results in one run.** The local runs that commit wait for each other and
+  GitHub keeps only one waiting, so `--results` takes the codes of one election day comma-separated (17 Dec 2023:
+  Prokuplje, Rača, Golubac), each named from the sites file, one that fails not stopping the rest, and the drafts
+  are committed together.
 
