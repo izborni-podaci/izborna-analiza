@@ -105,7 +105,7 @@ municipality_code,name,domain,note
 71161,Трговиште,trgoviste.rs,rik-adresar
 71170,Трстеник,trstenik.rs,rik-adresar
 71188,Тутин,tutin.rs,rik-adresar
-71196,Ћићевац,cicevac.ls.gov.rs,rik-adresar
+71196,Ћићевац,cicevac.rs,"rik-adresar; was cicevac.ls.gov.rs, found by the watch 2026-11-09"
 71200,Ћуприја,cuprija.rs,rik-adresar
 71218,Уб,opstinaub.org.rs,rik-adresar
 71226,Црна Трава,opstinacrnatrava.org.rs,rik-adresar
@@ -124,12 +124,12 @@ municipality_code,name,domain,note
 80012,Ада,ada.org.rs,rik-adresar
 80039,Алибунар,alibunar.org.rs,rik-adresar
 80047,Апатин,apatin.rs,rik-adresar
-80055,Бач,bac.ls.gov.rs,rik-adresar
-80063,Бачка Паланка,backapalanka.org.rs,rik-adresar
+80055,Бач,bac.rs,"rik-adresar; was bac.ls.gov.rs, found by the watch 2026-11-09"
+80063,Бачка Паланка,backapalanka.rs,"rik-adresar; was backapalanka.org.rs, found by the watch 2026-11-09"
 80071,Бачка Топола,btopola.org.rs,rik-adresar
 80080,Бачки Петровац,backipetrovac.rs,rik-adresar
 80098,Бела Црква,opstinabc.rs,rik-adresar
-80101,Беочин,beocin.ls.gov.rs,rik-adresar
+80101,Беочин,beocin.rs,"rik-adresar; was beocin.ls.gov.rs, found by the watch 2026-11-09"
 80110,Бечеј,,"rik-adresar: a webmail address, site to find"
 80128,Град Вршац,vrsac.org.rs,rik-adresar
 80136,Жабаљ,,"rik-adresar: a webmail address, site to find"
@@ -154,7 +154,7 @@ municipality_code,name,domain,note
 80357,Рума,,"rik-adresar: a webmail address, site to find"
 80365,Сента,zenta-senta.co.rs,rik-adresar
 80373,Сечањ,secanj.ls.gov.rs,rik-adresar
-80381,Град Сомбор,sombor.rs,rik-adresar
+80381,Град Сомбор,sombor.org.rs,"rik-adresar; was sombor.rs, found by the watch 2026-11-09"
 80390,Србобран,srbobran48.rs,rik-adresar
 80403,Град Сремска Митровица,sremskamitrovica.org.rs,rik-adresar
 80411,Сремски Карловци,sremskikarlovci.rs,rik-adresar
