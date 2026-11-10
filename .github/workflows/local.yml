@@ -16,7 +16,7 @@ on:
         description: "Probe: a municipality code (e.g. 80314 for Pančevo)"
         default: ""
       kind:
-        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (on a temporary branch, crops-tmp). With results: boards reads that local round's board decisions"
+        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (on a temporary branch, crops-tmp); crops-read deletes that branch. With results: boards reads that local round's board decisions"
         default: ""
       limit:
         description: "How many documents to log"
@@ -104,8 +104,11 @@ jobs:
           git add -f crops/
           git commit -qm "Crops of the boards' minutes' results section (temporary, deleted once read)"
           git push -qf origin HEAD:refs/heads/crops-tmp
+      - name: Delete the crops' branch once read
+        if: ${{ inputs.kind == 'crops-read' }}
+        run: git push -q origin --delete crops-tmp || true
       - name: Probe
-        if: ${{ inputs.code != '' && inputs.kind != 'crops' }}
+        if: ${{ inputs.code != '' && inputs.kind != 'crops' && inputs.kind != 'crops-read' }}
         env:
           CODE: ${{ inputs.code }}
           KIND: ${{ inputs.kind }}

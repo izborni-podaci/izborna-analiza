@@ -611,12 +611,14 @@ def read_board(text: str, url: str, day: str | None, contestants: list[dict], nu
 
 
 def board_candidates(store: dict, code: str, day: str) -> list[str]:
-    """The municipality's documents dated in the weeks before the election (a board decision may be filed as a
-    list's document: it names the lists), not its minutes or results."""
+    """The municipality's documents dated in the weeks before the election, or in the weeks after it, for a vote
+    repeated at a station (Sečanj 2025: stations 7 and 8 in December), not its minutes or results (a board decision
+    may be filed as a list's document: it names the lists)."""
     from datetime import timedelta
     first = (_date(day) - timedelta(days=BOARD_WINDOW)).isoformat()
+    last = (_date(day) + timedelta(days=REPORT_AFTER)).isoformat()
     return sorted(u for u, v in store["docs"].items() if v["m"] == code and v.get("e") in ("local", None)
-                  and v.get("d") and first <= v["d"] <= day and v["k"] not in ("minutes", "results"))
+                  and v.get("d") and first <= v["d"] <= last and v["k"] not in ("minutes", "results"))
 
 
 def _board_one(args: tuple) -> tuple[str, dict | None, str | None]:
