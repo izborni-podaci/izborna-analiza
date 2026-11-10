@@ -58,7 +58,7 @@ def text_of(data: bytes, url: str, pages: int = 2) -> str:
 
 
 def probe(docs: dict, code: str, kind: str | None = None, limit: int = 40, log=print, fetch=download,
-          path_has: str = "") -> None:
+          path_has: str = "", pages: int = 2, chars: int = 1200) -> None:
     """Log the masked layout of a municipality's documents (of one kind), the folders they sit in first."""
     mine = sorted(u for u, v in docs.items() if v["m"] == code and (not kind or v["k"] == kind)
                   and path_has in urllib.parse.unquote(u))
@@ -70,12 +70,12 @@ def probe(docs: dict, code: str, kind: str | None = None, limit: int = 40, log=p
     for k, u in enumerate(mine[:limit], 1):
         name = urllib.parse.unquote(u.rsplit("/", 1)[-1])
         try:
-            text = text_of(fetch(u), u)
+            text = text_of(fetch(u), u, pages=pages)
         except Exception as e:  # noqa: BLE001 - one document down must not stop the probe
             log(f"[{k}] {shape(name, 120)}: {type(e).__name__}")
             continue
         log(f"[{k}] {docs[u]['k']} {urllib.parse.urlsplit(u).path.rsplit('/', 1)[0]}/{shape(name, 120)} "
-            f"({len(text)} characters)\n{shape(text)}\n")
+            f"({len(text)} characters)\n{shape(text, chars)}\n")
 
 
 # --- what a document is, from its first page ---------------------------------------------------------------------

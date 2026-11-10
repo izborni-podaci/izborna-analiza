@@ -21,6 +21,12 @@ on:
       path_has:
         description: "Only documents whose address holds this (e.g. 2023/12)"
         default: ""
+      pages:
+        description: "Probe: pages read per document"
+        default: "2"
+      chars:
+        description: "Probe: characters of each masked layout logged"
+        default: "1200"
 
 permissions:
   contents: write
@@ -57,4 +63,6 @@ jobs:
           KIND: ${{ inputs.kind }}
           LIMIT: ${{ inputs.limit }}
           PATH_HAS: ${{ inputs.path_has }}
-        run: uv run izbori local --probe "$CODE" --kind "$KIND" --limit "$LIMIT" --path-has "$PATH_HAS"
+          PAGES: ${{ inputs.pages }}
+          CHARS: ${{ inputs.chars }}
+        run: uv run izbori local --probe "$CODE" --kind "$KIND" --limit "$LIMIT" --path-has "$PATH_HAS" --pages "$PAGES" --chars "$CHARS"

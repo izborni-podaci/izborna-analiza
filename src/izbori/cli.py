@@ -601,7 +601,8 @@ def cmd_local(args) -> int:
                 push()
         return 0
     docs = watch.load_store(root)["docs"]
-    local.probe(docs, args.probe, args.kind or None, args.limit, log, path_has=args.path_has)
+    local.probe(docs, args.probe, args.kind or None, args.limit, log, path_has=args.path_has, pages=args.pages,
+                chars=args.chars)
     return 0
 
 
@@ -911,6 +912,8 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--kind", default="", help="stations, boards or commission")
     lo.add_argument("--limit", type=int, default=40)
     lo.add_argument("--path-has", default="", help="only documents whose address holds this (e.g. 2023/12)")
+    lo.add_argument("--pages", type=int, default=2, help="pages read per document")
+    lo.add_argument("--chars", type=int, default=1200, help="characters of each masked layout logged")
     lo.set_defaults(fn=cmd_local)
     u = sub.add_parser("update", help="check RIK, archive what changed; with --watch, keep going while counting")
     u.add_argument("--watch", action="store_true")
