@@ -600,8 +600,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   collective list, a scan). With them every list's total matches. The report's column order differs from
   Wikipedia's (ordered by votes): 1 Vučić, 2 SVM, 3 Pančevo protiv nasilja, 4 POKS, 5 Pančevačka grupa.
   Published the same day as round `L80314-20240602` (moved from data/local/ to data/rounds/): the first local
-  election read from a commission's own documents. Invalid ballots are 26 short of the published total; the cells
-  derived from a sum at stations 16, 26, 69 and 74 are the candidates, for a person to read.
+  election read from a commission's own documents. Invalid ballots looked 26 short of Wikipedia's 1,593, but Marko
+  checked the four cells derived from a sum (stations 16, 26, 69, 74) and they are right: Wikipedia's figure is
+  voters (51,120, which matches) less valid votes, while the report's invalid ballots count what was in the box
+  (51,094 ballots = 49,527 valid + 1,567 invalid). The 26 are voters who signed but left no ballot in the box.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**
