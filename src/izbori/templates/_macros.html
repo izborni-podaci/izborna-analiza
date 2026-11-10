@@ -124,7 +124,7 @@
 {% endmacro %}
 
 {% macro ctrl_summary(rows, readable, total) %}
-<p class="rule">{{ t('ctrl_note') }}</p>
+<p class="rule">{{ t('ctrl_note_local' if local_report(rnd.id) else 'ctrl_note') }}</p>
 <p>{{ t('ctrl_read', n=i(readable), total=i(total)) }}</p>
 <div class="table-wrap">
 <table class="compact">

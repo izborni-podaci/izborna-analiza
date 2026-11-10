@@ -125,7 +125,7 @@
 
 <h2 id="result">{{ t('mun_result_heading') }}</h2>
 <p class="mun-line">{{ t('mun_turnout_line', voted=i(m.voted), registered=i(m.registered), turnout=pct(m.turnout, 1), invalid=pct(m.invalid, 1)) }}</p>
-<p class="rule">{{ t('mun_result_note') }}</p>
+<p class="rule">{{ t('mun_result_note_local' if local_report(rnd.id) else 'mun_result_note') }}</p>
 <ul class="vote-list">
 {% for r in mres if not r.minor %}
   <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>

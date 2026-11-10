@@ -623,7 +623,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   or, for a citizens' group, the round's only citizens' group list (two such lists: not guessed). OCR's garbled
   "2. чпан;" and "~ замсник 1. чпана:" at a line's start still start a role (the deputy's on one line: "сутра" at
   the end of a line once took the next member for a deputy), and a role in quotes, as a supplement (допуна)
-  writes it, is read. Second reading: lists 1–5 had a member at 79, 75, 79, 70 and 65 of 79 stations.
+  writes it, is read. Third reading: lists 1–5 have a member at 79, 76, 79, 70 and 65 of 79 stations; at 103
+  slots a list named its member and no deputy (the decisions have no deputy's line there). Left: station 65's
+  decision, whose OCR garbled lists 2 and 4 (four roles matched to no list), and a supplement at station 54
+  whose one role names its list otherwise than any of the five (not guessed). The controllers' note on a local
+  round names the commission's decisions on the municipality's site as the source (`ctrl_note_local`).
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**
