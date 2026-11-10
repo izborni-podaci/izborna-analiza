@@ -520,7 +520,7 @@ def role_shape(text: str, contestants: list[dict]) -> list[str]:
         part = " ".join(body[m.end(): marks[k + 1].start() if k + 1 < len(marks) else len(body)].split())
         head, _, tail = part.partition(",")
         masked = LETTERS_WORD.sub(lambda w: w.group(0) if boards.tokens(w.group(0)) & own else "xxx", tail)
-        out.append(f"{m.group(0).strip()} xxx,{masked} -> {role_list(part, contestants)}")
+        out.append(f"{shape(m.group(0).strip(), 80)} xxx,{masked} -> {role_list(part, contestants)}")
     return out
 
 
@@ -574,7 +574,7 @@ def _board_one(args: tuple) -> tuple[str, dict | None, str | None]:
 def read_boards(root, rid: str, log=print, workers: int = 4, one=_board_one, only: str = "") -> dict:
     """Read a local round's board decisions into data/rounds/<rid>/boards.json; returns a summary (no names).
 
-    With `only`, just the documents whose link holds it, each extended one's roles logged masked (role_shape);
+    With `only`, just the documents whose link holds it (or one of its parts between "|"), each extended one's roles logged masked (role_shape);
     nothing is written."""
     import csv
     import json
@@ -588,7 +588,7 @@ def read_boards(root, rid: str, log=print, workers: int = 4, one=_board_one, onl
         numbers = {r["bm_broj"].strip() for r in csv.DictReader(f)}
     store = load_store(root)
     days = {u: store["docs"][u].get("d") for u in board_candidates(store, code, day)
-            if only in urllib.parse.unquote(u)}
+            if not only or any(o and o in urllib.parse.unquote(u) for o in only.split("|"))}
     log(f"{rid}: {len(days)} documents of the weeks before the election to look at")
     items = [(u, d, contestants, numbers, code) + ((True,) if only else ()) for u, d in days.items()]
     out, failed = {}, []

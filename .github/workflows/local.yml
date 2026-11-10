@@ -21,7 +21,7 @@ on:
         description: "How many documents to log"
         default: "40"
       path_has:
-        description: "Only documents whose address holds this (e.g. 2023/12); with kind boards, their roles are logged masked and nothing is kept"
+        description: "Only documents whose address holds this (e.g. 2023/12); with kind boards (alternatives split by |), their roles are logged masked and nothing is kept"
         default: ""
       pages:
         description: "Probe: pages read per document"
