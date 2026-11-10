@@ -87,6 +87,7 @@ class Site:
             "mun_href": lambda code: link(self.slugs[code] + "/") if code in getattr(self, "slugs", {}) else link(f"m/{code}.html"),
             "city_href": lambda slug: link(slug + "/"),
             "local_report": self.local_report,
+            "local_from_minutes": self.local_from_minutes,
             "mname": lambda text: self.display_names.get(text, text) if hasattr(self, "display_names") else text,
             "part_of": lambda key: self.part_keys.get(key) if hasattr(self, "part_keys") else None,
             "lead_ramp": maps.lead_ramp(lambda x: fmt_pct(x, loc, 0)),
@@ -671,6 +672,10 @@ class Site:
         if rid not in self._one_mun:
             self._one_mun[rid] = len({s.municipality_code for s in self.analyses[rid].round.stations}) == 1
         return self._one_mun[rid]
+
+    def local_from_minutes(self, rid: str) -> bool:
+        """A local round whose stations were read from their boards' minutes, the commission's report holding totals."""
+        return ((self.archive.meta(rid) or {}).get("local") or {}).get("from") == "minutes"
 
     def local_report(self, rid: str) -> str | None:
         """The commission's report a local round was read from (meta.json "local"), for the page's source line."""

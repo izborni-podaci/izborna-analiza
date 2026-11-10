@@ -332,14 +332,51 @@ def _date(d):
     return date.fromisoformat((d or "2000-01-01")[:10])
 
 
-def build(root, code: str, day: str, name: str, report_url: str, text: str, lists: list[str], log=print) -> dict:
-    """Write the draft round of a local election from its report's text; returns a summary."""
+HAND = "local_hand.csv"  # round, station, registered, voted, ballots, invalid, valid, votes, source, note
+
+
+def hand_rows(root, rid: str, log=print) -> tuple[int, list[dict], list[dict], dict[int, str]]:
+    """Stations read by eye from their boards' minutes (data/local_hand.csv): (lists, rows, set aside, minutes' link
+    by station). A row must add up as a report's does (the lists to the valid votes, the ballots less the invalid
+    ones to the valid votes, no more ballots than voters); one that doesn't is set aside, never mended."""
+    import csv
+    from pathlib import Path
+    p = Path(root) / HAND
+    rows, aside, links, k = [], [], {}, 0
+    if not p.exists():
+        return 0, rows, aside, links
+    for c in csv.DictReader(open(p, encoding="utf-8", newline="")):
+        if c.get("round") != rid:
+            continue
+        n = int(c["station"])
+        r = {f: int(c[f]) for f in ("registered", "voted", "ballots", "invalid", "valid")}
+        r.update(n=n, v=[int(x) for x in c["votes"].split()], note=c.get("note") or "")
+        k = max(k, len(r["v"]))
+        links[n] = c.get("source") or ""
+        why = ("the lists don't add up to the valid votes" if sum(r["v"]) != r["valid"] else
+               "ballots less invalid aren't the valid votes" if r["ballots"] - r["invalid"] != r["valid"] else
+               "more ballots than voters" if r["ballots"] > r["voted"] else "")
+        if why:
+            aside.append({"n": n, "why": why, "raw": r})
+            log(f"station {n}: {why}")
+        else:
+            rows.append(r)
+    return k, sorted(rows, key=lambda r: r["n"]), aside, links
+
+
+def build(root, code: str, day: str, name: str, report_url: str, text: str | None, lists: list[str], log=print) -> dict:
+    """Write the draft round of a local election from its report's text, or, with no text, from the stations read
+    by eye from the boards' minutes (data/local_hand.csv); returns a summary."""
     import csv
     import io
     import json
     from pathlib import Path
-    k, rows, aside = result_rows(text)
     rid = round_id(code, day)
+    links: dict[int, str] = {}
+    if text is None:
+        k, rows, aside, links = hand_rows(root, rid, log)
+    else:
+        k, rows, aside = result_rows(text)
     rows, aside = corrected(root, rid, rows, aside, log)
     lists = hand_names(root, rid) or lists
     src_round, like = stations_like(root, code, max([r["n"] for r in rows] + [a["n"] for a in aside] + [0]), day)
@@ -352,7 +389,7 @@ def build(root, code: str, day: str, name: str, report_url: str, text: str, list
         s = like.get(str(r["n"]))
         w.writerow([f"{rid}-{r['n']}", r["n"], s.name if s else "", s.municipality if s else name, code,
                     s.district if s else "", s.district_code if s else "", r["registered"], r["voted"], r["ballots"],
-                    r["valid"], r["invalid"], ""] + r["v"] + ["", ""])  # the report is not a station's minutes
+                    r["valid"], r["invalid"], ""] + r["v"] + [links.get(r["n"], ""), ""])  # the minutes, when read
     (out / "results.csv").write_text("﻿" + buf.getvalue(), encoding="utf-8")
     def contestant(i):
         c = lists[i] if i < len(lists) else f"Изборна листа {i + 1}"
@@ -361,6 +398,7 @@ def build(root, code: str, day: str, name: str, report_url: str, text: str, list
             "date": day, "kind": "local", "rik_type": 3, "source": "commission",
             "title": f"Локални {day[:4]} - {name}",
             "local": {"municipality": code, "report": report_url, "stations_from": src_round,
+                      **({"from": "minutes"} if text is None else {}),
                       "aside": [{"n": a["n"], "why": a["why"]} for a in aside],
                       "notes": {str(r["n"]): r["note"] for r in rows if r["note"]}}}
     (out / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -654,7 +692,8 @@ def now_day() -> str:
 # the members' part; the images go to a temporary branch, deleted once read. What is read goes into
 # data/local_hand.csv and must add up, row by row and to the commission's totals.
 RESULTS_HEAD = re.compile(r"РЕЗУЛТАТИ|REZULTATI")
-CROP_END = re.compile(r"\b(?:ЧЛАН|ЗАМЕНИК|ПРЕДСЕДНИК|ПРИМЕДБ\w*|ПОДАЦИ|ПОТПИС\w*|БИРАЧКИ\s+ОДБОР)\b"
+REGISTERED = re.compile(r"УПИСАНИХ|UPISANIH")  # the row with the registered voters, in an earlier part of the form
+CROP_END = re.compile(r"\b(?:ЧЛАН|ЗАМЕНИК|ПРЕДСЕДНИК|ПРИМЕДБ\w*|ПОДАЦИ|ПОТПИС\w*|ЧИЊЕНИЦ\w*|НАПОМЕН\w*|БИРАЧКИ\s+ОДБОР)\b"
                       r"|^\W*1\s*[.,]\s*Број\s+бирачког\s+места|^\W*\d+\s*[.,]\s*Датум")
 CROP_DPI = 200
 
@@ -698,6 +737,16 @@ def result_regions(pages: list[tuple[list, int, int]]) -> list[tuple[int, int, i
     def col_lines(c):
         i, x0, x1, _ = c
         return [ln for ln in pages[i][0] if x0 <= ln[3] < x1]
+    registered = []  # the registered voters' row: a band of the form around it, its own line only
+    for c in cols:
+        hit = next((ln for ln in col_lines(c) if REGISTERED.search(ln[0])), None)
+        if hit:
+            registered = [(c[0], max(0, hit[1] - 60), min(c[3], hit[2] + 140), c[1], c[2])]
+            break
+    return registered + _results(cols, col_lines)
+
+
+def _results(cols, col_lines) -> list[tuple[int, int, int, int, int]]:
     for k, c in enumerate(cols):
         lines = col_lines(c)
         start = next((j for j, ln in enumerate(lines) if RESULTS_HEAD.search(ln[0]) and len(ln[0].split()) <= 6), None)

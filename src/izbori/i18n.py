@@ -181,6 +181,8 @@ S: dict[str, tuple[str, str]] = {
     "rik_time": ("Време у РИК-овој датотеци", "Time in RIK's file"),
     "local_source": ("Локални избори: резултати по бирачким местима из извештаја изборне комисије општине, прочитани и проверени збировима.",
                      "Local election: results by polling station from the municipal electoral commission's report, read and checked by their sums."),
+    "local_source_minutes": ("Локални избори: резултати по бирачким местима из записника бирачких одбора (уписани руком, прочитани и проверени збировима и укупним извештајем комисије).",
+                             "Local election: results by polling station from the polling boards' minutes (filled in by hand, read and checked by their sums and against the commission's report of totals)."),
     "local_source_link": ("Извештај комисије", "The commission's report"),
     "fetched": ("Преузето", "Fetched"),
     "snapshots": ("Сачуваних верзија", "Versions archived"),

@@ -614,6 +614,11 @@ def cmd_local(args) -> int:
     if args.results:  # a local election's results from the commission's report, as a draft round
         store = local.load_store(root)
         cands = local.report_candidates(store, args.results, args.date)
+        if args.hand:  # the stations read by eye from the minutes; the commission's report (its totals) is the source
+            report = next((u for u in cands if "ukup" in watch.fold(urllib.parse.unquote(u))), cands[0] if cands else "")
+            names = local.list_names(watch.load_store(root)["docs"], store, args.results, args.date)
+            local.build(root, args.results, args.date, args.name, report, None, [n for n, _ in names], log)
+            return 0
         if args.url:
             cands = [args.url]
         best = None
@@ -947,6 +952,7 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--out", default="crops", help="where --crops writes its images")
     lo.add_argument("--boards", metavar="ROUND", help="read a local round's polling board decisions into its boards.json")
     lo.add_argument("--name", default="", help="the municipality's name for the round's title (Cyrillic)")
+    lo.add_argument("--hand", action="store_true", help="with --results: the stations read by eye from the minutes")
     lo.add_argument("--url", default="", help="the report's link, when the classified documents don't say")
     lo.add_argument("--commit", action="store_true")
     lo.add_argument("--push", action="store_true")

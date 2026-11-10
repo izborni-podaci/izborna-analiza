@@ -219,10 +219,11 @@ def test_report_candidates_by_link_and_days_after():
 
 
 def test_the_results_section_alone_is_cut_out():
-    page = ([("ЗАПИСНИК", 50, 80, 800), ("1. Број бирачког места 1", 120, 150, 800), ("11. РЕЗУЛТАТИ ГЛАСАЊА", 900, 930, 600),
+    page = ([("ЗАПИСНИК", 50, 80, 800), ("1. Број бирачког места 1", 120, 150, 800),
+             ("4. БРОЈ БИРАЧА УПИСАНИХ У ИЗВОД 546", 400, 430, 800), ("11. РЕЗУЛТАТИ ГЛАСАЊА", 900, 930, 600),
              ("11.1 БРОЈ БИРАЧА 465", 950, 980, 800), ("11.5 БРОЈ ГЛАСОВА", 1300, 1330, 800),
              ("III. БИРАЧКИ ОДБОР", 1700, 1730, 600), ("ПРЕДСЕДНИК", 1750, 1780, 600)], 2339, 1654)
-    assert local.result_regions([page]) == [(0, 885, 1695, 0, 1654)]
+    assert local.result_regions([page]) == [(0, 340, 570, 0, 1654), (0, 885, 1695, 0, 1654)]
     # two pages side by side: the left one's parts don't end the right one's results; they run on to the next scan
     spread = ([("I. ПРЕ ОТВАРАЊА", 300, 330, 800), ("1. Број бирачког места", 400, 430, 800),
                ("III. РЕЗУЛТАТИ ГЛАСАЊА", 20, 50, 2500), ("10.1 БРОЈ БИРАЧА", 80, 110, 2500)], 2339, 3306)
@@ -235,3 +236,13 @@ def test_the_results_section_alone_is_cut_out():
 def test_crops_command_runs(tmp_path):
     from izbori import cli
     assert cli.main(["--data", str(tmp_path), "local", "--crops", "80446", "--out", str(tmp_path / "c")]) == 0
+
+
+def test_hand_rows_must_add_up(tmp_path):
+    (tmp_path / local.HAND).write_text(
+        "round,station,registered,voted,ballots,invalid,valid,votes,source,note\n"
+        "L1-20240602,1,546,316,316,4,312,200 50 40 22,https://t.rs/LO1.pdf,\n"
+        "L1-20240602,2,600,300,300,5,290,200 50 40 0,https://t.rs/LO2.pdf,\n"
+        "L9-20240602,1,1,1,1,0,1,1,x,\n", encoding="utf-8")
+    k, rows, aside, links = local.hand_rows(tmp_path, "L1-20240602", log=lambda *a: None)
+    assert k == 4 and [r["n"] for r in rows] == [1] and aside[0]["n"] == 2 and links[1] == "https://t.rs/LO1.pdf"
