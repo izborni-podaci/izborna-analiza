@@ -447,12 +447,35 @@ def hand_names(root, rid: str) -> list[dict]:
 # assembly's groups of councillors) and the extended (one member and a deputy per list, on its proposal: the lists'
 # controllers). Pančevo 2024 writes a slot as "1. члан: <person>, <…>, <list>;" and its deputy as "- заменик 1.
 # члана: <person>, <…>, <list>;" with no "на предлог", which RIK's reader (boards.parse_decision) doesn't take; so
-# each role's own text is matched to a list (boards.match_list), and only the list's number and whether the role
+# each role's own text is matched to a list (role_list), and only the list's number and whether the role
 # was filled are kept, as in RIK's rounds (boards.json). Changes, ends and the standing composition are kept as
 # links only: whether a list had its member at a station is the appointments' (boards.coverage).
-ROLE_ENTRY = re.compile(r"(?:^|\n)[\s\-–—•]*(?:(\d{1,2})\s*[.,]\s*(?:члан|clan|član)|(?:заменик|zamenik)\s*(\d{1,2})"
-                        r"\s*[.,]\s*(?:члана|clana|člana))\s*:", re.I)
+# a member's line, "1. члан:", or a deputy's, "- заменик 1. члана:"; OCR garbles the words ("2. чпан;", "~ замеиик 1.
+# чпана:"), so at a line's start a short word in their place, before ":" or ";", still starts the role
+ROLE_ENTRY = re.compile(r"(?:^|\n)[\s\-–—~•]*(?:(?:заменик|zamenik|[^\W\d_]{4,9})\s*(?P<d>\d{1,2})\s*[.,]\s*"
+                        r"(?:члана|clana|člana|[^\W\d_]{3,7})\s*[:;]|(?P<m>\d{1,2})\s*[.,]\s*(?:члан|clan|član|[^\W\d_]{3,6})"
+                        r"\s*[:;])", re.I)
 BOARD_WINDOW = 60  # days before the election in which its boards are appointed
+
+
+def role_list(part: str, contestants: list[dict]) -> int | None:
+    """The list a role's text names: after the person (before the first comma), the list sharing most of its words
+    with the text, clearly ahead of the next (Pančevo writes list 4 as "Панчево-Борба против насиља", three words
+    of list 3's name too); or, for a citizens' group named otherwise than its list ("Група грађана „…“"), the
+    round's only list of a citizens' group. Otherwise None: not guessed."""
+    head, comma, tail = part.partition(",")
+    words = set(boards._words(tail if comma else part))
+    counts = sorted(((len(words & set().union(*(boards.tokens(c.get(k, "")) for k in ("name", "rik_name", "short")))), n)
+                     for n, c in enumerate(contestants, start=1)), reverse=True)
+    if counts and counts[0][0] >= 2 and (len(counts) == 1 or counts[0][0] > counts[1][0]):
+        return counts[0][1]
+    group = re.compile(r"GRUPA\s+GRADJANA")
+    if group.search(watch.fold(tail if comma else part).upper()):
+        groups = [n for n, c in enumerate(contestants, start=1)
+                  if any(group.search(watch.fold(c.get(k, "")).upper()) for k in ("name", "rik_name"))]
+        if len(groups) == 1:
+            return groups[0]
+    return None
 
 
 def board_head(text: str) -> str:
@@ -475,12 +498,12 @@ def board_slots(text: str, contestants: list[dict]) -> tuple[list[list], int]:
         part = body[m.end(): marks[k + 1].start() if k + 1 < len(marks) else len(body)]
         if not boards._filled(part):
             continue
-        number = boards.match_list(" ".join(part.split()), contestants)
+        number = role_list(" ".join(part.split()), contestants)
         if number is None:
             unmatched += 1
             continue
         roles = by_list.setdefault(number, [False, False])
-        roles[0 if m.group(1) else 1] = True
+        roles[0 if m.group("m") else 1] = True
     return [[n, m, d] for n, (m, d) in sorted(by_list.items())], unmatched
 
 
@@ -497,7 +520,7 @@ def role_shape(text: str, contestants: list[dict]) -> list[str]:
         part = " ".join(body[m.end(): marks[k + 1].start() if k + 1 < len(marks) else len(body)].split())
         head, _, tail = part.partition(",")
         masked = LETTERS_WORD.sub(lambda w: w.group(0) if boards.tokens(w.group(0)) & own else "xxx", tail)
-        out.append(f"{m.group(0).strip()} xxx,{masked} -> {boards.match_list(part, contestants)}")
+        out.append(f"{m.group(0).strip()} xxx,{masked} -> {role_list(part, contestants)}")
     return out
 
 

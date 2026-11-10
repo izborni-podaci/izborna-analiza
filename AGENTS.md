@@ -615,6 +615,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   store format, with the commission's own link, so the site shows controllers and decisions as for RIK's rounds.
   With `path_has` as well, only those documents are read and each role is logged with every word masked but
   the lists' own after its first comma (`local.role_shape`), to see why a role matched no list; nothing is kept.
+  The first full reading put list 4's roles under list 3 ("Панчево-Борба против насиља" shares three words with
+  list 3's name; `boards.match_list` divides by the shorter name) and matched none of list 5's, named in the
+  decisions as Група грађана „ГРУПА ПАНЧЕВО", not by its ballot name. `local.role_list` now takes the list sharing
+  most words with the role's text after the person, clearly ahead of the next, or, for a citizens' group, the
+  round's only citizens' group list (two such lists: not guessed). OCR's garbled "2. чпан;" and "~ замсник 1.
+  чпана:" at a line's start still start a role, so a slot no longer runs into the one before it.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

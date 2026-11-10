@@ -183,3 +183,17 @@ def test_role_shape_shows_only_the_lists_words():
     lines = local.role_shape(EXTENDED, LISTS)
     assert len(lines) == 6 and lines[0].endswith("-> 1") and "Пера" not in " ".join(lines)
     assert "Перић" not in " ".join(lines) and "Панчевачка" in lines[4]
+
+
+GARBLED = EXTENDED.replace("2. Ово решење", """4. чпан; Ива Ивић, Омољица, ПОКС: "Панчево-Борба против насиља!"
+~ замсник 4. чпана: Јова Јовић, Панчево, ПОКС: "Панчево-Борба против насиља!".
+
+2. Ово решење""").replace('ГГ: "Панчевачка група – Ваше комшије!"', 'Група грађана "ГРУПА ПАНЧЕВО"')
+
+
+def test_roles_read_through_ocr_and_other_names_of_the_lists():
+    slots, unmatched = local.board_slots(GARBLED, LISTS)
+    assert slots == [[1, True, True], [3, True, True], [4, True, True], [5, True, False]] and unmatched == 0
+    others = [dict(c, name="Група грађана " + c["name"]) for c in LISTS]  # two citizens' groups: not guessed
+    assert local.role_list('Ана Анић, Панчево, Група грађана "ГРУПА ПАНЧЕВО"', others) is None
+    assert local.role_list("Ана Анић, Панчево, Панчево против насиља", LISTS) is None  # lists 3 and 4 alike
