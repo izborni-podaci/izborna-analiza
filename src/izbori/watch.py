@@ -33,12 +33,15 @@ DOC_EXT = (".pdf", ".doc", ".docx")
 MAX_PAGES = 100  # per site and visit
 DEPTH = 3  # links followed from the front page: Izbori → Izbori 2026 → Odluke
 PAUSE = 0.5  # seconds between requests to one site
-SEARCHES = ("бирачких места", "biračkih mesta", "бирачки одбор", "birački odbor")
+SEARCHES = ("бирачких места", "biračkih mesta", "бирачки одбор", "birački odbor", "резултати избора",
+            "rezultati izbora")
 
 # what a link must speak of to be followed (a page) or kept (a document); compared in folded Latin
 PAGE_WORDS = ("izbor", "komisij", "birack", "glasan", "dokument", "oglasn", "sluzben", "odluk", "akti")
-# the site's own index of uploads where it has one: WordPress's media search (uploads by title), and the sitemaps
-MEDIA_SEARCHES = ("бирачк", "birack", "biračk", "изборн", "izborn", "одбор")
+# the site's own index of uploads where it has one: WordPress's media search (uploads by title), and the sitemaps;
+# a commission's report of results is named for its results, not for the boards or the commission (Sečanj 2025)
+MEDIA_SEARCHES = ("бирачк", "birack", "biračk", "изборн", "izborn", "одбор", "резултат", "rezultat", "извештај",
+                  "izvestaj", "izveštaj")
 SITEMAPS = ("wp-sitemap.xml", "sitemap.xml", "sitemap_index.xml")
 MAX_SITEMAPS = 25
 KINDS = (  # first match wins

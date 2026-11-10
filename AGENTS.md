@@ -628,6 +628,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   decision, whose OCR garbled lists 2 and 4 (four roles matched to no list), and a supplement at station 54
   whose one role names its list otherwise than any of the five (not guessed). The controllers' note on a local
   round names the commission's decisions on the municipality's site as the source (`ctrl_note_local`).
+  10 Nov, Temerin and Sečanj: the watch found neither one's report of results. Sečanj's commission adopted its
+  "Ukupni izveštaj o rezultatima" on 21 Dec 2025 (minutes of its 25th session, after the repeated vote at
+  stations 7 and 8), but no upload by that name was among the documents: the media search looked only for boards,
+  stations and the commission. It now also asks for results and reports, and the site's search for "rezultati
+  izbora".
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**
