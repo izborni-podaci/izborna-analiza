@@ -1222,14 +1222,15 @@ class Site:
         country = {"turnout": a.totals.turnout, "invalid": a.totals.invalid_share,
                    "flagged_share": (sum(m["flagged"] for m in domestic) / sum(m["stations"] for m in domestic))
                    if domestic else None}
-        if self.one_municipality(rid):  # a single municipality's local election: no country to compare with
-            country = {"turnout": None, "invalid": None, "flagged_share": None}
+
         prev = a.previous[0] if a.previous else None
         prev_rows = self.mun_rows.get(prev, {}) if prev else {}
         both = [c for c in prev_rows if c in self.mun_rows[rid] and self.mun_rows[rid][c]["kind"] == "domestic"]
         country["registered_change"] = (sum(self.mun_rows[rid][c]["registered"] for c in both)
                                         / sum(prev_rows[c]["registered"] for c in both) - 1) if both and sum(
             prev_rows[c]["registered"] for c in both) else None
+        if self.one_municipality(rid):  # a single municipality's local election: no country to compare with
+            country = {k: None for k in country}
         country["prev_year"] = (self.dates.get(prev) or "")[:4] if prev else ""
         settlement_of = lambda s: (settl.get(s.key) or {}).get("s", "")  # noqa: E731
         sh = dict(rid=rid, base=base, municipalities=municipalities, by_station=by_station, ctrl=ctrl, common=common,

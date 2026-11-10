@@ -349,6 +349,11 @@ def build(root, code: str, day: str, name: str, report_url: str, text: str, list
                       "aside": [{"n": a["n"], "why": a["why"]} for a in aside],
                       "notes": {str(r["n"]): r["note"] for r in rows if r["note"]}}}
     (out / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    if src_round:  # the same stations, so the same census settlements as the round they were named from
+        from izbori import settlements
+        prev = json.loads((Path(root) / "rounds" / src_round / settlements.STORE).read_text(encoding="utf-8")) \
+            if (Path(root) / "rounds" / src_round / settlements.STORE).exists() else {"stations": {}}
+        settlements.save_store(out, {k: v for k, v in prev.get("stations", {}).items() if k.startswith(code + "/")})
     totals = [sum(r["v"][j] for r in rows) for j in range(k)]
     summary = {"round": rid, "lists": k, "rows": len(rows), "aside": len(aside), "totals": totals,
                "valid": sum(r["valid"] for r in rows), "invalid": sum(r["invalid"] for r in rows),

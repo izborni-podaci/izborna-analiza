@@ -120,7 +120,7 @@ def test_commissions(site, archive):
     for rid in archive.round_ids():
         lines = (out / f"api/r/{rid}/commissions.csv").read_text(encoding="utf-8").splitlines()
         assert lines[0].startswith("code,municipality,district,stations,minutes,median_hours")
-        assert len(lines) > 10
+        assert len(lines) > (10 if not rid.startswith("L") else 1)  # a local round of one municipality: one row
     # Kostolac's vote is run by Požarevac's commission: its documents are shown with Kostolac, apart from its own
     rows26 = {r["code"]: r for r in csv.DictReader(io.StringIO(
         (out / "api/r/680072/commissions.csv").read_text(encoding="utf-8")))}
