@@ -283,3 +283,18 @@ def test_an_act_whose_rows_sit_above_their_numbers(tmp_path):
     rep = {}
     more = stations + [st("4", "ШКОЛА"), st("5", "ШКОЛА")]
     assert stationlist.read_act(act5, more, units, wrong, rep) == {} and rep["kept"] is None
+
+
+def test_an_amendment_adds_to_the_decision_it_amends():
+    from izbori import stationlist
+    store = {"docs": {"a": {"st": {"1/1": {"s": "A", "ok": True}, "1/2": {"s": "B", "ok": True}}},
+                      "b": {"st": {"1/2": {"s": "C", "ok": True}, "1/3": {"s": "D", "ok": False}}}},
+             "stations": {"1/9": {"s": "old", "ok": True}, "2/1": {"s": "X", "ok": True}}}
+    stationlist.merge(store, [{"url": "a"}, {"url": "b"}], "1")
+    assert store["stations"] == {"1/1": {"s": "A", "ok": True}, "1/2": {"s": "C", "ok": True},
+                                 "1/3": {"s": "D", "ok": False}, "2/1": {"s": "X", "ok": True}}
+    # an act read before its stations were kept: the municipality's stations so far stay
+    store = {"docs": {"a": {"rows": 3}, "b": {"st": {"1/2": {"s": "C", "ok": True}}}},
+             "stations": {"1/1": {"s": "A", "ok": True}}}
+    stationlist.merge(store, [{"url": "a"}, {"url": "b"}], "1")
+    assert store["stations"] == {"1/1": {"s": "A", "ok": True}, "1/2": {"s": "C", "ok": True}}

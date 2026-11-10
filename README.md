@@ -471,7 +471,7 @@ The census wasn't held in Kosovo and Metohija. The tables count people and hold 
 
 **Each station's settlement** (`settlements.py`). `izbori settlements` joins every round's stations to the census, the same way for every station, the first rule that answers deciding:
 1. a manual correction in `data/settlements.csv`: "manual";
-1a. the local electoral commission's decision on polling stations (the law has it give each station's number, name, address and area; `data/station_lists.csv` lists the acts found, `izbori stationlist` and the **stations** workflow read them — text layer, OCR or .docx — cut them into one row per station number and take the settlement a row names, when the row also looks like the station in the results): "list";
+1a. the local electoral commission's decision on polling stations (the law has it give each station's number, name, address and area; `data/station_lists.csv` lists the acts found, `izbori stationlist` and the **stations** workflow read them — text layer, OCR or .docx — cut them into one row per station number and take the settlement a row names, when the row also looks like the station in the results; a municipality with several acts for one election — a decision and its amendments — gets its stations from all of them in the file's order, a later act overriding a station only where its row matched, and an act taken off the file takes what it gave with it): "list";
 2. a settlement of the station's municipality named in the address read from its board decision, after the first part: "address";
 3. named in the address's first part ("Дом културе Голубинци"): "building";
 4. named in the station's name in the results: "station";

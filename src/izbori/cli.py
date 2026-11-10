@@ -576,11 +576,21 @@ def cmd_stationlist(args) -> int:
             log(f"{rid} {code}: {len(stations)} stations, rows with a settlement {len(found)}, matching the station's "
                 f"name {ok}; agreeing with the addresses: after the number {rep.get('after')}, before it "
                 f"{rep.get('before')}, kept {rep.get('kept')}")
-            store["docs"][url] = {"m": code, "rows": len(found), "ok": ok, "read": rep.get("kept")}
-            store["stations"] = {k: v for k, v in store["stations"].items() if not k.startswith(code + "/")}
-            store["stations"].update(found)
+            store["docs"][url] = {"m": code, "rows": len(found), "ok": ok, "read": rep.get("kept"), "st": found}
+            stationlist.merge(store, [a for a in acts if a["round"] == rid and a["municipality_code"] == code], code)
             changed = True
-        if changed:
+        # an act taken off the list (a wrong round, not a list of stations) takes what it gave with it
+        mine = [a for a in acts if a["round"] == rid]
+        gone = [u for u in store["docs"] if u not in {a["url"] for a in mine}]
+        for u in gone:
+            del store["docs"][u]
+        codes = {a["municipality_code"] for a in mine}
+        stale = [k for k in store["stations"] if k.split("/")[0] not in codes]
+        for k in stale:
+            del store["stations"][k]
+        for code in codes:  # every act of a municipality read by now: its stations from all of them, in order
+            stationlist.merge(store, [a for a in mine if a["municipality_code"] == code], code)
+        if changed or gone or stale:
             stationlist.save_store(archive.dir(rid), store)
             written.append(rid)
     if written and args.commit and commit([str(archive.dir(rid) / stationlist.STORE) for rid in written],

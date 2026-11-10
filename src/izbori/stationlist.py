@@ -163,6 +163,22 @@ def _read_rows(cut: dict[int, str], by_number: dict, units: list) -> dict[str, d
     return out
 
 
+def merge(store: dict, acts: list[dict], code: str) -> None:
+    """A municipality's stations from all its acts read, in the order data/station_lists.csv lists them: a later act
+    (an amendment, a supplement) overrides a station only where its row matched the station's name, and never
+    removes what an earlier act gave. Pančevo 2023: an amendment of four rows used to replace the whole decision."""
+    mine = {k: v for k, v in store["stations"].items() if k.startswith(code + "/")}
+    # an act read before each act's stations were kept: what the store has for the municipality stays the base
+    merged = mine if any("st" not in store["docs"].get(a["url"], {"st": 1}) for a in acts) else {}
+    for act in acts:
+        got = (store["docs"].get(act["url"]) or {}).get("st") or {}
+        for key, v in got.items():
+            if v.get("ok") or key not in merged:
+                merged[key] = v
+    store["stations"] = {k: v for k, v in store["stations"].items() if not k.startswith(code + "/")}
+    store["stations"].update(merged)
+
+
 def load_store(round_dir: Path) -> dict:
     p = Path(round_dir) / STORE
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {"docs": {}, "stations": {}}

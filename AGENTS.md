@@ -705,3 +705,15 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   The same evening the polling places followed: `/<municipality>/<number>/` (`Site.place_path`), `s/<place>.html`
   a redirect. A redirect page is a bare 300-byte file, not a page on the base template: with 8,000 places in two
   scripts the template cost 60 MB.
+- **10 Nov 2026, the watch's acts on polling stations.** From the watch's candidates (735 links, most of them
+  boards, lists, voting outside the station, forms), 22 acts that decide a municipality's polling stations for an
+  archived election were added to `data/station_lists.csv`: for 2022 Blace, Kraljevo, Rača, Bač, Bačka Palanka,
+  Opovo, Pančevo (a second act), Šid, Prokuplje; for 2023 Bogatić, Golubac, Rača, Bačka Palanka, Kanjiža, Temerin,
+  Lapovo; for 2026 Golubac, Kraljevo, Rača, Bačka Palanka, Leskovac, Mali Zvornik. Amendments alone were left out,
+  and acts for the local elections of 2024 (no archived round of those municipalities). Three rows came off: a
+  2022 decision that a station's results can't be established (Majdanpek: not a list), and two of Pančevo's 2023 acts —
+  one for the 2024 local election, one a four-row amendment that had replaced the whole 2023 decision, since a
+  municipality's stations were those of the last act read. Now each act keeps its own reading (`"st"` in the
+  round's station_lists.json) and a municipality's stations are merged from all its acts in the file's order
+  (`stationlist.merge`); an act taken off the file takes what it gave with it. The stations workflow then reads
+  every act again once (`reread`).
