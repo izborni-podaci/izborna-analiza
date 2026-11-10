@@ -608,7 +608,19 @@ def cmd_local(args) -> int:
     root = Path(args.data)
     if args.classify:  # what each document is, from its first page, into data/local_docs.json
         codes = set(args.classify.split(",")) if args.classify != "all" else None
-        n = local.run_classify(root, codes, log, budget_seconds=args.budget * 60)
+        shard = None
+        if args.shard:  # one of the workflow's parallel parts: classified here, merged by --merge-parts
+            i, n = (int(x) for x in args.shard.split("/"))
+            shard = (i, n)
+        n = local.run_classify(root, codes, log, budget_seconds=args.budget * 60, shard=shard)
+        if n and args.commit and commit([str(root / local.STORE)], f"Data: {n} municipal documents classified"):
+            if args.push:
+                push()
+        return 0
+    if args.merge_parts:  # the parallel parts' classifications into data/local_docs.json
+        parts = sorted(Path(args.merge_parts).rglob("*.json"))
+        n = local.merge_parts(root, parts)
+        log(f"{len(parts)} parts merged, {n} documents changed")
         if n and args.commit and commit([str(root / local.STORE)], f"Data: {n} municipal documents classified"):
             if args.push:
                 push()
@@ -964,6 +976,8 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--probe", metavar="CODE", help="a municipality's code: log its documents' masked layouts")
     lo.add_argument("--classify", metavar="CODES", help="classify the documents of these municipalities (codes, or all)")
     lo.add_argument("--budget", type=int, default=240, help="minutes of classifying in one run")
+    lo.add_argument("--shard", metavar="I/N", help="with --classify: only the I-th of N parts (from 0), split by municipality")
+    lo.add_argument("--merge-parts", metavar="DIR", help="merge the parts' data/local_docs.json found under DIR")
     lo.add_argument("--results", metavar="CODE", help="read a municipality's local results report into a draft round")
     lo.add_argument("--date", default="", help="the local election's day (YYYY-MM-DD)")
     lo.add_argument("--overview", action="store_true", help="per municipality and local election, what we have")

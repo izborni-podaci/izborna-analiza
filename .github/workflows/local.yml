@@ -1,8 +1,8 @@
 # By hand: local elections from the municipalities' own documents (data/municipal_docs.json). Six modes:
-# classify (what each document is, from its first page, into data/local_docs.json, committed), results (a
-# municipality's report of local results read into a draft round under data/local/, committed), boards (a local
-# round's polling board decisions read into its boards.json, committed), crops (the results section of the
-# boards' minutes as images on a temporary branch, to be read by eye), the overview (per municipality and local
+# classify (what each document is, from its first page, into data/local_docs.json, committed; in 8 parallel
+# parts), results (a municipality's report of local results read into a draft round under data/local/,
+# committed), boards (a local round's polling board decisions read into its boards.json, committed), crops (the
+# results section of the boards' minutes as images on a temporary branch, to be read by eye), the overview (per municipality and local
 # election, what its results and boards are in, logged), or the probe (a
 # municipality's documents of one kind, each logged with every word that isn't a word of the forms masked).
 name: local
@@ -44,12 +44,69 @@ on:
 permissions:
   contents: write
 
+# Runs that commit to main wait for each other; the crops commit nothing to main, so they have a queue of their own.
 concurrency:
-  group: local
+  group: ${{ (inputs.kind == 'crops' || inputs.kind == 'crops-read') && 'local-crops' || 'local' }}
   cancel-in-progress: false
 
 jobs:
+  # Classifying reads every document's first page, so it is split over SHARDS runners by municipality (one
+  # municipality's site still gets at most one runner's four requests at once); each part's store is kept as an
+  # artifact and the merge job commits them together.
+  classify:
+    if: ${{ inputs.classify != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils >/dev/null
+          pip install uv && uv sync --frozen
+      - name: Classify a part
+        env:
+          CLASSIFY: ${{ inputs.classify }}
+          SHARD: ${{ matrix.shard }}
+        run: uv run izbori local --classify "$CLASSIFY" --shard "$SHARD/8" --budget 320
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: classified-${{ matrix.shard }}
+          path: data/local_docs.json
+          retention-days: 2
+          if-no-files-found: ignore
+
+  classify-merge:
+    if: ${{ always() && inputs.classify != '' }}
+    needs: classify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install uv && uv sync --frozen
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: classified-*
+          path: parts
+      - name: Merge and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          uv run izbori local --merge-parts parts --commit --push
+
   probe:
+    if: ${{ inputs.classify == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:
@@ -61,14 +118,6 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils >/dev/null
           pip install uv && uv sync --frozen
-      - name: Classify
-        if: ${{ inputs.classify != '' }}
-        env:
-          CLASSIFY: ${{ inputs.classify }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          uv run izbori local --classify "$CLASSIFY" --budget 270 --commit --push
       - name: Boards
         if: ${{ inputs.results != '' && inputs.kind == 'boards' }}
         env:

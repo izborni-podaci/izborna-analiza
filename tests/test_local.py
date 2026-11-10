@@ -56,6 +56,29 @@ def test_classify_run_keeps_kinds_only_and_resumes(tmp_path):
     assert local.run_classify(tmp_path, {"80314"}, log=lambda *_: None, workers=1, one=one) == 1  # only b, now
 
 
+def test_classify_shards_split_by_municipality_and_merge(tmp_path):
+    import json
+    import shutil
+    docs = {f"https://{m}.rs/{i}.pdf": {"m": m, "k": "boards", "seen": "x"}
+            for m, n in (("80314", 5), ("70017", 3), ("80446", 2), ("80373", 1)) for i in range(n)}
+    where = local.shard_of(sorted(docs), docs, 2)
+    assert where == {"80314": 0, "70017": 1, "80446": 1, "80373": 0}  # 6 and 5 documents
+    (tmp_path / "municipal_docs.json").write_text(json.dumps({"docs": docs}), encoding="utf-8")
+
+    def one(url):
+        return url, local.classify("ЗАПИСНИК О РАДУ БИРАЧКОГ ОДБОРА"), None
+    parts = []
+    for i in range(2):
+        d = tmp_path / f"shard{i}"
+        d.mkdir()
+        shutil.copy(tmp_path / "municipal_docs.json", d)
+        assert local.run_classify(d, None, log=lambda *_: None, workers=1, one=one, shard=(i, 2)) == (6, 5)[i]
+        parts.append(d / local.STORE)
+    assert local.merge_parts(tmp_path, parts) == 11
+    assert set(local.load_store(tmp_path)["docs"]) == set(docs)
+    assert local.merge_parts(tmp_path, parts) == 0
+
+
 TABLE = """ИЗВЕШТАЈ О РЕЗУЛТАТИМА ИЗБОРА ЗА ОДБОРНИКЕ
 1 1354 577 577 14 563 473 5 37 9 39
 2 1201 600 600 17 583 483 3 56 15 26

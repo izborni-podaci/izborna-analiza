@@ -746,3 +746,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   Bogatić, Kanjiža, Lapovo — tables or scans the reader doesn't cut), 2022 Bač (its site didn't answer), and 2026
   Kraljevo, Rača, Leskovac (one or two rows matched, Rača's against the addresses) and Mali Zvornik (it disagreed
   with the board decisions' addresses and was set aside).
+- **10 Nov 2026, classifying in parallel.** Reading the first page of all 4,838 documents again (a new
+  classification's version) took one runner most of a day at four documents at once. Now the workflow's classify
+  is a matrix of 8 runners, each with its share of municipalities (`local.shard_of`: largest first onto the least
+  loaded share, the same split in every runner); a municipality stays on one runner, so its site gets no more
+  requests at once than before. Each part's `data/local_docs.json` is an artifact, and a merge job commits every
+  entry that differs from main's (`local.merge_parts`), also when some parts ran out of time, since a run resumes.
+  The crops and crops-read runs have their own concurrency group: they commit nothing to main, so they don't wait.
+

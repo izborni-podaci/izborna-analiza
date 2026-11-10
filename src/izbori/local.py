@@ -181,10 +181,41 @@ def save_store(root, store: dict) -> None:
     (Path(root) / STORE).write_text(jsonfile.dumps(store, "docs"), encoding="utf-8")
 
 
+def shard_of(todo: list[str], docs: dict, n: int) -> dict[str, int]:
+    """Municipalities spread over n shards by how many documents each has to classify, largest first onto the
+    least loaded shard, so the shards take about as long. A municipality stays on one shard, so its site gets no
+    more requests at once than one run makes. The same todo list gives the same split in every shard."""
+    from collections import Counter
+    count = Counter(docs[u]["m"] for u in todo)
+    load, where = [0] * n, {}
+    for m, c in sorted(count.items(), key=lambda mc: (-mc[1], mc[0])):
+        i = min(range(n), key=lambda k: (load[k], k))
+        where[m] = i
+        load[i] += c
+    return where
+
+
+def merge_parts(root, parts: list) -> int:
+    """The shards' stores merged into this one: every entry a shard has that differs from this store's. Returns
+    how many entries changed."""
+    import json
+    from pathlib import Path
+    store = load_store(root)
+    changed = 0
+    for part in parts:
+        for u, v in json.loads(Path(part).read_text(encoding="utf-8"))["docs"].items():
+            if store["docs"].get(u) != v:
+                store["docs"][u] = v
+                changed += 1
+    save_store(root, store)
+    return changed
+
+
 def run_classify(root, codes: set | None = None, log=print, workers: int = 4, budget_seconds: float = 4 * 3600,
-                 one=_one) -> int:
+                 one=_one, shard: tuple[int, int] | None = None) -> int:
     """Classify every document the watch found and this store lacks (of the given municipalities); saved as it
-    goes, so a run cut short by its budget resumes. Returns how many were classified."""
+    goes, so a run cut short by its budget resumes. With shard (i, n), only the i-th of n parts, split by
+    municipality (shard_of). Returns how many were classified."""
     import time as _time
     from concurrent.futures import ProcessPoolExecutor
     docs = watch.load_store(root)["docs"]
@@ -192,6 +223,10 @@ def run_classify(root, codes: set | None = None, log=print, workers: int = 4, bu
     mine = [u for u, v in sorted(docs.items()) if not codes or v["m"] in codes]
     todo = [u for u in mine if u not in store["docs"]] + \
         [u for u in mine if u in store["docs"] and store["docs"][u].get("v", 1) < CLASSIFIER]  # new ones first
+    if shard:
+        where = shard_of(todo, docs, shard[1])
+        todo = [u for u in todo if where[docs[u]["m"]] == shard[0]]
+        log(f"shard {shard[0] + 1} of {shard[1]}: {len({docs[u]['m'] for u in todo})} municipalities")
     log(f"{len(todo)} documents to classify")
     start, done = _time.time(), 0
     pool = ProcessPoolExecutor(workers) if workers > 1 else None
