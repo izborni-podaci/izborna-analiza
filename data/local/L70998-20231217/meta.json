@@ -2,25 +2,39 @@
  "contest": {},
  "contestants": [
   {
-   "name": "Изборна листа 1"
+   "name": "Александар Вучић – Прокупље не сме да стане",
+   "rik_name": "АЛЕКСАНДАР ВУЧИЋ – ПРОКУПЉЕ НЕ СМЕ ДА СТАНЕ",
+   "short": "Прокупље не сме да стане"
   },
   {
-   "name": "Изборна листа 2"
+   "name": "Ивица Дачић – Премијер Србије",
+   "rik_name": "ИВИЦА ДАЧИЋ – ПРЕМИЈЕР СРБИЈЕ",
+   "short": "Ивица Дачић"
   },
   {
-   "name": "Изборна листа 3"
+   "name": "Милица Ђурђевић Стаменковски – Српска странка Заветници – Марко Ристић – За боље Прокупље",
+   "rik_name": "МИЛИЦА ЂУРЂЕВИЋ СТАМЕНКОВСКИ – СРПСКА СТРАНКА ЗАВЕТНИЦИ – МАРКО РИСТИЋ – ЗА БОЉЕ ПРОКУПЉЕ",
+   "short": "Заветници"
   },
   {
-   "name": "Изборна листа 4"
+   "name": "Прокупље у срцу – Народна странка",
+   "rik_name": "ПРОКУПЉЕ У СРЦУ – НАРОДНА СТРАНКА",
+   "short": "Прокупље у срцу"
   },
   {
-   "name": "Изборна листа 5"
+   "name": "Др Војислав Шешељ – Српска радикална странка",
+   "rik_name": "ДР ВОЈИСЛАВ ШЕШЕЉ – СРПСКА РАДИКАЛНА СТРАНКА",
+   "short": "СРС"
   },
   {
-   "name": "Изборна листа 6"
+   "name": "Др Милош Јовановић – Нада за Прокупље – Српска коалиција НАДА – Национално демократска алтернатива – Нова Демократска странка Србије (Нови ДСС) – Покрет обнове Краљевине Србије (ПОКС) – Војислав Михаиловић",
+   "rik_name": "ДР МИЛОШ ЈОВАНОВИЋ – НАДА ЗА ПРОКУПЉЕ – СРПСКА КОАЛИЦИЈА НАДА – НАЦИОНАЛНО ДЕМОКРАТСКА АЛТЕРНАТИВА – НОВА ДЕМОКРАТСКА СТРАНКА СРБИЈЕ (НОВИ ДСС) – ПОКРЕТ ОБНОВЕ КРАЉЕВИНЕ СРБИЈЕ (ПОКС) – ВОЈИСЛАВ МИХАИЛОВИЋ",
+   "short": "Нада за Прокупље"
   },
   {
-   "name": "Изборна листа 7"
+   "name": "Србија против насиља – Прокупље",
+   "rik_name": "СРБИЈА ПРОТИВ НАСИЉА – ПРОКУПЉЕ",
+   "short": "Србија против насиља"
   }
  ],
  "date": "2023-12-17",
@@ -32,25 +46,14 @@
   "municipality": "70998",
   "report": "https://prokuplje.org.rs/wp-content/uploads/2023/12/Zbirni-izvestaj-lokal.pdf",
   "stations_from": "341140",
-  "aside": [
-   {
-    "n": 30,
-    "why": "lists add up to 308, valid votes read 318"
-   },
-   {
-    "n": 56,
-    "why": "lists and valid votes unreadable"
-   },
-   {
-    "n": 71,
-    "why": "lists add up to 33, valid votes read 38"
-   }
-  ],
+  "aside": [],
   "notes": {
    "19": "list 5 from the valid votes",
    "20": "list 5 read as strokes, from the valid votes",
    "25": "list 4 from the valid votes",
    "27": "list 5 from the valid votes; invalid from ballots and valid",
+   "30": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "33": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "34": "list 7 from the valid votes",
    "36": "list 4 read as strokes, from the valid votes",
    "37": "list 2 from the valid votes",
@@ -61,12 +64,14 @@
    "48": "ballots from valid and invalid",
    "52": "voted taken as the ballots (read lower than them)",
    "54": "list 5 from the valid votes",
-   "62": "list 2 from the valid votes",
+   "56": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "62": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "63": "list 7 read as strokes, from the valid votes",
    "65": "list 6 read as strokes, from the valid votes",
-   "66": "list 2 from the valid votes",
+   "66": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "69": "list 6 read as strokes, from the valid votes; invalid from ballots and valid",
-   "70": "lists 6, 7 read as strokes, from the valid votes; invalid from ballots and valid",
+   "70": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "71": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "72": "list 3 read as strokes, from the valid votes",
    "73": "list 7 read as strokes, from the valid votes",
    "74": "list 7 read as strokes, from the valid votes",

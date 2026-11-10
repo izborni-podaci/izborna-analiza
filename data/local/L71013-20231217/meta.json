@@ -2,10 +2,14 @@
  "contest": {},
  "contestants": [
   {
-   "name": "Изборна листа 1"
+   "name": "Александар Вучић – Рача не сме да стане",
+   "rik_name": "АЛЕКСАНДАР ВУЧИЋ – РАЧА НЕ СМЕ ДА СТАНЕ",
+   "short": "Рача не сме да стане"
   },
   {
-   "name": "Изборна листа 2"
+   "name": "Ивица Дачић – Премијер Србије",
+   "rik_name": "ИВИЦА ДАЧИЋ – ПРЕМИЈЕР СРБИЈЕ",
+   "short": "Ивица Дачић"
   }
  ],
  "date": "2023-12-17",
@@ -17,50 +21,22 @@
   "municipality": "71013",
   "report": "https://www.raca.rs/wp-content/uploads/2023/12/Ukupan-izvestaj-po-birackim-mestima.pdf",
   "stations_from": "341140",
-  "aside": [
-   {
-    "n": 5,
-    "why": "lists add up to 44, valid votes read 101"
-   },
-   {
-    "n": 8,
-    "why": "a station's figures unreadable"
-   },
-   {
-    "n": 10,
-    "why": "lists add up to 212, valid votes read 192"
-   },
-   {
-    "n": 13,
-    "why": "a station's figures unreadable"
-   },
-   {
-    "n": 14,
-    "why": "a station's figures unreadable"
-   },
-   {
-    "n": 22,
-    "why": "lists add up to 202, valid votes read 182"
-   },
-   {
-    "n": 24,
-    "why": "a station's figures unreadable"
-   },
-   {
-    "n": 25,
-    "why": "lists add up to 103, valid votes read 106"
-   }
-  ],
+  "aside": [],
   "notes": {
    "1": "ballots taken as valid and invalid (the report has none)",
    "2": "ballots taken as valid and invalid (the report has none)",
    "3": "ballots taken as valid and invalid (the report has none)",
    "4": "ballots taken as valid and invalid (the report has none)",
+   "5": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "6": "ballots taken as valid and invalid (the report has none)",
    "7": "ballots taken as valid and invalid (the report has none)",
+   "8": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "9": "ballots taken as valid and invalid (the report has none)",
+   "10": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "11": "ballots taken as valid and invalid (the report has none)",
    "12": "ballots taken as valid and invalid (the report has none)",
+   "13": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "14": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "15": "ballots taken as valid and invalid (the report has none)",
    "16": "ballots taken as valid and invalid (the report has none)",
    "17": "ballots taken as valid and invalid (the report has none)",
@@ -68,7 +44,10 @@
    "19": "ballots taken as valid and invalid (the report has none)",
    "20": "ballots taken as valid and invalid (the report has none)",
    "21": "ballots taken as valid and invalid (the report has none)",
+   "22": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "23": "ballots taken as valid and invalid (the report has none)",
+   "24": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "25": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
    "26": "ballots taken as valid and invalid (the report has none)",
    "27": "ballots taken as valid and invalid (the report has none)"
   }
