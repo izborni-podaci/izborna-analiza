@@ -197,3 +197,14 @@ def test_roles_read_through_ocr_and_other_names_of_the_lists():
     others = [dict(c, name="Група грађана " + c["name"]) for c in LISTS]  # two citizens' groups: not guessed
     assert local.role_list('Ана Анић, Панчево, Група грађана "ГРУПА ПАНЧЕВО"', others) is None
     assert local.role_list("Ана Анић, Панчево, Панчево против насиља", LISTS) is None  # lists 3 and 4 alike
+
+
+def test_a_supplement_s_quoted_role_and_lists_told_by_their_own_words():
+    supplement = EXTENDED.split("1. У бирачки")[0] + '1. Допуњује се решење:\n\n„- заменик 5. члана: Ана Анић, Панчево, Група грађана "ГРУПА ПАНЧЕВО".“\n\n2. Ово решење'
+    assert local.board_slots(supplement, LISTS) == ([[5, False, True]], 0)
+    assert local.role_list("Пера Перић, Панчево, Савез војвођ- анских Мађара", LISTS) == 2
+    assert local.role_list("Пера Перић, Омољица, Савез", LISTS) is None  # one word only
+    assert local.role_list("Пера Перић, Панчево, xxx насиља!", LISTS) is None  # lists 3 and 4 alike
+    # a line ending in a word before the next member's number is not a deputy's role
+    text = EXTENDED.replace("Александар Вучић-Панчево\nсутра;", "Александар Вучић-Панчево;\nсутра\n")
+    assert local.board_slots(text, LISTS)[0][0] == [1, True, True]

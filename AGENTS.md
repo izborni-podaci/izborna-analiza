@@ -617,10 +617,13 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   the lists' own after its first comma (`local.role_shape`), to see why a role matched no list; nothing is kept.
   The first full reading put list 4's roles under list 3 ("Панчево-Борба против насиља" shares three words with
   list 3's name; `boards.match_list` divides by the shorter name) and matched none of list 5's, named in the
-  decisions as Група грађана „ГРУПА ПАНЧЕВО", not by its ballot name. `local.role_list` now takes the list sharing
-  most words with the role's text after the person, clearly ahead of the next, or, for a citizens' group, the
-  round's only citizens' group list (two such lists: not guessed). OCR's garbled "2. чпан;" and "~ замсник 1.
-  чпана:" at a line's start still start a role, so a slot no longer runs into the one before it.
+  decisions as Група грађана „ГРУПА ПАНЧЕВО", not by its ballot name. `local.role_list` now counts, in the role's
+  text after the person, the words of each list's name that no other list's name has ("Панчево", "против",
+  "насиља" are in three; "борба" only in list 4's), the best clearly ahead and with two of its words in the text;
+  or, for a citizens' group, the round's only citizens' group list (two such lists: not guessed). OCR's garbled
+  "2. чпан;" and "~ замсник 1. чпана:" at a line's start still start a role (the deputy's on one line: "сутра" at
+  the end of a line once took the next member for a deputy), and a role in quotes, as a supplement (допуна)
+  writes it, is read. Second reading: lists 1–5 had a member at 79, 75, 79, 70 and 65 of 79 stations.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

@@ -452,25 +452,32 @@ def hand_names(root, rid: str) -> list[dict]:
 # links only: whether a list had its member at a station is the appointments' (boards.coverage).
 # a member's line, "1. члан:", or a deputy's, "- заменик 1. члана:"; OCR garbles the words ("2. чпан;", "~ замеиик 1.
 # чпана:"), so at a line's start a short word in their place, before ":" or ";", still starts the role
-ROLE_ENTRY = re.compile(r"(?:^|\n)[\s\-–—~•]*(?:(?:заменик|zamenik|[^\W\d_]{4,9})\s*(?P<d>\d{1,2})\s*[.,]\s*"
-                        r"(?:члана|clana|člana|[^\W\d_]{3,7})\s*[:;]|(?P<m>\d{1,2})\s*[.,]\s*(?:члан|clan|član|[^\W\d_]{3,6})"
-                        r"\s*[:;])", re.I)
+ROLE_ENTRY = re.compile(r"(?:^|\n)[\s\-–—~•„\"“«]*(?:(?:заменик|zamenik)\s*\d{1,2}\s*[.,]\s*(?:члана|clana|člana|[^\W\d_]{3,7})"
+                        r"\s*[:;]|[^\W\d_]{4,9}[ \t]*\d{1,2}[ \t]*[.,][ \t]*[^\W\d_]{3,7}[ \t]*[:;]"
+                        r"|(?P<m>\d{1,2})\s*[.,]\s*(?:члан|clan|član|[^\W\d_]{3,6})\s*[:;])", re.I)
 BOARD_WINDOW = 60  # days before the election in which its boards are appointed
 
 
 def role_list(part: str, contestants: list[dict]) -> int | None:
-    """The list a role's text names: after the person (before the first comma), the list sharing most of its words
-    with the text, clearly ahead of the next (Pančevo writes list 4 as "Панчево-Борба против насиља", three words
-    of list 3's name too); or, for a citizens' group named otherwise than its list ("Група грађана „…“"), the
-    round's only list of a citizens' group. Otherwise None: not guessed."""
+    """The list a role's text names, from its words after the person (before the first comma): the list with most
+    words of its own, words no other list's name has ("Панчево", "против", "насиља" are in three names in
+    Pančevo; "борба" only in list 4's, "бирам" in list 3's), clearly ahead of the next, with two of its words in the
+    text; or, for a citizens' group named otherwise than its list ("Група грађана „…“"), the round's only list of a
+    citizens' group. Otherwise None: not guessed."""
     head, comma, tail = part.partition(",")
-    words = set(boards._words(tail if comma else part))
-    counts = sorted(((len(words & set().union(*(boards.tokens(c.get(k, "")) for k in ("name", "rik_name", "short")))), n)
-                     for n, c in enumerate(contestants, start=1)), reverse=True)
-    if counts and counts[0][0] >= 2 and (len(counts) == 1 or counts[0][0] > counts[1][0]):
-        return counts[0][1]
+    text = tail if comma else part
+    words = set(boards._words(text))
+    own = [set().union(*(boards.tokens(c.get(k, "")) for k in ("name", "rik_name", "short"))) for c in contestants]
+    scores = []
+    for n, mine in enumerate(own, start=1):
+        others = set().union(*(o for k, o in enumerate(own, start=1) if k != n))
+        scores.append((len(words & (mine - others)), len(words & mine), n))
+    scores.sort(reverse=True)
+    best = scores[0] if scores else (0, 0, None)
+    if best[0] >= 1 and (len(scores) == 1 or best[0] > scores[1][0]) and max(best[0], best[1]) >= 2:
+        return best[2]
     group = re.compile(r"GRUPA\s+GRADJANA")
-    if group.search(watch.fold(tail if comma else part).upper()):
+    if group.search(watch.fold(text).upper()):
         groups = [n for n, c in enumerate(contestants, start=1)
                   if any(group.search(watch.fold(c.get(k, "")).upper()) for k in ("name", "rik_name"))]
         if len(groups) == 1:
