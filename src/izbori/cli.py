@@ -430,7 +430,9 @@ def cmd_geo(args) -> int:
     from izbori import geo
     if args.quarters:  # one settlement by its quarters (code=name), into data/geo/quarters.json
         code, _, sname = args.quarters.partition("=")
-        feats, points = geo.quarter_features(geo.fetch(geo.QUARTER_FETCH.replace("{name}", sname), timeout=960), sname, log)
+        addresses = geo.quarter_addresses(Path(args.data), code)
+        query = geo.QUARTER_FETCH.replace("{name}", sname) + geo.address_query(addresses)
+        feats, points = geo.quarter_features(geo.fetch(query, timeout=960), sname, log, addresses)
         if not feats:
             return 1
         qout = Path(args.data) / "geo" / geo.QUARTERS_FILE

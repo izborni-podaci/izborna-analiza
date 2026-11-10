@@ -675,6 +675,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   First refetch: 142 of 153 placed (the water utility in Rotkvarija, the inspection office in Stari grad).
   Sajlovo and Šangaj are only points in OpenStreetMap, so a neighbourhood's (or locality's) point inside a quarter
   is a name for it too; a suburb's label, over several quarters, is not.
+- **10 Nov 2026, Novi Sad's stations placed by an address.** Of the 11 stations OSM has no building for, Marko
+  gave four addresses (Čarobni šešir: Desanke Maksimović 80, from predskolska.rs; Dom zdravlja Liman: Bulevar
+  cara Lazara 77; Železnice Srbije: Vase Stajića 2; JKP Gradsko zelenilo: Mladena Leskovca 1), kept in
+  `data/geo/quarter_addresses.csv` with their source. The geo run asks OSM for those house numbers and places
+  each building in the quarter its address point is in; an address OSM lacks places nothing. Sajlovo and Šangaj
+  are not quarters (Marko), so their local communities' stations stay apart; DES and the two pensioners' clubs too.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

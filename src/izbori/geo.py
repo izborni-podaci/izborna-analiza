@@ -478,12 +478,33 @@ out geom;
 );
 out center tags;"""
 QUARTER_KINDS = ("quarter", "suburb", "neighbourhood")  # the order the shapes are taken in
+# a station's building OpenStreetMap doesn't name, placed by its address (data/geo/quarter_addresses.csv: the
+# building's name as the station names it, the street as OSM writes it, the number, and who gave it)
+QUARTER_ADDRESSES = "quarter_addresses.csv"
+
+
+def quarter_addresses(root: Path, code: str) -> list[tuple[str, str, str]]:
+    import csv
+    p = Path(root) / "geo" / QUARTER_ADDRESSES
+    if not p.exists():
+        return []
+    return [(r["building"], r["street"], r["housenumber"]) for r in csv.DictReader(open(p, encoding="utf-8"))
+            if r["municipality"] == code]
+
+
+def address_query(addresses: list[tuple[str, str, str]]) -> str:
+    """The Overpass lines for those addresses (inside the settlement's area .a), to go with QUARTER_FETCH."""
+    if not addresses:
+        return ""
+    streets = "|".join(sorted({re.sub(r'[\\"^$*+?()\[\]{}|.]', "", s) for _, s, _ in addresses}))  # names, no regex
+    return f'\n(nwr(area.a)["addr:housenumber"]["addr:street"~"^({streets})$"];);\nout center tags;'
+
 QUARTERS_FILE = "quarters.json"
 
 
-def quarter_features(data: dict, name: str, log=print) -> tuple[list[dict], list[list[str]]]:
+def quarter_features(data: dict, name: str, log=print, addresses=()) -> tuple[list[dict], list[list[str]]]:
     """The quarters of one settlement (features: name, geometry) and the public buildings' names with their
-    quarter ([name, quarter])."""
+    quarter ([name, quarter]); a building given by its address (quarter_addresses) is placed where OSM has it."""
     from shapely import set_precision
     from shapely.geometry import Point, Polygon, mapping
     from shapely.ops import unary_union
@@ -546,6 +567,16 @@ def quarter_features(data: dict, name: str, log=print) -> tuple[list[dict], list
         q = quarter_of(Point(c["lon"], c["lat"]))
         if q:
             points.setdefault(t["name"], q)
+    from izbori.settlements import norm
+    for building, street, number in addresses:
+        hit = next((e for e in els if norm(e.get("tags", {}).get("addr:street", "")) == norm(street)
+                    and e.get("tags", {}).get("addr:housenumber", "").strip().lower() == number.strip().lower()
+                    and (e.get("center") or "lon" in e)), None)
+        c = (hit.get("center") or {"lon": hit["lon"], "lat": hit["lat"]}) if hit else None
+        q = quarter_of(Point(c["lon"], c["lat"])) if c else None
+        log(f"{building}: {street} {number} " + (f"in {q}" if q else "not found in a quarter"))
+        if q:
+            points[building] = q
     feats = []
     for qname, g in quarters:
         g = set_precision(g.simplify(SETTLEMENT_TOLERANCE / 2, preserve_topology=True), 10 ** -(DIGITS + 1))

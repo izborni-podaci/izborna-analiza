@@ -144,3 +144,22 @@ def test_quarters_take_the_first_drawn_and_place_buildings():
     assert [f["properties"]["name"] for f in feats] == ["Лиман 1", "Телеп", "Шира"]  # smaller first; Liman is mostly Liman 1
     assert points == [["Основна школа „Вељко Петровић“", "Лиман 1"], ["Сајлово", "Телеп"], ["Шангај", "Телеп"],
                       ["месна заједница Братство-Телеп", "Телеп"]]  # Liman, over Liman 1 and more, is no name
+
+
+def test_a_building_placed_by_its_address(tmp_path):
+    def rel(name, tags, ring):
+        return {"type": "relation", "tags": dict(name=name, **tags),
+                "members": [{"type": "way", "role": "outer", "geometry": [{"lon": x, "lat": y} for x, y in ring]}]}
+    sq = [(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)]
+    els = [rel("Нови Сад", {"admin_level": "9", "boundary": "administrative"}, sq),
+           rel("Адице", {"place": "quarter"}, [(0, 0), (5, 0), (5, 5), (0, 5), (0, 0)]),
+           {"type": "way", "center": {"lon": 2, "lat": 2}, "tags": {"addr:street": "Десанке Максимовић", "addr:housenumber": "80"}},
+           {"type": "node", "lon": 2, "lat": 3, "tags": {"addr:street": "Десанке Максимовић", "addr:housenumber": "8"}}]
+    (tmp_path / "geo").mkdir()
+    (tmp_path / "geo" / geo.QUARTER_ADDRESSES).write_text(
+        "municipality,building,street,housenumber,source\n89010,Чаробни шешир,Десанке Максимовић,80,x\n"
+        "89010,Нигде,Нема улице,1,x\n11000,Друго,Улица,1,x\n", encoding="utf-8")
+    addresses = geo.quarter_addresses(tmp_path, "89010")
+    assert len(addresses) == 2 and "Десанке Максимовић|Нема улице" in geo.address_query(addresses)
+    feats, points = geo.quarter_features({"elements": els}, "Нови Сад", log=lambda *_: None, addresses=addresses)
+    assert points == [["Чаробни шешир", "Адице"]]
