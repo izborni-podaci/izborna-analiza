@@ -601,6 +601,13 @@ def cmd_local(args) -> int:
             if args.push:
                 push()
         return 0
+    if args.boards:  # a local round's polling boards from the commission's decisions, into its boards.json
+        local.read_boards(root, args.boards, log)
+        if args.commit and commit([str(root / "rounds" / args.boards / "boards.json")],
+                                  f"Data: polling boards of the local election {args.boards}"):
+            if args.push:
+                push()
+        return 0
     if args.results:  # a local election's results from the commission's report, as a draft round
         store = local.load_store(root)
         cands = [u for u, v in store["docs"].items() if v["m"] == args.results and v["k"] == "results"
@@ -934,6 +941,7 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--budget", type=int, default=240, help="minutes of classifying in one run")
     lo.add_argument("--results", metavar="CODE", help="read a municipality's local results report into a draft round")
     lo.add_argument("--date", default="", help="the local election's day (YYYY-MM-DD)")
+    lo.add_argument("--boards", metavar="ROUND", help="read a local round's polling board decisions into its boards.json")
     lo.add_argument("--name", default="", help="the municipality's name for the round's title (Cyrillic)")
     lo.add_argument("--url", default="", help="the report's link, when the classified documents don't say")
     lo.add_argument("--commit", action="store_true")

@@ -604,6 +604,15 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   checked the four cells derived from a sum (stations 16, 26, 69, 74) and they are right: Wikipedia's figure is
   voters (51,120, which matches) less valid votes, while the report's invalid ballots count what was in the box
   (51,094 ballots = 49,527 valid + 1,567 invalid). The 26 are voters who signed but left no ballot in the box.
+  10 Nov, Pančevo's polling boards. The commission published, per station, the standing composition
+  (`N-stalni-sastav.pdf`, 79), the extended (`BM-N-Prosireni-sastav.pdf`, 79; classified as lists' documents,
+  since they name the lists) and 44 changes (`N_PS.pdf`, `izmena-bm-…`). The extended one writes a slot as
+  "1. član: <person>, <…>, <list>;" and its deputy on the next line, with no "na predlog", which RIK's reader
+  doesn't take, so `local.board_slots` matches each role's own text to a list (`boards.match_list`) and keeps
+  only the list's number and whether the role was filled; changes and the standing composition are kept as links
+  (`local.read_board`, by the decision's title). `izbori local --boards ROUND` (the workflow's `results` input with
+  `kind` boards) reads the documents of the 60 days before the election into the round's boards.json in RIK's
+  store format, with the commission's own link, so the site shows controllers and decisions as for RIK's rounds.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

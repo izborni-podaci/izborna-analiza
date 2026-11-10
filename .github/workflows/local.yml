@@ -1,6 +1,7 @@
-# By hand: local elections from the municipalities' own documents (data/municipal_docs.json). Two modes:
+# By hand: local elections from the municipalities' own documents (data/municipal_docs.json). Four modes:
 # classify (what each document is, from its first page, into data/local_docs.json, committed), results (a
-# municipality's report of local results read into a draft round under data/local/, committed), or the probe (a
+# municipality's report of local results read into a draft round under data/local/, committed), boards (a local
+# round's polling board decisions read into its boards.json, committed), or the probe (a
 # municipality's documents of one kind, each logged with every word that isn't a word of the forms masked).
 name: local
 
@@ -14,7 +15,7 @@ on:
         description: "Probe: a municipality code (e.g. 80314 for Pančevo)"
         default: ""
       kind:
-        description: "stations, boards or commission (empty: all)"
+        description: "Probe: stations, boards or commission (empty: all). With results: boards reads that local round's board decisions"
         default: ""
       limit:
         description: "How many documents to log"
@@ -29,7 +30,7 @@ on:
         description: "Probe: characters of each masked layout logged"
         default: "1200"
       results:
-        description: "Results: a municipality code whose local results report to read into a draft round"
+        description: "Results: a municipality code whose local results report to read into a draft round (with kind boards: a local round id, e.g. L80314-20240602)"
         default: ""
       date:
         description: "Results: the local election's day (YYYY-MM-DD)"
@@ -66,8 +67,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           uv run izbori local --classify "$CLASSIFY" --budget 270 --commit --push
+      - name: Boards
+        if: ${{ inputs.results != '' && inputs.kind == 'boards' }}
+        env:
+          ROUND: ${{ inputs.results }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          uv run izbori local --boards "$ROUND" --commit --push
       - name: Results
-        if: ${{ inputs.results != '' }}
+        if: ${{ inputs.results != '' && inputs.kind != 'boards' }}
         env:
           RESULTS: ${{ inputs.results }}
           DATE: ${{ inputs.date }}

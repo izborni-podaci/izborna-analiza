@@ -97,3 +97,83 @@ def test_a_person_s_reading_brings_a_row_back(tmp_path):
     assert rows[-1]["note"] == "checked by hand against the report (Marko)"
     assert rows[1]["v"] == [483, 3, 56, 15, 26]  # a correction that doesn't add up changes nothing
     assert any("station 2 doesn't add up" in m for m in logged)
+
+
+LISTS = [{"name": "Александар Вучић – Панчево сутра", "rik_name": "АЛЕКСАНДАР ВУЧИЋ – ПАНЧЕВО СУТРА", "short": "Панчево сутра"},
+         {"name": "Савез војвођанских Мађара – др Балинт Пастор", "rik_name": "", "short": "СВМ"},
+         {"name": "Панчево против насиља – Бирам борбу", "rik_name": "", "short": "Панчево против насиља"},
+         {"name": "Панчево – борба против насиља (Покрет обнове Краљевине Србије, Народна странка)", "rik_name": "",
+          "short": "Борба против насиља (ПОКС)"},
+         {"name": "Група грађана Панчевачка група – Ваше комшије", "rik_name": "", "short": "Панчевачка група"}]
+# Pančevo's layout of 2024, with invented people
+EXTENDED = """На основу члана 25. Закона, Изборна комисија града Панчева, на седници 22. маја 2024. године, донела је
+
+РЕШЕЊЕ
+
+О ИМЕНОВАЊУ ПРЕДСЕДНИКА И ЧЛАНОВА БИРАЧКОГ ОДБОРА
+- У ПРОШИРЕНОМ САСТАВУ -
+ЗА СПРОВОЂЕЊЕ ИЗБОРА ЗА ОДБОРНИКЕ СКУПШТИНЕ ГРАДА ПАНЧЕВА
+ЗА БИРАЧКО МЕСТО БРОЈ 7 У ПАНЧЕВУ
+
+ОШ „Мика Мишић“ Панчево, Улица Нова бр.1
+
+1. У бирачки одбор у проширеном саставу именују се:
+
+1. члан: Пера Перић, Панчево, Александар Вучић-Панчево сутра;
+
+- заменик 1. члана:Жика Жикић, Панчево, Александар Вучић-Панчево
+сутра;
+
+2. члан: Мика Микић, Панчево, Панчево против насиља – Бирам борбу!
+
+- заменик 2. члана: Лаза Лазић, Старчево, Панчево против насиља – Бирам борбу;
+
+3. члан: Ана Анић, Панчево, ГГ: "Панчевачка група – Ваше комшије!"
+
+- заменик 3. члана: ____________
+
+2. Ово решење објавити на сајту.
+"""
+
+
+def test_extended_board_from_pancevo_s_layout():
+    slots, unmatched = local.board_slots(EXTENDED, LISTS)
+    assert slots == [[1, True, True], [3, True, True], [5, True, False]] and unmatched == 0
+    got = local.read_board(EXTENDED, "https://x/BM-7.pdf", "2024-05-22", LISTS, {"7"}, "80314")
+    assert got["s"] == "80314/7" and got["k"] == "extended" and got["slots"] == slots and not got["unparsed"]
+    assert "Пера" not in str(got) and got["u"] == "https://x/BM-7.pdf"
+    assert local.read_board(EXTENDED, "u", None, LISTS, {"8"}, "80314") is None  # not a station of the round
+
+
+def test_changes_and_minutes_are_kept_as_links_or_left():
+    change = EXTENDED.replace("О ИМЕНОВАЊУ", "О ИЗМЕНИ РЕШЕЊА О ИМЕНОВАЊУ")
+    got = local.read_board(change, "u", "2024-05-30", LISTS, {"7"}, "80314")
+    assert got["k"] == "extended_change" and "slots" not in got
+    standing = EXTENDED.replace("ПРОШИРЕНОМ", "СТАЛНОМ")
+    assert local.read_board(standing, "u", "", LISTS, {"7"}, "80314")["k"] == "standing"
+    minutes = EXTENDED.replace("РЕШЕЊЕ", "ЗАПИСНИК О РАДУ")
+    assert local.read_board(minutes, "u", "", LISTS, {"7"}, "80314") is None
+
+
+def test_read_boards_writes_the_round_s_store(tmp_path):
+    import json
+    rdir = tmp_path / "rounds" / "L80314-20240602"
+    rdir.mkdir(parents=True)
+    (rdir / "meta.json").write_text(json.dumps({"date": "2024-06-02", "contestants": LISTS,
+                                                "local": {"municipality": "80314"}}), encoding="utf-8")
+    (rdir / "results.csv").write_text("bm_uid,bm_broj\nx,7\n", encoding="utf-8")
+    (tmp_path / local.STORE).write_text(json.dumps({"docs": {
+        "https://x/BM-7.pdf": {"m": "80314", "k": "lists", "e": "local", "d": "2024-05-22"},
+        "https://x/old.pdf": {"m": "80314", "k": "boards", "e": "local", "d": "2022-03-01"},
+        "https://x/z.pdf": {"m": "80314", "k": "minutes", "e": "local", "d": "2024-06-02"}}}), encoding="utf-8")
+    seen = []
+
+    def one(item):
+        seen.append(item[0])
+        return item[0], local.read_board(EXTENDED, item[0], item[1], item[2], item[3], item[4]), None
+    s = local.read_boards(tmp_path, "L80314-20240602", log=lambda *a: None, workers=1, one=one)
+    assert seen == ["https://x/BM-7.pdf"]
+    assert s["per_list"] == {"1": 1, "2": 0, "3": 1, "4": 0, "5": 1} and s["stations_read"] == 1
+    from izbori import boards
+    cov = boards.coverage(boards.load_store(rdir))
+    assert cov["80314/7"]["lists"]["5"] == {"member": True, "deputy": False}

@@ -440,3 +440,134 @@ def hand_names(root, rid: str) -> list[dict]:
     got = sorted((int(r["number"]), r) for r in csv.DictReader(open(p, encoding="utf-8", newline=""))
                  if r.get("round") == rid)
     return [{"name": r["name"], "rik_name": r["rik_name"], "short": r["short"]} for _, r in got]
+
+
+# --- the polling boards: who proposed each member, from the commission's decisions --------------------------------
+# A municipal commission appoints each station's board in two decisions: the standing composition (proposed by the
+# assembly's groups of councillors) and the extended (one member and a deputy per list, on its proposal: the lists'
+# controllers). Pančevo 2024 writes a slot as "1. члан: <person>, <…>, <list>;" and its deputy as "- заменик 1.
+# члана: <person>, <…>, <list>;" with no "на предлог", which RIK's reader (boards.parse_decision) doesn't take; so
+# each role's own text is matched to a list (boards.match_list), and only the list's number and whether the role
+# was filled are kept, as in RIK's rounds (boards.json). Changes, ends and the standing composition are kept as
+# links only: whether a list had its member at a station is the appointments' (boards.coverage).
+ROLE_ENTRY = re.compile(r"(?:^|\n)[\s\-–—•]*(?:(\d{1,2})\s*[.,]\s*(?:члан|clan|član)|(?:заменик|zamenik)\s*(\d{1,2})"
+                        r"\s*[.,]\s*(?:члана|clana|člana))\s*:", re.I)
+BOARD_WINDOW = 60  # days before the election in which its boards are appointed
+
+
+def board_head(text: str) -> str:
+    """A decision's title: from "РЕШЕЊЕ" to the station's number (what boards.classify reads)."""
+    t = boards._normalize(text)
+    start = max(t.find("РЕШЕЊЕ"), t.find("REŠENJE"), t.find("RESENJE"), 0)
+    m = boards.STATION.search(t, start)
+    return t[start:m.end()] if m and m.end() - start < 900 else t[start:start + 600]
+
+
+def board_slots(text: str, contestants: list[dict]) -> tuple[list[list], int]:
+    """[[ballot number, member filled, deputy filled], …] and how many filled roles named no list clearly."""
+    t = boards._normalize(text)
+    end = boards.END.search(t)
+    body = t[:end.start()] if end else t
+    marks = list(ROLE_ENTRY.finditer(body))
+    by_list: dict[int, list[bool]] = {}
+    unmatched = 0
+    for k, m in enumerate(marks):
+        part = body[m.end(): marks[k + 1].start() if k + 1 < len(marks) else len(body)]
+        if not boards._filled(part):
+            continue
+        number = boards.match_list(" ".join(part.split()), contestants)
+        if number is None:
+            unmatched += 1
+            continue
+        roles = by_list.setdefault(number, [False, False])
+        roles[0 if m.group(1) else 1] = True
+    return [[n, m, d] for n, (m, d) in sorted(by_list.items())], unmatched
+
+
+def read_board(text: str, url: str, day: str | None, contestants: list[dict], numbers: set[str], code: str) -> dict | None:
+    """What boards.json keeps of one decision of a local commission, or None when it isn't one on a station's board."""
+    t = boards._normalize(text)
+    up = t.upper()
+    if "ОДБОР" not in up and "ODBOR" not in up:
+        return None
+    head = board_head(text)
+    if "ЗАПИСНИК" in head.upper() or "ZAPISNIK" in head.upper():
+        return None
+    m = boards.STATION.search(t)
+    if not m or m.group(1).lstrip("0") not in numbers:
+        return None
+    kind, repeat = boards.classify(head, "")
+    if kind == "other":
+        return None
+    entry = {"s": f"{code}/{m.group(1).lstrip('0')}", "k": kind, "r": repeat, "t": day or "", "u": url, "v": boards.PARSER}
+    if kind == "extended":
+        decision = boards.parse_decision(text)
+        slots, unmatched = board_slots(text, contestants)
+        if not slots and decision.slots:  # RIK's layout, "на предлог …"
+            slots = [[boards.slot_list(s, contestants), s.member, s.deputy] for s in decision.slots]
+            unmatched = sum(1 for s in slots if s[0] is None)
+        entry.update(slots=slots, unmatched=unmatched, addr=decision.address, unparsed=not slots)
+    return entry
+
+
+def board_candidates(store: dict, code: str, day: str) -> list[str]:
+    """The municipality's documents dated in the weeks before the election (a board decision may be filed as a
+    list's document: it names the lists), not its minutes or results."""
+    from datetime import timedelta
+    first = (_date(day) - timedelta(days=BOARD_WINDOW)).isoformat()
+    return sorted(u for u, v in store["docs"].items() if v["m"] == code and v.get("e") in ("local", None)
+                  and v.get("d") and first <= v["d"] <= day and v["k"] not in ("minutes", "results"))
+
+
+def _board_one(args: tuple) -> tuple[str, dict | None, str | None]:
+    url, day, contestants, numbers, code = args
+    try:
+        return url, read_board(text_of(download(url), url, pages=3), url, day, contestants, numbers, code), None
+    except Exception as e:  # noqa: BLE001 - a document down: left out of this run
+        return url, None, type(e).__name__
+
+
+def read_boards(root, rid: str, log=print, workers: int = 4, one=_board_one) -> dict:
+    """Read a local round's board decisions into data/rounds/<rid>/boards.json; returns a summary (no names)."""
+    import csv
+    import json
+    from collections import Counter
+    from concurrent.futures import ProcessPoolExecutor
+    from pathlib import Path
+    rdir = Path(root) / "rounds" / rid
+    meta = json.loads((rdir / "meta.json").read_text(encoding="utf-8"))
+    code, day, contestants = meta["local"]["municipality"], meta["date"], meta["contestants"]
+    with open(rdir / "results.csv", encoding="utf-8-sig", newline="") as f:
+        numbers = {r["bm_broj"].strip() for r in csv.DictReader(f)}
+    store = load_store(root)
+    days = {u: store["docs"][u].get("d") for u in board_candidates(store, code, day)}
+    log(f"{rid}: {len(days)} documents of the weeks before the election to look at")
+    items = [(u, d, contestants, numbers, code) for u, d in days.items()]
+    out, failed = {}, []
+    if workers > 1:
+        with ProcessPoolExecutor(workers) as pool:
+            results = list(pool.map(one, items))
+    else:
+        results = [one(i) for i in items]
+    for url, got, err in results:
+        if err:
+            failed.append(err)
+        elif got:
+            out[url] = got
+    boards.save_store(rdir, {"complete": not failed, "indexed": len(days), "read": now_day(), "source": "commission", "docs": out})
+    ext = [d for d in out.values() if d["k"] == "extended"]
+    cov = boards.coverage({"docs": out})
+    summary = {"decisions": len(out), "kinds": dict(Counter(d["k"] for d in out.values())),
+               "extended_unread": sum(1 for d in ext if d.get("unparsed")),
+               "roles_unmatched": sum(d.get("unmatched", 0) for d in ext),
+               "stations": len(numbers), "stations_read": sum(1 for c in cov.values() if c.get("lists") is not None),
+               "per_list": {str(n): sum(1 for c in cov.values() if (c.get("lists") or {}).get(str(n), {}).get("member"))
+                            for n in range(1, len(contestants) + 1)},
+               "failed": dict(Counter(failed))}
+    log(json.dumps(summary, ensure_ascii=False))
+    return summary
+
+
+def now_day() -> str:
+    from datetime import date
+    return date.today().isoformat()
