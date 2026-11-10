@@ -2,19 +2,29 @@
  "contest": {},
  "contestants": [
   {
-   "name": "Изборна листа 1"
+   "name": "Александар Вучић – Панчево сутра",
+   "rik_name": "АЛЕКСАНДАР ВУЧИЋ – ПАНЧЕВО СУТРА",
+   "short": "Панчево сутра"
   },
   {
-   "name": "Изборна листа 2"
+   "name": "Савез војвођанских Мађара – др Балинт Пастор",
+   "rik_name": "САВЕЗ ВОЈВОЂАНСКИХ МАЂАРА – ДР БАЛИНТ ПАСТОР",
+   "short": "СВМ"
   },
   {
-   "name": "Изборна листа 3"
+   "name": "Панчево против насиља – Бирам борбу",
+   "rik_name": "ПАНЧЕВО ПРОТИВ НАСИЉА – БИРАМ БОРБУ",
+   "short": "Панчево против насиља"
   },
   {
-   "name": "Изборна листа 4"
+   "name": "Панчево – борба против насиља (Покрет обнове Краљевине Србије, Народна странка)",
+   "rik_name": "ПАНЧЕВО – БОРБА ПРОТИВ НАСИЉА, ПОКРЕТ ОБНОВЕ КРАЉЕВИНЕ СРБИЈЕ И НАРОДНА СТРАНКА",
+   "short": "Борба против насиља (ПОКС)"
   },
   {
-   "name": "Изборна листа 5"
+   "name": "Група грађана Панчевачка група – Ваше комшије",
+   "rik_name": "ГРУПА ГРАЂАНА ПАНЧЕВАЧКА ГРУПА – ВАШЕ КОМШИЈЕ",
+   "short": "Панчевачка група"
   }
  ],
  "date": "2024-06-02",
@@ -26,37 +36,21 @@
   "municipality": "80314",
   "report": "http://www.pancevo.rs/sadrzaj/uploads/2024/04/ukupan-izvestaj-o-rezultatima-izbora-za-sva-biracka-mesta.pdf",
   "stations_from": "680072",
-  "aside": [
-   {
-    "n": 18,
-    "why": "lists add up to 648, valid votes read 654"
-   },
-   {
-    "n": 28,
-    "why": "lists add up to 463, valid votes read 453"
-   },
-   {
-    "n": 47,
-    "why": "lists add up to 473, valid votes read 468"
-   },
-   {
-    "n": 63,
-    "why": "ballots, invalid and valid votes don't agree"
-   },
-   {
-    "n": 65,
-    "why": "lists add up to 582, valid votes read 584"
-   }
-  ],
+  "aside": [],
   "notes": {
    "16": "invalid from ballots and valid",
+   "18": "checked by hand against the report (Marko, 10 Nov 2026)",
    "22": "list 2 from the valid votes",
+   "28": "checked by hand against the report (Marko, 10 Nov 2026)",
    "40": "list 2 from the valid votes",
+   "47": "checked by hand against the report (Marko, 10 Nov 2026)",
    "49": "list 2 from the valid votes",
    "56": "voted taken as the ballots (read lower than them)",
    "57": "list 4 from the valid votes",
    "58": "list 4 from the valid votes; voted taken as the ballots (read lower than them)",
    "60": "list 2 from the valid votes",
+   "63": "checked by hand against the report (Marko, 10 Nov 2026)",
+   "65": "checked by hand against the report (Marko, 10 Nov 2026)",
    "69": "ballots from valid and invalid",
    "72": "list 5 from the valid votes",
    "74": "invalid from ballots and valid",
