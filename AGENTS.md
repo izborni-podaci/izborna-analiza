@@ -632,7 +632,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   "Ukupni izveštaj o rezultatima" on 21 Dec 2025 (minutes of its 25th session, after the repeated vote at
   stations 7 and 8), but no upload by that name was among the documents: the media search looked only for boards,
   stations and the commission. It now also asks for results and reports, and the site's search for "rezultati
-  izbora".
+  izbora". That found both: Sečanj's `2025/12/Ukupan-izvestaj.pdf` (classified as a list's document) and
+  Temerin's "УКУПАН ИЗВЕШТАЈ О РЕЗУЛТАТИМА ИЗБОРА ЗА ОДБОРНИКЕ…" (dated 6 June, its own day). So `--results` no
+  longer asks for the kind or the election's day: any local report with "izveštaj" in its link, dated up to 40
+  days after, is read, and the one with most stations kept (`local.report_candidates`).
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

@@ -208,3 +208,11 @@ def test_a_supplement_s_quoted_role_and_lists_told_by_their_own_words():
     # a line ending in a word before the next member's number is not a deputy's role
     text = EXTENDED.replace("Александар Вучић-Панчево\nсутра;", "Александар Вучић-Панчево;\nсутра\n")
     assert local.board_slots(text, LISTS)[0][0] == [1, True, True]
+
+
+def test_report_candidates_by_link_and_days_after():
+    store = {"docs": {"https://x/2025/12/Ukupan-izvestaj.pdf": {"m": "80373", "k": "lists", "e": "local", "d": "2025-12-21"},
+                      "https://x/2022/04/Ukupni-izvestaj.pdf": {"m": "80373", "k": "other", "e": "local", "d": "2022-04-06"},
+                      "https://x/Zbirni-izvestaj-poslanici.pdf": {"m": "80373", "k": "results", "e": "parliamentary", "d": "2025-12-01"},
+                      "https://x/Resenje.pdf": {"m": "80373", "k": "results", "e": "local", "d": "2025-12-01"}}}
+    assert local.report_candidates(store, "80373", "2025-11-30") == ["https://x/2025/12/Ukupan-izvestaj.pdf"]

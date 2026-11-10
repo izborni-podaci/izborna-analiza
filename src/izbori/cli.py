@@ -610,8 +610,7 @@ def cmd_local(args) -> int:
         return 0
     if args.results:  # a local election's results from the commission's report, as a draft round
         store = local.load_store(root)
-        cands = [u for u, v in store["docs"].items() if v["m"] == args.results and v["k"] == "results"
-                 and (not args.date or v.get("d") == args.date) and "izvestaj" in watch.fold(urllib.parse.unquote(u))]
+        cands = local.report_candidates(store, args.results, args.date)
         if args.url:
             cands = [args.url]
         best = None

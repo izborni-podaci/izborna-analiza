@@ -290,6 +290,21 @@ LIST_NAME = re.compile(r"(?:изборн[ауе]\s+лист[ауе]|izborn[aue]\
                        re.I)
 
 
+REPORT_AFTER = 40  # days after the election in which the commission's report is dated (Sečanj 2025: 21, after a repeat)
+
+
+def report_candidates(store: dict, code: str, day: str) -> list[str]:
+    """The municipality's reports (izveštaj in the link) of a local election, dated from its day to REPORT_AFTER
+    days after: the page gives the report's own date, not the election's (Temerin 2024: 6 June), and the first
+    page alone may not tell a report from a list's document (Sečanj 2025), so the kind isn't asked; every one is
+    read and the one with most stations wins."""
+    from datetime import timedelta
+    last = (_date(day) + timedelta(days=REPORT_AFTER)).isoformat() if day else "9999"
+    return sorted(u for u, v in store["docs"].items() if v["m"] == code and v.get("e") in ("local", None)
+                  and (not day or day <= (v.get("d") or "") <= last)
+                  and re.search(r"izvest|izvjest", watch.fold(urllib.parse.unquote(u))))
+
+
 def round_id(code: str, day: str) -> str:
     return f"L{code}-{day.replace('-', '')}"
 
