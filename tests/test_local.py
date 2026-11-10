@@ -101,6 +101,23 @@ def test_classify_shards_split_by_municipality_and_merge(tmp_path):
     assert local.merge_parts(tmp_path, parts) == 0
 
 
+def test_merge_keeps_each_shards_new_entries_whatever_the_order(tmp_path):
+    import json
+    old = {"m": "80314", "k": "boards", "e": None, "d": None}  # an entry of an older version (no "v")
+    base = {"https://p.rs/a.pdf": old, "https://t.rs/b.pdf": {**old, "m": "80446"}}
+    new_p = {**old, "k": "minutes", "v": local.CLASSIFIER}
+    new_t = {**old, "m": "80446", "k": "lists", "v": local.CLASSIFIER}
+    parts = []
+    for i, store in enumerate(({**base, "https://p.rs/a.pdf": new_p},  # each part: the whole store, plus its own
+                               {**base, "https://t.rs/b.pdf": new_t})):
+        parts.append(tmp_path / f"part{i}.json")
+        parts[-1].write_text(json.dumps({"docs": store}), encoding="utf-8")
+    (tmp_path / local.STORE).write_text(json.dumps({"docs": base}), encoding="utf-8")
+    assert local.merge_parts(tmp_path, parts) == 2
+    assert local.load_store(tmp_path)["docs"] == {"https://p.rs/a.pdf": new_p, "https://t.rs/b.pdf": new_t}
+    assert local.merge_parts(tmp_path, parts[::-1]) == 0
+
+
 TABLE = """ИЗВЕШТАЈ О РЕЗУЛТАТИМА ИЗБОРА ЗА ОДБОРНИКЕ
 1 1354 577 577 14 563 473 5 37 9 39
 2 1201 600 600 17 583 483 3 56 15 26

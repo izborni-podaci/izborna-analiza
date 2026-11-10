@@ -196,15 +196,18 @@ def shard_of(todo: list[str], docs: dict, n: int) -> dict[str, int]:
 
 
 def merge_parts(root, parts: list) -> int:
-    """The shards' stores merged into this one: every entry a shard has that differs from this store's. Returns
-    how many entries changed."""
+    """The shards' stores merged into this one: an entry this store lacks, or one a shard classified by a newer
+    version. Each shard's store is the whole store as it began plus what that shard read, so "differs from this
+    one" would let a later shard's old entries undo an earlier shard's new ones; newer-or-missing doesn't depend
+    on the order. Returns how many entries changed."""
     import json
     from pathlib import Path
     store = load_store(root)
     changed = 0
     for part in parts:
         for u, v in json.loads(Path(part).read_text(encoding="utf-8"))["docs"].items():
-            if store["docs"].get(u) != v:
+            have = store["docs"].get(u)
+            if have is None or v.get("v", 1) > have.get("v", 1):
                 store["docs"][u] = v
                 changed += 1
     save_store(root, store)

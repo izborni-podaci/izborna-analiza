@@ -778,4 +778,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   even when the run is cancelled, and `kind` merge with a run's id in `code` merges that run's parts from its
   artifacts (`actions: read`), for a run dispatched before this change. The workflow is at GitHub's ten inputs,
   so this reuses `code` and `kind`.
+- **10 Nov 2026, the merge undid shards.** The first sharded merge took every entry of a part that differed from
+  the store being merged into. But each part is the whole store as its runner began plus its own reading, so a
+  later part's old entries put back what an earlier part had just read: Pančevo, Temerin and Sečanj (1,862
+  documents read) were left as before. Now an entry is taken only when the store lacks it or the part read it
+  by a newer classifier version, which doesn't depend on the parts' order; that run's parts were merged again
+  (`kind` merge).
 
