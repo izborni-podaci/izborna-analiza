@@ -669,6 +669,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   words it holds whole; a named place at least 80% inside one other quarter is a name for that quarter (Liman,
   over Liman 1–4, is not); and the fetch also takes offices, companies' buildings and social centres. No
   per-station table: what OpenStreetMap doesn't have stays out of the quarters.
+  First refetch: 142 of 153 placed (the water utility in Rotkvarija, the inspection office in Stari grad).
+  Sajlovo and Šangaj are only points in OpenStreetMap, so a neighbourhood's (or locality's) point inside a quarter
+  is a name for it too; a suburb's label, over several quarters, is not.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

@@ -471,6 +471,7 @@ out geom;
   nwr(area.a)["name"]["building"~"^(school|kindergarten|civic|public|college|university)$"];
   nwr(area.a)["name"]["office"];
   nwr(area.a)["name"]["amenity"="social_centre"];
+  node(area.a)["name"]["place"~"^(neighbourhood|locality|hamlet)$"];
   nwr(area.a)["name"]["building"~"^(office|commercial|industrial|train_station)$"];
   nwr(area.a)["name"]["club"];
   nwr(area.a)["name"]["leisure"~"^(sports_centre|sports_hall)$"];
@@ -539,7 +540,8 @@ def quarter_features(data: dict, name: str, log=print) -> tuple[list[dict], list
                 points.setdefault("месна заједница " + t["name"], q)
             continue
         c = e.get("center") or ({"lon": e["lon"], "lat": e["lat"]} if "lon" in e else None)
-        if not c or not t.get("name") or t.get("place"):
+        # a place is a name only as a point of a neighbourhood (Сајлово, Шангај), not a suburb's label over several
+        if not c or not t.get("name") or (t.get("place") and (e["type"] != "node" or t["place"] in QUARTER_KINDS[:2])):
             continue
         q = quarter_of(Point(c["lon"], c["lat"]))
         if q:
