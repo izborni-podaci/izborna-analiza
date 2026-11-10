@@ -602,8 +602,8 @@ def cmd_local(args) -> int:
                 push()
         return 0
     if args.boards:  # a local round's polling boards from the commission's decisions, into its boards.json
-        local.read_boards(root, args.boards, log)
-        if args.commit and commit([str(root / "rounds" / args.boards / "boards.json")],
+        local.read_boards(root, args.boards, log, only=args.path_has)
+        if not args.path_has and args.commit and commit([str(root / "rounds" / args.boards / "boards.json")],
                                   f"Data: polling boards of the local election {args.boards}"):
             if args.push:
                 push()

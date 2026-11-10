@@ -21,7 +21,7 @@ on:
         description: "How many documents to log"
         default: "40"
       path_has:
-        description: "Only documents whose address holds this (e.g. 2023/12)"
+        description: "Only documents whose address holds this (e.g. 2023/12); with kind boards, their roles are logged masked and nothing is kept"
         default: ""
       pages:
         description: "Probe: pages read per document"
@@ -71,10 +71,11 @@ jobs:
         if: ${{ inputs.results != '' && inputs.kind == 'boards' }}
         env:
           ROUND: ${{ inputs.results }}
+          PATH_HAS: ${{ inputs.path_has }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          uv run izbori local --boards "$ROUND" --commit --push
+          uv run izbori local --boards "$ROUND" --path-has "$PATH_HAS" --commit --push
       - name: Results
         if: ${{ inputs.results != '' && inputs.kind != 'boards' }}
         env:

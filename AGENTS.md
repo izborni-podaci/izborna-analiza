@@ -613,6 +613,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   (`local.read_board`, by the decision's title). `izbori local --boards ROUND` (the workflow's `results` input with
   `kind` boards) reads the documents of the 60 days before the election into the round's boards.json in RIK's
   store format, with the commission's own link, so the site shows controllers and decisions as for RIK's rounds.
+  With `path_has` as well, only those documents are read and each role is logged with every word masked but
+  the lists' own after its first comma (`local.role_shape`), to see why a role matched no list; nothing is kept.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

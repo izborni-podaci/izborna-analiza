@@ -484,6 +484,23 @@ def board_slots(text: str, contestants: list[dict]) -> tuple[list[list], int]:
     return [[n, m, d] for n, (m, d) in sorted(by_list.items())], unmatched
 
 
+def role_shape(text: str, contestants: list[dict]) -> list[str]:
+    """Each extended role's text with every word masked but the lists' own words after its first comma (the person
+    comes first), and the list it was matched to: to see why a role names no list, without a name in a log."""
+    own = set().union(*(boards.tokens(c.get(k, "")) for c in contestants for k in ("name", "rik_name", "short")))
+    t = boards._normalize(text)
+    end = boards.END.search(t)
+    body = t[:end.start()] if end else t
+    marks = list(ROLE_ENTRY.finditer(body))
+    out = []
+    for k, m in enumerate(marks):
+        part = " ".join(body[m.end(): marks[k + 1].start() if k + 1 < len(marks) else len(body)].split())
+        head, _, tail = part.partition(",")
+        masked = LETTERS_WORD.sub(lambda w: w.group(0) if boards.tokens(w.group(0)) & own else "xxx", tail)
+        out.append(f"{m.group(0).strip()} xxx,{masked} -> {boards.match_list(part, contestants)}")
+    return out
+
+
 def read_board(text: str, url: str, day: str | None, contestants: list[dict], numbers: set[str], code: str) -> dict | None:
     """What boards.json keeps of one decision of a local commission, or None when it isn't one on a station's board."""
     t = boards._normalize(text)
@@ -520,15 +537,22 @@ def board_candidates(store: dict, code: str, day: str) -> list[str]:
 
 
 def _board_one(args: tuple) -> tuple[str, dict | None, str | None]:
-    url, day, contestants, numbers, code = args
+    url, day, contestants, numbers, code, diagnose = (*args, False)[:6]
     try:
-        return url, read_board(text_of(download(url), url, pages=3), url, day, contestants, numbers, code), None
+        text = text_of(download(url), url, pages=3)
+        got = read_board(text, url, day, contestants, numbers, code)
+        if got and diagnose and got["k"] == "extended":
+            got["_roles"] = role_shape(text, contestants)
+        return url, got, None
     except Exception as e:  # noqa: BLE001 - a document down: left out of this run
         return url, None, type(e).__name__
 
 
-def read_boards(root, rid: str, log=print, workers: int = 4, one=_board_one) -> dict:
-    """Read a local round's board decisions into data/rounds/<rid>/boards.json; returns a summary (no names)."""
+def read_boards(root, rid: str, log=print, workers: int = 4, one=_board_one, only: str = "") -> dict:
+    """Read a local round's board decisions into data/rounds/<rid>/boards.json; returns a summary (no names).
+
+    With `only`, just the documents whose link holds it, each extended one's roles logged masked (role_shape);
+    nothing is written."""
     import csv
     import json
     from collections import Counter
@@ -540,9 +564,10 @@ def read_boards(root, rid: str, log=print, workers: int = 4, one=_board_one) -> 
     with open(rdir / "results.csv", encoding="utf-8-sig", newline="") as f:
         numbers = {r["bm_broj"].strip() for r in csv.DictReader(f)}
     store = load_store(root)
-    days = {u: store["docs"][u].get("d") for u in board_candidates(store, code, day)}
+    days = {u: store["docs"][u].get("d") for u in board_candidates(store, code, day)
+            if only in urllib.parse.unquote(u)}
     log(f"{rid}: {len(days)} documents of the weeks before the election to look at")
-    items = [(u, d, contestants, numbers, code) for u, d in days.items()]
+    items = [(u, d, contestants, numbers, code) + ((True,) if only else ()) for u, d in days.items()]
     out, failed = {}, []
     if workers > 1:
         with ProcessPoolExecutor(workers) as pool:
@@ -553,8 +578,12 @@ def read_boards(root, rid: str, log=print, workers: int = 4, one=_board_one) -> 
         if err:
             failed.append(err)
         elif got:
+            for line in got.pop("_roles", []):
+                log(f"{urllib.parse.unquote(url).rsplit('/', 1)[-1][:40]}: {line}")
             out[url] = got
-    boards.save_store(rdir, {"complete": not failed, "indexed": len(days), "read": now_day(), "source": "commission", "docs": out})
+    if not only:
+        boards.save_store(rdir, {"complete": not failed, "indexed": len(days), "read": now_day(), "source": "commission",
+                                 "docs": out})
     ext = [d for d in out.values() if d["k"] == "extended"]
     cov = boards.coverage({"docs": out})
     summary = {"decisions": len(out), "kinds": dict(Counter(d["k"] for d in out.values())),

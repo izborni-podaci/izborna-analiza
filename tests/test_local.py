@@ -177,3 +177,9 @@ def test_read_boards_writes_the_round_s_store(tmp_path):
     from izbori import boards
     cov = boards.coverage(boards.load_store(rdir))
     assert cov["80314/7"]["lists"]["5"] == {"member": True, "deputy": False}
+
+
+def test_role_shape_shows_only_the_lists_words():
+    lines = local.role_shape(EXTENDED, LISTS)
+    assert len(lines) == 6 and lines[0].endswith("-> 1") and "Пера" not in " ".join(lines)
+    assert "Перић" not in " ".join(lines) and "Панчевачка" in lines[4]
