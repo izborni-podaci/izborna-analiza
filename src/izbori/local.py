@@ -632,7 +632,8 @@ LISTS = "local_lists.csv"  # round, number, rik_name, name, short, source
 
 def corrected(root, rid: str, rows: list[dict], aside: list[dict], log=print) -> tuple[list[dict], list[dict]]:
     """Rows a person read in the report (data/local_corrections.csv): each named cell replaces what OCR read, the
-    row must then add up, and it is noted as checked by hand. A station set aside comes back this way."""
+    row must then add up, and it is noted as checked by hand. A station set aside comes back this way, and one
+    OCR didn't read at all (a row lost) when every figure is given."""
     import csv
     from pathlib import Path
     p = Path(root) / CORRECTIONS
@@ -645,7 +646,8 @@ def corrected(root, rid: str, rows: list[dict], aside: list[dict], log=print) ->
             continue
         n = int(c["station"])
         base = dict(by_row.get(n) or (by_aside.get(n) or {}).get("raw") or {})
-        if not base:
+        whole = all((c.get(f) or "").strip() for f in ("registered", "voted", "ballots", "invalid", "valid", "votes"))
+        if not base and not whole:  # a station OCR lost altogether comes back only with every figure given
             log(f"correction for station {n}: no such row")
             continue
         for f in ("registered", "voted", "ballots", "invalid", "valid"):

@@ -801,4 +801,13 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   line of a signature block (`PAGE_END`: "Број:", the president or deputy, "М.П."), onto the crops' temporary
   branch, deleted once read. A report holds no one's name but the lists' and the signatories', so this is the
   same rule as the minutes' crops.
+- **11 Nov 2026, 17 Dec 2023 read against the reports.** Every station of Prokuplje (91), Rača (27) and Golubac
+  (30) was read by eye from the reports' pages and compared with what the readers made: the rows read were right
+  but for three of Prokuplje's that added up wrong (station 62's first two lists read 15 and 105 for 115 and 5;
+  66's strokes taken for lists 5 and 2 the wrong way round; 70's turnout 45 for 43) and one OCR lost altogether
+  (33). With the stations set aside, these are in `data/local_corrections.csv`, and every total then matches the
+  commission's own (Prokuplje's summary page, Rača's and Golubac's separate reports of totals). Golubac's report
+  prints station 14's valid votes as 14 and 18's as 211, where its lists and its other figures give 141 and 208;
+  the corrections take those and say so. A correction now brings back a station OCR lost when it gives every
+  figure. The lists' names are the reports' own.
 

@@ -162,6 +162,18 @@ def test_a_person_s_reading_brings_a_row_back(tmp_path):
     assert any("station 2 doesn't add up" in m for m in logged)
 
 
+def test_a_station_ocr_lost_comes_back_with_every_figure(tmp_path):
+    (tmp_path / "local_corrections.csv").write_text(
+        "round,station,registered,voted,ballots,invalid,valid,votes,note\n"
+        "L1-1,9,305,160,160,3,157,86 32 10 1 28,Claude\n"
+        "L1-1,10,,,,,,1 2 3 4 5,a few figures only\n", encoding="utf-8")
+    k, rows, aside = local.result_rows(TABLE)
+    logged = []
+    rows, aside = local.corrected(tmp_path, "L1-1", rows, aside, logged.append)
+    assert rows[-1]["n"] == 9 and rows[-1]["registered"] == 305 and rows[-1]["v"] == [86, 32, 10, 1, 28]
+    assert any("station 10: no such row" in m for m in logged)
+
+
 LISTS = [{"name": "Александар Вучић – Панчево сутра", "rik_name": "АЛЕКСАНДАР ВУЧИЋ – ПАНЧЕВО СУТРА", "short": "Панчево сутра"},
          {"name": "Савез војвођанских Мађара – др Балинт Пастор", "rik_name": "", "short": "СВМ"},
          {"name": "Панчево против насиља – Бирам борбу", "rik_name": "", "short": "Панчево против насиља"},
