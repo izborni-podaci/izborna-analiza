@@ -795,4 +795,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   Golubac's reports aren't tables but a section per station with labelled lines, which read no row at all: they
   are read by `section_rows` (headings "број 1" or "бр. 1", labelled figures, a line per list ending in its
   votes), with ballots taken as valid and invalid since these reports don't give them.
+- **11 Nov 2026, a report's pages to read by eye.** The stations a report's reader sets aside, and the lists'
+  names where no proclamation was found, are read from the report itself: `kind` pages renders the documents
+  whose link holds `path_has` (several municipalities' codes in `code`) at 150 dpi, each page cut above the first
+  line of a signature block (`PAGE_END`: "Број:", the president or deputy, "М.П."), onto the crops' temporary
+  branch, deleted once read. A report holds no one's name but the lists' and the signatories', so this is the
+  same rule as the minutes' crops.
 

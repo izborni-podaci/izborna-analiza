@@ -986,6 +986,63 @@ def crop_results(pdf: bytes, out_dir, stem: str, max_pages: int = 4) -> list:
     return made
 
 
+# A commission's report as page images, to read by eye the stations its reader set aside and the lists' names:
+# each page down to the first line of a signature block (the act's number, the president, the stamp), so the
+# commission's members aren't on them.
+PAGE_END = re.compile(r"^\W*(?:Број|Broj)\s*:|ПРЕДСЕДНИ|PREDSEDNI|ЗАМЕНИК|ZAMENIK|\b[МM]\.\s?[ПP]\b", re.I)
+PAGE_DPI = 150
+
+
+def report_pages(pdf: bytes, out_dir, stem: str, max_pages: int = 20) -> list:
+    """A report's pages as PNG images in out_dir (stem-p<page>.png), each cut above its signature block."""
+    import subprocess
+    import tempfile
+    from pathlib import Path
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    made = []
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "doc.pdf"
+        path.write_bytes(pdf)
+        for p in range(1, max_pages + 1):
+            prefix = Path(tmp) / f"p{p}"
+            r = subprocess.run(["pdftoppm", "-r", str(PAGE_DPI), "-gray", "-png", "-f", str(p), "-l", str(p),
+                                str(path), str(prefix)], capture_output=True)
+            images = sorted(Path(tmp).glob(f"p{p}*.png"))
+            if r.returncode != 0 or not images:
+                break
+            lines, w, h = page_lines(images[0])
+            end = next((top for text, top, _, _ in lines if PAGE_END.search(text)), h)
+            if end > 40:
+                target = out_dir / f"{stem}-p{p}"
+                subprocess.run(["pdftoppm", "-r", str(PAGE_DPI), "-gray", "-png", "-singlefile", "-f", str(p),
+                                "-l", str(p), "-x", "0", "-y", "0", "-W", str(w), "-H", str(end - 4), str(path),
+                                str(target)], capture_output=True)
+                if Path(f"{target}.png").exists():
+                    made.append(Path(f"{target}.png"))
+            images[0].unlink()
+    return made
+
+
+def run_pages(root, code: str, path_has: str, out_dir, log=print, fetch=None) -> int:
+    """report_pages for a municipality's documents whose link holds one of path_has's parts (split by "|")."""
+    docs = watch.load_store(root)["docs"]
+    parts = [p for p in path_has.split("|") if p]
+    todo = sorted(u for u, v in docs.items() if v["m"] == code and parts
+                  and any(p in urllib.parse.unquote(u) for p in parts))
+    log(f"{code}: {len(todo)} documents")
+    done = 0
+    for u in todo:
+        try:
+            made = report_pages((fetch or download)(u), out_dir, f"{code}-{safe_stem(u)}")
+        except Exception as e:  # noqa: BLE001 - one document down must not stop the rest
+            log(f"{safe_stem(u)}: {type(e).__name__}")
+            continue
+        log(f"{safe_stem(u)}: {len(made)} page(s)")
+        done += bool(made)
+    return done
+
+
 def safe_stem(url: str) -> str:
     name = urllib.parse.unquote(url).rsplit("/", 1)[-1].rsplit(".", 1)[0]
     return re.sub(r"[^a-z0-9]+", "-", watch.fold(name)).strip("-")[:80]

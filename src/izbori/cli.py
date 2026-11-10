@@ -618,6 +618,10 @@ def cmd_local(args) -> int:
             if args.push:
                 push()
         return 0
+    if args.report_pages:  # a report's pages, cut above their signatures, to read by eye
+        for code in args.report_pages.split(","):
+            local.run_pages(root, code.strip(), args.path_has, args.out, log)
+        return 0
     if args.merge_parts:  # the parallel parts' classifications into data/local_docs.json
         parts = sorted(Path(args.merge_parts).rglob("*.json"))
         n = local.merge_parts(root, parts)
@@ -1014,6 +1018,7 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--overview", action="store_true", help="per municipality and local election, what we have")
     lo.add_argument("--crops", metavar="CODE", help="cut the results section out of a municipality's boards' minutes")
     lo.add_argument("--out", default="crops", help="where --crops writes its images")
+    lo.add_argument("--report-pages", metavar="CODE", help="municipalities' documents (codes, comma-separated; --path-has) as page images cut above their signatures")
     lo.add_argument("--sheets", action="store_true", help="with --crops: reading sheets of the number cells instead of the crops")
     lo.add_argument("--boards", metavar="ROUND", help="read a local round's polling board decisions into its boards.json")
     lo.add_argument("--name", default="", help="the municipality's name for the round's title (Cyrillic)")

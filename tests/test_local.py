@@ -423,3 +423,22 @@ def test_a_report_with_a_section_per_station():
     assert rows[1]["v"] == [136, 37]
     assert aside == [{"n": 3, "why": "lists add up to 170, valid votes read 169",
                       "raw": {"n": 3, "registered": 208, "voted": 185, "invalid": 16, "valid": 169, "v": [100, 70]}}]
+
+
+def test_report_pages_end_above_the_signatures(tmp_path):
+    import json
+    for line in ("Број: 013-67/2023-01", "ПРЕДСЕДНИК", "Predsednica komisije", "ЗАМЕНИК ПРЕДСЕДНИКА", "М.П."):
+        assert local.PAGE_END.search(line), line
+    for line in ("1 350 210 210 2 208 94 29 8 2 4 10 61", "4) Број важећих гласачких листића- 115",
+                 "Број бирача уписаних у бирачки списак 35.951"):
+        assert not local.PAGE_END.search(line), line
+    (tmp_path / "municipal_docs.json").write_text(json.dumps({"docs": {
+        "https://r.rs/Ukupan-izvestaj-po-birackim-mestima.pdf": {"m": "71013", "k": "x", "seen": "x"},
+        "https://r.rs/Resenje.pdf": {"m": "71013", "k": "x", "seen": "x"}}}), encoding="utf-8")
+    asked = []
+
+    def fetch(u):
+        asked.append(u)
+        raise OSError
+    assert local.run_pages(tmp_path, "71013", "po-birackim", tmp_path / "out", log=lambda *_: None, fetch=fetch) == 0
+    assert asked == ["https://r.rs/Ukupan-izvestaj-po-birackim-mestima.pdf"]
