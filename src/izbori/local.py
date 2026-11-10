@@ -645,3 +645,119 @@ def read_boards(root, rid: str, log=print, workers: int = 4, one=_board_one, onl
 def now_day() -> str:
     from datetime import date
     return date.today().isoformat()
+
+
+# --- the boards' minutes, where a commission published no results by station -------------------------------------
+# Temerin 2024 and Sečanj 2025 published only the municipality's totals; each station's results are in its board's
+# minutes, filled in by hand, which OCR can't read. So the minutes' results section alone (from "РЕЗУЛТАТИ" to the
+# next part of the form: the board, its members' signatures, remarks) is cut out as an image to be read by eye, never
+# the members' part; the images are a workflow's artifact for a day, not kept. What is read goes into
+# data/local_hand.csv and must add up, row by row and to the commission's totals.
+RESULTS_HEAD = re.compile(r"РЕЗУЛТАТИ|REZULTATI")
+CROP_END = re.compile(r"\b(?:ЧЛАН|ЗАМЕНИК|ПРЕДСЕДНИК|ПРИМЕДБ\w*|ПОДАЦИ|ПОТПИС\w*|БИРАЧКИ\s+ОДБОР)\b"
+                      r"|^\W*1\s*[.,]\s*Број\s+бирачког\s+места|^\W*\d+\s*[.,]\s*Датум")
+CROP_DPI = 200
+
+
+def page_lines(png) -> tuple[list[tuple[str, int, int]], int, int]:
+    """A page image's lines as Tesseract finds them: (text, top, bottom) in pixels, and the page's width and height."""
+    import os
+    import subprocess
+    r = subprocess.run(["tesseract", str(png), "-", "-l", "srp+srp_latn", "tsv"], capture_output=True, text=True,
+                       env={**os.environ, "OMP_THREAD_LIMIT": "1"})
+    lines: dict[tuple, list] = {}
+    width = height = 0
+    for row in r.stdout.splitlines()[1:]:
+        f = row.split("\t")
+        if len(f) < 12:
+            continue
+        level, top, left, w, h = int(f[0]), int(f[7]), int(f[6]), int(f[8]), int(f[9])
+        if level == 1:
+            width, height = w, h
+        if level == 5 and f[11].strip():
+            cur = lines.setdefault((f[2], f[3], f[4]), [[], top, top + h])
+            cur[0].append(f[11])
+            cur[1], cur[2] = min(cur[1], top), max(cur[2], top + h)
+    return sorted(((" ".join(t), a, b) for t, a, b in lines.values()), key=lambda x: x[1]), width, height
+
+
+def result_regions(pages: list[tuple[list[tuple[str, int, int]], int]]) -> list[tuple[int, int, int]]:
+    """Where the results section is: [(page index, top, bottom)], from its heading to the next part of the form,
+    onto the next page when it runs over; nothing when there is no heading."""
+    out = []
+    for i, (lines, height) in enumerate(pages):
+        start = next((k for k, (t, _, _) in enumerate(lines) if RESULTS_HEAD.search(t) and len(t.split()) <= 6), None)
+        if start is None:
+            continue
+        top = max(0, lines[start][1] - 15)
+        end = next((a for t, a, _ in lines[start + 1:] if CROP_END.search(t)), None)
+        if end is not None:
+            return [(i, top, end - 5)]
+        out.append((i, top, height))
+        if i + 1 < len(pages):
+            nxt, nh = pages[i + 1]
+            stop = next((a for t, a, _ in nxt if CROP_END.search(t)), nh // 2)
+            if stop > 20:
+                out.append((i + 1, 0, stop - 5))
+        return out
+    return out
+
+
+def crop_results(pdf: bytes, out_dir, stem: str, max_pages: int = 4) -> list:
+    """The minutes' results section as PNG images in out_dir (stem-p<page>.png); [] when it isn't found."""
+    import shutil
+    import subprocess
+    import tempfile
+    from pathlib import Path
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "doc.pdf"
+        path.write_bytes(pdf)
+        pages, widths = [], []
+        for p in range(1, max_pages + 1):
+            prefix = Path(tmp) / f"p{p}"
+            r = subprocess.run(["pdftoppm", "-r", str(CROP_DPI), "-gray", "-png", "-f", str(p), "-l", str(p),
+                                str(path), str(prefix)], capture_output=True)
+            images = sorted(Path(tmp).glob(f"p{p}*.png"))
+            if r.returncode != 0 or not images:
+                break
+            lines, w, h = page_lines(images[0])
+            pages.append((lines, h))
+            widths.append(w)
+            images[0].unlink()
+        made = []
+        for i, top, bottom in result_regions(pages):
+            target = out_dir / f"{stem}-p{i + 1}"
+            subprocess.run(["pdftoppm", "-r", str(CROP_DPI), "-gray", "-png", "-singlefile", "-f", str(i + 1),
+                            "-l", str(i + 1), "-x", "0", "-y", str(top), "-W", str(widths[i]), "-H",
+                            str(max(1, bottom - top)), str(path), str(target)], capture_output=True)
+            if Path(f"{target}.png").exists():
+                made.append(Path(f"{target}.png"))
+        shutil.rmtree(tmp, ignore_errors=True)
+    return made
+
+
+def safe_stem(url: str) -> str:
+    name = urllib.parse.unquote(url).rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    return re.sub(r"[^a-z0-9]+", "-", watch.fold(name)).strip("-")[:80]
+
+
+def run_crops(root, code: str, path_has: str, out_dir, log=print, fetch=None) -> int:
+    """Cut the results section out of a municipality's boards' minutes (links holding one of path_has's parts
+    between "|"); returns how many minutes gave an image."""
+    store = load_store(root)
+    parts = [p for p in path_has.split("|") if p]
+    todo = sorted(u for u, v in store["docs"].items() if v["m"] == code and v["k"] == "minutes"
+                  and (not parts or any(p in urllib.parse.unquote(u) for p in parts)))
+    log(f"{code}: {len(todo)} minutes")
+    done = 0
+    for u in todo:
+        try:
+            made = crop_results((fetch or download)(u), out_dir, f"{code}-{safe_stem(u)}")
+        except Exception as e:  # noqa: BLE001 - one document down must not stop the rest
+            log(f"{safe_stem(u)}: {type(e).__name__}")
+            continue
+        log(f"{safe_stem(u)}: {len(made)} image(s)")
+        done += bool(made)
+    return done

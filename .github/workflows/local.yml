@@ -1,7 +1,8 @@
-# By hand: local elections from the municipalities' own documents (data/municipal_docs.json). Four modes:
+# By hand: local elections from the municipalities' own documents (data/municipal_docs.json). Five modes:
 # classify (what each document is, from its first page, into data/local_docs.json, committed), results (a
 # municipality's report of local results read into a draft round under data/local/, committed), boards (a local
-# round's polling board decisions read into its boards.json, committed), or the probe (a
+# round's polling board decisions read into its boards.json, committed), crops (the results section of the
+# boards' minutes as images, a day's artifact, to be read by eye), or the probe (a
 # municipality's documents of one kind, each logged with every word that isn't a word of the forms masked).
 name: local
 
@@ -15,7 +16,7 @@ on:
         description: "Probe: a municipality code (e.g. 80314 for Pančevo)"
         default: ""
       kind:
-        description: "Probe: stations, boards or commission (empty: all). With results: boards reads that local round's board decisions"
+        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (a day's artifact). With results: boards reads that local round's board decisions"
         default: ""
       limit:
         description: "How many documents to log"
@@ -86,8 +87,21 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           uv run izbori local --results "$RESULTS" --date "$DATE" --name "$NAME" --commit --push
+      - name: Crops
+        if: ${{ inputs.code != '' && inputs.kind == 'crops' }}
+        env:
+          CODE: ${{ inputs.code }}
+          PATH_HAS: ${{ inputs.path_has }}
+        run: uv run izbori local --crops "$CODE" --path-has "$PATH_HAS" --out crops
+      - name: Keep the crops for a day
+        if: ${{ inputs.code != '' && inputs.kind == 'crops' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: crops
+          path: crops/
+          retention-days: 1
       - name: Probe
-        if: ${{ inputs.code != '' }}
+        if: ${{ inputs.code != '' && inputs.kind != 'crops' }}
         env:
           CODE: ${{ inputs.code }}
           KIND: ${{ inputs.kind }}

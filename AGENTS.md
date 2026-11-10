@@ -636,6 +636,13 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   Temerin's "УКУПАН ИЗВЕШТАЈ О РЕЗУЛТАТИМА ИЗБОРА ЗА ОДБОРНИКЕ…" (dated 6 June, its own day). So `--results` no
   longer asks for the kind or the election's day: any local report with "izveštaj" in its link, dated up to 40
   days after, is read, and the one with most stations kept (`local.report_candidates`).
+  Both reports hold only the municipality's totals (Temerin: 31 stations, 24,763 registered, 11,687 valid, four
+  lists; Sečanj: 17 stations, 10,226 registered, 6,787 valid, five lists). Results by station are only in the
+  boards' minutes, filled in by hand: OCR reads "5 4 6'" for a number. Marko chose to have them read by eye:
+  `local.crop_results` cuts out the minutes' results section (from "РЕЗУЛТАТИ" to the board, its members,
+  signatures or remarks, by Tesseract's line boxes), the images are the run's artifact for one day, and Claude
+  reads the numbers into `data/local_hand.csv`; each row must add up and all of them to the report's totals,
+  and a row that doesn't is left for Marko.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

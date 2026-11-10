@@ -216,3 +216,20 @@ def test_report_candidates_by_link_and_days_after():
                       "https://x/Zbirni-izvestaj-poslanici.pdf": {"m": "80373", "k": "results", "e": "parliamentary", "d": "2025-12-01"},
                       "https://x/Resenje.pdf": {"m": "80373", "k": "results", "e": "local", "d": "2025-12-01"}}}
     assert local.report_candidates(store, "80373", "2025-11-30") == ["https://x/2025/12/Ukupan-izvestaj.pdf"]
+
+
+def test_the_results_section_alone_is_cut_out():
+    page = ([("ЗАПИСНИК", 50, 80), ("1. Број бирачког места 1", 120, 150), ("11. РЕЗУЛТАТИ ГЛАСАЊА", 900, 930),
+             ("11.1 БРОЈ БИРАЧА 465", 950, 980), ("11.5 БРОЈ ГЛАСОВА", 1300, 1330), ("III. БИРАЧКИ ОДБОР", 1700, 1730),
+             ("ПРЕДСЕДНИК", 1750, 1780)], 2339)
+    assert local.result_regions([page]) == [(0, 885, 1695)]
+    over = ([("x. РЕЗУЛТАТИ", 1800, 1830), ("10.1 БРОЈ", 1850, 1880)], 2339)
+    nxt = ([("листа 4 422", 100, 130), ("ЧЛАН", 600, 630)], 2339)
+    assert local.result_regions([over, nxt]) == [(0, 1785, 2339), (1, 0, 595)]
+    assert local.result_regions([([("ЗАПИСНИК", 50, 80)], 2339)]) == []
+    assert local.safe_stem("https://t.rs/upload/ЗАПИСНИК О РАДУ БИРАЧКОГ ОДБОРА ЛО1.pdf") == "zapisnik-o-radu-birackog-odbora-lo1"
+
+
+def test_crops_command_runs(tmp_path):
+    from izbori import cli
+    assert cli.main(["--data", str(tmp_path), "local", "--crops", "80446", "--out", str(tmp_path / "c")]) == 0
