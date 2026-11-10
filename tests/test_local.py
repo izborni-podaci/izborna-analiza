@@ -77,9 +77,23 @@ def test_result_rows_check_themselves():
     assert by[5]["invalid"] == 90 and "invalid" in by[5]["note"]  # "|90" read 190: 1032 − 942
     assert by[6]["voted"] == 377 and "voted taken as the ballots" in by[6]["note"]  # "37": a digit lost
     assert by[7]["v"][3] == 11 and "list 4 from the valid votes" in by[7]["note"]  # unreadable, the sum gives it
-    assert aside == [{"n": 8, "why": "lists add up to 648, valid votes read 654"}]  # never guessed
+    assert [(a["n"], a["why"]) for a in aside] == [(8, "lists add up to 648, valid votes read 654")]  # never guessed
 
 
 def test_list_names_from_proclamations():
     m = local.LIST_NAME.search("РЕШЕЊЕ о проглашењу изборне листе „ПРИМЕР – ЗА ГРАД“ коју је поднела")
     assert m.group(1) == "ПРИМЕР – ЗА ГРАД"
+
+
+def test_a_person_s_reading_brings_a_row_back(tmp_path):
+    (tmp_path / "local_corrections.csv").write_text(
+        "round,station,registered,voted,ballots,invalid,valid,votes,note\n"
+        "L1-1,8,,,,,,534 3 57 14 46,Marko\n"
+        "L1-1,2,,,,,,483 3 56 15 99,wrong\n", encoding="utf-8")
+    k, rows, aside = local.result_rows(TABLE)
+    logged = []
+    rows, aside = local.corrected(tmp_path, "L1-1", rows, aside, logged.append)
+    assert aside == [] and rows[-1]["n"] == 8 and rows[-1]["v"] == [534, 3, 57, 14, 46]
+    assert rows[-1]["note"] == "checked by hand against the report (Marko)"
+    assert rows[1]["v"] == [483, 3, 56, 15, 26]  # a correction that doesn't add up changes nothing
+    assert any("station 2 doesn't add up" in m for m in logged)

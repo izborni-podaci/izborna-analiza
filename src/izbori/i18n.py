@@ -179,6 +179,9 @@ S: dict[str, tuple[str, str]] = {
     # round
     "counted_of": ("Обрађено бирачких места: {counted} од {total}", "Polling stations counted: {counted} of {total}"),
     "rik_time": ("Време у РИК-овој датотеци", "Time in RIK's file"),
+    "local_source": ("Локални избори: резултати по бирачким местима из извештаја изборне комисије општине, прочитани и проверени збировима.",
+                     "Local election: results by polling station from the municipal electoral commission's report, read and checked by their sums."),
+    "local_source_link": ("Извештај комисије", "The commission's report"),
     "fetched": ("Преузето", "Fetched"),
     "snapshots": ("Сачуваних верзија", "Versions archived"),
     "rik_source": ("Резултати на сајту РИК-а", "Results on RIK's website"),

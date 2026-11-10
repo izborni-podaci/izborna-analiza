@@ -9,7 +9,7 @@
 <div class="progress">
   <div class="meter" role="img" aria-label="{{ t('counted_of', counted=i(totals.counted), total=i(totals.stations)) }}"><span style="width: {{ '%.1f'|format(100 * totals.counted / totals.stations if totals.stations else 0) }}%"></span></div>
   <p><strong>{{ t('counted_of', counted=i(totals.counted), total=i(totals.stations)) }}</strong></p>
-  <p class="muted">{{ t('rik_time') }}: {{ time(rnd.rik_time) }} · {{ t('fetched') }}: {{ time(rnd.fetched) }} · {{ t('snapshots') }}: <a href="{{ link(base + 'changes.html') }}">{{ i(snapshots|length) }}</a> · <a href="{{ rik_url }}">{{ t('rik_source') }}</a></p>
+  {% set lr = local_report(rnd.id) %}{% if lr %}<p class="muted">{{ t('local_source') }} <a href="{{ lr }}">{{ t('local_source_link') }}</a></p>{% else %}<p class="muted">{{ t('rik_time') }}: {{ time(rnd.rik_time) }} · {{ t('fetched') }}: {{ time(rnd.fetched) }} · {{ t('snapshots') }}: <a href="{{ link(base + 'changes.html') }}">{{ i(snapshots|length) }}</a> · <a href="{{ rik_url }}">{{ t('rik_source') }}</a></p>{% endif %}
 </div>
 
 {% if rebuilt %}<p class="callout">{{ t('rebuilt_note') }}</p>{% endif %}

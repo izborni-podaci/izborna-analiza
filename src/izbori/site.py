@@ -86,6 +86,7 @@ class Site:
             "site_host": self.site_url.split("://", 1)[-1].rstrip("/"),
             "mun_href": lambda code: link(self.slugs[code] + "/") if code in getattr(self, "slugs", {}) else link(f"m/{code}.html"),
             "city_href": lambda slug: link(slug + "/"),
+            "local_report": self.local_report,
             "mname": lambda text: self.display_names.get(text, text) if hasattr(self, "display_names") else text,
             "part_of": lambda key: self.part_keys.get(key) if hasattr(self, "part_keys") else None,
             "lead_ramp": maps.lead_ramp(lambda x: fmt_pct(x, loc, 0)),
@@ -346,7 +347,8 @@ class Site:
         rows = [{"number": a.round.contestants[i].number, "label": narrative.short_label(labels[i]),
                  "full": a.round.contestants[i].name,
                  "votes": s.votes[i] or 0, "share": (s.votes[i] or 0) / total,
-                 "mun": mv[i] / mun_total if mun_total else None, "country": a.totals.share_of_valid(i)}
+                 "mun": mv[i] / mun_total if mun_total else None,
+                 "country": a.totals.share_of_valid(i) if not self.one_municipality(rid) else None}
                 for i in shown]
         rest = [i for i in order if i not in set(shown)]
         return rows, len(rest), sum(s.votes[i] or 0 for i in rest)
@@ -660,6 +662,19 @@ class Site:
             n = quarters.SPOKEN.get(f["properties"]["name"], f["properties"]["name"])
             feats.append({**f, "properties": {**f["properties"], "name": n, "census": n}})
         return placed, feats, area.get("settlement", "")
+
+    def one_municipality(self, rid: str) -> bool:
+        """A round of one municipality's local election (Pančevo 2024): its own totals are the municipality's, so
+        no "the whole country" beside them."""
+        if not hasattr(self, "_one_mun"):
+            self._one_mun = {}
+        if rid not in self._one_mun:
+            self._one_mun[rid] = len({s.municipality_code for s in self.analyses[rid].round.stations}) == 1
+        return self._one_mun[rid]
+
+    def local_report(self, rid: str) -> str | None:
+        """The commission's report a local round was read from (meta.json "local"), for the page's source line."""
+        return ((self.archive.meta(rid) or {}).get("local") or {}).get("report")
 
     def part_row(self, a: Analysis, m: dict, sts: list) -> dict:
         """A municipality's row for its city settlement alone: the same figures over its stations, its name the
@@ -1207,6 +1222,8 @@ class Site:
         country = {"turnout": a.totals.turnout, "invalid": a.totals.invalid_share,
                    "flagged_share": (sum(m["flagged"] for m in domestic) / sum(m["stations"] for m in domestic))
                    if domestic else None}
+        if self.one_municipality(rid):  # a single municipality's local election: no country to compare with
+            country = {"turnout": None, "invalid": None, "flagged_share": None}
         prev = a.previous[0] if a.previous else None
         prev_rows = self.mun_rows.get(prev, {}) if prev else {}
         both = [c for c in prev_rows if c in self.mun_rows[rid] and self.mun_rows[rid][c]["kind"] == "domestic"]
@@ -1247,6 +1264,9 @@ class Site:
             sum((s.votes[i] or 0) for s in sts if s.counted and i < len(s.votes)) for i in range(len(a.round.contestants))]
         mctrl, mreadable = ctrl_rows(a.round.contestants, [ctrl[s.key] for s in sts if s.key in ctrl])
         mres, top, by_st = vote_view(a.round.contestants, votes, a.totals, [s for s in sts if s.counted])
+        if self.one_municipality(rid):
+            for r in mres:
+                r["national"] = None
         index = leading(votes)
         number = a.round.contestants[index].number if index is not None else None
         flags_of = {s.key: by_station.get(s.key, []) for s in sts}
@@ -1266,7 +1286,8 @@ class Site:
         show = latin if loc == "en" else (lambda x: x)
         data = json.dumps({"rid": rid, "default": index, "name": show(m["name"]),
                            "lists": [{"n": c.number, "label": show(narrative.short_label(self.labels[rid][i])),
-                                      "slot": ranks.get(i, 9), "country": a.totals.share_of_valid(i)}
+                                      "slot": ranks.get(i, 9),
+                                      "country": a.totals.share_of_valid(i) if not self.one_municipality(rid) else None}
                                      for i, c in enumerate(a.round.contestants)],
                            "turnout": {"mun": m["turnout"], "country": country["turnout"]},
                            "i18n": {"rule3": tt("co_w3_rule", number="{number}"), "ofRead": tt("co_w3_of", n="{n}"),

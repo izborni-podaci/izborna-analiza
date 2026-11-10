@@ -130,7 +130,7 @@
 {% for r in mres if not r.minor %}
   <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
     <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
-    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
+    {% if r.national is not none %}<span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span>{% endif %}</li>
 {% endfor %}
 </ul>
 {% set minor = mres|selectattr('minor')|list %}
@@ -139,7 +139,7 @@
 {% for r in minor %}
   <li><span class="vl-name">{{ r.number }}. {{ name(r.label) }}</span><span class="vl-n">{{ i(r.votes) }}</span><span class="vl-pct">{{ pct(r.share, 1) }}</span>
     <span class="vl-bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(r.w) }}%"></span></span>
-    <span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span></li>
+    {% if r.national is not none %}<span class="vl-ref small muted">{{ t('repeat_national', share=pct(r.national, 1)) }}</span>{% endif %}</li>
 {% endfor %}
 </ul></details>{% endif %}
 

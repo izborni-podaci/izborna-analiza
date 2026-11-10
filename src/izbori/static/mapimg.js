@@ -176,8 +176,10 @@
         const barX = cx + 150; const barW = colW - 150 - 56;
         ctx.fillStyle = '#0f1f33'; ctx.font = '600 15px system-ui, sans-serif'; ctx.fillText(D.L.chartResult, cx, cy); cy += 18;
         // what the upright tick is, said before the bars: the list's result in the whole country
-        ctx.fillStyle = '#0f1f33'; ctx.fillRect(cx, cy - 9, 2, 14);
-        ctx.fillStyle = '#44607f'; ctx.font = '12px system-ui, sans-serif'; ctx.fillText(D.L.country, cx + 8, cy + 2); cy += 14;
+        if (result.some((r) => r.country !== null && r.country !== undefined)) {  // none for one municipality's local election
+          ctx.fillStyle = '#0f1f33'; ctx.fillRect(cx, cy - 9, 2, 14);
+          ctx.fillStyle = '#44607f'; ctx.font = '12px system-ui, sans-serif'; ctx.fillText(D.L.country, cx + 8, cy + 2); cy += 14;
+        }
         const maxShare = Math.max(0.01, ...result.map((r) => Math.max(r.share, r.country || 0)));
         ctx.font = '13px system-ui, sans-serif';
         result.forEach((r) => {

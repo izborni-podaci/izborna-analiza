@@ -110,7 +110,7 @@
 {% endmacro %}
 
 {% macro data_note() %}
-<p class="data-note">{{ t('rik_time') }}: {{ time(rnd.rik_time) }} · {{ t('fetched') }}: {{ time(rnd.fetched) }}</p>
+{% set lr = local_report(rnd.id) %}{% if lr %}<p class="data-note">{{ t('local_source') }} <a href="{{ lr }}">{{ t('local_source_link') }}</a></p>{% else %}<p class="data-note">{{ t('rik_time') }}: {{ time(rnd.rik_time) }} · {{ t('fetched') }}: {{ time(rnd.fetched) }}</p>{% endif %}
 {% endmacro %}
 
 {% macro controllers(c, n_lists) %}

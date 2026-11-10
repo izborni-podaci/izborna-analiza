@@ -594,6 +594,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   moving it to data/rounds/ after a check. The lists' names come from the proclamations (contestants, public as
   RIK's are; a precedent: Belgrade 2024's round names its lists' leaders). Station minutes (158) are not read:
   hand-filled, OCR is unreliable on them.
+  First reading: 74 of 79 stations add up; registered (106,192) and valid (49,527) match the published totals to
+  the vote, invalid is 26 short (1,567 of 1,593: some derived cell). Marko read the five set aside in the report
+  (`data/local_corrections.csv`) and confirmed the lists' names (`data/local_lists.csv`, from the decision on the
+  collective list, a scan). With them every list's total matches. The report's column order differs from
+  Wikipedia's (ordered by votes): 1 Vučić, 2 SVM, 3 Pančevo protiv nasilja, 4 POKS, 5 Pančevačka grupa.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

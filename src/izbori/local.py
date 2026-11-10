@@ -230,6 +230,7 @@ def result_rows(text: str) -> tuple[int, list[dict], list[dict]]:
         reg, voted, box, invalid, valid = cells[1:FIXED]
         votes = cells[FIXED:]
         notes = []
+        raw = {"registered": reg, "voted": voted, "ballots": box, "invalid": invalid, "valid": valid, "v": list(votes)}
         # the lists against the valid votes
         missing = [i for i, v in enumerate(votes) if v is None]
         if valid is None and not missing:
@@ -239,10 +240,10 @@ def result_rows(text: str) -> tuple[int, list[dict], list[dict]]:
             votes[missing[0]] = valid - sum(v for v in votes if v is not None)
             notes.append(f"list {missing[0] + 1} from the valid votes")
         if valid is None or None in votes or votes[missing[0]] < 0 if missing else False:
-            aside.append({"n": n, "why": "lists and valid votes unreadable"})
+            aside.append({"n": n, "why": "lists and valid votes unreadable", "raw": raw})
             continue
         if sum(votes) != valid:
-            aside.append({"n": n, "why": f"lists add up to {sum(votes)}, valid votes read {valid}"})
+            aside.append({"n": n, "why": f"lists add up to {sum(votes)}, valid votes read {valid}", "raw": raw})
             continue
         # ballots, invalid and valid
         if box is None and invalid is not None:
@@ -260,10 +261,10 @@ def result_rows(text: str) -> tuple[int, list[dict], list[dict]]:
                 invalid = box - valid
                 notes.append("invalid from ballots and valid")
             else:
-                aside.append({"n": n, "why": "ballots, invalid and valid votes don't agree"})
+                aside.append({"n": n, "why": "ballots, invalid and valid votes don't agree", "raw": raw})
                 continue
         if box is None or invalid is None or invalid < 0:
-            aside.append({"n": n, "why": "ballots and invalid unreadable"})
+            aside.append({"n": n, "why": "ballots and invalid unreadable", "raw": raw})
             continue
         if voted is None or voted < box or voted > (reg or voted):
             if voted is not None and voted < box:  # "37" for 377: a digit lost
@@ -323,8 +324,10 @@ def build(root, code: str, day: str, name: str, report_url: str, text: str, list
     import json
     from pathlib import Path
     k, rows, aside = result_rows(text)
-    src_round, like = stations_like(root, code, max([r["n"] for r in rows] + [a["n"] for a in aside] + [0]), day)
     rid = round_id(code, day)
+    rows, aside = corrected(root, rid, rows, aside, log)
+    lists = hand_names(root, rid) or lists
+    src_round, like = stations_like(root, code, max([r["n"] for r in rows] + [a["n"] for a in aside] + [0]), day)
     out = Path(root) / DRAFTS / rid
     out.mkdir(parents=True, exist_ok=True)
     buf = io.StringIO()
@@ -336,12 +339,15 @@ def build(root, code: str, day: str, name: str, report_url: str, text: str, list
                     s.district if s else "", s.district_code if s else "", r["registered"], r["voted"], r["ballots"],
                     r["valid"], r["invalid"], ""] + r["v"] + ["", ""])  # the report is not a station's minutes
     (out / "results.csv").write_text("﻿" + buf.getvalue(), encoding="utf-8")
-    meta = {"contest": {}, "contestants": [{"name": lists[i] if i < len(lists) else f"Изборна листа {i + 1}"}
-                                           for i in range(k)],
+    def contestant(i):
+        c = lists[i] if i < len(lists) else f"Изборна листа {i + 1}"
+        return c if isinstance(c, dict) else {"name": c}
+    meta = {"contest": {}, "contestants": [contestant(i) for i in range(k)],
             "date": day, "kind": "local", "rik_type": 3, "source": "commission",
             "title": f"Локални {day[:4]} - {name}",
             "local": {"municipality": code, "report": report_url, "stations_from": src_round,
-                      "aside": aside, "notes": {str(r["n"]): r["note"] for r in rows if r["note"]}}}
+                      "aside": [{"n": a["n"], "why": a["why"]} for a in aside],
+                      "notes": {str(r["n"]): r["note"] for r in rows if r["note"]}}}
     (out / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     totals = [sum(r["v"][j] for r in rows) for j in range(k)]
     summary = {"round": rid, "lists": k, "rows": len(rows), "aside": len(aside), "totals": totals,
@@ -376,3 +382,56 @@ def list_names(docs: dict, store: dict, code: str, day: str, fetch=None) -> list
                 seen.add(nm.upper())
                 out.append((nm, u))
     return out
+
+
+
+CORRECTIONS = "local_corrections.csv"  # round, station, registered, voted, ballots, invalid, valid, votes, note
+LISTS = "local_lists.csv"  # round, number, rik_name, name, short, source
+
+
+def corrected(root, rid: str, rows: list[dict], aside: list[dict], log=print) -> tuple[list[dict], list[dict]]:
+    """Rows a person read in the report (data/local_corrections.csv): each named cell replaces what OCR read, the
+    row must then add up, and it is noted as checked by hand. A station set aside comes back this way."""
+    import csv
+    from pathlib import Path
+    p = Path(root) / CORRECTIONS
+    if not p.exists():
+        return rows, aside
+    by_row = {r["n"]: r for r in rows}
+    by_aside = {a["n"]: a for a in aside}
+    for c in csv.DictReader(open(p, encoding="utf-8", newline="")):
+        if c.get("round") != rid:
+            continue
+        n = int(c["station"])
+        base = dict(by_row.get(n) or (by_aside.get(n) or {}).get("raw") or {})
+        if not base:
+            log(f"correction for station {n}: no such row")
+            continue
+        for f in ("registered", "voted", "ballots", "invalid", "valid"):
+            if (c.get(f) or "").strip():
+                base[f] = int(c[f])
+        if (c.get("votes") or "").strip():
+            base["v"] = [int(x) for x in c["votes"].split()]
+        if None in base["v"] or sum(base["v"]) != base["valid"] or base["ballots"] - base["invalid"] != base["valid"]:
+            log(f"correction for station {n} doesn't add up; left as it was")
+            continue
+        if base.get("voted") is None or base["voted"] < base["ballots"]:
+            base["voted"] = base["ballots"]
+        note = "checked by hand against the report" + (f" ({c['note']})" if c.get("note") else "")
+        by_row[n] = {**{k: base[k] for k in ("registered", "voted", "ballots", "invalid", "valid", "v")}, "n": n,
+                     "note": note}
+        by_aside.pop(n, None)
+    return [by_row[n] for n in sorted(by_row)], [by_aside[n] for n in sorted(by_aside)]
+
+
+def hand_names(root, rid: str) -> list[dict]:
+    """The lists a person entered for this election (data/local_lists.csv: the name as the commission prints it,
+    in ordinary case, and short, as RIK's rounds have them), in ballot order."""
+    import csv
+    from pathlib import Path
+    p = Path(root) / LISTS
+    if not p.exists():
+        return []
+    got = sorted((int(r["number"]), r) for r in csv.DictReader(open(p, encoding="utf-8", newline=""))
+                 if r.get("round") == rid)
+    return [{"name": r["name"], "rik_name": r["rik_name"], "short": r["short"]} for _, r in got]
