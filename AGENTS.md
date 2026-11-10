@@ -659,6 +659,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   (`local.TITLE_KINDS`, with a new kind, `commission`, for appointments to the electoral commission), the page
   only when the title matches nothing. Entries carry the classification's version (`v`); `run_classify` reads
   the new documents first, then every entry of an older version again, so one rule applies to all.
+  `izbori local --overview` answers what can be published next: per municipality, its local documents
+  grouped by time (a document's day is often its own date, not the election's), and for each group whether a
+  report by station reads (`result_rows`, at least 3 rows), only a report of totals exists, or only minutes.
 - **10 Nov 2026, Novi Sad's stations without a quarter.** 13 of the city's 153 were left out of the quarters
   (round 680072). Why: a name with no quotes holding a building's whole name and more (ГРАДСКА УПРАВА ЗА
   ИНСПЕКЦИЈСКЕ ПОСЛОВЕ ГРАДА НОВОГ САДА; the rule took only names inside quotes); local communities named for a

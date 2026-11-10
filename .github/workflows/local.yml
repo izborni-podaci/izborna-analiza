@@ -1,8 +1,9 @@
-# By hand: local elections from the municipalities' own documents (data/municipal_docs.json). Five modes:
+# By hand: local elections from the municipalities' own documents (data/municipal_docs.json). Six modes:
 # classify (what each document is, from its first page, into data/local_docs.json, committed), results (a
 # municipality's report of local results read into a draft round under data/local/, committed), boards (a local
 # round's polling board decisions read into its boards.json, committed), crops (the results section of the
-# boards' minutes as images on a temporary branch, to be read by eye), or the probe (a
+# boards' minutes as images on a temporary branch, to be read by eye), the overview (per municipality and local
+# election, what its results and boards are in, logged), or the probe (a
 # municipality's documents of one kind, each logged with every word that isn't a word of the forms masked).
 name: local
 
@@ -16,7 +17,7 @@ on:
         description: "Probe: a municipality code (e.g. 80314 for Pančevo)"
         default: ""
       kind:
-        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (on a temporary branch, crops-tmp); crops-read deletes that branch. With results: boards reads that local round's board decisions"
+        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (on a temporary branch, crops-tmp); crops-read deletes that branch; overview logs, per municipality and local election, what its results and boards are in. With results: boards reads that local round's board decisions"
         default: ""
       limit:
         description: "How many documents to log"
@@ -77,6 +78,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           uv run izbori local --boards "$ROUND" --path-has "$PATH_HAS" --commit --push
+      - name: Overview
+        if: ${{ inputs.kind == 'overview' }}
+        run: uv run izbori local --overview
       - name: Results
         if: ${{ inputs.results != '' && inputs.kind != 'boards' }}
         env:

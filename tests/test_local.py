@@ -282,3 +282,20 @@ def test_an_older_classification_is_read_again(tmp_path):
         return url, local.classify("РЕШЕЊЕ о именовању бирачког одбора"), None
     assert local.run_classify(tmp_path, None, log=lambda *_: None, workers=1, one=one) == 1
     assert seen == ["https://p.rs/a.pdf"] and local.load_store(tmp_path)["docs"]["https://p.rs/a.pdf"]["k"] == "boards"
+
+
+def test_overview_groups_a_municipality_s_documents_by_time(tmp_path):
+    import json
+    (tmp_path / "municipal_sites.csv").write_text("municipality_code,name,domain,note\n80373,Сечањ,s.rs,x\n",
+                                                  encoding="utf-8")
+    docs = {f"https://s.rs/2025/11/BM-{n}.pdf": {"m": "80373", "k": "boards", "e": "local", "d": "2025-11-19"}
+            for n in range(5)}
+    docs.update({"https://s.rs/2025/12/Ukupan-izvestaj.pdf": {"m": "80373", "k": "results", "e": "local", "d": "2025-12-21"},
+                 "https://s.rs/2025/11/BIRACKO-MESTO-1.pdf": {"m": "80373", "k": "minutes", "e": "local", "d": None},
+                 "https://s.rs/2020/06/a.pdf": {"m": "80373", "k": "lists", "e": "local", "d": "2020-06-02"}})
+    (tmp_path / local.STORE).write_text(json.dumps({"docs": docs}), encoding="utf-8")
+    (tmp_path / "rounds" / "L80373-20251130").mkdir(parents=True)
+    rows = local.overview(tmp_path, log=lambda *a: None, fetch=lambda u: b"", read=True)
+    assert len(rows) == 1 and rows[0]["first"] == "2025-11-19" and rows[0]["last"] == "2025-12-21"
+    assert rows[0]["results"] == "totals" and rows[0]["boards"] == 5 and rows[0]["undated_minutes"] == 1
+    assert rows[0]["published"] == ["L80373-20251130"]

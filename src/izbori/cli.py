@@ -614,6 +614,11 @@ def cmd_local(args) -> int:
     if args.crops:  # the results section of the boards' minutes as images, to be read by eye
         local.run_crops(root, args.crops, args.path_has, args.out, log)
         return 0
+    if args.overview:  # per municipality and local election: what its results and boards are in (logged, as JSON)
+        import json
+        rows = local.overview(root, log)
+        print(json.dumps(rows, ensure_ascii=False))
+        return 0
     if args.boards:  # a local round's polling boards from the commission's decisions, into its boards.json
         local.read_boards(root, args.boards, log, only=args.path_has)
         if not args.path_has and args.commit and commit([str(root / "rounds" / args.boards / "boards.json")],
@@ -959,6 +964,7 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--budget", type=int, default=240, help="minutes of classifying in one run")
     lo.add_argument("--results", metavar="CODE", help="read a municipality's local results report into a draft round")
     lo.add_argument("--date", default="", help="the local election's day (YYYY-MM-DD)")
+    lo.add_argument("--overview", action="store_true", help="per municipality and local election, what we have")
     lo.add_argument("--crops", metavar="CODE", help="cut the results section out of a municipality's boards' minutes")
     lo.add_argument("--out", default="crops", help="where --crops writes its images")
     lo.add_argument("--boards", metavar="ROUND", help="read a local round's polling board decisions into its boards.json")

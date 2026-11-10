@@ -853,3 +853,70 @@ def run_crops(root, code: str, path_has: str, out_dir, log=print, fetch=None) ->
         log(f"{safe_stem(u)}: {len(made)} image(s)")
         done += bool(made)
     return done
+
+
+# --- what we have, per municipality and local election ---------------------------------------------------------
+# A document's day ("d") is the first date after "izbor" on its page: the election's day on a minutes' form, often
+# the document's own date on a decision. So a municipality's local documents are put together by time — a gap of
+# more than OVERVIEW_GAP days starts another election — and each group is named by its most cited day.
+OVERVIEW_GAP = 40
+OVERVIEW_MIN = 3  # documents a group needs to count as an election
+
+
+def election_groups(docs: dict) -> list[tuple[str, str, str]]:
+    """A municipality's local elections as (first day, last day, most cited day) of their dated local documents."""
+    from collections import Counter
+    dated = sorted(v["d"] for v in docs.values() if v.get("e") == "local" and v.get("d"))
+    groups: list[list[str]] = []
+    for d in dated:
+        if groups and (_date(d) - _date(groups[-1][-1])).days <= OVERVIEW_GAP:
+            groups[-1].append(d)
+        else:
+            groups.append([d])
+    return [(g[0], g[-1], Counter(g).most_common(1)[0][0]) for g in groups if len(g) >= OVERVIEW_MIN]
+
+
+def overview(root, log=print, fetch=None, read=True) -> list[dict]:
+    """Per municipality and local election: its documents by kind and what its results are in: a report by station
+    ("stations", with how many rows were read), the commission's totals only ("totals"), or the boards' minutes only
+    ("minutes"). With read, each report ("izveštaj" in its link) is downloaded and read."""
+    import csv
+    from collections import Counter
+    from pathlib import Path
+    names = {r["municipality_code"]: r["name"] for r in csv.DictReader(open(Path(root) / watch.SITES_FILE,
+                                                                             encoding="utf-8"))}
+    store = load_store(root)
+    by_code: dict[str, dict] = {}
+    for u, v in store["docs"].items():
+        by_code.setdefault(v["m"], {})[u] = v
+    published = {p.name for p in (Path(root) / "rounds").glob("L*")}
+    rows = []
+    for code in sorted(by_code, key=lambda c: names.get(c, c)):
+        docs = by_code[code]
+        undated_minutes = sum(1 for v in docs.values() if v["k"] == "minutes" and v.get("e") == "local"
+                              and not v.get("d"))
+        for first, last, day in election_groups(docs):
+            near = {u: v for u, v in docs.items() if v.get("e") in ("local", None) and v.get("d")
+                    and first <= v["d"] <= last}
+            kinds = Counter(v["k"] for v in near.values())
+            reports = sorted(u for u in near if re.search(r"izvest|izvjest", watch.fold(urllib.parse.unquote(u))))
+            best = 0
+            if read:
+                for u in reports:
+                    try:
+                        best = max(best, len(result_rows(text_of((fetch or download)(u), u, pages=20))[1]))
+                    except Exception as e:  # noqa: BLE001 - a report down: counted as not read
+                        log(f"{code} {day}: {type(e).__name__}")
+            minutes = kinds.get("minutes", 0)
+            what = ("stations" if best >= 3 else "totals" if reports else
+                    "minutes" if minutes or undated_minutes else "-")
+            row = {"code": code, "name": names.get(code, code), "first": first, "last": last, "day": day,
+                   "results": what, "rows": best, "reports": len(reports), "minutes": minutes,
+                   "undated_minutes": undated_minutes, "boards": kinds.get("boards", 0),
+                   "lists": kinds.get("lists", 0), "documents": len(near),
+                   "published": sorted(p for p in published if p.startswith(f"L{code}-")
+                                       and first.replace("-", "") <= p[-8:] <= last.replace("-", ""))}
+            rows.append(row)
+            log(f"{code} {row['name']} {first}..{last} (~{day}): results {what} ({best} rows, {len(reports)} "
+                f"reports), {minutes} minutes (+{undated_minutes} undated), {row['boards']} board decisions")
+    return rows
