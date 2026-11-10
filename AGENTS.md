@@ -659,6 +659,16 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   (`local.TITLE_KINDS`, with a new kind, `commission`, for appointments to the electoral commission), the page
   only when the title matches nothing. Entries carry the classification's version (`v`); `run_classify` reads
   the new documents first, then every entry of an older version again, so one rule applies to all.
+- **10 Nov 2026, Novi Sad's stations without a quarter.** 13 of the city's 153 were left out of the quarters
+  (round 680072). Why: a name with no quotes holding a building's whole name and more (ГРАДСКА УПРАВА ЗА
+  ИНСПЕКЦИЈСКЕ ПОСЛОВЕ ГРАДА НОВОГ САДА; the rule took only names inside quotes); local communities named for a
+  neighbourhood OpenStreetMap draws inside a quarter but leaves out of the map (МЗ САЈЛОВО ×2, МЗ ШАНГАЈ); and
+  buildings outside the fetched kinds (ЈКП Водовод и канализација, ЈКП Градско зеленило, Железнице Србије, ДЕС,
+  two pensioners' clubs) or missing from OpenStreetMap (ПУ Радосно детињство – вртић Чаробни шешир ×2, Дом
+  здравља Лиман). Same rules for every station: an unquoted name is also matched by a building of three or more
+  words it holds whole; a named place at least 80% inside one other quarter is a name for that quarter (Liman,
+  over Liman 1–4, is not); and the fetch also takes offices, companies' buildings and social centres. No
+  per-station table: what OpenStreetMap doesn't have stays out of the quarters.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

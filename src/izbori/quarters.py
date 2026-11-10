@@ -5,7 +5,9 @@
 A station in that settlement is placed in a quarter by its building: the name in quotes in RIK's station name
 (ОШ "ВЕЉКО ПЕТРОВИЋ" → Вељко Петровић) is looked for among the buildings of the same kind (a school among schools),
 and a local community's hall (МЗ "АДИЦЕ") also by the quarter of that name. A name found in more than one quarter,
-or nowhere, places nothing: the station stays in the settlement, shown apart from the quarters.
+or nowhere, places nothing: the station stays in the settlement, shown apart from the quarters. A named place
+inside a quarter (a neighbourhood OpenStreetMap draws within it: Сајлово, Шангај) is among the names too, so a local
+community named for it finds its quarter.
 """
 from __future__ import annotations
 
@@ -72,7 +74,8 @@ def quarter_of(name: str, points: list, quarters: dict[str, str]) -> str | None:
     share most of the words outside the quotes (ОШ, ГИМНАЗИЈА, КУД, СРЕДЊА …) are taken: a primary school's station
     finds the primary school, not the secondary school of the same name; a name still in two quarters is left."""
     kind = kind_of(name)
-    parts = re.findall(r'"([^"]+)"', name or "") or [name or ""]
+    quoted = re.findall(r'"([^"]+)"', name or "")
+    parts = quoted or [name or ""]
     outside = set(norm(re.sub(r'"[^"]+"', " ", name or "")).split()) - {"I"}
     for part in reversed(parts):  # ПУ "РАДОСНО ДЕТИЊСТВО" - ОБЈЕКАТ "МРВИЦА": the last name is the building's
         want = distinct(part)
@@ -84,7 +87,11 @@ def quarter_of(name: str, points: list, quarters: dict[str, str]) -> str | None:
                 return named.pop()
         hits = [(len(outside & set(norm(full).split())), q)
                 for k, have, q, full in points
-                if (kind is None or k is None or k == kind) and (have == want or (want < have and (len(want) > 1 or k == kind)))]
+                if (kind is None or k is None or k == kind)
+                and (have == want or (want < have and (len(want) > 1 or k == kind))
+                     # a name with nothing in quotes holds the building's whole name and more ("ГРАДСКА УПРАВА ЗА
+                     # ИНСПЕКЦИЈСКЕ ПОСЛОВЕ ГРАДА НОВОГ САДА"): a building of three words or more inside it
+                     or (not quoted and len(have) >= 3 and have < want))]
         if not hits:
             continue
         best = max(h for h, _ in hits)

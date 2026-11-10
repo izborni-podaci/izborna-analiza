@@ -135,8 +135,10 @@ def test_quarters_take_the_first_drawn_and_place_buildings():
            rel("Лиман 1", {"place": "quarter"}, sq(5, 0, 8, 5)),
            rel("Шира", {"place": "suburb"}, sq(0, 4, 6, 10)),
            rel("Братство-Телеп", {"admin_level": "10", "boundary": "administrative"}, sq(1, 1, 2, 2)),
+           rel("Сајлово", {"place": "neighbourhood"}, sq(1, 0.5, 4, 4.5)),  # inside Telep: a name, not a shape
            {"type": "node", "lon": 6, "lat": 1, "tags": {"name": "Основна школа „Вељко Петровић“", "amenity": "school"}},
            {"type": "node", "lon": 9, "lat": 9, "tags": {"name": "Нигде", "amenity": "school"}}]
     feats, points = geo.quarter_features({"elements": els}, "Нови Сад", log=lambda *_: None)
     assert [f["properties"]["name"] for f in feats] == ["Лиман 1", "Телеп", "Шира"]  # smaller first; Liman is mostly Liman 1
-    assert points == [["Основна школа „Вељко Петровић“", "Лиман 1"], ["месна заједница Братство-Телеп", "Телеп"]]
+    assert points == [["Основна школа „Вељко Петровић“", "Лиман 1"], ["Сајлово", "Телеп"],
+                      ["месна заједница Братство-Телеп", "Телеп"]]  # Liman, over Liman 1 and more, is no name

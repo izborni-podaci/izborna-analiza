@@ -452,8 +452,9 @@ def quarters_inspect(name: str, log=print) -> None:
 # the city's quarters (place=quarter: Telep, Liman 1–4, Detelinara, Grbavica, Bistrica …) inside it; `izbori geo
 # --quarters 89010=Нови Сад` keeps those shapes (clipped to the settlement, the overlaps given to the first drawn:
 # quarters, then suburbs and neighbourhoods where no quarter is) and, to place the polling stations, the names of
-# the public buildings inside the settlement (schools, kindergartens, community centres, local communities' halls),
-# each with the quarter its point falls in. No coordinates of buildings are kept, only name → quarter.
+# the public buildings inside the settlement (schools, kindergartens, community centres, local communities' halls,
+# offices and companies' buildings, pensioners' clubs) and of the named places drawn inside a quarter, each with the
+# quarter its point falls in. No coordinates of buildings are kept, only name → quarter.
 
 QUARTER_FETCH = """[out:json][timeout:900];
 rel["boundary"="administrative"]["admin_level"="9"]["name"="{name}"]->.s;
@@ -468,7 +469,9 @@ out geom;
 (
   nwr(area.a)["name"]["amenity"~"^(school|kindergarten|community_centre|college|university|library|arts_centre|social_facility|townhall|clinic|hospital|doctors|theatre|cinema|fire_station|police)$"];
   nwr(area.a)["name"]["building"~"^(school|kindergarten|civic|public|college|university)$"];
-  nwr(area.a)["name"]["office"="government"];
+  nwr(area.a)["name"]["office"];
+  nwr(area.a)["name"]["amenity"="social_centre"];
+  nwr(area.a)["name"]["building"~"^(office|commercial|industrial|train_station)$"];
   nwr(area.a)["name"]["club"];
   nwr(area.a)["name"]["leisure"~"^(sports_centre|sports_hall)$"];
 );
@@ -523,6 +526,10 @@ def quarter_features(data: dict, name: str, log=print) -> tuple[list[dict], list
         return hits[0] if hits else None
 
     points: dict[str, str] = {}
+    for kind, qname, g in shapes:  # a named place mostly inside one other quarter (Сајлово), not one over several (Лиман)
+        share = max(((own.intersection(g).area / g.area, q) for q, own in quarters if q != qname), default=(0, None))
+        if share[0] >= 0.8:
+            points.setdefault(qname, share[1])
     for e in els:
         t = e.get("tags", {})
         if e["type"] == "relation" and t.get("admin_level") == "10" and t.get("name"):  # a local community
