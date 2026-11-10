@@ -788,4 +788,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   GitHub keeps only one waiting, so `--results` takes the codes of one election day comma-separated (17 Dec 2023:
   Prokuplje, Rača, Golubac), each named from the sites file, one that fails not stopping the rest, and the drafts
   are committed together.
+- **11 Nov 2026, the reports of 17 Dec 2023.** Prokuplje's report is a scanned table: 18 of its 90 stations were
+  set aside, most because OCR read a one or an eleven as strokes and not as many as there were ("||" for 1, "|"
+  for 11), so they were off by ten. A cell of strokes is now 1, 11 or 111, taken as the one combination that makes
+  the lists add up to the valid votes, and noted on the row; two ways, or none, and it stays aside. Rača's and
+  Golubac's reports aren't tables but a section per station with labelled lines, which read no row at all: they
+  are read by `section_rows` (headings "број 1" or "бр. 1", labelled figures, a line per list ending in its
+  votes), with ballots taken as valid and invalid since these reports don't give them.
 

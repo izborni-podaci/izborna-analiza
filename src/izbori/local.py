@@ -295,9 +295,98 @@ def cell(tok: str) -> int | None:
     return int(t) if t.isdigit() else None
 
 
+# OCR reads a one or an eleven in a scanned table as strokes ("|", "||", "l!"), and how many strokes it sees isn't
+# how many ones there were (Prokuplje 2023: "||" for 1, "|" for 11). Such a cell is a 1, 11 or 111; when a row's
+# lists don't add up, the strokes are taken as the one combination that does, if there is exactly one.
+BARS = re.compile(r"[|!lIі\]\)\[}{]+")
+BAR_VALUES = (1, 11, 111)
+
+
+def bars_solved(toks: list[str], votes: list, valid: int) -> list | None:
+    """The lists' votes with their cells of strokes taken as the only combination of 1, 11 and 111 that adds up
+    to the valid votes; None when there is none or more than one."""
+    import itertools
+    bars = [i for i, t in enumerate(toks) if BARS.fullmatch(t)]
+    if not bars or len(bars) > 3:
+        return None
+    rest = sum(v for i, v in enumerate(votes) if i not in bars)
+    found = [c for c in itertools.product(BAR_VALUES, repeat=len(bars)) if rest + sum(c) == valid]
+    if len(found) != 1:
+        return None
+    out = list(votes)
+    for i, v in zip(bars, found[0]):
+        out[i] = v
+    return out
+
+
+# Some commissions write the report as a section per station instead of a table (Rača, Golubac 2023): "Бирачко место
+# број 1 …" or "бр. 1", then "1) Број бирача уписаних … - 213", "2) … гласали - 144", "3) … неважећих … - 29", "4) … важећих … -
+# 115" and a line per list ending in its votes. No ballots in the box: they are taken as valid and invalid.
+SECTION = re.compile(r"(?:^|\n)\s*\d*[.)]?\s*(?:Бирачко|Biračko|Biracko)\s+(?:место|mesto)\s+(?:број|broj|бр\.|br\.)\s*(\d+)",
+                     re.I)
+SECTION_FIELDS = (("registered", r"уписаних|upisanih"), ("voted", r"гласали|glasali"),
+                  ("invalid", r"неважећих|nevažećih|nevazecih"), ("valid", r"(?<![не])важећих|(?<!ne)važećih|(?<!ne)vazecih"))
+
+
+def section_rows(text: str) -> tuple[int, list[dict], list[dict]]:
+    """result_rows for a report written as a section per station."""
+    from collections import Counter
+    marks = list(SECTION.finditer(text))
+    found = []
+    for m, nxt in zip(marks, marks[1:] + [None]):
+        body = text[m.end():nxt.start() if nxt else len(text)]
+        got: dict = {"n": int(m.group(1))}
+        lines = body.split("\n")
+        last_field = -1
+        for i, line in enumerate(lines):
+            for name, word in SECTION_FIELDS:
+                if name not in got and re.search(word, line, re.I):
+                    num = re.findall(r"\d[\d.]*", line.split(re.search(word, line, re.I).group(0), 1)[1])
+                    got[name] = cell(num[-1].replace(".", "")) if num else None
+                    last_field = i
+                    break
+        votes = []
+        for line in lines[last_field + 1:]:
+            t = line.strip()
+            if not t or (not votes and t.split() == [str(i) for i in range(1, len(t.split()) + 1)]) or \
+                    re.search(r"Број|Broj|мандат|mandat", t):
+                continue  # the table's header and its column numbers ("1 2 3"; a list of 2 votes after them counts,
+                # one before them is a station with a list too few, set aside)
+            last = t.split()[-1]
+            if cell(last) is not None and len(t.split()) > 1:
+                votes.append(cell(last))
+        got["v"] = votes
+        found.append(got)
+    if not found:
+        return 0, [], []
+    k = Counter(len(f["v"]) for f in found).most_common(1)[0][0]
+    rows, aside = [], []
+    for f in found:
+        raw = dict(f)
+        if len(f["v"]) != k or any(f.get(x) is None for x in ("registered", "voted", "invalid", "valid")):
+            aside.append({"n": f["n"], "why": "a station's figures unreadable", "raw": raw})
+            continue
+        if sum(f["v"]) != f["valid"]:
+            aside.append({"n": f["n"], "why": f"lists add up to {sum(f['v'])}, valid votes read {f['valid']}", "raw": raw})
+            continue
+        box = f["valid"] + f["invalid"]
+        if box > f["voted"] or f["voted"] > f["registered"]:
+            aside.append({"n": f["n"], "why": "more ballots than voters, or voters than registered", "raw": raw})
+            continue
+        rows.append({"n": f["n"], "registered": f["registered"], "voted": f["voted"], "ballots": box,
+                     "invalid": f["invalid"], "valid": f["valid"], "v": f["v"],
+                     "note": "ballots taken as valid and invalid (the report has none)"})
+    return k, rows, aside
+
+
 def result_rows(text: str) -> tuple[int, list[dict], list[dict]]:
     """The lists' count, the rows read ({"n", "registered", "voted", "ballots", "invalid", "valid", "v": [...],
-    "note"}) and the rows set aside ({"n", "why"}), from the text of a results report."""
+    "note"}) and the rows set aside ({"n", "why"}), from the text of a results report: a table with a row per
+    station, or else a section per station (section_rows)."""
+    if len(SECTION.findall(text)) >= 3:
+        got = section_rows(text)
+        if got[1]:
+            return got
     lines = []
     for line in text.replace("\r", "").split("\n"):
         toks = line.split()
@@ -331,8 +420,14 @@ def result_rows(text: str) -> tuple[int, list[dict], list[dict]]:
             aside.append({"n": n, "why": "lists and valid votes unreadable", "raw": raw})
             continue
         if sum(votes) != valid:
-            aside.append({"n": n, "why": f"lists add up to {sum(votes)}, valid votes read {valid}", "raw": raw})
-            continue
+            fixed = bars_solved(toks[FIXED:], votes, valid)
+            if fixed is None:
+                aside.append({"n": n, "why": f"lists add up to {sum(votes)}, valid votes read {valid}", "raw": raw})
+                continue
+            changed = [i for i in range(k) if fixed[i] != votes[i]]
+            votes = fixed
+            notes.append("list" + ("s " if len(changed) > 1 else " ") + ", ".join(str(i + 1) for i in changed)
+                         + " read as strokes, from the valid votes")
         # ballots, invalid and valid
         if box is None and invalid is not None:
             box = valid + invalid

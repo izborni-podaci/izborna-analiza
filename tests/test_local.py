@@ -361,3 +361,65 @@ def test_overview_groups_a_municipality_s_documents_by_time(tmp_path):
     assert len(rows) == 1 and rows[0]["first"] == "2025-11-19" and rows[0]["last"] == "2025-12-21"
     assert rows[0]["results"] == "totals" and rows[0]["boards"] == 5 and rows[0]["undated_minutes"] == 1
     assert rows[0]["published"] == ["L80373-20251130"]
+
+
+def test_strokes_taken_as_the_one_combination_that_adds_up():
+    text = """ИЗВЕШТАЈ
+1 350 210 210 2 208 94 29 8 2 4 10 61
+2 500 284 284 4 280 171 17 24 16 | 10 31
+3 89 22 22 0 22 16 1 0 || 0 1 3
+4 74 45 43 0 43 34 3 2 0 2 || ||
+5 61 33 33 0 38 31 2 0 0 0 0 0
+"""
+    k, rows, aside = local.result_rows(text)
+    by = {r["n"]: r for r in rows}
+    assert by[2]["v"][4] == 11 and "list 5 read as strokes" in by[2]["note"]
+    assert by[3]["v"][3] == 1
+    assert by[4]["v"][5:] == [1, 1] and "lists 6, 7" in by[4]["note"]
+    assert [a["n"] for a in aside] == [5]  # no strokes to take: set aside
+    assert local.bars_solved(["1", "|", "|"], [1, 1, 1], 13) is None  # 1+1+11 and 1+11+1: two ways
+
+
+SECTIONS = """ИЗВЕШТАЈ О РЕЗУЛТАТИМА ГЛАСАЊА ЗА СВАКО БИРАЧКО МЕСТО
+1 Бирачко место број 1 у "Дом", улица број 38.
+1) Број бирача уписаних у бирачки списак- 213
+2) Број бирача који су гласали - 144
+3) Број неважећих гласачких листића - 29
+4) Број важећих гласачких листића- 115
+5) Број гласова и број мандата које је добила свака изборна листа:
+Редни Назив изборне листе Број гласова
+1 2 3
+Прва листа – са дугим
+називом 95
+Друга листа 20
+
+2 Бирачко место број 2 у школи,
+број 172
+1)Број бирача уписаних у бирачки списак- 398
+2)Број бирача који су гласали - 269
+3)Број неважећих гласачких листића - 96
+4)Број важећих гласачких листића- 173
+1 2 3
+Прва листа 136
+Друга листа 37
+
+3. Бирачко место бр.3 , Село:
+-Број уписаних бирача: 208
+-Број бирача који су гласали: 185
+- Број неупотребљених: 23
+- Број неважећих гласачких листића: 16
+- Број важећих гласачких листића: 169
+1 100
+Прва листа
+2 | Друга листа 70
+"""
+
+
+def test_a_report_with_a_section_per_station():
+    k, rows, aside = local.result_rows(SECTIONS)
+    assert k == 2
+    assert rows[0] == {"n": 1, "registered": 213, "voted": 144, "ballots": 144, "invalid": 29, "valid": 115,
+                       "v": [95, 20], "note": "ballots taken as valid and invalid (the report has none)"}
+    assert rows[1]["v"] == [136, 37]
+    assert aside == [{"n": 3, "why": "lists add up to 170, valid votes read 169",
+                      "raw": {"n": 3, "registered": 208, "voted": 185, "invalid": 16, "valid": 169, "v": [100, 70]}}]
