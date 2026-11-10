@@ -18,7 +18,7 @@ on:
         description: "Probe: a municipality code (e.g. 80314 for Pančevo)"
         default: ""
       kind:
-        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (on a temporary branch, crops-tmp); crops-read deletes that branch; overview logs, per municipality and local election, what its results and boards are in. With results: boards reads that local round's board decisions"
+        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (on a temporary branch, crops-tmp); crops-read deletes that branch; merge commits the classified parts of the run whose id is in code (one cancelled or cut short); overview logs, per municipality and local election, what its results and boards are in. With results: boards reads that local round's board decisions"
         default: ""
       limit:
         description: "How many documents to log"
@@ -44,6 +44,7 @@ on:
 
 permissions:
   contents: write
+  actions: read  # kind merge: another run's artifacts
 
 # Runs that commit to main wait for each other; the crops commit nothing to main, so they have a queue of their own.
 concurrency:
@@ -86,32 +87,41 @@ jobs:
           retention-days: 2
           if-no-files-found: ignore
 
+  # Also when the run is cancelled (every step: always()), so a part that hangs can be stopped without losing the
+  # rest; kind merge with a run's id in code merges that run's parts.
   classify-merge:
-    if: ${{ always() && inputs.classify != '' }}
+    if: ${{ always() && (inputs.classify != '' || inputs.kind == 'merge') }}
     needs: classify
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        if: ${{ always() }}
         with:
           ref: ${{ github.ref_name }}  # as it is when the job starts: with what an earlier run committed
       - uses: actions/setup-python@v5
+        if: ${{ always() }}
         with:
           python-version: "3.12"
       - name: Install
+        if: ${{ always() }}
         run: pip install uv && uv sync --frozen
       - uses: actions/download-artifact@v4
+        if: ${{ always() }}
         with:
           pattern: classified-*
           path: parts
+          run-id: ${{ inputs.kind == 'merge' && inputs.code || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Merge and commit
+        if: ${{ always() }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           uv run izbori local --merge-parts parts --commit --push
 
   probe:
-    if: ${{ inputs.classify == '' }}
+    if: ${{ inputs.classify == '' && inputs.kind != 'merge' }}
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:

@@ -774,4 +774,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   waits for every part. Now five failures in a row from a site skip its other documents for that run (they stay
   unclassified, so the next run asks again). Classifying runs in threads instead of processes: the reading is
   pdftotext and tesseract, run as processes anyway, and the threads share the count.
+- **10 Nov 2026, merging a cancelled classify.** Bač's part was stopped by hand. The merge job's steps now run
+  even when the run is cancelled, and `kind` merge with a run's id in `code` merges that run's parts from its
+  artifacts (`actions: read`), for a run dispatched before this change. The workflow is at GitHub's ten inputs,
+  so this reuses `code` and `kind`.
 
