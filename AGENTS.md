@@ -733,3 +733,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   round's station_lists.json) and a municipality's stations are merged from all its acts in the file's order
   (`stationlist.merge`); an act taken off the file takes what it gave with it. The stations workflow then reads
   every act again once (`reread`).
+  What they read: kept the acts whose rows matched the stations — 2022 Kraljevo (97 stations), Rača (25), Opovo
+  (12); 2023 Golubac (26), Rača (20), Bačka Palanka (10), Temerin (16); 2026 Golubac (23), Bačka Palanka (25): 254
+  stations with a settlement from their act, and Pančevo 2023 back to its decision's 50. Taken off again: acts
+  that read no row as a station (2022 Blace, Bačka Palanka, Pančevo's second act, Šid, Prokuplje's .docx; 2023
+  Bogatić, Kanjiža, Lapovo — tables or scans the reader doesn't cut), 2022 Bač (its site didn't answer), and 2026
+  Kraljevo, Rača, Leskovac (one or two rows matched, Rača's against the addresses) and Mali Zvornik (it disagreed
+  with the board decisions' addresses and was set aside).
