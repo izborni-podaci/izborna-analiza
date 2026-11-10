@@ -764,4 +764,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   so a municipality is read from two or three images and nothing but figures leaves the minutes. 30 of Temerin's 31
   and all of Sečanj's stations were found that way. numpy, OpenCV and scikit-learn come in with `uv run --with`
   in the workflow only, as shapely does for geo; their tests skip without them.
+- **10 Nov 2026, a queued classify builds on the one before.** The classify and merge jobs check out the branch as
+  it is when they start, not the commit the run was dispatched on, so a run queued behind another one (the same
+  concurrency group) skips what that one committed instead of reading it again and failing to push its merge.
 
