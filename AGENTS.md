@@ -753,4 +753,15 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   requests at once than before. Each part's `data/local_docs.json` is an artifact, and a merge job commits every
   entry that differs from main's (`local.merge_parts`), also when some parts ran out of time, since a run resumes.
   The crops and crops-read runs have their own concurrency group: they commit nothing to main, so they don't wait.
+- **10 Nov 2026, reading sheets for minutes filled in by hand.** Asked whether reading the minutes could be
+  automatic, I measured on the 48 stations of Temerin 2024 and Sečanj 2025 read by eye: Tesseract read 14% of the
+  handwritten cells; a small network trained on MNIST about 70% (78% once the cells were found by long ruled lines
+  only); taking the most likely figures that add up (ballots less invalid are the valid votes, the lists sum to
+  them) accepted 10 of Temerin's 31 stations with 2 wrong and 3 of Sečanj's 17 with all 3 wrong — a figure that
+  adds up isn't a right one, and the registered voters aren't checked by any sum. So nothing is taken from a
+  model. What it does instead: `izbori local --crops … --sheets` (the workflow's crops) puts only the number cells
+  on reading sheets, a row per station, with the model's guess under each and red where a station doesn't add up,
+  so a municipality is read from two or three images and nothing but figures leaves the minutes. 30 of Temerin's 31
+  and all of Sečanj's stations were found that way. numpy, OpenCV and scikit-learn come in with `uv run --with`
+  in the workflow only, as shapely does for geo; their tests skip without them.
 

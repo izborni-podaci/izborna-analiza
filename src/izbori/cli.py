@@ -627,6 +627,16 @@ def cmd_local(args) -> int:
         return 0
     if args.crops:  # the results section of the boards' minutes as images, to be read by eye
         local.run_crops(root, args.crops, args.path_has, args.out, log)
+        if args.sheets:  # only the number cells, side by side, with a digit model's guesses (izbori.sheet)
+            import shutil
+            import tempfile
+            from izbori import sheet
+            out = Path(args.out)
+            with tempfile.TemporaryDirectory() as tmp:
+                for png in out.glob("*.png"):
+                    shutil.move(str(png), tmp)
+                model = sheet.digit_model(Path.home() / ".cache" / "izbori-digits")
+                sheet.make_sheets(Path(tmp), out, model, log)
         return 0
     if args.overview:  # per municipality and local election: what its results and boards are in (logged, as JSON)
         import json
@@ -983,6 +993,7 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--overview", action="store_true", help="per municipality and local election, what we have")
     lo.add_argument("--crops", metavar="CODE", help="cut the results section out of a municipality's boards' minutes")
     lo.add_argument("--out", default="crops", help="where --crops writes its images")
+    lo.add_argument("--sheets", action="store_true", help="with --crops: reading sheets of the number cells instead of the crops")
     lo.add_argument("--boards", metavar="ROUND", help="read a local round's polling board decisions into its boards.json")
     lo.add_argument("--name", default="", help="the municipality's name for the round's title (Cyrillic)")
     lo.add_argument("--hand", action="store_true", help="with --results: the stations read by eye from the minutes")

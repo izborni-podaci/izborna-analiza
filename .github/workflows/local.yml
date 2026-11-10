@@ -2,9 +2,10 @@
 # classify (what each document is, from its first page, into data/local_docs.json, committed; in 8 parallel
 # parts), results (a municipality's report of local results read into a draft round under data/local/,
 # committed), boards (a local round's polling board decisions read into its boards.json, committed), crops (the
-# results section of the boards' minutes as images on a temporary branch, to be read by eye), the overview (per municipality and local
-# election, what its results and boards are in, logged), or the probe (a
-# municipality's documents of one kind, each logged with every word that isn't a word of the forms masked).
+# results section of the boards' minutes as reading sheets of their number cells, on a temporary branch, to be
+# read by eye), the overview (per municipality and local election, what its results and boards are in, logged), or
+# the probe (a municipality's documents of one kind, each logged with every word that isn't a word of the forms
+# masked).
 name: local
 
 on:
@@ -145,7 +146,11 @@ jobs:
         env:
           CODE: ${{ inputs.code }}
           PATH_HAS: ${{ inputs.path_has }}
-        run: uv run izbori local --crops "$CODE" --path-has "$PATH_HAS" --out crops
+        # reading sheets: each station's number cells side by side with a digit model's guesses (izbori.sheet);
+        # the crops of minutes whose cells aren't found go along whole
+        run: >-
+          uv run --with "numpy>=1.26" --with "opencv-python-headless>=4.9" --with "scikit-learn>=1.4"
+          izbori local --crops "$CODE" --path-has "$PATH_HAS" --out crops --sheets
       - name: Keep the crops on a temporary branch
         # the run's artifacts are out of reach of the session that reads them; the branch is deleted once read
         if: ${{ inputs.code != '' && inputs.kind == 'crops' }}
