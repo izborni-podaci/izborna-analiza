@@ -1,0 +1,66 @@
+{
+ "contest": {},
+ "contestants": [
+  {
+   "name": "Изборна листа 1"
+  },
+  {
+   "name": "Изборна листа 2"
+  },
+  {
+   "name": "Изборна листа 3"
+  },
+  {
+   "name": "Изборна листа 4"
+  },
+  {
+   "name": "Изборна листа 5"
+  }
+ ],
+ "date": "2024-06-02",
+ "kind": "local",
+ "rik_type": 3,
+ "source": "commission",
+ "title": "Локални 2024 - Панчево",
+ "local": {
+  "municipality": "80314",
+  "report": "http://www.pancevo.rs/sadrzaj/uploads/2024/04/ukupan-izvestaj-o-rezultatima-izbora-za-sva-biracka-mesta.pdf",
+  "stations_from": "680072",
+  "aside": [
+   {
+    "n": 18,
+    "why": "lists add up to 648, valid votes read 654"
+   },
+   {
+    "n": 28,
+    "why": "lists add up to 463, valid votes read 453"
+   },
+   {
+    "n": 47,
+    "why": "lists add up to 473, valid votes read 468"
+   },
+   {
+    "n": 63,
+    "why": "ballots, invalid and valid votes don't agree"
+   },
+   {
+    "n": 65,
+    "why": "lists add up to 582, valid votes read 584"
+   }
+  ],
+  "notes": {
+   "16": "invalid from ballots and valid",
+   "22": "list 2 from the valid votes",
+   "40": "list 2 from the valid votes",
+   "49": "list 2 from the valid votes",
+   "56": "voted taken as the ballots (read lower than them)",
+   "57": "list 4 from the valid votes",
+   "58": "list 4 from the valid votes; voted taken as the ballots (read lower than them)",
+   "60": "list 2 from the valid votes",
+   "69": "ballots from valid and invalid",
+   "72": "list 5 from the valid votes",
+   "74": "invalid from ballots and valid",
+   "75": "list 4 from the valid votes"
+  }
+ }
+}
