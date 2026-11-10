@@ -810,4 +810,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   prints station 14's valid votes as 14 and 18's as 211, where its lists and its other figures give 141 and 208;
   the corrections take those and say so. A correction now brings back a station OCR lost when it gives every
   figure. The lists' names are the reports' own.
+  Published (moved to `data/rounds/`): every station of the three adds up and their sums are the commissions' totals
+  to the vote.
 
