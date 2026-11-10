@@ -640,7 +640,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   lists; Sečanj: 17 stations, 10,226 registered, 6,787 valid, five lists). Results by station are only in the
   boards' minutes, filled in by hand: OCR reads "5 4 6'" for a number. Marko chose to have them read by eye:
   `local.crop_results` cuts out the minutes' results section (from "РЕЗУЛТАТИ" to the board, its members,
-  signatures or remarks, by Tesseract's line boxes), the images are the run's artifact for one day, and Claude
+  signatures or remarks, by Tesseract's line boxes), the images go to a temporary branch `crops-tmp`
+  (a run's artifacts are stored where the session can't reach), deleted once read, and Claude
   reads the numbers into `data/local_hand.csv`; each row must add up and all of them to the report's totals,
   and a row that doesn't is left for Marko.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in

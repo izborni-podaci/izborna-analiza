@@ -2,7 +2,7 @@
 # classify (what each document is, from its first page, into data/local_docs.json, committed), results (a
 # municipality's report of local results read into a draft round under data/local/, committed), boards (a local
 # round's polling board decisions read into its boards.json, committed), crops (the results section of the
-# boards' minutes as images, a day's artifact, to be read by eye), or the probe (a
+# boards' minutes as images on a temporary branch, to be read by eye), or the probe (a
 # municipality's documents of one kind, each logged with every word that isn't a word of the forms masked).
 name: local
 
@@ -16,7 +16,7 @@ on:
         description: "Probe: a municipality code (e.g. 80314 for Pančevo)"
         default: ""
       kind:
-        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (a day's artifact). With results: boards reads that local round's board decisions"
+        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (on a temporary branch, crops-tmp). With results: boards reads that local round's board decisions"
         default: ""
       limit:
         description: "How many documents to log"
@@ -93,13 +93,17 @@ jobs:
           CODE: ${{ inputs.code }}
           PATH_HAS: ${{ inputs.path_has }}
         run: uv run izbori local --crops "$CODE" --path-has "$PATH_HAS" --out crops
-      - name: Keep the crops for a day
+      - name: Keep the crops on a temporary branch
+        # the run's artifacts are out of reach of the session that reads them; the branch is deleted once read
         if: ${{ inputs.code != '' && inputs.kind == 'crops' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: crops
-          path: crops/
-          retention-days: 1
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan crops-tmp
+          git rm -rq --cached .
+          git add -f crops/
+          git commit -qm "Crops of the boards' minutes' results section (temporary, deleted once read)"
+          git push -qf origin HEAD:refs/heads/crops-tmp
       - name: Probe
         if: ${{ inputs.code != '' && inputs.kind != 'crops' }}
         env:

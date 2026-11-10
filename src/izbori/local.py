@@ -651,7 +651,7 @@ def now_day() -> str:
 # Temerin 2024 and Sečanj 2025 published only the municipality's totals; each station's results are in its board's
 # minutes, filled in by hand, which OCR can't read. So the minutes' results section alone (from "РЕЗУЛТАТИ" to the
 # next part of the form: the board, its members' signatures, remarks) is cut out as an image to be read by eye, never
-# the members' part; the images are a workflow's artifact for a day, not kept. What is read goes into
+# the members' part; the images go to a temporary branch, deleted once read. What is read goes into
 # data/local_hand.csv and must add up, row by row and to the commission's totals.
 RESULTS_HEAD = re.compile(r"РЕЗУЛТАТИ|REZULTATI")
 CROP_END = re.compile(r"\b(?:ЧЛАН|ЗАМЕНИК|ПРЕДСЕДНИК|ПРИМЕДБ\w*|ПОДАЦИ|ПОТПИС\w*|БИРАЧКИ\s+ОДБОР)\b"
