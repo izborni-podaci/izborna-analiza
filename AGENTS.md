@@ -587,6 +587,13 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   The deeper pass over the 100 sites crashed after 2.5 hours on one malformed link ("Invalid IPv6 URL") and kept
   nothing, since the store was written only at the end. Now a link that doesn't parse is skipped, a site that
   throws is logged and passed, and the store is written after every site with finds.
+  10 Nov, Pančevo's local results: its "ukupan izveštaj o rezultatima … za sva biračka mesta" (2 June 2024) is a
+  scanned typed table that OCR reads well (79 stations, five lists). `local.result_rows` checks each row against
+  itself and sets aside what doesn't add up; the reading becomes a draft round in RIK's format (`local.build`,
+  data/local/L80314-20240602/), its stations named from the 2026 round (the same 79, by number), published by
+  moving it to data/rounds/ after a check. The lists' names come from the proclamations (contestants, public as
+  RIK's are; a precedent: Belgrade 2024's round names its lists' leaders). Station minutes (158) are not read:
+  hand-filled, OCR is unreliable on them.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

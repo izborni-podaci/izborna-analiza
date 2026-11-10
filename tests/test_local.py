@@ -53,3 +53,33 @@ def test_classify_run_keeps_kinds_only_and_resumes(tmp_path):
     assert store["docs"] == {"https://p.rs/a.pdf": {"m": "80314", "k": "minutes", "e": None, "d": None}}
     pages["https://p.rs/b.pdf"] = "ЗАПИСНИК са седнице"
     assert local.run_classify(tmp_path, {"80314"}, log=lambda *_: None, workers=1, one=one) == 1  # only b, now
+
+
+TABLE = """ИЗВЕШТАЈ О РЕЗУЛТАТИМА ИЗБОРА ЗА ОДБОРНИКЕ
+1 1354 577 577 14 563 473 5 37 9 39
+2 1201 600 600 17 583 483 3 56 15 26
+||| 1636 867 867 24 843 682 9 65 37 50
+4 1483 629 629 16 613 397 3 174 1! 28
+5 1898 1033 1032 |90 942 794 10 44 18 76
+6 878 37 377 7 370 231 3 70 14 52
+37 1252 552 552 10 542 333 6 102 xx 90
+8 1488 684 684 30 654 534 3 51 14 46
+Број: 1-01-013-1/2024
+"""
+
+
+def test_result_rows_check_themselves():
+    k, rows, aside = local.result_rows(TABLE)
+    assert k == 5
+    by = {r["n"]: r for r in rows}
+    assert by[3]["v"] == [682, 9, 65, 37, 50]  # "|||" is the sequence's 3
+    assert by[4]["v"][3] == 11  # "1!"
+    assert by[5]["invalid"] == 90 and "invalid" in by[5]["note"]  # "|90" read 190: 1032 − 942
+    assert by[6]["voted"] == 377 and "voted taken as the ballots" in by[6]["note"]  # "37": a digit lost
+    assert by[7]["v"][3] == 11 and "list 4 from the valid votes" in by[7]["note"]  # unreadable, the sum gives it
+    assert aside == [{"n": 8, "why": "lists add up to 648, valid votes read 654"}]  # never guessed
+
+
+def test_list_names_from_proclamations():
+    m = local.LIST_NAME.search("РЕШЕЊЕ о проглашењу изборне листе „ПРИМЕР – ЗА ГРАД“ коју је поднела")
+    assert m.group(1) == "ПРИМЕР – ЗА ГРАД"

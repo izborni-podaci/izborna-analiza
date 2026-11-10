@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 import time
+import urllib.parse
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -600,6 +601,30 @@ def cmd_local(args) -> int:
             if args.push:
                 push()
         return 0
+    if args.results:  # a local election's results from the commission's report, as a draft round
+        store = local.load_store(root)
+        cands = [u for u, v in store["docs"].items() if v["m"] == args.results and v["k"] == "results"
+                 and (not args.date or v.get("d") == args.date) and "izvestaj" in watch.fold(urllib.parse.unquote(u))]
+        if args.url:
+            cands = [args.url]
+        best = None
+        for u in cands:
+            text = local.text_of(local.download(u), u, pages=20)
+            k, rows, aside = local.result_rows(text)
+            log(f"{u.rsplit('/', 1)[-1][:60]}: {k} lists, {len(rows)} rows, {len(aside)} set aside")
+            if rows and (best is None or len(rows) > best[2]):
+                best = (u, text, len(rows))
+        if not best:
+            log("no report of results read")
+            return 1
+        names = local.list_names(watch.load_store(root)["docs"], store, args.results, args.date)
+        for i, (nm, u) in enumerate(names, 1):
+            log(f"  list {i}: proclaimed in {u.rsplit('/', 1)[-1][:80]}")
+        summary = local.build(root, args.results, args.date, args.name, best[0], best[1], [n for n, _ in names], log)
+        if args.commit and commit([str(root / local.DRAFTS)], f"Data: draft of the local election {summary['round']}"):
+            if args.push:
+                push()
+        return 0
     docs = watch.load_store(root)["docs"]
     local.probe(docs, args.probe, args.kind or None, args.limit, log, path_has=args.path_has, pages=args.pages,
                 chars=args.chars)
@@ -907,6 +932,10 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--probe", metavar="CODE", help="a municipality's code: log its documents' masked layouts")
     lo.add_argument("--classify", metavar="CODES", help="classify the documents of these municipalities (codes, or all)")
     lo.add_argument("--budget", type=int, default=240, help="minutes of classifying in one run")
+    lo.add_argument("--results", metavar="CODE", help="read a municipality's local results report into a draft round")
+    lo.add_argument("--date", default="", help="the local election's day (YYYY-MM-DD)")
+    lo.add_argument("--name", default="", help="the municipality's name for the round's title (Cyrillic)")
+    lo.add_argument("--url", default="", help="the report's link, when the classified documents don't say")
     lo.add_argument("--commit", action="store_true")
     lo.add_argument("--push", action="store_true")
     lo.add_argument("--kind", default="", help="stations, boards or commission")

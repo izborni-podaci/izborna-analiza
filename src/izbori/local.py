@@ -189,3 +189,190 @@ def run_classify(root, codes: set | None = None, log=print, workers: int = 4, bu
     log(f"{done} classified now; kinds: {dict(Counter(v['k'] for v in mine))}; "
         f"elections: {dict(Counter((v['e'], v['d']) for v in mine).most_common(12))}")
     return done
+
+
+# --- the commission's report of results by polling station ------------------------------------------------------
+# One row per station: number, registered, voted (circled in the register), ballots in the box, invalid, valid,
+# then each list's votes in ballot order (Pančevo 2024: "1 1354 577 577 14 563 473 5 37 9 39"). OCR loses a digit
+# or reads one as a sign ("|||" for 7, "1!" for 11, "|90" for 19), so a row is checked against itself: the lists
+# add up to the valid votes, and the ballots in the box less the invalid ones are the valid votes. One unreadable
+# cell in an equation is worked out from it; a row that still doesn't add up is set aside for a person, never guessed.
+FIXED = 6  # number, registered, voted, ballots, invalid, valid
+CELL_FIX = str.maketrans({"|": "1", "!": "1", "l": "1", "I": "1", "і": "1", "О": "0", "O": "0", "o": "0",
+                          "о": "0", "S": "5", "B": "8", ")": "1", "]": "1", "%": "5"})
+
+
+def cell(tok: str) -> int | None:
+    t = tok.translate(CELL_FIX).strip(".,;:'`")
+    return int(t) if t.isdigit() else None
+
+
+def result_rows(text: str) -> tuple[int, list[dict], list[dict]]:
+    """The lists' count, the rows read ({"n", "registered", "voted", "ballots", "invalid", "valid", "v": [...],
+    "note"}) and the rows set aside ({"n", "why"}), from the text of a results report."""
+    lines = []
+    for line in text.replace("\r", "").split("\n"):
+        toks = line.split()
+        if len(toks) >= FIXED + 1 and sum(1 for t in toks if cell(t) is not None) >= len(toks) - 2:
+            lines.append(toks)
+    if not lines:
+        return 0, [], []
+    from collections import Counter
+    k = Counter(len(t) - FIXED for t in lines).most_common(1)[0][0]
+    rows, aside, expect = [], [], 1
+    for toks in lines:
+        if len(toks) != FIXED + k:
+            continue
+        cells = [cell(t) for t in toks]
+        # the sequence decides a misread number ("37" for 57, "|||" for 7); a row OCR lost (one to three) is skipped
+        n = cells[0] if cells[0] is not None and expect <= cells[0] <= expect + 3 else expect
+        expect = n + 1
+        reg, voted, box, invalid, valid = cells[1:FIXED]
+        votes = cells[FIXED:]
+        notes = []
+        # the lists against the valid votes
+        missing = [i for i, v in enumerate(votes) if v is None]
+        if valid is None and not missing:
+            valid = sum(votes)
+            notes.append("valid from the lists")
+        elif valid is not None and len(missing) == 1:
+            votes[missing[0]] = valid - sum(v for v in votes if v is not None)
+            notes.append(f"list {missing[0] + 1} from the valid votes")
+        if valid is None or None in votes or votes[missing[0]] < 0 if missing else False:
+            aside.append({"n": n, "why": "lists and valid votes unreadable"})
+            continue
+        if sum(votes) != valid:
+            aside.append({"n": n, "why": f"lists add up to {sum(votes)}, valid votes read {valid}"})
+            continue
+        # ballots, invalid and valid
+        if box is None and invalid is not None:
+            box = valid + invalid
+            notes.append("ballots from valid and invalid")
+        elif invalid is None and box is not None:
+            invalid = box - valid
+            notes.append("invalid from ballots and valid")
+        elif box is not None and invalid is not None and box - invalid != valid:
+            # one of the two misread: the one that keeps ballots within the voters circled is kept
+            if voted is not None and 0 <= voted - (valid + invalid) <= max(3, voted // 50):
+                box = valid + invalid
+                notes.append("ballots from valid and invalid")
+            elif voted is not None and 0 <= box - valid <= max(3, box // 10) and box <= voted:
+                invalid = box - valid
+                notes.append("invalid from ballots and valid")
+            else:
+                aside.append({"n": n, "why": "ballots, invalid and valid votes don't agree"})
+                continue
+        if box is None or invalid is None or invalid < 0:
+            aside.append({"n": n, "why": "ballots and invalid unreadable"})
+            continue
+        if voted is None or voted < box or voted > (reg or voted):
+            if voted is not None and voted < box:  # "37" for 377: a digit lost
+                notes.append("voted taken as the ballots (read lower than them)")
+            elif voted is None:
+                notes.append("voted taken as the ballots (unreadable)")
+            voted = box if (voted is None or voted < box) else voted
+        rows.append({"n": n, "registered": reg, "voted": voted, "ballots": box, "invalid": invalid, "valid": valid,
+                     "v": votes, "note": "; ".join(notes)})
+    return k, rows, aside
+
+
+# --- a local election as a round of the archive -------------------------------------------------------------------
+# What the readers make of a municipality's local election is written as a round in RIK's own format (results.csv,
+# meta.json), so every page of the site treats it as it treats RIK's rounds. It is first a draft under
+# data/local/<id>/, with the rows set aside and the lists' names as the commission's decisions print them, for a
+# person to check; `--publish` moves it to data/rounds/<id>/.
+DRAFTS = "local"
+RESULT_COLUMNS = ["bm_uid", "bm_broj", "bm_naziv", "opstina", "sifra_opstine", "okrug_region", "sifra_okruga_regiona",
+                  "upisani_biraci", "glasali_biraci", "listici_u_kutiji", "vazeci_glasovi", "nevazeci_listici",
+                  "vreme_unosa_rezultata"]
+LIST_NAME = re.compile(r"(?:изборн[ауе]\s+лист[ауе]|izborn[aue]\s+list[aue])\s*(?:под\s+називом\s*)?[„\"“«]\s*([^\n„\"“”»]{3,240}?)\s*[“”\"»]",
+                       re.I)
+
+
+def round_id(code: str, day: str) -> str:
+    return f"L{code}-{day.replace('-', '')}"
+
+
+def stations_like(root, code: str, n: int, day: str):
+    """The stations of the municipality in the archived round nearest in time with as many stations: their names
+    and district, by number (a local election uses the polling stations of the elections around it)."""
+    from izbori.history import Archive
+    archive = Archive(root)
+    best = None
+    for rid in archive.round_ids():
+        if rid.startswith("L"):
+            continue
+        mine = [s for s in archive.load(rid).stations if s.municipality_code == code]
+        if len(mine) != n:
+            continue
+        gap = abs((_date(archive.meta(rid).get("date")) - _date(day)).days)
+        if best is None or gap < best[0]:
+            best = (gap, rid, {s.number: s for s in mine})
+    return (best[1], best[2]) if best else (None, {})
+
+
+def _date(d):
+    from datetime import date
+    return date.fromisoformat((d or "2000-01-01")[:10])
+
+
+def build(root, code: str, day: str, name: str, report_url: str, text: str, lists: list[str], log=print) -> dict:
+    """Write the draft round of a local election from its report's text; returns a summary."""
+    import csv
+    import io
+    import json
+    from pathlib import Path
+    k, rows, aside = result_rows(text)
+    src_round, like = stations_like(root, code, max([r["n"] for r in rows] + [a["n"] for a in aside] + [0]), day)
+    rid = round_id(code, day)
+    out = Path(root) / DRAFTS / rid
+    out.mkdir(parents=True, exist_ok=True)
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(RESULT_COLUMNS + [f"lista_{i + 1}" for i in range(k)] + ["zapisnik_link", "korekcija_dokument_link"])
+    for r in rows:
+        s = like.get(str(r["n"]))
+        w.writerow([f"{rid}-{r['n']}", r["n"], s.name if s else "", s.municipality if s else name, code,
+                    s.district if s else "", s.district_code if s else "", r["registered"], r["voted"], r["ballots"],
+                    r["valid"], r["invalid"], ""] + r["v"] + ["", ""])  # the report is not a station's minutes
+    (out / "results.csv").write_text("﻿" + buf.getvalue(), encoding="utf-8")
+    meta = {"contest": {}, "contestants": [{"name": lists[i] if i < len(lists) else f"Изборна листа {i + 1}"}
+                                           for i in range(k)],
+            "date": day, "kind": "local", "rik_type": 3, "source": "commission",
+            "title": f"Локални {day[:4]} - {name}",
+            "local": {"municipality": code, "report": report_url, "stations_from": src_round,
+                      "aside": aside, "notes": {str(r["n"]): r["note"] for r in rows if r["note"]}}}
+    (out / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    totals = [sum(r["v"][j] for r in rows) for j in range(k)]
+    summary = {"round": rid, "lists": k, "rows": len(rows), "aside": len(aside), "totals": totals,
+               "valid": sum(r["valid"] for r in rows), "invalid": sum(r["invalid"] for r in rows),
+               "registered": sum(r["registered"] or 0 for r in rows), "stations_from": src_round}
+    log(f"{rid}: {summary}")
+    for a in aside:
+        log(f"  set aside: station {a['n']}: {a['why']}")
+    return summary
+
+
+def list_names(docs: dict, store: dict, code: str, day: str, fetch=None) -> list[tuple[str, str]]:
+    """The lists the commission proclaimed for this election: (name as its decision prints it, link), in the
+    order of the decisions' links (the order of proclamation is the order on the ballot). A list's name is a
+    contestant's, public as RIK's are; nothing else of the decision is kept."""
+    out, seen = [], set()
+    for u, v in sorted(store["docs"].items()):
+        if v["m"] != code or v["k"] != "lists" or v.get("e") not in ("local", None):
+            continue
+        if v.get("d") and abs((_date(v["d"]) - _date(day)).days) > 60:
+            continue
+        try:
+            text = first_page(u, fetch)
+        except Exception:  # noqa: BLE001
+            continue
+        if "прогла" not in text.lower() and "progla" not in text.lower():
+            continue
+        m = LIST_NAME.search(text)
+        if m:
+            nm = re.sub(r"\s+", " ", m.group(1)).strip(" .,")
+            if nm.upper() not in seen:
+                seen.add(nm.upper())
+                out.append((nm, u))
+    return out

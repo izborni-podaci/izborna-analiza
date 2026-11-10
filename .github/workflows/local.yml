@@ -1,5 +1,6 @@
 # By hand: local elections from the municipalities' own documents (data/municipal_docs.json). Two modes:
-# classify (what each document is, from its first page, into data/local_docs.json, committed), or the probe (a
+# classify (what each document is, from its first page, into data/local_docs.json, committed), results (a
+# municipality's report of local results read into a draft round under data/local/, committed), or the probe (a
 # municipality's documents of one kind, each logged with every word that isn't a word of the forms masked).
 name: local
 
@@ -27,6 +28,15 @@ on:
       chars:
         description: "Probe: characters of each masked layout logged"
         default: "1200"
+      results:
+        description: "Results: a municipality code whose local results report to read into a draft round"
+        default: ""
+      date:
+        description: "Results: the local election's day (YYYY-MM-DD)"
+        default: ""
+      name:
+        description: "Results: the municipality's name for the title, in Cyrillic (e.g. Панчево)"
+        default: ""
 
 permissions:
   contents: write
@@ -56,6 +66,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           uv run izbori local --classify "$CLASSIFY" --budget 270 --commit --push
+      - name: Results
+        if: ${{ inputs.results != '' }}
+        env:
+          RESULTS: ${{ inputs.results }}
+          DATE: ${{ inputs.date }}
+          NAME: ${{ inputs.name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          uv run izbori local --results "$RESULTS" --date "$DATE" --name "$NAME" --commit --push
       - name: Probe
         if: ${{ inputs.code != '' }}
         env:
