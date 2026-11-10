@@ -53,9 +53,9 @@ def text_of(data: bytes, url: str, pages: int = 2, turn: bool = False) -> str:
         return ""
     # turn: a report's scanned pages may lie sideways, and its small figures want a finer scan
     dpi = 300 if turn else 200
-    text = boards.pdf_text(data, max_pages=pages, turn=turn, dpi=dpi)
+    text = boards.pdf_text(data, max_pages=pages, turn=turn, dpi=dpi, to_end=turn)
     if len(re.findall(r"[А-Яа-яA-Za-z]", text)) < 100:
-        text = boards.pdf_text(data, max_pages=pages, ocr=True, turn=turn, dpi=dpi)
+        text = boards.pdf_text(data, max_pages=pages, ocr=True, turn=turn, dpi=dpi, to_end=turn)
     return text
 
 

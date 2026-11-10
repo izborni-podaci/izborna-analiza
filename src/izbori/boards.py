@@ -410,9 +410,10 @@ def upright(png: Path) -> None:
 
 
 def pdf_text(pdf: bytes, max_pages: int = 3, lang: str = "srp+srp_latn", dpi: int = 200, psm: int | None = None,
-             ocr: bool = False, turn: bool = False) -> str:
+             ocr: bool = False, turn: bool = False, to_end: bool = False) -> str:
     """The decision's text: the PDF's own text layer when it has one (unless ocr), otherwise OCR of the first pages
-    (psm: Tesseract's page segmentation, its default when None; turn: each page turned upright first)."""
+    (psm: Tesseract's page segmentation, its default when None; turn: each page turned upright first), stopping at
+    a decision's end unless to_end (a report's table goes on after its first page's signature)."""
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "doc.pdf"
         path.write_bytes(pdf)
@@ -435,7 +436,7 @@ def pdf_text(pdf: bytes, max_pages: int = 3, lang: str = "srp+srp_latn", dpi: in
                                   capture_output=True, text=True, env={**os.environ, "OMP_THREAD_LIMIT": "1"})
             out.append(read.stdout)
             images[0].unlink()
-            if END.search("\n" + read.stdout):
+            if not to_end and END.search("\n" + read.stdout):
                 break
         return "\n".join(out)
 

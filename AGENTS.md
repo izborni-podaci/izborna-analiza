@@ -817,5 +817,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   "Skup1" is the commission's rules of procedure. Zemun's "Rezultati 02. juna 2024." is a report with a table of
   its 115 stations, scanned sideways. Reports are now also links with "rezultati", and their scans are read at
   300 dpi, each page turned upright first by Tesseract's orientation detection (`boards.upright`, with
-  ImageMagick) when it is sure enough.
+  ImageMagick) when it is sure enough.  The first try read one page: OCR stops at a decision's end ("Образложење"), which Zemun's first page has before
+  its table; a report is now read to its last page (`to_end`).
 
