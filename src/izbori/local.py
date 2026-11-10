@@ -692,7 +692,7 @@ def now_day() -> str:
 # the members' part; the images go to a temporary branch, deleted once read. What is read goes into
 # data/local_hand.csv and must add up, row by row and to the commission's totals.
 RESULTS_HEAD = re.compile(r"РЕЗУЛТАТИ|REZULTATI")
-REGISTERED = re.compile(r"УПИСАНИХ|UPISANIH")  # the row with the registered voters, in an earlier part of the form
+REGISTERED = re.compile(r"УПИСАН(?:И|ИХ)\b|UPISAN(?:I|IH)\b")  # the row with the registered voters, in an earlier part of the form
 CROP_END = re.compile(r"\b(?:ЧЛАН|ЗАМЕНИК|ПРЕДСЕДНИК|ПРИМЕДБ\w*|ПОДАЦИ|ПОТПИС\w*|ЧИЊЕНИЦ\w*|НАПОМЕН\w*|БИРАЧКИ\s+ОДБОР)\b"
                       r"|^\W*1\s*[.,]\s*Број\s+бирачког\s+места|^\W*\d+\s*[.,]\s*Датум")
 CROP_DPI = 200
