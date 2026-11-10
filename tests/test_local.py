@@ -56,6 +56,28 @@ def test_classify_run_keeps_kinds_only_and_resumes(tmp_path):
     assert local.run_classify(tmp_path, {"80314"}, log=lambda *_: None, workers=1, one=one) == 1  # only b, now
 
 
+def test_classify_skips_a_site_that_does_not_answer(tmp_path):
+    import json
+    docs = {f"https://www.bac.rs/{i}.pdf": {"m": "80055", "k": "boards", "seen": "x"} for i in range(12)}
+    docs.update({f"https://p.rs/{i}.pdf": {"m": "80314", "k": "boards", "seen": "x"} for i in range(3)})
+    (tmp_path / "municipal_docs.json").write_text(json.dumps({"docs": docs}), encoding="utf-8")
+    asked = []
+
+    def one(url):
+        asked.append(url)
+        if "bac.rs" in url:
+            return url, None, "TimeoutError"
+        return url, local.classify("ЗАПИСНИК О РАДУ БИРАЧКОГ ОДБОРА"), None
+    logged = []
+    assert local.run_classify(tmp_path, None, log=logged.append, workers=1, one=one) == 3
+    assert sum("bac.rs" in u for u in asked) == local.SITE_DOWN
+    assert any("{'bac.rs': 7}" in line for line in logged)
+    # the next run asks again
+    asked.clear()
+    local.run_classify(tmp_path, None, log=lambda *_: None, workers=2, one=one)
+    assert sum("bac.rs" in u for u in asked) >= local.SITE_DOWN
+
+
 def test_classify_shards_split_by_municipality_and_merge(tmp_path):
     import json
     import shutil

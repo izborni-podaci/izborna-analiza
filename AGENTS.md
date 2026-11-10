@@ -767,4 +767,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 - **10 Nov 2026, a queued classify builds on the one before.** The classify and merge jobs check out the branch as
   it is when they start, not the commit the run was dispatched on, so a run queued behind another one (the same
   concurrency group) skips what that one committed instead of reading it again and failing to push its merge.
+- **10 Nov 2026, a site that doesn't answer is skipped while classifying.** The first sharded run took 1 to 32
+  minutes for seven of its parts and more than an hour for the eighth: its municipality, Bač (734 documents on
+  bac.rs), didn't answer, so each document waited out the download's 90-second timeout, four at a time. A share
+  by municipality keeps a site's requests to one runner, so one dead site holds up only its part — but the merge
+  waits for every part. Now five failures in a row from a site skip its other documents for that run (they stay
+  unclassified, so the next run asks again). Classifying runs in threads instead of processes: the reading is
+  pdftotext and tesseract, run as processes anyway, and the threads share the count.
 

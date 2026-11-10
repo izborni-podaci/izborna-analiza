@@ -211,13 +211,19 @@ def merge_parts(root, parts: list) -> int:
     return changed
 
 
+SITE_DOWN = 5  # a site whose documents failed this many times in a row is left for the next run
+
+
 def run_classify(root, codes: set | None = None, log=print, workers: int = 4, budget_seconds: float = 4 * 3600,
                  one=_one, shard: tuple[int, int] | None = None) -> int:
     """Classify every document the watch found and this store lacks (of the given municipalities); saved as it
     goes, so a run cut short by its budget resumes. With shard (i, n), only the i-th of n parts, split by
-    municipality (shard_of). Returns how many were classified."""
+    municipality (shard_of). A site that doesn't answer (SITE_DOWN failures in a row) is skipped for the rest of
+    the run instead of each of its documents waiting out the timeout. Returns how many were classified."""
+    import threading
     import time as _time
-    from concurrent.futures import ProcessPoolExecutor
+    from collections import Counter
+    from concurrent.futures import ThreadPoolExecutor  # the reading is pdftotext and tesseract, in processes
     docs = watch.load_store(root)["docs"]
     store = load_store(root)
     mine = [u for u, v in sorted(docs.items()) if not codes or v["m"] in codes]
@@ -229,9 +235,25 @@ def run_classify(root, codes: set | None = None, log=print, workers: int = 4, bu
         log(f"shard {shard[0] + 1} of {shard[1]}: {len({docs[u]['m'] for u in todo})} municipalities")
     log(f"{len(todo)} documents to classify")
     start, done = _time.time(), 0
-    pool = ProcessPoolExecutor(workers) if workers > 1 else None
+    failed: Counter = Counter()  # a site's failures in a row
+    skipped: Counter = Counter()
+    lock = threading.Lock()
+
+    def guarded(url):
+        site = urllib.parse.urlparse(url).netloc.removeprefix("www.")
+        with lock:
+            if failed[site] >= SITE_DOWN:
+                skipped[site] += 1
+                return url, None, "skipped"
+        got = one(url)
+        with lock:
+            failed[site] = failed[site] + 1 if got[2] else 0
+            if failed[site] == SITE_DOWN:
+                log(f"{site}: {SITE_DOWN} failures in a row ({got[2]}); its other documents wait for the next run")
+        return got
+    pool = ThreadPoolExecutor(workers) if workers > 1 else None
     try:
-        results = pool.map(one, todo) if pool else map(one, todo)
+        results = pool.map(guarded, todo) if pool else map(guarded, todo)
         for url, got, err in results:
             if got:
                 store["docs"][url] = {"m": docs[url]["m"], **got}
@@ -246,7 +268,8 @@ def run_classify(root, codes: set | None = None, log=print, workers: int = 4, bu
         if pool:
             pool.shutdown(cancel_futures=True)
     save_store(root, store)
-    from collections import Counter
+    if skipped:
+        log(f"skipped, their sites not answering: {dict(skipped)}")
     mine = [v for v in store["docs"].values() if not codes or v["m"] in codes]
     log(f"{done} classified now; kinds: {dict(Counter(v['k'] for v in mine))}; "
         f"elections: {dict(Counter((v['e'], v['d']) for v in mine).most_common(12))}")
