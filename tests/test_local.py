@@ -27,13 +27,13 @@ def test_the_command_runs(tmp_path):
 def test_classify_by_the_forms_words():
     c = local.classify
     assert c("ЗАПИСНИК О РАДУ БИРАЧКОГ ОДБОРА на изборима за народне посланике одржаних 25. октобра 2026") == \
-        {"k": "minutes", "e": "parliamentary", "d": "2026-10-25"}
+        {"k": "minutes", "e": "parliamentary", "d": "2026-10-25", "v": local.CLASSIFIER}
     assert c("ИЗВЕШТАЈ О УКУПНИМ РЕЗУЛТАТИМА ИЗБОРА за одборнике Скупштине града одржаних 17.12.2023. године") == \
-        {"k": "results", "e": "local", "d": "2023-12-17"}
+        {"k": "results", "e": "local", "d": "2023-12-17", "v": local.CLASSIFIER}
     assert c("Р Е Ш Е Њ Е о именовању чланова бирачког одбора за изборе за одборнике, расписане за 2. јун 2024")["k"] == "boards"
     assert c("ЗАПИСНИК са 16. седнице Изборне комисије")["k"] == "session"
     assert c("ОДЛУКА о одређивању бирачких места за изборе за посланике у Скупштину Аутономне покрајине Војводине") == \
-        {"k": "stations", "e": "provincial", "d": None}
+        {"k": "stations", "e": "provincial", "d": None, "v": local.CLASSIFIER}
     assert c("Јавни позив")["k"] == "other"
 
 
@@ -50,7 +50,8 @@ def test_classify_run_keeps_kinds_only_and_resumes(tmp_path):
         return (url, local.classify(t), None) if t else (url, None, "URLError")
     assert local.run_classify(tmp_path, {"80314"}, log=lambda *_: None, workers=1, one=one) == 1
     store = local.load_store(tmp_path)
-    assert store["docs"] == {"https://p.rs/a.pdf": {"m": "80314", "k": "minutes", "e": None, "d": None}}
+    assert store["docs"] == {"https://p.rs/a.pdf": {"m": "80314", "k": "minutes", "e": None, "d": None,
+                                                    "v": local.CLASSIFIER}}
     pages["https://p.rs/b.pdf"] = "ЗАПИСНИК са седнице"
     assert local.run_classify(tmp_path, {"80314"}, log=lambda *_: None, workers=1, one=one) == 1  # only b, now
 
@@ -246,3 +247,38 @@ def test_hand_rows_must_add_up(tmp_path):
         "L9-20240602,1,1,1,1,0,1,1,x,\n", encoding="utf-8")
     k, rows, aside, links = local.hand_rows(tmp_path, "L1-20240602", log=lambda *a: None)
     assert k == 4 and [r["n"] for r in rows] == [1] and aside[0]["n"] == 2 and links[1] == "https://t.rs/LO1.pdf"
+
+
+def test_the_title_decides_before_the_page():
+    c = local.classify
+    pre = "На основу члана 25. Закона о локалним изборима, Изборна комисија града Панчева донела је\n\n"
+    # an extended board names the lists it seats: still a board
+    ext = pre + ("РЕШЕЊЕ\nО ИМЕНОВАЊУ ЧЛАНОВА БИРАЧКОГ ОДБОРА У ПРОШИРЕНОМ САСТАВУ ЗА ИЗБОРЕ ЗА ОДБОРНИКЕ\n"
+                 "1. члан: …, на предлог изборне листе АЛЕКСАНДАР ВУЧИЋ – ПАНЧЕВО СУТРА, збирна изборна листа")
+    assert c(ext)["k"] == "boards" and c(ext)["v"] == local.CLASSIFIER
+    # a report of results, whose page goes on to name every list
+    rep = pre + "УКУПНИ ИЗВЕШТАЈ\nна основу збирне изборне листе\nО РЕЗУЛТАТИМА ИЗБОРА ЗА ОДБОРНИКЕ СКУПШТИНЕ ОПШТИНЕ"
+    assert c(rep)["k"] == "results"
+    # an appointment to the municipal commission, on a list's proposal, is neither a result nor a board
+    oik = pre + ("РЕШЕЊЕ о именовању члана и заменика члана у проширени састав Општинске изборне комисије на "
+                 "предлог подносиоца изборне листе, ради утврђивања резултата избора")
+    assert c(oik)["k"] == "commission"
+    assert c("R E Š E N J E o imenovanju članova biračkog odbora")["k"] == "boards"
+
+
+def test_an_older_classification_is_read_again(tmp_path):
+    import json
+    (tmp_path / "municipal_docs.json").write_text(json.dumps({"docs": {
+        "https://p.rs/a.pdf": {"m": "80314", "k": "boards", "seen": "x"},
+        "https://p.rs/b.pdf": {"m": "80314", "k": "boards", "seen": "x"}}}), encoding="utf-8")
+    (tmp_path / local.STORE).write_text(json.dumps({"docs": {
+        "https://p.rs/a.pdf": {"m": "80314", "k": "lists", "e": "local", "d": None},
+        "https://p.rs/b.pdf": {"m": "80314", "k": "minutes", "e": None, "d": None, "v": local.CLASSIFIER}}}),
+        encoding="utf-8")
+    seen = []
+
+    def one(url):
+        seen.append(url)
+        return url, local.classify("РЕШЕЊЕ о именовању бирачког одбора"), None
+    assert local.run_classify(tmp_path, None, log=lambda *_: None, workers=1, one=one) == 1
+    assert seen == ["https://p.rs/a.pdf"] and local.load_store(tmp_path)["docs"]["https://p.rs/a.pdf"]["k"] == "boards"

@@ -652,6 +652,13 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   10,226, with every cell read twice: left as the minutes have it, for Marko. The lists' names are printed on the
   minutes. Published as `L80446-20240602` and `L80373-20251130`. A municipality's page no longer lists another
   municipality's local election among the elections it "didn't vote in".
+  10 Nov, the classifier reads the title first. The whole first page misfiled documents that name lists,
+  boards and results in passing: Pančevo's extended boards (BM-N-Prosireni-sastav) as lists, Sečanj's report of
+  results as lists, and the appointments to Sečanj's commission on the lists' proposals as results. Now the title
+  (from the heading in capitals — РЕШЕЊЕ, ИЗВЕШТАЈ, ЗАПИСНИК, ОДЛУКА — 400 characters) is matched first
+  (`local.TITLE_KINDS`, with a new kind, `commission`, for appointments to the electoral commission), the page
+  only when the title matches nothing. Entries carry the classification's version (`v`); `run_classify` reads
+  the new documents first, then every entry of an older version again, so one rule applies to all.
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

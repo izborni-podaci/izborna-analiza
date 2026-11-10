@@ -91,6 +91,23 @@ KINDS = (
     ("stations", (("odluk", "resenje"), ("odredjivanju birackih mesta", "utvrdjivanju birackih mesta", "birackih mesta"))),
     ("session", (("zapisnik",), ("sednic",))),
 )
+# The title (the heading — РЕШЕЊЕ, ИЗВЕШТАЈ, ЗАПИСНИК, ОДЛУКА — and its subject) decides first: the rest of a page
+# names lists, boards and results in passing (Pančevo's extended boards were filed as lists, Sečanj's report of
+# results as lists and the appointments to its commission as results). Kinds by the title, first match wins; a
+# title that matches none leaves it to the whole page (KINDS above).
+TITLE_KINDS = (
+    ("minutes", (("zapisnik",), ("o radu birackog odbora", "rad birackog odbora"))),
+    ("results", (("izvestaj",), ("rezultat",))),
+    ("boards", (("resenje", "resenja"), ("birackog odbora", "birackih odbora", "biracki odbor", "birackom odboru"))),
+    ("commission", (("resenje", "resenja"), ("izborne komisije", "izbornu komisiju", "oik", "izborna komisija"))),
+    ("lists", (("proglas", "zbirn", "lista kandidata", "izbornoj listi", "izborne liste"), ("list",))),
+    ("stations", (("odluk", "resenje"), ("birackih mesta", "birackog mesta"))),
+    ("session", (("zapisnik",), ("sednic",))),
+)
+HEADING = re.compile(r"(?<![A-Za-zА-Яа-яЂђЈјЉљЊњЋћЏџČčĆćŠšŽžĐđ])(?:РЕШЕЊ[ЕА]|ИЗВЕШТАЈ|ЗАПИСНИК|ОДЛУК[АУ]|REŠENJ[EA]|RESENJ[EA]"
+                     r"|IZVEŠTAJ|IZVESTAJ|ZAPISNIK|ODLUK[AU])(?![A-Za-zА-Яа-яЂђЈјЉљЊњЋћЏџČčĆćŠšŽžĐđ])")
+TITLE_CHARS = 400
+CLASSIFIER = 2  # the classification's version: an entry of an older one is classified again (run_classify)
 ELECTIONS = (  # which election, by what the form says it is for
     ("local", ("odbornika", "odbornike", "skupstine opstine", "skupstine grada", "skupstinu opstine", "skupstinu grada",
                "gradske opstine")),
@@ -106,16 +123,24 @@ STORE = "local_docs.json"
 
 def classify(text: str) -> dict:
     """{"k": kind or "other", "e": election or None, "d": its day (YYYY-MM-DD) or None} from a first page."""
-    f = watch.fold(text)
     # a title set in spaced capitals ("Р Е Ш Е Њ Е") read as one word
-    f = re.sub(r"(?<![a-z])((?:[a-z]{1,2} ){3,}[a-z]{1,2})(?![a-z])", lambda m: m.group(1).replace(" ", ""), f)
-    kind = "other"
-    for k, (first, second) in KINDS:
-        if any(w in f for w in first) and any(w in f for w in second):
-            kind = k
-            break
+    text = re.sub(r"(?<!\w)((?:[^\W\d_] ){3,}[^\W\d_])(?!\w)", lambda m: m.group(1).replace(" ", ""), text or "")
+    f = watch.fold(text)
+    kind = by_kinds(watch.fold(title(text)), TITLE_KINDS) or by_kinds(f, KINDS) or "other"
     election = next((e for e, words in ELECTIONS if any(w in f for w in words)), None)
-    return {"k": kind, "e": election, "d": election_day(f)}
+    return {"k": kind, "e": election, "d": election_day(f), "v": CLASSIFIER}
+
+
+def title(text: str) -> str:
+    """A document's title: from its heading (in capitals, as forms set it) on, TITLE_CHARS characters; without a
+    heading, the start of the page."""
+    m = HEADING.search(text)
+    return text[m.start(): m.start() + TITLE_CHARS] if m else text[:TITLE_CHARS + 200]
+
+
+def by_kinds(folded: str, kinds) -> str | None:
+    return next((k for k, (first, second) in kinds
+                 if any(w in folded for w in first) and any(w in folded for w in second)), None)
 
 
 def election_day(folded: str) -> str | None:
@@ -164,7 +189,9 @@ def run_classify(root, codes: set | None = None, log=print, workers: int = 4, bu
     from concurrent.futures import ProcessPoolExecutor
     docs = watch.load_store(root)["docs"]
     store = load_store(root)
-    todo = [u for u, v in sorted(docs.items()) if u not in store["docs"] and (not codes or v["m"] in codes)]
+    mine = [u for u, v in sorted(docs.items()) if not codes or v["m"] in codes]
+    todo = [u for u in mine if u not in store["docs"]] + \
+        [u for u in mine if u in store["docs"] and store["docs"][u].get("v", 1) < CLASSIFIER]  # new ones first
     log(f"{len(todo)} documents to classify")
     start, done = _time.time(), 0
     pool = ProcessPoolExecutor(workers) if workers > 1 else None
