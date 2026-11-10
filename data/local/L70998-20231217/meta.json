@@ -1,0 +1,128 @@
+{
+ "contest": {},
+ "contestants": [
+  {
+   "name": "Изборна листа 1"
+  },
+  {
+   "name": "Изборна листа 2"
+  },
+  {
+   "name": "Изборна листа 3"
+  },
+  {
+   "name": "Изборна листа 4"
+  },
+  {
+   "name": "Изборна листа 5"
+  },
+  {
+   "name": "Изборна листа 6"
+  },
+  {
+   "name": "Изборна листа 7"
+  }
+ ],
+ "date": "2023-12-17",
+ "kind": "local",
+ "rik_type": 3,
+ "source": "commission",
+ "title": "Локални 2023 - Прокупље",
+ "local": {
+  "municipality": "70998",
+  "report": "https://prokuplje.org.rs/wp-content/uploads/2023/12/Zbirni-izvestaj-lokal.pdf",
+  "stations_from": "341140",
+  "aside": [
+   {
+    "n": 20,
+    "why": "lists add up to 270, valid votes read 280"
+   },
+   {
+    "n": 30,
+    "why": "lists add up to 308, valid votes read 318"
+   },
+   {
+    "n": 36,
+    "why": "lists add up to 32, valid votes read 22"
+   },
+   {
+    "n": 39,
+    "why": "lists add up to 119, valid votes read 109"
+   },
+   {
+    "n": 41,
+    "why": "lists add up to 88, valid votes read 78"
+   },
+   {
+    "n": 45,
+    "why": "lists add up to 118, valid votes read 108"
+   },
+   {
+    "n": 56,
+    "why": "lists and valid votes unreadable"
+   },
+   {
+    "n": 63,
+    "why": "lists add up to 70, valid votes read 60"
+   },
+   {
+    "n": 65,
+    "why": "lists add up to 183, valid votes read 173"
+   },
+   {
+    "n": 69,
+    "why": "lists add up to 25, valid votes read 15"
+   },
+   {
+    "n": 70,
+    "why": "lists add up to 63, valid votes read 43"
+   },
+   {
+    "n": 71,
+    "why": "lists add up to 33, valid votes read 38"
+   },
+   {
+    "n": 72,
+    "why": "lists add up to 49, valid votes read 39"
+   },
+   {
+    "n": 73,
+    "why": "lists add up to 26, valid votes read 16"
+   },
+   {
+    "n": 74,
+    "why": "lists add up to 27, valid votes read 17"
+   },
+   {
+    "n": 77,
+    "why": "lists add up to 159, valid votes read 149"
+   },
+   {
+    "n": 87,
+    "why": "lists add up to 82, valid votes read 92"
+   },
+   {
+    "n": 90,
+    "why": "lists add up to 140, valid votes read 130"
+   }
+  ],
+  "notes": {
+   "19": "list 5 from the valid votes",
+   "25": "list 4 from the valid votes",
+   "27": "list 5 from the valid votes; invalid from ballots and valid",
+   "34": "list 7 from the valid votes",
+   "37": "list 2 from the valid votes",
+   "46": "list 2 from the valid votes",
+   "48": "ballots from valid and invalid",
+   "52": "voted taken as the ballots (read lower than them)",
+   "54": "list 5 from the valid votes",
+   "62": "list 2 from the valid votes",
+   "66": "list 2 from the valid votes",
+   "76": "list 3 from the valid votes",
+   "80": "list 4 from the valid votes",
+   "82": "list 2 from the valid votes",
+   "84": "list 5 from the valid votes",
+   "91": "list 7 from the valid votes"
+  }
+ }
+}
