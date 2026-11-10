@@ -715,7 +715,9 @@ def page_lines(png) -> tuple[list[tuple[str, int, int, int]], int, int]:
         if level == 1:
             width, height = w, h
         if level == 5 and f[11].strip():
-            cur = lines.setdefault((f[1], f[2], f[3], f[4]), [[], top, top + h, left, left + w])
+            # a line Tesseract runs across both pages of a spread is split at the fold (Temerin's BM 23)
+            half = width > height and left + w / 2 >= width / 2
+            cur = lines.setdefault((f[1], f[2], f[3], f[4], half), [[], top, top + h, left, left + w])
             cur[0].append(f[11])
             cur[1], cur[2] = min(cur[1], top), max(cur[2], top + h)
             cur[3], cur[4] = min(cur[3], left), max(cur[4], left + w)
