@@ -693,7 +693,7 @@ def local_results(root: Path, code: str, date: str, name: str, args, log) -> dic
     best = None
     for u in cands:
         try:
-            text = local.text_of(local.download(u), u, pages=20)
+            text = local.text_of(local.download(u), u, pages=20, turn=True)
         except Exception as e:  # noqa: BLE001 - a report down: the next one
             log(f"{u.rsplit('/', 1)[-1][:60]}: {type(e).__name__}")
             continue

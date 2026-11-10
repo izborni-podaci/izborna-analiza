@@ -812,4 +812,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   figure. The lists' names are the reports' own.
   Published (moved to `data/rounds/`): every station of the three adds up and their sums are the commissions' totals
   to the vote.
+- **11 Nov 2026, Zemun 2024: a report on its side.** Of the four documents classified as results that the overview
+  didn't count as reports, Aleksandrovac 2020 and Brus 2023 hold the municipality's totals only, and Kraljevo's
+  "Skup1" is the commission's rules of procedure. Zemun's "Rezultati 02. juna 2024." is a report with a table of
+  its 115 stations, scanned sideways. Reports are now also links with "rezultati", and their scans are read at
+  300 dpi, each page turned upright first by Tesseract's orientation detection (`boards.upright`, with
+  ImageMagick) when it is sure enough.
 

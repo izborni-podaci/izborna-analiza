@@ -386,10 +386,33 @@ def match_list(text: str, contestants: list[dict]) -> int | None:
 # --- getting text out of a PDF -----------------------------------------------------------------
 
 
+ROTATE = re.compile(r"Rotate:\s*(\d+)")
+ROTATE_CONFIDENCE = re.compile(r"Orientation confidence:\s*([\d.]+)")
+
+
+def rotation(osd: str) -> int:
+    """The degrees to turn a page by, from Tesseract's orientation detection (--psm 0), when it is sure enough."""
+    r, c = ROTATE.search(osd), ROTATE_CONFIDENCE.search(osd)
+    return int(r.group(1)) if r and c and float(c.group(1)) >= 2 and int(r.group(1)) in (90, 180, 270) else 0
+
+
+def upright(png: Path) -> None:
+    """A scan laid sideways (Zemun's report of 2024: a wide table on portrait pages) turned upright in place, when
+    Tesseract can tell its orientation and ImageMagick is there to turn it."""
+    convert = shutil.which("magick") or shutil.which("convert")
+    if not convert:
+        return
+    osd = subprocess.run(["tesseract", str(png), "-", "--psm", "0"], capture_output=True, text=True,
+                         env={**os.environ, "OMP_THREAD_LIMIT": "1"})
+    degrees = rotation(osd.stdout + osd.stderr)
+    if degrees:
+        subprocess.run([convert, str(png), "-rotate", str(degrees), str(png)], capture_output=True)
+
+
 def pdf_text(pdf: bytes, max_pages: int = 3, lang: str = "srp+srp_latn", dpi: int = 200, psm: int | None = None,
-             ocr: bool = False) -> str:
+             ocr: bool = False, turn: bool = False) -> str:
     """The decision's text: the PDF's own text layer when it has one (unless ocr), otherwise OCR of the first pages
-    (psm: Tesseract's page segmentation, its default when None)."""
+    (psm: Tesseract's page segmentation, its default when None; turn: each page turned upright first)."""
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "doc.pdf"
         path.write_bytes(pdf)
@@ -406,6 +429,8 @@ def pdf_text(pdf: bytes, max_pages: int = 3, lang: str = "srp+srp_latn", dpi: in
             images = sorted(Path(tmp).glob(f"p{page}*.png"))
             if r.returncode != 0 or not images:
                 break
+            if turn:
+                upright(images[0])
             read = subprocess.run(["tesseract", str(images[0]), "-", "-l", lang] + (["--psm", str(psm)] if psm else []),
                                   capture_output=True, text=True, env={**os.environ, "OMP_THREAD_LIMIT": "1"})
             out.append(read.stdout)

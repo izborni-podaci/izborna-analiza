@@ -45,15 +45,17 @@ def download(url: str, timeout: int = 90) -> bytes:
         return r.read(30_000_000)
 
 
-def text_of(data: bytes, url: str, pages: int = 2) -> str:
+def text_of(data: bytes, url: str, pages: int = 2, turn: bool = False) -> str:
     if url.lower().endswith(".docx") or data[:2] == b"PK":
         from izbori.stationlist import docx_text
         return docx_text(data)
     if not data.startswith(b"%PDF"):
         return ""
-    text = boards.pdf_text(data, max_pages=pages)
+    # turn: a report's scanned pages may lie sideways, and its small figures want a finer scan
+    dpi = 300 if turn else 200
+    text = boards.pdf_text(data, max_pages=pages, turn=turn, dpi=dpi)
     if len(re.findall(r"[А-Яа-яA-Za-z]", text)) < 100:
-        text = boards.pdf_text(data, max_pages=pages, ocr=True)
+        text = boards.pdf_text(data, max_pages=pages, ocr=True, turn=turn, dpi=dpi)
     return text
 
 
@@ -477,15 +479,15 @@ REPORT_AFTER = 40  # days after the election in which the commission's report is
 
 
 def report_candidates(store: dict, code: str, day: str) -> list[str]:
-    """The municipality's reports (izveštaj in the link) of a local election, dated from its day to REPORT_AFTER
-    days after: the page gives the report's own date, not the election's (Temerin 2024: 6 June), and the first
+    """The municipality's reports ("izveštaj" or "rezultati" in the link: Zemun 2024's is "Rezultati 02. juna") of
+    a local election, dated from its day to REPORT_AFTER days after: the page gives the report's own date, not the election's (Temerin 2024: 6 June), and the first
     page alone may not tell a report from a list's document (Sečanj 2025), so the kind isn't asked; every one is
     read and the one with most stations wins."""
     from datetime import timedelta
     last = (_date(day) + timedelta(days=REPORT_AFTER)).isoformat() if day else "9999"
     return sorted(u for u, v in store["docs"].items() if v["m"] == code and v.get("e") in ("local", None)
                   and (not day or day <= (v.get("d") or "") <= last)
-                  and re.search(r"izvest|izvjest", watch.fold(urllib.parse.unquote(u))))
+                  and re.search(r"izvest|izvjest|rezultat", watch.fold(urllib.parse.unquote(u))))
 
 
 def round_id(code: str, day: str) -> str:

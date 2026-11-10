@@ -454,3 +454,11 @@ def test_report_pages_end_above_the_signatures(tmp_path):
         raise OSError
     assert local.run_pages(tmp_path, "71013", "po-birackim", tmp_path / "out", log=lambda *_: None, fetch=fetch) == 0
     assert asked == ["https://r.rs/Ukupan-izvestaj-po-birackim-mestima.pdf"]
+
+
+def test_a_sideways_page_is_turned_by_tesseract_s_orientation():
+    from izbori import boards
+    osd = "Page number: 0\nOrientation in degrees: 90\nRotate: 270\nOrientation confidence: 7.76\nScript: Cyrillic\n"
+    assert boards.rotation(osd) == 270
+    assert boards.rotation(osd.replace("7.76", "0.40")) == 0  # not sure enough: left as it is
+    assert boards.rotation("Rotate: 0\nOrientation confidence: 9.1") == 0
