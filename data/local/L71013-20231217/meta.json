@@ -1,0 +1,76 @@
+{
+ "contest": {},
+ "contestants": [
+  {
+   "name": "Изборна листа 1"
+  },
+  {
+   "name": "Изборна листа 2"
+  }
+ ],
+ "date": "2023-12-17",
+ "kind": "local",
+ "rik_type": 3,
+ "source": "commission",
+ "title": "Локални 2023 - Рача",
+ "local": {
+  "municipality": "71013",
+  "report": "https://www.raca.rs/wp-content/uploads/2023/12/Ukupan-izvestaj-po-birackim-mestima.pdf",
+  "stations_from": "341140",
+  "aside": [
+   {
+    "n": 5,
+    "why": "lists add up to 44, valid votes read 101"
+   },
+   {
+    "n": 8,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 10,
+    "why": "lists add up to 212, valid votes read 192"
+   },
+   {
+    "n": 13,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 14,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 22,
+    "why": "lists add up to 202, valid votes read 182"
+   },
+   {
+    "n": 24,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 25,
+    "why": "lists add up to 103, valid votes read 106"
+   }
+  ],
+  "notes": {
+   "1": "ballots taken as valid and invalid (the report has none)",
+   "2": "ballots taken as valid and invalid (the report has none)",
+   "3": "ballots taken as valid and invalid (the report has none)",
+   "4": "ballots taken as valid and invalid (the report has none)",
+   "6": "ballots taken as valid and invalid (the report has none)",
+   "7": "ballots taken as valid and invalid (the report has none)",
+   "9": "ballots taken as valid and invalid (the report has none)",
+   "11": "ballots taken as valid and invalid (the report has none)",
+   "12": "ballots taken as valid and invalid (the report has none)",
+   "15": "ballots taken as valid and invalid (the report has none)",
+   "16": "ballots taken as valid and invalid (the report has none)",
+   "17": "ballots taken as valid and invalid (the report has none)",
+   "18": "ballots taken as valid and invalid (the report has none)",
+   "19": "ballots taken as valid and invalid (the report has none)",
+   "20": "ballots taken as valid and invalid (the report has none)",
+   "21": "ballots taken as valid and invalid (the report has none)",
+   "23": "ballots taken as valid and invalid (the report has none)",
+   "26": "ballots taken as valid and invalid (the report has none)",
+   "27": "ballots taken as valid and invalid (the report has none)"
+  }
+ }
+}

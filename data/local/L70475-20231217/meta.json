@@ -1,0 +1,85 @@
+{
+ "contest": {},
+ "contestants": [
+  {
+   "name": "Изборна листа 1"
+  },
+  {
+   "name": "Изборна листа 2"
+  }
+ ],
+ "date": "2023-12-17",
+ "kind": "local",
+ "rik_type": 3,
+ "source": "commission",
+ "title": "Локални 2023 - Голубац",
+ "local": {
+  "municipality": "70475",
+  "report": "https://www.golubac.org.rs/wp-content/uploads/2023/11/Извештај-о-резултатима-гласања-за-свако-бирачко-место-на-територији-општине-Голубац-на-изборима-за-одборнике-СО-Голубац.pdf",
+  "stations_from": "341140",
+  "aside": [
+   {
+    "n": 5,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 13,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 14,
+    "why": "lists add up to 141, valid votes read 14"
+   },
+   {
+    "n": 18,
+    "why": "lists add up to 208, valid votes read 211"
+   },
+   {
+    "n": 20,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 21,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 22,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 23,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 29,
+    "why": "a station's figures unreadable"
+   },
+   {
+    "n": 30,
+    "why": "a station's figures unreadable"
+   }
+  ],
+  "notes": {
+   "1": "ballots taken as valid and invalid (the report has none)",
+   "2": "ballots taken as valid and invalid (the report has none)",
+   "3": "ballots taken as valid and invalid (the report has none)",
+   "4": "ballots taken as valid and invalid (the report has none)",
+   "6": "ballots taken as valid and invalid (the report has none)",
+   "7": "ballots taken as valid and invalid (the report has none)",
+   "8": "ballots taken as valid and invalid (the report has none)",
+   "9": "ballots taken as valid and invalid (the report has none)",
+   "10": "ballots taken as valid and invalid (the report has none)",
+   "11": "ballots taken as valid and invalid (the report has none)",
+   "12": "ballots taken as valid and invalid (the report has none)",
+   "15": "ballots taken as valid and invalid (the report has none)",
+   "16": "ballots taken as valid and invalid (the report has none)",
+   "17": "ballots taken as valid and invalid (the report has none)",
+   "19": "ballots taken as valid and invalid (the report has none)",
+   "24": "ballots taken as valid and invalid (the report has none)",
+   "25": "ballots taken as valid and invalid (the report has none)",
+   "26": "ballots taken as valid and invalid (the report has none)",
+   "27": "ballots taken as valid and invalid (the report has none)",
+   "28": "ballots taken as valid and invalid (the report has none)"
+  }
+ }
+}
