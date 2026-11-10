@@ -644,6 +644,14 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   (a run's artifacts are stored where the session can't reach), deleted once read, and Claude
   reads the numbers into `data/local_hand.csv`; each row must add up and all of them to the report's totals,
   and a row that doesn't is left for Marko.
+  Read the same day. Temerin: 31 stations, every row adds up, and their sum is the report's to the vote
+  (registered 24,763, voted 12,055, ballots 12,054, invalid 367, lists 7,208 / 2,002 / 2,055 / 422). Sečanj: 17
+  stations, stations 7 and 8 from their repeated votes (10 and 17 Dec 2025; the first minutes summed with the
+  rest miss the report by 10 valid votes, the repeats match it exactly): voted 6,966, ballots 6,965, invalid 178,
+  lists 4,103 / 285 / 111 / 2,179 / 109; the registered voters add up to 10,227, one more than the report's
+  10,226, with every cell read twice: left as the minutes have it, for Marko. The lists' names are printed on the
+  minutes. Published as `L80446-20240602` and `L80373-20251130`. A municipality's page no longer lists another
+  municipality's local election among the elections it "didn't vote in".
 - **9 Nov 2026, today's failed runs.** Three **pages** deploys timed out at GitHub's default 10 minutes in
   "syncing files" (the builds were fine, the next deploys took under 3 minutes): the deploy now waits 30. Two
   **geo** runs failed on Overpass's 504: a third server joins the rotation. The morning's **test** and **stations**

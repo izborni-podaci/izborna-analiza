@@ -616,7 +616,8 @@ def cmd_local(args) -> int:
         cands = local.report_candidates(store, args.results, args.date)
         if args.hand:  # the stations read by eye from the minutes; the commission's report (its totals) is the source
             report = next((u for u in cands if "ukup" in watch.fold(urllib.parse.unquote(u))), cands[0] if cands else "")
-            names = local.list_names(watch.load_store(root)["docs"], store, args.results, args.date)
+            names = [] if local.hand_names(root, local.round_id(args.results, args.date)) else \
+                local.list_names(watch.load_store(root)["docs"], store, args.results, args.date)
             local.build(root, args.results, args.date, args.name, report, None, [n for n, _ in names], log)
             return 0
         if args.url:

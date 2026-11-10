@@ -493,7 +493,7 @@ class Site:
                                    self.peers[rid]["mun"]["digest"], self.docs_known[rid],
                                    self.observed[rid][code]) for rid in rids],
                      [(p.id, p.rounds, p.newest.number, p.newest.name, p.former_numbers, self.flagged_in(p))
-                      for p in places], [self.shorts[loc][r] for r in newest_first if r not in rids]])
+                      for p in places], [self.shorts[loc][r] for r in newest_first if r not in rids and not self.local_report(r)]])
 
     def history_context(self, loc: str, code: str, rid: str) -> dict:
         """A municipality's other elections, for its page in election `rid`: the strip of its elections (newest
@@ -522,7 +522,7 @@ class Site:
                    sum(1 for p in mine if rids[0] not in p.stations),
                    sum(1 for p in mine if rids[0] in p.stations and p.former_numbers))
         elections = [self.municipality_election(r, code, self.shorts[loc][r]) for r in rids]
-        analysis = narrative.municipality(elections, [self.shorts[loc][r] for r in newest_first if r not in rids],
+        analysis = narrative.municipality(elections, [self.shorts[loc][r] for r in newest_first if r not in rids and not self.local_report(r)],
                                           repeat, network, loc)
         return {"strip": strip, "history": {"rows": rows, "places": places, "analysis": analysis,
                                             "charts": self.trends(rids, elections, "all", loc), "n": len(rids)}}

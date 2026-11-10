@@ -1,0 +1,48 @@
+{
+ "contest": {},
+ "contestants": [
+  {
+   "name": "Александар Вучић – Најбоље за Сечањ!",
+   "rik_name": "АЛЕКСАНДАР ВУЧИЋ – НАЈБОЉЕ ЗА СЕЧАЊ!",
+   "short": "Најбоље за Сечањ"
+  },
+  {
+   "name": "Ивица Дачић – Социјалистичка партија Србије – За општину свих нас",
+   "rik_name": "ИВИЦА ДАЧИЋ – СОЦИЈАЛИСТИЧКА ПАРТИЈА СРБИЈЕ – ЗА ОПШТИНУ СВИХ НАС",
+   "short": "СПС"
+  },
+  {
+   "name": "Вукашин Баћина – За бољу општину Сечањ",
+   "rik_name": "ВУКАШИН БАЋИНА – ЗА БОЉУ ОПШТИНУ СЕЧАЊ",
+   "short": "За бољу општину Сечањ"
+  },
+  {
+   "name": "Глас младих који мења Сечањ",
+   "rik_name": "ГЛАС МЛАДИХ КОЈИ МЕЊА СЕЧАЊ",
+   "short": "Глас младих"
+  },
+  {
+   "name": "Др Војислав Шешељ – Српска радикална странка",
+   "rik_name": "ДР ВОЈИСЛАВ ШЕШЕЉ – СРПСКА РАДИКАЛНА СТРАНКА",
+   "short": "СРС"
+  }
+ ],
+ "date": "2025-11-30",
+ "kind": "local",
+ "rik_type": 3,
+ "source": "commission",
+ "title": "Локални 2025 - Сечањ",
+ "local": {
+  "municipality": "80373",
+  "report": "https://secanj.ls.gov.rs/wp-content/uploads/2025/12/Ukupan-izvestaj.pdf",
+  "stations_from": "680072",
+  "from": "minutes",
+  "aside": [],
+  "notes": {
+   "2": "the board corrected the ballots from 405 to 402 on the minutes",
+   "7": "the repeated vote of 10 Dec 2025 (the first, of 30 Nov, was annulled)",
+   "8": "the repeated vote of 17 Dec 2025",
+   "17": "list 3: a dash on the minutes, taken as 0"
+  }
+ }
+}
