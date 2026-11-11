@@ -821,4 +821,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   its table; a report is now read to its last page (`to_end`).  Turned upright, Zemun's table still read badly: Tesseract took its ruled lines for ones and ran cells together.
   Taking the lines out first (`boards.unruled`, OpenCV, in the results step with `uv run --with` as for the
   sheets) read a test page nearly whole.
+- **11 Nov 2026, Zemun 2024 read by eye.** With the scan turned, its lines taken out and read as one block
+  (`--psm 6` when the first reading gives no row), OCR gave 61 rows of 115, but numbered by their order, and with
+  rows lost on the way every one after was a station off: 114 of 115 differed from the report. So the stations'
+  numbers OCR gives are not to be trusted where it drops rows, and every station was read by eye from the turned
+  pages into `data/local_corrections.csv`: each row adds up, and the sums are the commission's totals to the vote
+  (169,069 registered, 77,463 out, 77,415 voted, 1,770 invalid, 75,645 valid, all nine lists). The lists' names
+  are the report's; the stations' names come from the Belgrade round of the same day (567956).
 
