@@ -1,0 +1,152 @@
+{
+ "contest": {},
+ "contestants": [
+  {
+   "name": "Александар Вучић – Власотинце не сме да стане",
+   "rik_name": "АЛЕКСАНДАР ВУЧИЋ – ВЛАСОТИНЦЕ НЕ СМЕ ДА СТАНЕ",
+   "short": "Власотинце не сме да стане"
+  },
+  {
+   "name": "Јединствена Србија – Драган Марковић Палма – Локални развој",
+   "rik_name": "ЈЕДИНСТВЕНА СРБИЈА – ДРАГАН МАРКОВИЋ ПАЛМА – ЛОКАЛНИ РАЗВОЈ",
+   "short": "Јединствена Србија"
+  },
+  {
+   "name": "Ивица Дачић – Премијер Србије",
+   "rik_name": "ИВИЦА ДАЧИЋ – ПРЕМИЈЕР СРБИЈЕ",
+   "short": "Ивица Дачић"
+  },
+  {
+   "name": "Милица Ђурђевић Стаменковски – Бошко Обрадовић – Национално окупљање – Државотворна снага – Српска странка Заветници – Српски покрет Двери – Бошко Станчић – Горан Јовановић",
+   "rik_name": "МИЛИЦА ЂУРЂЕВИЋ СТАМЕНКОВСКИ – БОШКО ОБРАДОВИЋ – НАЦИОНАЛНО ОКУПЉАЊЕ – ДРЖАВОТВОРНА СНАГА – СРПСКА СТРАНКА ЗАВЕТНИЦИ – СРПСКИ ПОКРЕТ ДВЕРИ – БОШКО СТАНЧИЋ – ГОРАН ЈОВАНОВИЋ",
+   "short": "Национално окупљање"
+  },
+  {
+   "name": "„Власотинце у срцу – др Саша Савић“",
+   "rik_name": "„ВЛАСОТИНЦЕ У СРЦУ – ДР САША САВИЋ“",
+   "short": "Власотинце у срцу"
+  },
+  {
+   "name": "„Дејан Мајорац“",
+   "rik_name": "„ДЕЈАН МАЈОРАЦ“",
+   "short": "Дејан Мајорац"
+  },
+  {
+   "name": "„Заједно за Власотинце – Милан Бан – др Митов – Жарко Паша“",
+   "rik_name": "„ЗАЈЕДНО ЗА ВЛАСОТИНЦЕ – МИЛАН БАН – ДР МИТОВ – ЖАРКО ПАША“",
+   "short": "Заједно за Власотинце"
+  },
+  {
+   "name": "Др Спасић",
+   "rik_name": "ДР СПАСИЋ",
+   "short": "Др Спасић"
+  },
+  {
+   "name": "Група грађана „Мирослав Љубеновић – Једини прави избор“",
+   "rik_name": "ГРУПА ГРАЂАНА „МИРОСЛАВ ЉУБЕНОВИЋ – ЈЕДИНИ ПРАВИ ИЗБОР“",
+   "short": "Једини прави избор"
+  },
+  {
+   "name": "Народни покрет Србије – Мирослав Мики Алексић – за Власотинце",
+   "rik_name": "НАРОДНИ ПОКРЕТ СРБИЈЕ – МИРОСЛАВ МИКИ АЛЕКСИЋ – ЗА ВЛАСОТИНЦЕ",
+   "short": "Народни покрет Србије"
+  },
+  {
+   "name": "Не се знаје заре игра – за Власотинце – Владимир Митровић Заре (Странка слободе и правде, Демократска странка)",
+   "rik_name": "НЕ СЕ ЗНАЈЕ ЗАРЕ ИГРА – ЗА ВЛАСОТИНЦЕ – ВЛАДИМИР МИТРОВИЋ ЗАРЕ (СТРАНКА СЛОБОДЕ И ПРАВДЕ, ДЕМОКРАТСКА СТРАНКА)",
+   "short": "Не се знаје заре игра"
+  }
+ ],
+ "date": "2023-12-17",
+ "kind": "local",
+ "rik_type": 3,
+ "source": "commission",
+ "title": "Локални 2023 - Власотинце",
+ "local": {
+  "municipality": "70424",
+  "report": "https://vlasotince.rs/wp-content/uploads/2024/01/Ukupni-rezultati.pdf",
+  "stations_from": "341140",
+  "aside": [],
+  "check": {
+   "matches": false,
+   "differs": {
+    "registered": [
+     22901,
+     5
+    ],
+    "valid": [
+     16025,
+     16
+    ],
+    "out": [
+     16457,
+     16
+    ]
+   },
+   "missing": [
+    "v"
+   ],
+   "ready": false
+  },
+  "notes": {
+   "1": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "2": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "3": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "4": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "5": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "6": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "7": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "8": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "9": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "10": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "11": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "12": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "13": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "14": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "15": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "16": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "17": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "18": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "19": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "20": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "21": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "22": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "23": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "24": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "25": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "26": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "27": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "28": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "29": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "30": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "31": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "32": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "33": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "34": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "35": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "36": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "37": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "38": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "39": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "40": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "41": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "42": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "43": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "44": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "45": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "46": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "47": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "48": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "49": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "50": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "51": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "52": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "53": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "54": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "55": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "56": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "57": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "58": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)"
+  }
+ }
+}
