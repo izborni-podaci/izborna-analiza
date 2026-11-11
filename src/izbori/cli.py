@@ -113,6 +113,7 @@ def cmd_register(args) -> int:
     html = body.decode("utf-8", "replace")
     options = re.findall(r'<option[^>]*value="(\d+)"[^>]*>\s*([^<]+?)\s*</option>', html)
     rounds = [(v, n) for v, n in options if re.search(r"Локал|Lokal|Парламент|Покрајин|Председ", n)]
+    todo = []
     for v, n in rounds:
         print(f"round {v}: {latin(n)}")
     for v, n in rounds:
@@ -141,19 +142,28 @@ def cmd_register(args) -> int:
                 title = latin((r.get('document_name') or '').strip())
                 print(f"    {where} | {title[:90]} | {links[0] if links else ''}")
                 if args.reports and links and TOTAL_REPORT.search(watch.fold(title)):
-                    try:
-                        print(f"    report: {latin(n)} | {where} | {report_shape(client.get_bytes(links[0]))}")
-                    except Exception as e:  # noqa: BLE001 - one document down must not stop the rest
-                        print(f"    report: {latin(n)} | {where} | {type(e).__name__}")
+                    todo.append((latin(n), where, links[0]))
+    if todo:
+        from concurrent.futures import ThreadPoolExecutor
+
+        def shape(item):
+            try:
+                return item, report_shape(client.get_bytes(item[2]))
+            except Exception as e:  # noqa: BLE001 - one document down must not stop the rest
+                return item, type(e).__name__
+        with ThreadPoolExecutor(4) as pool:
+            for (rnd, where, link), got in pool.map(shape, todo):
+                print(f"    report: {rnd} | {where} | {got} | {link}", flush=True)
     return 0
 
 
 TOTAL_REPORT = re.compile(r"ukupa|ukupn|zbirn")
 
 
-def report_shape(data: bytes) -> str:
+def report_shape(data: bytes, ocr: bool = True) -> str:
     """A report's shape, never its text: its pages, whether it has a text layer, and how many of its lines hold five
-    or more figures (a table by polling station has one such line a station; totals only, a handful)."""
+    or more figures (a table by polling station has one such line a station; totals only, a handful), a scan's
+    counted on its first two pages by OCR."""
     import re
     import subprocess
     import tempfile
@@ -166,8 +176,12 @@ def report_shape(data: bytes) -> str:
         pages = int((re.search(r"Pages:\s+(\d+)", info) or [0, 0])[1])
         text = subprocess.run(["pdftotext", "-layout", str(path), "-"], capture_output=True, text=True).stdout
     letters = len(re.findall(r"[A-Za-zА-Яа-яЂ-џČĆŽŠĐčćžšđ]", text))
+    kind = "text" if letters > 200 else "scan"
+    if kind == "scan" and ocr:  # a scan's first two pages read as a report's are: upright, its ruled lines out
+        from izbori import boards
+        text = boards.pdf_text(data, max_pages=2, dpi=300, psm=6, ocr=True, turn=True, to_end=True)
     rows = sum(1 for line in text.splitlines() if len(re.findall(r"(?<![\d.,])\d[\d.]*(?![\d])", line)) >= 5)
-    return f"{pages} pages | {'text' if letters > 200 else 'scan'} | {rows} rows of figures"
+    return f"{pages} pages | {kind} | {rows} rows of figures"
 
 
 def cmd_rounds(args) -> int:

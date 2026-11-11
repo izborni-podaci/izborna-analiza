@@ -19,7 +19,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,6 +30,6 @@ jobs:
           pip install uv && uv sync --frozen
           uv run izbori rounds
           if [ "${{ inputs.reports }}" = "true" ]; then
-            sudo apt-get install -y -q poppler-utils >/dev/null
-            uv run izbori register --reports
+            sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils >/dev/null
+            uv run --with "numpy>=1.26" --with "opencv-python-headless>=4.9" izbori register --reports
           elif [ "${{ inputs.register }}" = "true" ]; then uv run izbori register; fi

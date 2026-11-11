@@ -910,3 +910,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   reports by station the municipal sites gave. Whether each is by station (as the law asks since 2022) or totals
   only is not known from the title, so `register --reports` (probe `reports`) fetches each and logs its shape only:
   pages, text layer or scan, and lines with five or more figures. No title or text is stored.
+  The first run: 208 total reports, 172 of them scans, so their shape said nothing — a scan of 2–4 pages is a table
+  by station (Vlasotince's, 3 pages) as often as totals (Temerin's, 3 pages). Of the 36 with a text layer, 19 have
+  15 or more rows of figures (Prokuplje 2023: 103). A scan's first two pages are now read by OCR as a report's are
+  (upright, ruled lines out, psm 6) and their rows of figures counted, four reports at a time.

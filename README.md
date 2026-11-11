@@ -490,7 +490,7 @@ Otherwise the station has none: unknown is not zero. Names are compared in Latin
 
 1. **Pages:** in Settings → Pages, choose "GitHub Actions" as the source. Then run the **pages** workflow once (Actions → pages → Run workflow).
 2. **Reaching RIK:** run the **probe** workflow by hand. It lists the rounds RIK offers and changes nothing.
-   - With `register` it also lists what RIK's register of commissions' documents holds for each local round (`izbori register`: how many commission decisions, polling-station acts and board decisions, and each report of results with its municipality, title and link); with `reports` it also fetches each commission's total report and logs only its shape (pages, whether it has a text layer, how many lines hold five or more figures), never its text.
+   - With `register` it also lists what RIK's register of commissions' documents holds for each local round (`izbori register`: how many commission decisions, polling-station acts and board decisions, and each report of results with its municipality, title and link); with `reports` it also fetches each commission's total report and logs only its shape (pages, whether it has a text layer, how many lines hold five or more figures), never its text (a scan's rows counted by OCR of its first two pages).
    - If it fails to connect, RIK is blocking GitHub's servers.
    - Then run `uv run izbori update --watch --commit --push` on election night from a computer in Serbia.
 3. **Email:** get a neutral sender mailbox with SMTP and add these repository secrets:
