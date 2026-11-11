@@ -538,6 +538,7 @@ def test_the_commission_s_totals():
     assert local.check_totals(rows, t) == {"matches": True, "differs": {}}
     rows[0]["v"] = [12388, 1919, 1212, 537, 610, 859, 3709]  # two lists swapped a hundred: the rows add up, not the lists
     assert local.check_totals(rows, t)["differs"] == {"v": [rows[0]["v"], t["v"]]}
+    assert local.check_totals(rows, t)["over"] == [2]  # list 2 already more than its total: misread somewhere
     assert local.check_totals(rows, None)["matches"] is False
 
 

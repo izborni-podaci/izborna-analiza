@@ -861,5 +861,6 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   how the totals check and the pages in the same run were tried on Prokuplje 2023, whose station 62 the reader
   reads wrong while the row adds up.  The dry run read 84 of Prokuplje's stations (2 set aside, 5 lost) where the first reading had 87 (3 aside): turning
   and taking the lines out, which Zemun needed, costs Prokuplje's cleaner scan. So a report is now read both as it
-  is and turned (and as one block when neither gives a row), keeping the reading with most stations.
+  is and turned (and as one block when neither gives a row), keeping the reading with most stations.  Read so again, Prokuplje's 87 stations already give list 2 1,840 votes of its 1,819 with three stations to come:
+  the check now names such lists (`over`), a misread row that adds up, before anything set aside is read.
 

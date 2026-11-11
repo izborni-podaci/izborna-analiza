@@ -569,7 +569,11 @@ def check_totals(rows: list[dict], totals: dict | None) -> dict:
     if "out" in totals and totals["out"] not in (sums["out"], sums["voted"]):
         differs["out"] = [sums["out"], totals["out"]]
     missing = [f for f in ("registered", "valid", "invalid", "v") if f not in totals]
-    return {"matches": not differs and not missing, "differs": differs, **({"missing": missing} if missing else {})}
+    # a list whose stations already add up to more than its total is misread somewhere, whatever is still missing
+    # (Prokuplje's list 2: 1,840 of 1,819 with stations still to read, from station 62's swap)
+    over = [j + 1 for j in range(min(k, len(totals.get("v", [])))) if sums["v"][j] > totals["v"][j]]
+    return {"matches": not differs and not missing, "differs": differs, **({"missing": missing} if missing else {}),
+            **({"over": over} if over else {})}
 
 
 REPORT_AFTER = 40  # days after the election in which the commission's report is dated (Sečanj 2025: 21, after a repeat)
