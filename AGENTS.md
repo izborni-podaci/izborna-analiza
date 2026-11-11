@@ -887,4 +887,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   page, only its files; the rest are unchanged. Two things for later: several municipalities keep their files on
   media.readycms.io (their CMS's host, which `same_site` rejects), and RIK's own site carries some local
   commissions' reports ("extfile/sr/files/additionalDocuments/…", Ruma's totals among them).
+- **11 Nov 2026, a CMS's file host.** Some municipalities' sites keep their files on their CMS's host
+  (media.readycms.io: Ub's gazette, probably Lajkovac's lists). A document there now counts when it is linked from
+  the municipality's own pages (`watch.FILE_HOSTS`); the host's own pages aren't followed, since it serves other
+  sites too. RIK's results app has one local round (Belgrade 2024); the local commissions' documents it hosts under
+  additionalDocuments (Ruma's totals, a decision of Novi Sad's) aren't reached by any of our readers yet.
 

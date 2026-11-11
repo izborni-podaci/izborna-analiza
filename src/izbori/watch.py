@@ -142,6 +142,11 @@ def why(e: Exception) -> str:
     return f"{type(e).__name__} {str(reason)[:80]}".strip()
 
 
+# the file hosts of the CMSs some municipalities' sites run on (Ub's, Lajkovac's): a document there linked from the
+# municipality's own pages is its own; the host serves other sites too, so only such links count, never a search
+FILE_HOSTS = ("media.readycms.io",)
+
+
 def same_site(netloc: str, host: str) -> bool:
     """A link on the municipality's own site: its domain, with or without www., or a subdomain of it (Novi Sad's
     commission documents on skupstina.novisad.rs)."""
@@ -179,7 +184,8 @@ def crawl(domain: str, log=None, fetcher=fetch, sleep=time.sleep, pages_of: tupl
     def take(html: str, url: str, depth: int) -> None:
         for href, text in links_of(html, url):
             u = urllib.parse.urlsplit(href)
-            if not same_site(u.netloc, host):
+            on_file_host = u.netloc.lower() in FILE_HOSTS and u.path.lower().endswith(DOC_EXT)
+            if not same_site(u.netloc, host) and not on_file_host:
                 continue
             path = u.path.lower()
             about = fold(text + " " + urllib.parse.unquote(path))

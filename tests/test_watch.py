@@ -140,3 +140,10 @@ def test_crawl_starts_from_the_commission_s_own_page_and_its_subdomain():
                         pages_of=("https://skupstina.primer.rs/oik/akta/",))
     assert found == {"https://skupstina.primer.rs/f/resenje-bo-bm-3.pdf": "boards"}  # not another site's
     assert watch.same_site("www.primer.rs", "primer.rs") and not watch.same_site("neprimer.rs", "primer.rs")
+
+
+def test_a_document_on_the_site_s_file_host():
+    pages = {"https://ub.rs/": '<a href="https://media.readycms.io/x/Odluka%20o%20birackim%20mestima.pdf">Одлука о '
+                               'бирачким местима</a><a href="https://media.readycms.io/x/strana/">Страна</a>'}
+    found = watch.crawl("ub.rs", fetcher=lambda u: pages.get(u, ""), sleep=lambda s: None)
+    assert found == {"https://media.readycms.io/x/Odluka%20o%20birackim%20mestima.pdf": "stations"}  # its pages not followed
