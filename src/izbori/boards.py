@@ -398,15 +398,21 @@ def rotation(osd: str) -> int:
 
 def upright(png: Path) -> None:
     """A scan laid sideways (Zemun's report of 2024: a wide table on portrait pages) turned upright in place, when
-    Tesseract can tell its orientation and ImageMagick is there to turn it."""
-    convert = shutil.which("magick") or shutil.which("convert")
-    if not convert:
-        return
+    Tesseract can tell its orientation."""
     osd = subprocess.run(["tesseract", str(png), "-", "--psm", "0"], capture_output=True, text=True,
                          env={**os.environ, "OMP_THREAD_LIMIT": "1"})
     degrees = rotation(osd.stdout + osd.stderr)
-    if degrees:
-        subprocess.run([convert, str(png), "-rotate", str(degrees), str(png)], capture_output=True)
+    if not degrees:
+        return
+    try:  # OpenCV where the step has it (the results step), else ImageMagick
+        import cv2
+        turns = {90: cv2.ROTATE_90_CLOCKWISE, 180: cv2.ROTATE_180, 270: cv2.ROTATE_90_COUNTERCLOCKWISE}
+        g = cv2.imread(str(png), cv2.IMREAD_GRAYSCALE)
+        cv2.imwrite(str(png), cv2.rotate(g, turns[degrees]))
+    except ImportError:
+        convert = shutil.which("magick") or shutil.which("convert")
+        if convert:
+            subprocess.run([convert, str(png), "-rotate", str(degrees), str(png)], capture_output=True)
 
 
 def unruled(png: Path) -> None:
