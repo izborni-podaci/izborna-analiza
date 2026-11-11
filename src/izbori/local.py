@@ -529,7 +529,7 @@ LIST_NAME = re.compile(r"(?:изборн[ауе]\s+лист[ауе]|izborn[aue]\
 # A report of the municipality's totals (on its own, or before a table of stations) gives registered, out, voted,
 # invalid and valid on labelled lines, then each list's votes with its share ("12.488 57,26%", "3747 61,35% 21").
 # The draft's sums must match them to the vote before it is published.
-NUMBER = r"\d{1,3}(?:(?:[.,]|\.\s)\d{3})+|\d+"
+NUMBER = r"\d{1,3}(?:(?:[.,]|\.\s|\s)\d{3})(?:(?:[.,]|\.\s|\s)\d{3})*(?!\d)|\d+"  # 22.901, 77. 415, 22 901
 TOTAL_FIELDS = (("registered", r"уписан|upisan"), ("out", r"изаш|izaš|izas"),
                 ("voted", r"гласали|glasali|гласало|glasalo"), ("invalid", r"неважећ|nevažeć|nevazec"),
                 ("valid", r"(?<![нН][еЕ])важећ|(?<![nN][eE])važeć|(?<![nN][eE])vazec"))

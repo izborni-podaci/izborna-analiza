@@ -552,3 +552,10 @@ def test_a_link_s_variants():
     assert local.link_variants("https://g.rs/2020/05/SOG 1.docx?lang=lat") == [
         "https://g.rs/2020/05/SOG 1.docx?lang=lat", "https://g.rs/2020/05/SOG 1.docx", "https://g.rs/2020/05/SOG-1.docx"]
     assert local.link_variants("https://g.rs/a.pdf") == ["https://g.rs/a.pdf"]
+
+
+def test_totals_with_spaces_between_thousands():
+    t = local.totals_of("2. БРОЈ БИРАЧА УПИСАНИХ У БИРАЧКИ СПИСАК: 22 901\n3. БРОЈ БИРАЧА КОЈИ ЈЕ ИЗАШАО НА ИЗБОРЕ 16 457\n"
+                        "4. БРОЈ ГЛАСАЧКИХ ЛИСТИЋА КОЈИ СЕ НАЛАЗЕ У ГЛАСАЧКИМ КУТИЈАМА: 16 454\n"
+                        "5. БРОЈ НЕВАЖЕЋИХ ГЛАСАЧКИХ ЛИСТИЋА: 429\n6. БРОЈ ВАЖЕЋИХ ГЛАСАЧКИХ ЛИСТИЋА: 16 025\n")
+    assert (t["registered"], t["out"], t["invalid"], t["valid"]) == (22901, 16457, 429, 16025)
