@@ -137,9 +137,37 @@ def cmd_register(args) -> int:
             print(f"    {len(per)} municipalities; {len(reports)} reports of results")
             for r in reports:
                 links = re.findall(r'href="([^"]+)"', " ".join(r.get("extfiles_link") or []))
-                print(f"    {latin((r.get('municipality_display_name') or '').strip())} | "
-                      f"{latin((r.get('document_name') or '').strip())[:90]} | {links[0] if links else ''}")
+                where = latin((r.get('municipality_display_name') or '').strip())
+                title = latin((r.get('document_name') or '').strip())
+                print(f"    {where} | {title[:90]} | {links[0] if links else ''}")
+                if args.reports and links and TOTAL_REPORT.search(watch.fold(title)):
+                    try:
+                        print(f"    report: {latin(n)} | {where} | {report_shape(client.get_bytes(links[0]))}")
+                    except Exception as e:  # noqa: BLE001 - one document down must not stop the rest
+                        print(f"    report: {latin(n)} | {where} | {type(e).__name__}")
     return 0
+
+
+TOTAL_REPORT = re.compile(r"ukupa|ukupn|zbirn")
+
+
+def report_shape(data: bytes) -> str:
+    """A report's shape, never its text: its pages, whether it has a text layer, and how many of its lines hold five
+    or more figures (a table by polling station has one such line a station; totals only, a handful)."""
+    import re
+    import subprocess
+    import tempfile
+    if data[:4] != b"%PDF":
+        return f"not a PDF ({len(data)} bytes)"
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "doc.pdf"
+        path.write_bytes(data)
+        info = subprocess.run(["pdfinfo", str(path)], capture_output=True, text=True).stdout
+        pages = int((re.search(r"Pages:\s+(\d+)", info) or [0, 0])[1])
+        text = subprocess.run(["pdftotext", "-layout", str(path), "-"], capture_output=True, text=True).stdout
+    letters = len(re.findall(r"[A-Za-zА-Яа-яЂ-џČĆŽŠĐčćžšđ]", text))
+    rows = sum(1 for line in text.splitlines() if len(re.findall(r"(?<![\d.,])\d[\d.]*(?![\d])", line)) >= 5)
+    return f"{pages} pages | {'text' if letters > 200 else 'scan'} | {rows} rows of figures"
 
 
 def cmd_rounds(args) -> int:
@@ -1097,6 +1125,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("rounds", help="list the elections and rounds RIK offers").set_defaults(fn=cmd_rounds)
     rg = sub.add_parser("register", help="what RIK's register of commissions' documents holds for local elections")
     rg.add_argument("--round", default="", help="only this register round")
+    rg.add_argument("--reports", action="store_true", help="also fetch each total report and give its shape")
     rg.set_defaults(fn=cmd_register)
 
     f = sub.add_parser("fetch", help="download one round now and archive it if it changed")

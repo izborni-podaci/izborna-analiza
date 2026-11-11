@@ -8,6 +8,10 @@ on:
         description: "Also list what RIK's register of commissions' documents holds for local elections"
         type: boolean
         default: false
+      reports:
+        description: "With register: fetch each commission's total report and give its shape (pages, text layer, rows of figures)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -25,4 +29,7 @@ jobs:
         run: |
           pip install uv && uv sync --frozen
           uv run izbori rounds
-          if [ "${{ inputs.register }}" = "true" ]; then uv run izbori register; fi
+          if [ "${{ inputs.reports }}" = "true" ]; then
+            sudo apt-get install -y -q poppler-utils >/dev/null
+            uv run izbori register --reports
+          elif [ "${{ inputs.register }}" = "true" ]; then uv run izbori register; fi

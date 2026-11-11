@@ -901,4 +901,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   municipality's local elections, not yet read.  Published, 58 stations named from the parliamentary round of the same day (341140). The totals check couldn't
   confirm it by itself: the report writes thousands with a space ("22 901"), now read, and gives the lists' votes
   without shares, which `totals_of` doesn't take; the sums were checked against the report by eye.
-
+- **12 Nov 2026, RIK's register holds the local commissions' reports.** `izbori register` (probe `register`) read
+  RIK's register of commissions' documents for its local rounds: Lokalni 2022, 2023 and 2024, the city
+  municipalities of 2024 and 2026, Belgrade's rounds, and the 2025 and 2026 local elections. Each holds thousands of
+  commission documents (5,374 for 2024, 5,184 for 2023) and a total report („Укупан/Укупни/Збирни извештај о
+  резултатима…“) for nearly every municipality listed: 13 of 14 for 2022, 64 of 66 for 2023, 65 of 66 for 2024, 23
+  of 23 city municipalities in 2024, all 9 in 2026 and all 5 in 2025 — about 180 local elections, against the 6
+  reports by station the municipal sites gave. Whether each is by station (as the law asks since 2022) or totals
+  only is not known from the title, so `register --reports` (probe `reports`) fetches each and logs its shape only:
+  pages, text layer or scan, and lines with five or more figures. No title or text is stored.

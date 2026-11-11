@@ -705,3 +705,10 @@ def test_city_page_adds_its_municipalities_up(site):
     assert "0; url=../beograd/" in (site / "g/beograd.html").read_text(encoding="utf-8")
     poz = (site / "pozarevac/index.html").read_text(encoding="utf-8")
     assert "(grad bez gradskih opština)" in poz and ("Kostolac" in poz)
+
+
+def test_register_report_shape_names_nothing():
+    from izbori import cli
+    assert cli.report_shape(b"<html>") == "not a PDF (6 bytes)"
+    assert cli.TOTAL_REPORT.search("ukupan izvestaj o rezultatima")
+    assert not cli.TOTAL_REPORT.search("izvestaj o sprovedenim izborima")
