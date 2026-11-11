@@ -2,31 +2,49 @@
  "contest": {},
  "contestants": [
   {
-   "name": "Изборна листа 1"
+   "name": "Александар Вучић – Земун сутра (Ивица Дачић – Социјалистичка партија Србије – СПС; Милан Кркобабић – Партија уједињених пензионера, пољопривредника и пролетера Србије – Солидарност и правда – ПУПС – Солидарност и правда; др Војислав Шешељ – Српска радикална странка – СРС; Александар Вулин – Покрет социјалиста – ПС; Ненад Поповић – Српска народна партија – СНП; Милица Ђурђевић Стаменковски – Српска странка Заветници – Заветници; Милош Вучевић – Српска напредна странка – СНС)",
+   "rik_name": "АЛЕКСАНДАР ВУЧИЋ – ЗЕМУН СУТРА (ИВИЦА ДАЧИЋ – СОЦИЈАЛИСТИЧКА ПАРТИЈА СРБИЈЕ – СПС; МИЛАН КРКОБАБИЋ – ПАРТИЈА УЈЕДИЊЕНИХ ПЕНЗИОНЕРА, ПОЉОПРИВРЕДНИКА И ПРОЛЕТЕРА СРБИЈЕ – СОЛИДАРНОСТ И ПРАВДА – ПУПС – СОЛИДАРНОСТ И ПРАВДА; ДР ВОЈИСЛАВ ШЕШЕЉ – СРПСКА РАДИКАЛНА СТРАНКА – СРС; АЛЕКСАНДАР ВУЛИН – ПОКРЕТ СОЦИЈАЛИСТА – ПС; НЕНАД ПОПОВИЋ – СРПСКА НАРОДНА ПАРТИЈА – СНП; МИЛИЦА ЂУРЂЕВИЋ СТАМЕНКОВСКИ – СРПСКА СТРАНКА ЗАВЕТНИЦИ – ЗАВЕТНИЦИ; МИЛОШ ВУЧЕВИЋ – СРПСКА НАПРЕДНА СТРАНКА – СНС)",
+   "short": "Земун сутра"
   },
   {
-   "name": "Изборна листа 2"
+   "name": "Народна листа за Земун (Народна странка – Владимир Гајић, Живим за Србију – др Јована Стојковић)",
+   "rik_name": "НАРОДНА ЛИСТА ЗА ЗЕМУН (НАРОДНА СТРАНКА – ВЛАДИМИР ГАЈИЋ, ЖИВИМ ЗА СРБИЈУ – ДР ЈОВАНА СТОЈКОВИЋ)",
+   "short": "Народна листа за Земун"
   },
   {
-   "name": "Изборна листа 3"
+   "name": "Група грађана „Доста је било пљачке, корупције и лоповлука – Радуловић Милорад“",
+   "rik_name": "ГРУПА ГРАЂАНА „ДОСТА ЈЕ БИЛО ПЉАЧКЕ, КОРУПЦИЈЕ И ЛОПОВЛУКА – РАДУЛОВИЋ МИЛОРАД“",
+   "short": "Доста је било пљачке"
   },
   {
-   "name": "Изборна листа 4"
+   "name": "Др Саво Манојловић – И ја сам Земун – Крени – Промени – И ја сам Батајница – Милан Љутовац",
+   "rik_name": "ДР САВО МАНОЈЛОВИЋ – И ЈА САМ ЗЕМУН – КРЕНИ – ПРОМЕНИ – И ЈА САМ БАТАЈНИЦА – МИЛАН ЉУТОВАЦ",
+   "short": "Крени – Промени"
   },
   {
-   "name": "Изборна листа 5"
+   "name": "Група грађана „Покренимо – окренимо Земун“",
+   "rik_name": "ГРУПА ГРАЂАНА „ПОКРЕНИМО – ОКРЕНИМО ЗЕМУН“",
+   "short": "Покренимо – окренимо Земун"
   },
   {
-   "name": "Изборна листа 6"
+   "name": "Руска странка – Борба за Земун – Срби и Руси браћа заувек",
+   "rik_name": "РУСКА СТРАНКА – БОРБА ЗА ЗЕМУН – СРБИ И РУСИ БРАЋА ЗАУВЕК",
+   "short": "Руска странка"
   },
   {
-   "name": "Изборна листа 7"
+   "name": "Група грађана „Ми – Глас из Земуна“",
+   "rik_name": "ГРУПА ГРАЂАНА „МИ – ГЛАС ИЗ ЗЕМУНА“",
+   "short": "Ми – Глас из Земуна"
   },
   {
-   "name": "Изборна листа 8"
+   "name": "Бирамо Земун – Лариса Илијин (Зелено-леви фронт, Не давимо Београд, Народни покрет Србије, Демократска странка, Еколошки устанак – Ћута, Покрет слободних грађана, Ново лице Србије)",
+   "rik_name": "БИРАМО ЗЕМУН – ЛАРИСА ИЛИЈИН (ЗЕЛЕНО-ЛЕВИ ФРОНТ, НЕ ДАВИМО БЕОГРАД, НАРОДНИ ПОКРЕТ СРБИЈЕ, ДЕМОКРАТСКА СТРАНКА, ЕКОЛОШКИ УСТАНАК – ЋУТА, ПОКРЕТ СЛОБОДНИХ ГРАЂАНА, НОВО ЛИЦЕ СРБИЈЕ)",
+   "short": "Бирамо Земун"
   },
   {
-   "name": "Изборна листа 9"
+   "name": "Група грађана „Земун против насиља – Драгана Радивојевић“",
+   "rik_name": "ГРУПА ГРАЂАНА „ЗЕМУН ПРОТИВ НАСИЉА – ДРАГАНА РАДИВОЈЕВИЋ“",
+   "short": "Земун против насиља"
   }
  ],
  "date": "2024-06-02",
@@ -37,101 +55,123 @@
  "local": {
   "municipality": "70157",
   "report": "https://zemun.rs/wp-content/uploads/2020/05/Rezultati-02.-juna-2024.-godine.pdf",
-  "stations_from": null,
-  "aside": [
-   {
-    "n": 4,
-    "why": "lists add up to 649, valid votes read 652"
-   },
-   {
-    "n": 8,
-    "why": "lists add up to 775, valid votes read 778"
-   },
-   {
-    "n": 13,
-    "why": "lists add up to 616, valid votes read 614"
-   },
-   {
-    "n": 20,
-    "why": "lists add up to 724, valid votes read 721"
-   },
-   {
-    "n": 21,
-    "why": "lists add up to 707, valid votes read 727"
-   },
-   {
-    "n": 28,
-    "why": "lists add up to 737, valid votes read 577"
-   },
-   {
-    "n": 36,
-    "why": "lists and valid votes unreadable"
-   },
-   {
-    "n": 37,
-    "why": "lists add up to 483, valid votes read 48"
-   },
-   {
-    "n": 38,
-    "why": "lists add up to 604, valid votes read 704"
-   },
-   {
-    "n": 49,
-    "why": "lists add up to 558, valid votes read 568"
-   },
-   {
-    "n": 54,
-    "why": "lists add up to 669, valid votes read 66"
-   },
-   {
-    "n": 57,
-    "why": "lists add up to 473, valid votes read 43"
-   },
-   {
-    "n": 59,
-    "why": "lists add up to 611, valid votes read 61"
-   },
-   {
-    "n": 61,
-    "why": "lists add up to 661, valid votes read 66"
-   },
-   {
-    "n": 63,
-    "why": "lists add up to 691, valid votes read 686"
-   },
-   {
-    "n": 64,
-    "why": "lists add up to 839, valid votes read 849"
-   },
-   {
-    "n": 74,
-    "why": "lists and valid votes unreadable"
-   },
-   {
-    "n": 76,
-    "why": "lists add up to 901, valid votes read 855"
-   },
-   {
-    "n": 77,
-    "why": "lists add up to 777, valid votes read 77"
-   }
-  ],
+  "stations_from": "567956",
+  "aside": [],
   "notes": {
-   "12": "list 6 read as strokes, from the valid votes",
-   "15": "list 6 from the valid votes",
-   "17": "list 9 read as strokes, from the valid votes",
-   "23": "list 5 from the valid votes",
-   "32": "list 9 from the valid votes",
-   "42": "voted taken as the ballots (read lower than them)",
-   "45": "list 6 from the valid votes",
-   "53": "list 6 read as strokes, from the valid votes",
-   "55": "list 2 from the valid votes; invalid from ballots and valid",
-   "56": "list 6 from the valid votes",
-   "58": "list 9 from the valid votes",
-   "60": "voted taken as the ballots (read lower than them)",
-   "69": "list 5 from the valid votes",
-   "72": "list 2 from the valid votes",
-   "79": "list 8 from the valid votes"
+   "1": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "2": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "3": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "4": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "6": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "7": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "8": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "9": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "10": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "11": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "12": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "13": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "14": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "15": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "16": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "17": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "18": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "19": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "20": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "21": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "22": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "23": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "24": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "25": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "26": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "27": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "28": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "29": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "30": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "31": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "32": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "33": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "34": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "35": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "36": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "37": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "38": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "39": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "40": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "41": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "42": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "43": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "44": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "45": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "46": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "47": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "48": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "49": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "50": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "51": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "52": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "53": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "54": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "55": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "56": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "57": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "58": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "59": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "60": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "61": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "62": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "63": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "64": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "65": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "66": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "67": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "68": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "69": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "70": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "71": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "72": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "73": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "74": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "75": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "76": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "77": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "78": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "79": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "80": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "81": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "82": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "83": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "84": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "85": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "86": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "87": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "88": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "89": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "90": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "91": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "92": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "93": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "94": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "95": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "96": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "97": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "98": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "99": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "100": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "101": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "102": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "103": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "104": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "105": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "106": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "107": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "108": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "109": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "110": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "111": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "112": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "113": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "114": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)",
+   "115": "checked by hand against the report (Claude, from the report's page, 11 Nov 2026)"
   }
  }
 }
