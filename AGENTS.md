@@ -847,5 +847,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   whether the masked text classifies as the full one does has to be measured on a real run first.  The first `results=day` (2 June 2024) found four municipalities with a report of that day not yet published —
   Alibunar, Bačka Palanka, Kanjiža, Novi Kneževac — and none is by station: decisions on preliminary results or the
   totals. A day with no report by station is an answer, so such a run no longer fails. The classify run after the
-  link fixes read 618 more documents (Bač's among them); 122 are left, 45 of them Golubac's "?lang=" links.
+  link fixes read 618 more documents (Bač's among them); 122 are left, 45 of them Golubac's "?lang=" links.  With Bač classified, the overview counts 69 local elections in 41 municipalities: 5 with a report by station
+  (all published), 21 with the commission's totals only, 7 with some boards' minutes. Bač 2024 has its totals
+  and preliminary results only, each found twice (bac.rs and www.bac.rs): a report's link is now read once
+  whatever its "www.".
 

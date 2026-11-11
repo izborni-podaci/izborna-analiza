@@ -582,9 +582,17 @@ def report_candidates(store: dict, code: str, day: str) -> list[str]:
     read and the one with most stations wins."""
     from datetime import timedelta
     last = (_date(day) + timedelta(days=REPORT_AFTER)).isoformat() if day else "9999"
-    return sorted(u for u, v in store["docs"].items() if v["m"] == code and v.get("e") in ("local", None)
-                  and (not day or day <= (v.get("d") or "") <= last)
-                  and re.search(r"izvest|izvjest|rezultat", watch.fold(urllib.parse.unquote(u))))
+    found = sorted(u for u, v in store["docs"].items() if v["m"] == code and v.get("e") in ("local", None)
+                   and (not day or day <= (v.get("d") or "") <= last)
+                   and re.search(r"izvest|izvjest|rezultat", watch.fold(urllib.parse.unquote(u))))
+    # the same file found under "www." and without (Bač's): read once
+    seen, out = set(), []
+    for u in found:
+        key = re.sub(r"^https?://(www\.)?", "", u)
+        if key not in seen:
+            seen.add(key)
+            out.append(u)
+    return out
 
 
 def round_id(code: str, day: str) -> str:

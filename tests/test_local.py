@@ -539,3 +539,9 @@ def test_the_commission_s_totals():
     rows[0]["v"] = [12388, 1919, 1212, 537, 610, 859, 3709]  # two lists swapped a hundred: the rows add up, not the lists
     assert local.check_totals(rows, t)["differs"] == {"v": [rows[0]["v"], t["v"]]}
     assert local.check_totals(rows, None)["matches"] is False
+
+
+def test_a_report_found_twice_is_read_once():
+    store = {"docs": {"https://bac.rs/a/izvestaj.pdf": {"m": "80055", "e": "local", "d": "2024-06-06"},
+                      "https://www.bac.rs/a/izvestaj.pdf": {"m": "80055", "e": "local", "d": "2024-06-06"}}}
+    assert local.report_candidates(store, "80055", "2024-06-02") == ["https://bac.rs/a/izvestaj.pdf"]
