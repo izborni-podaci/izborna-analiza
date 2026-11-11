@@ -493,7 +493,7 @@ class Site:
                                    self.peers[rid]["mun"]["digest"], self.docs_known[rid],
                                    self.observed[rid][code]) for rid in rids],
                      [(p.id, p.rounds, p.newest.number, p.newest.name, p.former_numbers, self.flagged_in(p))
-                      for p in places], [self.shorts[loc][r] for r in newest_first if r not in rids and not self.local_report(r)]])
+                      for p in places], [self.shorts[loc][r] for r in newest_first if r not in rids and self.analyses[r].round.kind != "local"]])
 
     def history_context(self, loc: str, code: str, rid: str) -> dict:
         """A municipality's other elections, for its page in election `rid`: the strip of its elections (newest
@@ -522,7 +522,7 @@ class Site:
                    sum(1 for p in mine if rids[0] not in p.stations),
                    sum(1 for p in mine if rids[0] in p.stations and p.former_numbers))
         elections = [self.municipality_election(r, code, self.shorts[loc][r]) for r in rids]
-        analysis = narrative.municipality(elections, [self.shorts[loc][r] for r in newest_first if r not in rids and not self.local_report(r)],
+        analysis = narrative.municipality(elections, [self.shorts[loc][r] for r in newest_first if r not in rids and self.analyses[r].round.kind != "local"],
                                           repeat, network, loc)
         return {"strip": strip, "history": {"rows": rows, "places": places, "analysis": analysis,
                                             "charts": self.trends(rids, elections, "all", loc), "n": len(rids)}}
@@ -1011,8 +1011,12 @@ class Site:
         # the same polling place across elections (address, name, number, manual corrections): the checks used
         # these links too, and the history table, the search and the pages across elections all follow them
         self.places = links(self.archive, rids[-1], self.cache) if rids else follow([])
-        rep_rows, rep_once = repeat.stations(oldest_first, self.places)
-        rep_muns, national = repeat.municipalities(oldest_first)
+        # Places to watch compares every station across the elections the whole country (or a whole province or
+        # city) voted in: a local round read from one municipality's own documents is shown on that municipality's
+        # and its stations' pages, not as a column every other station is "not part of" (Marko, 11 Nov 2026)
+        wide = [a for a in oldest_first if not (self.archive.meta(a.round.id) or {}).get("local")]
+        rep_rows, rep_once = repeat.stations(wide, self.places)
+        rep_muns, national = repeat.municipalities(wide)
         rep_same = repeat.same_counts(rep_rows)
         rep_n2 = sum(1 for r in rep_rows if r["k"] >= 2)
         by_code = defaultdict(set)
@@ -1085,7 +1089,6 @@ class Site:
         appear = [{"code": c.code, "group": c.group, "n": overall["counts"][c.code],
                    "w": 100 * overall["counts"][c.code] / top}
                   for c in sorted(CHECKS, key=lambda c: -overall["counts"].get(c.code, 0)) if overall["counts"].get(c.code)]
-        example = rep_rows[0] if rep_rows and rep_rows[0]["k"] >= 2 else None
         share = {a.round.id: len(a.by_station) / a.totals.stations if a.totals.stations else 0.0 for a in rounds}
         share_top = max(share.values(), default=0) or 1
         for rid in rids:  # loaded once here, before the languages are written side by side
@@ -1098,8 +1101,9 @@ class Site:
         cards = self.highlights_of(rids[-1]) if rids else {}
 
         def pages_in(loc: str) -> None:
-            columns = [{"id": a.round.id, "title": self.round_title(a.round, loc), "national": national[a.round.id],
+            columns = [{"id": a.round.id, "title": self.round_title(a.round, loc), "national": national.get(a.round.id),
                         "short": self.short_title(a.round, loc)} for a in oldest_first]
+            wide_ids = {a.round.id for a in wide}
             summaries = [{"id": a.round.id, "title_display": self.round_title(a.round, loc), "kind": a.round.kind,
                           "short": self.short_title(a.round, loc),
                           "date": fmt_date(self.archive.meta(a.round.id).get("date"), loc),
@@ -1124,7 +1128,7 @@ class Site:
             rep_mun_options = sorted({(r["station"].municipality_code, r["station"].municipality) for r in rep_rows},
                                      key=lambda x: collate(latin(x[1]) if loc == "en" else x[1], loc))
             self.write(loc, "repeat.html", "repeat.html", rows=rep_rows, once=rep_once, n2=rep_n2, muns=rep_muns, groups=groups,
-                       rounds=columns, same=rep_same, checks=CHECKS, group_of=group_of, example=example,
+                       rounds=[c for c in columns if c["id"] in wide_ids], same=rep_same, checks=CHECKS, group_of=group_of,
                        st_path=self.st_path, mun_options=rep_mun_options, slugs=self.slugs)
             cols = {c["id"]: c for c in columns}
             self.place_pages(loc, cols)

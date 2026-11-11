@@ -863,4 +863,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   and taking the lines out, which Zemun needed, costs Prokuplje's cleaner scan. So a report is now read both as it
   is and turned (and as one block when neither gives a row), keeping the reading with most stations.  Read so again, Prokuplje's 87 stations already give list 2 1,840 votes of its 1,819 with three stations to come:
   the check now names such lists (`over`), a misread row that adds up, before anything set aside is read.
+- **11 Nov 2026, local elections only where they belong (Marko).** A local election isn't shown where it isn't
+  relevant: Novi Sad's page said it "didn't vote in" Lokalni 2024 (Belgrade's), and Places to watch had a column for
+  every local round that all other stations were "not part of". A municipality's "didn't vote in" now leaves out
+  every local election, and Places to watch compares only the elections of the whole country, the province or
+  Belgrade; a local round read from a municipality's documents stays on that municipality's and its stations'
+  pages. Places to watch lost its worked example: one lede, and the four terms the table rests on set apart in a
+  box (flag, elections flagged k / n, the same flag again, the cells).
 

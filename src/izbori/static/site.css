@@ -749,6 +749,13 @@ table.votes th:first-child, table.votes td:first-child { position: sticky; left:
 .qa dt { font-weight: 600; }
 .qa dd { margin: 0; }
 @media (max-width: 600px) { .qa div { grid-template-columns: minmax(0, 1fr); } }
+/* the definitions a page's table rests on, set apart (Places to watch, 11 Nov 2026) */
+.defs { margin: 12px 0 16px; padding: 12px 16px; display: grid; gap: 8px; max-width: 760px;
+  background: var(--surface); border-left: 4px solid var(--accent); }
+.defs div { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2px 16px; }
+.defs dt { font-weight: 700; color: var(--accent); }
+.defs dd { margin: 0; }
+@media (max-width: 600px) { .defs div { grid-template-columns: minmax(0, 1fr); } }
 
 /* Station history: groups by the number of elections flagged */
 .strip-key { margin-top: -4px; }

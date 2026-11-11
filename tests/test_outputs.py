@@ -453,7 +453,8 @@ def test_municipality_across_elections(site):
     page = (site / "novi-sad/index.html").read_text(encoding="utf-8")
     rows = re.findall(r'<th scope="row" role="rowheader" class="election"><a href="\.\./r/(\d+)/m/89010\.html">', page)
     assert rows == ["680072", "341143", "341140", "42732"]  # newest first, one row each
-    assert "Opština nije glasala na: Lokalni 2024" in page
+    # a local election (Belgrade's, or one read from another municipality's documents) isn't one Novi Sad "missed"
+    assert "nije glasala na" not in page and "Lokalni" not in page
     assert re.search(r"\d+ od 221 biračkih mesta za proveru", page)
     assert "207 (Predsednički 2022) → 221 · novih" in page
     assert 'href="../r/680072/check.html#m-89010"' in page

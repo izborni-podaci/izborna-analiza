@@ -4,25 +4,13 @@
 {% block main %}
 {{ mx.crumbs([(t('crumbs_home'), link('index.html')), (t('repeat_title'), none)]) }}
 <h1 class="page-title">{{ t('repeat_title') }}</h1>
-<dl class="qa">
-  <div><dt>{{ t('repeat_what_q') }}</dt><dd>{{ t('repeat_what_a', n=rounds|length) }}</dd></div>
-  <div><dt>{{ t('repeat_why_q') }}</dt><dd>{{ t('repeat_why_a') }}</dd></div>
-  <div><dt>{{ t('repeat_how_q') }}</dt><dd>{{ t('repeat_how_a') }}</dd></div>
+<p class="lede">{{ t('repeat_lede2', n=rounds|length) }}</p>
+<dl class="defs">
+  <div><dt>{{ t('repeat_def_flag') }}</dt><dd>{{ t('repeat_def_flag_d') }} <a href="{{ link('about.html') }}#checks">{{ t('rules_link') }}</a></dd></div>
+  <div><dt>{{ t('repeat_def_k') }}</dt><dd>{{ t('repeat_def_k_d') }}</dd></div>
+  <div><dt>{{ t('repeat_def_same') }}</dt><dd>{{ t('repeat_def_same_d') }}</dd></div>
+  <div><dt>{{ t('repeat_def_cells') }}</dt><dd>{{ t('repeat_def_cells_d') }}</dd></div>
 </dl>
-<p class="principle">{{ t('principle') }}</p>
-
-{% if example %}{% set s = example.station %}
-<section class="example">
-  <p class="kicker">{{ t('repeat_example_heading') }}</p>
-  <h2 class="example-title"><a href="{{ link(st_path(example.rid, example.key)) }}">{{ name(mname(s.municipality)) }} · {{ t('station_no') }} {{ s.number }}</a>{% if s.name %} <span class="muted">{{ name(s.name) }}</span>{% endif %}</h2>
-  <ol class="timeline">
-  {% for r in rounds %}
-    <li><span class="muted">{{ r.short }}</span><span>{% if r.id in example.flags %}{% for code in example.flags[r.id] %}<span class="sym-line">{{ mx.sym(code, group_of[code]) }}<strong>{{ check_name(code) }}</strong></span>{% if not loop.last %}<br>{% endif %}{% endfor %}{% elif r.id in example.took %}<span class="muted">{{ t('repeat_no_flag') }}</span>{% else %}<span class="muted">{{ t('repeat_not_there') }}</span>{% endif %}</span></li>
-  {% endfor %}
-  </ol>
-  <p class="small">{{ t('repeat_example_note', k=example.k, n=example.n) }}</p>
-</section>
-{% endif %}
 
 <details class="data-notes">
   <summary>{{ t('repeat_notes_summary') }}</summary>
