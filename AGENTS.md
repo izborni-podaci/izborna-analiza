@@ -870,4 +870,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   Belgrade; a local round read from a municipality's documents stays on that municipality's and its stations'
   pages. Places to watch lost its worked example: one lede, and the four terms the table rests on set apart in a
   box (flag, elections flagged k / n, the same flag again, the cells).
+- **11 Nov 2026, Golubac's links.** Its 45 unread documents ("…/SOG 1.docx?lang=lat", "Rešenje o proglašenju … .pdf")
+  give an HTTP error as they are, without "?lang=" and with their spaces as hyphens (`link_variants`, tried in
+  turn on 403 or 404). The probe now logs the error's code.
 

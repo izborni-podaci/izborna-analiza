@@ -124,7 +124,7 @@ def probe(docs: dict, code: str, kind: str | None = None, limit: int = 40, log=p
         try:
             text = text_of(fetch(u), u, pages=pages)
         except Exception as e:  # noqa: BLE001 - one document down must not stop the probe
-            log(f"[{k}] {shape(name, 120)}: {type(e).__name__}")
+            log(f"[{k}] {shape(name, 120)}: {type(e).__name__} {getattr(e, 'code', '')}".rstrip())
             continue
         log(f"[{k}] {docs[u]['k']} {urllib.parse.urlsplit(u).path.rsplit('/', 1)[0]}/{shape(name, 120)} "
             f"({len(text)} characters)\n{shape(text, chars)}\n")
