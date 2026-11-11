@@ -705,7 +705,7 @@ def build(root, code: str, day: str, name: str, report_url: str, text: str | Non
     summary = {"round": rid, "lists": k, "rows": len(rows), "aside": len(aside), "totals": totals,
                "valid": sum(r["valid"] for r in rows), "invalid": sum(r["invalid"] for r in rows),
                "registered": sum(r["registered"] or 0 for r in rows), "stations_from": src_round}
-    summary["ready"] = check["ready"]
+    summary["ready"], summary["matches"] = check["ready"], check["matches"]
     log(f"{rid}: {summary}")
     for a in aside:
         log(f"  set aside: station {a['n']}: {a['why']}")

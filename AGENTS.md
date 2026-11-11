@@ -851,4 +851,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   (all published), 21 with the commission's totals only, 7 with some boards' minutes. Bač 2024 has its totals
   and preliminary results only, each found twice (bac.rs and www.bac.rs): a report's link is now read once
   whatever its "www.".
+- **11 Nov 2026, local runs that "failed".** Seven of the night's local runs were red, none by an error: each was a
+  results run whose reports held no table of stations (Zemun's while its reading was being made, Bač's totals,
+  the first `results=day` before it was allowed to find none), which exited 1. A results run now fails only on an
+  error, and writes what each municipality gave to the run's summary page (stations and "ready to publish", or
+  what's left: stations set aside, sums that aren't the commission's totals, or no report by station).
 

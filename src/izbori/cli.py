@@ -666,22 +666,43 @@ def cmd_local(args) -> int:
             log(f"{args.date}: {len(codes)} municipalities with a report: {', '.join(codes)}")
         names_of = {r["municipality_code"]: r["name"] for r in csv.DictReader(
             open(root / watch.SITES_FILE, encoding="utf-8"))}
-        made = []
+        made, outcome = [], []
         for code in codes:  # several municipalities of the same election day in one run, one failing not the rest
             name = args.name if args.name and len(codes) == 1 else names_of.get(code, code)
             log(f"== {code} {name}")
             summary = local_results(root, code, args.date, name, args, log)
             if summary:
                 made.append(summary["round"])
+                state = "ready to publish" if summary["ready"] else ", ".join(
+                    x for x in (f"{summary['aside']} set aside" if summary["aside"] else "",
+                                "" if summary["matches"] else "sums not the commission's totals") if x)
+                outcome.append((code, name, f"{summary['rows']} stations, {state}"))
+            else:
+                outcome.append((code, name, "no report by station read"))
         if made and args.commit and commit([str(root / local.DRAFTS)],
                                            f"Data: draft of the local election {', '.join(made)}"):
             if args.push:
                 push()
-        return 0 if made or codes_by_day else 1  # a day with no report by station is an answer, not a failure
+        results_summary(args.date, outcome)
+        # a municipality whose reports hold no table of stations is an answer, not a failure: the run fails only on
+        # an error, and its summary says what each municipality gave
+        return 0
     docs = watch.load_store(root)["docs"]
     local.probe(docs, args.probe, args.kind or None, args.limit, log, path_has=args.path_has, pages=args.pages,
                 chars=args.chars)
     return 0
+
+
+def results_summary(date: str, outcome: list[tuple[str, str, str]]) -> None:
+    """What each municipality gave, as the workflow run's summary page (GITHUB_STEP_SUMMARY), when there is one."""
+    import os
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not path or not outcome:
+        return
+    lines = [f"### Local results, {date}", "", "| Code | Municipality | Result |", "|---|---|---|"]
+    lines += [f"| {c} | {n} | {r} |" for c, n, r in outcome]
+    with open(path, "a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
 
 
 def local_results(root: Path, code: str, date: str, name: str, args, log) -> dict | None:
