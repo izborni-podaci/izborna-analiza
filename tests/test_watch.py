@@ -127,3 +127,16 @@ def test_a_broken_link_or_a_crash_does_not_stop_the_run(tmp_path):
         return '<a href="/o.pdf">Одлука о одређивању бирачких места</a>'
     logged = []
     assert watch.run(tmp_path, "2026-11-09", logged.append, fetcher, lambda s: None) == 1
+
+
+def test_crawl_starts_from_the_commission_s_own_page_and_its_subdomain():
+    pages = {
+        "https://primer.rs/": '<a href="/vesti/">Вести</a>',
+        "https://skupstina.primer.rs/oik/akta/": '<a href="https://skupstina.primer.rs/f/resenje-bo-bm-3.pdf">'
+                                                 'Решење о именовању бирачког одбора БМ 3</a>'
+                                                 '<a href="https://primer.com/resenje-bo-bm-4.pdf">Решење о именовању бирачког одбора</a>',
+    }
+    found = watch.crawl("primer.rs", fetcher=lambda u: pages.get(u, ""), sleep=lambda s: None,
+                        pages_of=("https://skupstina.primer.rs/oik/akta/",))
+    assert found == {"https://skupstina.primer.rs/f/resenje-bo-bm-3.pdf": "boards"}  # not another site's
+    assert watch.same_site("www.primer.rs", "primer.rs") and not watch.same_site("neprimer.rs", "primer.rs")

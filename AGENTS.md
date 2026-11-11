@@ -873,4 +873,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 - **11 Nov 2026, Golubac's links.** Its 45 unread documents ("…/SOG 1.docx?lang=lat", "Rešenje o proglašenju … .pdf")
   give an HTTP error as they are, without "?lang=" and with their spaces as hyphens (`link_variants`, tried in
   turn on 403 or 404). The probe now logs the error's code.
+- **11 Nov 2026, Golubac's links are gone; controllers for the new rounds; where the watch starts.** All of
+  Golubac's unread links give 404 in every spelling: the files are no longer on its site. Of the four local
+  rounds published from reports, only Golubac has a board decision in the weeks before (one, extending one
+  station's board); Prokuplje, Rača and Zemun have none on their sites. 79 of the 168 municipal sites gave the
+  watch no document at all, so `municipal_sites.csv` gets a `pages` column — the commission's own pages, found by
+  hand or search, read first — and the watch takes documents from a municipality's subdomains too.
 

@@ -142,9 +142,18 @@ def why(e: Exception) -> str:
     return f"{type(e).__name__} {str(reason)[:80]}".strip()
 
 
-def crawl(domain: str, log=None, fetcher=fetch, sleep=time.sleep) -> dict[str, str]:
+def same_site(netloc: str, host: str) -> bool:
+    """A link on the municipality's own site: its domain, with or without www., or a subdomain of it (Novi Sad's
+    commission documents on skupstina.novisad.rs)."""
+    n, h = netloc.lower().removeprefix("www."), host.lower().removeprefix("www.")
+    return n == h or n.endswith("." + h)
+
+
+def crawl(domain: str, log=None, fetcher=fetch, sleep=time.sleep, pages_of: tuple = ()) -> dict[str, str]:
     """The commission's documents on one site: url → kind. The front page, then the pages it links to about
-    elections or the commission (one level), then the site's search for each phrase in SEARCHES."""
+    elections or the commission (one level), then the site's search for each phrase in SEARCHES. pages_of: the
+    pages where the commission keeps its documents (municipal_sites.csv's "pages"), when the front page doesn't lead
+    there, read first."""
     host = domain.lower()
     # the front page: https, then www, then plain http (old sites)
     roots = [f"https://{domain}/", f"https://www.{domain}/", f"http://{domain}/", f"http://www.{domain}/"]
@@ -163,13 +172,14 @@ def crawl(domain: str, log=None, fetcher=fetch, sleep=time.sleep) -> dict[str, s
             log(f"{domain}: {err}")
         return found
     sleep(PAUSE)
-    queue: list[tuple[str, int, str | None]] = [(f"{root}?s={urllib.parse.quote(q)}", 2, None) for q in SEARCHES]
+    queue: list[tuple[str, int, str | None]] = [(u, 1, None) for u in pages_of] + \
+        [(f"{root}?s={urllib.parse.quote(q)}", 2, None) for q in SEARCHES]
     pages = 1
 
     def take(html: str, url: str, depth: int) -> None:
         for href, text in links_of(html, url):
             u = urllib.parse.urlsplit(href)
-            if u.netloc.lower().removeprefix("www.") != host.removeprefix("www."):
+            if not same_site(u.netloc, host):
                 continue
             path = u.path.lower()
             about = fold(text + " " + urllib.parse.unquote(path))
@@ -197,7 +207,7 @@ def crawl(domain: str, log=None, fetcher=fetch, sleep=time.sleep) -> dict[str, s
             src = (it or {}).get("source_url") or ""
             title = ((it or {}).get("title") or {}).get("rendered") or ""
             u = urllib.parse.urlsplit(src)
-            if u.path.lower().endswith(DOC_EXT) and u.netloc.lower().removeprefix("www.") == host.removeprefix("www."):
+            if u.path.lower().endswith(DOC_EXT) and same_site(u.netloc, host):
                 kind = kind_of(title + " " + urllib.parse.unquote(u.path.rsplit("/", 1)[-1]))
                 if kind and src not in found:
                     found[src] = kind
@@ -302,7 +312,7 @@ def run(root: Path, today: str, log=print, fetcher=fetch, sleep=time.sleep, only
                 log(f"{s['municipality_code']} {latin(s['name'])}: no other spelling of {s['domain']} answers")
                 continue
         try:
-            found = crawl(s["domain"], log, fetcher, sleep)
+            found = crawl(s["domain"], log, fetcher, sleep, tuple((s.get("pages") or "").split()))
         except Exception as e:  # noqa: BLE001 - one site's oddity must not lose the others' finds
             log(f"{s['municipality_code']} {latin(s['name'])}: stopped, {why(e)}")
             continue
