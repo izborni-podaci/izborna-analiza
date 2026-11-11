@@ -1,0 +1,137 @@
+{
+ "contest": {},
+ "contestants": [
+  {
+   "name": "Изборна листа 1"
+  },
+  {
+   "name": "Изборна листа 2"
+  },
+  {
+   "name": "Изборна листа 3"
+  },
+  {
+   "name": "Изборна листа 4"
+  },
+  {
+   "name": "Изборна листа 5"
+  },
+  {
+   "name": "Изборна листа 6"
+  },
+  {
+   "name": "Изборна листа 7"
+  },
+  {
+   "name": "Изборна листа 8"
+  },
+  {
+   "name": "Изборна листа 9"
+  }
+ ],
+ "date": "2024-06-02",
+ "kind": "local",
+ "rik_type": 3,
+ "source": "commission",
+ "title": "Локални 2024 - Градска општина Земун",
+ "local": {
+  "municipality": "70157",
+  "report": "https://zemun.rs/wp-content/uploads/2020/05/Rezultati-02.-juna-2024.-godine.pdf",
+  "stations_from": null,
+  "aside": [
+   {
+    "n": 4,
+    "why": "lists add up to 649, valid votes read 652"
+   },
+   {
+    "n": 8,
+    "why": "lists add up to 775, valid votes read 778"
+   },
+   {
+    "n": 13,
+    "why": "lists add up to 616, valid votes read 614"
+   },
+   {
+    "n": 20,
+    "why": "lists add up to 724, valid votes read 721"
+   },
+   {
+    "n": 21,
+    "why": "lists add up to 707, valid votes read 727"
+   },
+   {
+    "n": 28,
+    "why": "lists add up to 737, valid votes read 577"
+   },
+   {
+    "n": 36,
+    "why": "lists and valid votes unreadable"
+   },
+   {
+    "n": 37,
+    "why": "lists add up to 483, valid votes read 48"
+   },
+   {
+    "n": 38,
+    "why": "lists add up to 604, valid votes read 704"
+   },
+   {
+    "n": 49,
+    "why": "lists add up to 558, valid votes read 568"
+   },
+   {
+    "n": 54,
+    "why": "lists add up to 669, valid votes read 66"
+   },
+   {
+    "n": 57,
+    "why": "lists add up to 473, valid votes read 43"
+   },
+   {
+    "n": 59,
+    "why": "lists add up to 611, valid votes read 61"
+   },
+   {
+    "n": 61,
+    "why": "lists add up to 661, valid votes read 66"
+   },
+   {
+    "n": 63,
+    "why": "lists add up to 691, valid votes read 686"
+   },
+   {
+    "n": 64,
+    "why": "lists add up to 839, valid votes read 849"
+   },
+   {
+    "n": 74,
+    "why": "lists and valid votes unreadable"
+   },
+   {
+    "n": 76,
+    "why": "lists add up to 901, valid votes read 855"
+   },
+   {
+    "n": 77,
+    "why": "lists add up to 777, valid votes read 77"
+   }
+  ],
+  "notes": {
+   "12": "list 6 read as strokes, from the valid votes",
+   "15": "list 6 from the valid votes",
+   "17": "list 9 read as strokes, from the valid votes",
+   "23": "list 5 from the valid votes",
+   "32": "list 9 from the valid votes",
+   "42": "voted taken as the ballots (read lower than them)",
+   "45": "list 6 from the valid votes",
+   "53": "list 6 read as strokes, from the valid votes",
+   "55": "list 2 from the valid votes; invalid from ballots and valid",
+   "56": "list 6 from the valid votes",
+   "58": "list 9 from the valid votes",
+   "60": "voted taken as the ballots (read lower than them)",
+   "69": "list 5 from the valid votes",
+   "72": "list 2 from the valid votes",
+   "79": "list 8 from the valid votes"
+  }
+ }
+}
