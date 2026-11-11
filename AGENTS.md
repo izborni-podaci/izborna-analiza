@@ -844,5 +844,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   the temporary branch, and `results=day` takes every municipality with a report of that date not yet published.
   (4) The overview counts as reports the documents classified as results and links with "rezultati", which it
   missed for Zemun, Rača and Golubac. (3) — classifying again from masked first pages kept in the store — waits:
-  whether the masked text classifies as the full one does has to be measured on a real run first.
+  whether the masked text classifies as the full one does has to be measured on a real run first.  The first `results=day` (2 June 2024) found four municipalities with a report of that day not yet published —
+  Alibunar, Bačka Palanka, Kanjiža, Novi Kneževac — and none is by station: decisions on preliminary results or the
+  totals. A day with no report by station is an answer, so such a run no longer fails. The classify run after the
+  link fixes read 618 more documents (Bač's among them); 122 are left, 45 of them Golubac's "?lang=" links.
 

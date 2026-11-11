@@ -657,7 +657,8 @@ def cmd_local(args) -> int:
         return 0
     if args.results:  # local elections' results from the commissions' reports, as draft rounds
         codes = [c.strip() for c in args.results.split(",") if c.strip()]
-        if codes == ["day"]:  # every municipality with a report of that day's local election not yet published
+        codes_by_day = codes == ["day"]
+        if codes_by_day:  # every municipality with a report of that day's local election not yet published
             store = local.load_store(root)
             codes = sorted(c for c in {v["m"] for v in store["docs"].values()}
                            if local.report_candidates(store, c, args.date)
@@ -676,7 +677,7 @@ def cmd_local(args) -> int:
                                            f"Data: draft of the local election {', '.join(made)}"):
             if args.push:
                 push()
-        return 0 if made else 1
+        return 0 if made or codes_by_day else 1  # a day with no report by station is an answer, not a failure
     docs = watch.load_store(root)["docs"]
     local.probe(docs, args.probe, args.kind or None, args.limit, log, path_has=args.path_has, pages=args.pages,
                 chars=args.chars)
