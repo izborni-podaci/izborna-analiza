@@ -655,7 +655,7 @@ def hand_rows(root, rid: str, log=print) -> tuple[int, list[dict], list[dict], d
 
 
 def build(root, code: str, day: str, name: str, report_url: str, text: str | None, lists: list[str], log=print,
-          totals: dict | None = None) -> dict:
+          totals: dict | None = None, corrections: bool = True) -> dict:
     """Write the draft round of a local election from its report's text, or, with no text, from the stations read
     by eye from the boards' minutes (data/local_hand.csv); returns a summary."""
     import csv
@@ -668,7 +668,8 @@ def build(root, code: str, day: str, name: str, report_url: str, text: str | Non
         k, rows, aside, links = hand_rows(root, rid, log)
     else:
         k, rows, aside = result_rows(text)
-    rows, aside = corrected(root, rid, rows, aside, log)
+    if corrections:  # not in a dry run of the reader alone
+        rows, aside = corrected(root, rid, rows, aside, log)
     lists = hand_names(root, rid) or lists
     src_round, like = stations_like(root, code, max([r["n"] for r in rows] + [a["n"] for a in aside] + [0]), day)
     out = Path(root) / DRAFTS / rid

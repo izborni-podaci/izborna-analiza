@@ -18,7 +18,7 @@ on:
         description: "Probe: a municipality code (e.g. 80314 for Pančevo)"
         default: ""
       kind:
-        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (on a temporary branch, crops-tmp); pages: the documents whose link holds path_has as page images cut above their signatures, there too; crops-read deletes that branch; merge commits the classified parts of the run whose id is in code (one cancelled or cut short); overview logs, per municipality and local election, what its results and boards are in. With results: boards reads that local round's board decisions"
+        description: "Probe: stations, boards or commission (empty: all); crops: the results section of the code's boards' minutes as images (on a temporary branch, crops-tmp); pages: the documents whose link holds path_has as page images cut above their signatures, there too; check (with results): a dry run of the reader without the corrections, committing nothing; crops-read deletes that branch; merge commits the classified parts of the run whose id is in code (one cancelled or cut short); overview logs, per municipality and local election, what its results and boards are in. With results: boards reads that local round's board decisions"
         default: ""
       limit:
         description: "How many documents to log"
@@ -151,12 +151,16 @@ jobs:
           RESULTS: ${{ inputs.results }}
           DATE: ${{ inputs.date }}
           NAME: ${{ inputs.name }}
+          KIND: ${{ inputs.kind }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # kind check: a dry run, as the reader alone would make it (no corrections), committing nothing
+          args=(--commit --push)
+          [ "$KIND" = check ] && args=(--no-corrections)
           # OpenCV takes a scanned table's ruled lines out before OCR (boards.unruled)
           uv run --with "numpy>=1.26" --with "opencv-python-headless>=4.9" \
-            izbori local --results "$RESULTS" --date "$DATE" --name "$NAME" --commit --push --out crops
+            izbori local --results "$RESULTS" --date "$DATE" --name "$NAME" --out crops "${args[@]}"
       - name: Keep the report pages to read on a temporary branch
         # a draft that isn't ready (stations set aside, or sums that aren't the commission's totals) leaves its
         # report's pages, cut above the signatures, in crops/: they go where the crops go, deleted once read

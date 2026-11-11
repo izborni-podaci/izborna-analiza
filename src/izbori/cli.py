@@ -758,7 +758,8 @@ def local_results(root: Path, code: str, date: str, name: str, args, log) -> dic
     names = local.list_names(watch.load_store(root)["docs"], store, code, date)
     for i, (nm, u) in enumerate(names, 1):
         log(f"  list {i}: proclaimed in {u.rsplit('/', 1)[-1][:80]}")
-    summary = local.build(root, code, date, name, best[0], best[1], [n for n, _ in names], log, totals=totals)
+    summary = local.build(root, code, date, name, best[0], best[1], [n for n, _ in names], log, totals=totals,
+                          corrections=not args.no_corrections)
     if not summary["ready"]:  # the report's pages to read by eye, in the same run (the workflow keeps them)
         made = local.report_pages(local.download(best[0]), Path(args.out), f"{code}-{local.safe_stem(best[0])}")
         log(f"  {len(made)} page(s) of the report kept to read by eye")
@@ -1073,6 +1074,7 @@ def main(argv: list[str] | None = None) -> int:
     lo.add_argument("--overview", action="store_true", help="per municipality and local election, what we have")
     lo.add_argument("--crops", metavar="CODE", help="cut the results section out of a municipality's boards' minutes")
     lo.add_argument("--out", default="crops", help="where --crops writes its images")
+    lo.add_argument("--no-corrections", action="store_true", help="with --results: the reader alone, without data/local_corrections.csv")
     lo.add_argument("--report-pages", metavar="CODE", help="municipalities' documents (codes, comma-separated; --path-has) as page images cut above their signatures")
     lo.add_argument("--sheets", action="store_true", help="with --crops: reading sheets of the number cells instead of the crops")
     lo.add_argument("--boards", metavar="ROUND", help="read a local round's polling board decisions into its boards.json")

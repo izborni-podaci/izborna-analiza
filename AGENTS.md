@@ -856,4 +856,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   the first `results=day` before it was allowed to find none), which exited 1. A results run now fails only on an
   error, and writes what each municipality gave to the run's summary page (stations and "ready to publish", or
   what's left: stations set aside, sums that aren't the commission's totals, or no report by station).
+- **11 Nov 2026, a dry run of the reader.** `kind` check with `results` runs the reader as it would on a report
+  never read before: no corrections, nothing committed, the report's pages kept if the draft isn't ready. It is
+  how the totals check and the pages in the same run were tried on Prokuplje 2023, whose station 62 the reader
+  reads wrong while the row adds up.
 
