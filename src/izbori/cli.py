@@ -699,9 +699,12 @@ def local_results(root: Path, code: str, date: str, name: str, args, log) -> dic
             continue
         k, rows, aside = local.result_rows(text)
         log(f"{u.rsplit('/', 1)[-1][:60]}: {k} lists, {len(rows)} rows, {len(aside)} set aside")
-        if not rows:  # what OCR made of it: a few lines of figures only (no word, so no name)
-            for line in [x for x in text.split("\n") if len(re.findall(r"\d+", x)) >= 6][:5]:
-                log("  " + re.sub(r"[^\d\s|!]+", "x", line)[:160])
+        if not rows:  # what OCR made of it: lines of figures only (no word, so no name), the fullest first
+            lines = text.split("\n")
+            full = sorted(lines, key=lambda x: -len(re.findall(r"\d+", x)))[:6]
+            log(f"  {len(lines)} lines, {sum(1 for x in lines if len(re.findall(chr(92) + 'd+', x)) >= 10)} with ten figures")
+            for line in full:
+                log("  " + re.sub(r"[^\d\s|!]+", "x", line)[:200])
         if rows and (best is None or len(rows) > best[2]):
             best = (u, text, len(rows))
     if not best:
