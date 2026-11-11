@@ -892,4 +892,11 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   the municipality's own pages (`watch.FILE_HOSTS`); the host's own pages aren't followed, since it serves other
   sites too. RIK's results app has one local round (Belgrade 2024); the local commissions' documents it hosts under
   additionalDocuments (Ruma's totals, a decision of Novi Sad's) aren't reached by any of our readers yet.
+- **11 Nov 2026, Vlasotince 2023 from its report.** The watch's new start pages found Vlasotince's „Укупни
+  извештај о резултатима гласања … на бирачким местима“ (form ЛИ-ВЛ-22/23): a scanned table of its 58 stations and
+  11 lists, which the reader made 12 rows of. Every station was read by eye from it into the corrections; each adds
+  up, and the sums are the commission's totals to the vote (22,901 registered, 16,457 out, 16,454 voted, 429
+  invalid, 16,025 valid, all eleven lists). The report says it is to be published on RIK's site: since the law of
+  2022 (art. 59), each local commission's report by station should be among RIK's documents — a source for every
+  municipality's local elections, not yet read.
 
