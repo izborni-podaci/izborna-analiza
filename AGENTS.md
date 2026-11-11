@@ -879,4 +879,12 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   station's board); Prokuplje, Rača and Zemun have none on their sites. 79 of the 168 municipal sites gave the
   watch no document at all, so `municipal_sites.csv` gets a `pages` column — the commission's own pages, found by
   hand or search, read first — and the watch takes documents from a municipality's subdomains too.
+- **11 Nov 2026, the empty sites by web search.** Of the 79 municipal sites that gave the watch nothing, a fork
+  searched each for its official site and its commission's page (only the municipality's own domain counts).
+  Nine webmail rows got their site (Arilje, Veliko Gradište, Vlasotince, Kosjerić, Koceljeva, Merošina, Niška Banja,
+  Bečej, Ruma), four wrong domains were corrected (Bela Palanka's "belapalanak.ls.gov.rs", Zvezdara, Kuršumlija,
+  Čačak), and Novi Sad got its commission's page on skupstina.novisad.rs. Searches rarely surface a commission's
+  page, only its files; the rest are unchanged. Two things for later: several municipalities keep their files on
+  media.readycms.io (their CMS's host, which `same_site` rejects), and RIK's own site carries some local
+  commissions' reports ("extfile/sr/files/additionalDocuments/…", Ruma's totals among them).
 
