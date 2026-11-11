@@ -462,3 +462,22 @@ def test_a_sideways_page_is_turned_by_tesseract_s_orientation():
     assert boards.rotation(osd) == 270
     assert boards.rotation(osd.replace("7.76", "0.40")) == 0  # not sure enough: left as it is
     assert boards.rotation("Rotate: 0\nOrientation confidence: 9.1") == 0
+
+
+def test_a_table_s_lines_are_taken_out(tmp_path):
+    import pytest
+    cv2 = pytest.importorskip("cv2")
+    import numpy as np
+    from izbori import boards
+    img = np.full((400, 900), 255, np.uint8)
+    for y in (50, 150, 250, 350):
+        cv2.line(img, (20, y), (880, y), 0, 2)
+    for x in (20, 300, 600, 880):
+        cv2.line(img, (x, 50), (x, 350), 0, 2)
+    cv2.putText(img, "1534", (60, 120), cv2.FONT_HERSHEY_SIMPLEX, 1.5, 0, 3)
+    path = tmp_path / "page.png"
+    cv2.imwrite(str(path), img)
+    boards.unruled(path)
+    out = cv2.imread(str(path), 0)
+    assert out[50, 450] == 255 and out[200, 300] == 255  # the lines are gone
+    assert (out[80:125, 60:200] < 128).sum() > 200  # the figure stays

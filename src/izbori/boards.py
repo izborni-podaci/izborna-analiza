@@ -409,6 +409,27 @@ def upright(png: Path) -> None:
         subprocess.run([convert, str(png), "-rotate", str(degrees), str(png)], capture_output=True)
 
 
+def unruled(png: Path) -> None:
+    """A scanned table's ruled lines taken out in place, which Tesseract otherwise reads as ones or runs into the
+    figures (Zemun 2024's table: about one figure in three read with them, nearly all without). Needs OpenCV; without
+    it the page is left as it is."""
+    try:
+        import cv2
+        import numpy as np
+    except ImportError:
+        return
+    g = cv2.imread(str(png), cv2.IMREAD_GRAYSCALE)
+    if g is None:
+        return
+    bw = cv2.adaptiveThreshold(255 - g, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 15, -2)
+    h, w = bw.shape
+    hor = cv2.morphologyEx(bw, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (max(20, w // 30), 1)))
+    ver = cv2.morphologyEx(bw, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (1, max(20, h // 30))))
+    lines = cv2.dilate(cv2.bitwise_or(hor, ver), np.ones((3, 3), np.uint8))
+    g[lines > 0] = 255
+    cv2.imwrite(str(png), g)
+
+
 def pdf_text(pdf: bytes, max_pages: int = 3, lang: str = "srp+srp_latn", dpi: int = 200, psm: int | None = None,
              ocr: bool = False, turn: bool = False, to_end: bool = False) -> str:
     """The decision's text: the PDF's own text layer when it has one (unless ocr), otherwise OCR of the first pages
@@ -430,8 +451,9 @@ def pdf_text(pdf: bytes, max_pages: int = 3, lang: str = "srp+srp_latn", dpi: in
             images = sorted(Path(tmp).glob(f"p{page}*.png"))
             if r.returncode != 0 or not images:
                 break
-            if turn:
+            if turn:  # a report: a scan may lie sideways, and its table's lines get in the way
                 upright(images[0])
+                unruled(images[0])
             read = subprocess.run(["tesseract", str(images[0]), "-", "-l", lang] + (["--psm", str(psm)] if psm else []),
                                   capture_output=True, text=True, env={**os.environ, "OMP_THREAD_LIMIT": "1"})
             out.append(read.stdout)

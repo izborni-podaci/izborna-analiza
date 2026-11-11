@@ -818,5 +818,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   its 115 stations, scanned sideways. Reports are now also links with "rezultati", and their scans are read at
   300 dpi, each page turned upright first by Tesseract's orientation detection (`boards.upright`, with
   ImageMagick) when it is sure enough.  The first try read one page: OCR stops at a decision's end ("Образложење"), which Zemun's first page has before
-  its table; a report is now read to its last page (`to_end`).
+  its table; a report is now read to its last page (`to_end`).  Turned upright, Zemun's table still read badly: Tesseract took its ruled lines for ones and ran cells together.
+  Taking the lines out first (`boards.unruled`, OpenCV, in the results step with `uv run --with` as for the
+  sheets) read a test page nearly whole.
 
