@@ -72,7 +72,7 @@ jobs:
           python-version: "3.12"
       - name: Install
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils >/dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils antiword >/dev/null
           pip install uv && uv sync --frozen
       - name: Classify a part
         env:
@@ -131,7 +131,7 @@ jobs:
           python-version: "3.12"
       - name: Install
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils >/dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-srp tesseract-ocr-srp-latn poppler-utils antiword >/dev/null
           pip install uv && uv sync --frozen
       - name: Boards
         if: ${{ inputs.results != '' && inputs.kind == 'boards' }}

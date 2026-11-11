@@ -38,17 +38,43 @@ def shape(text: str, limit: int = 1200) -> str:
     return LETTERS_WORD.sub(mask, re.sub(r"[ \t]+", " ", text))[:limit]
 
 
+def fetch_url(url: str) -> str:
+    """A document's link as it can be asked for: Kanjiža's links have Windows' backslashes in their path
+    ("data\\files\\docs"), and Cyrillic is quoted."""
+    return urllib.parse.quote(url.replace("\\", "/"), safe="/:?&=%@+,;~!$'()*")
+
+
 def download(url: str, timeout: int = 90) -> bytes:
-    url = urllib.parse.quote(url, safe="/:?&=%@+,;~!$'()*")  # Cyrillic in a link
-    req = urllib.request.Request(url, headers={"User-Agent": watch.AGENT})
+    req = urllib.request.Request(fetch_url(url), headers={"User-Agent": watch.AGENT})
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read(30_000_000)
+        data = r.read(30_000_000)
+        page = "html" in (r.headers.get("Content-Type") or "")
+    if page and re.search(r"[?&]lang=", url):  # Golubac's "?lang=lat" answers with a page: the file without it
+        return download(re.sub(r"[?&]lang=[^&]*", "", url), timeout)
+    return data
+
+
+def doc_text(data: bytes) -> str:
+    """An old Word document's text by antiword (in the local workflow); "" without it."""
+    import shutil
+    import subprocess
+    import tempfile
+    from pathlib import Path
+    if not shutil.which("antiword"):
+        return ""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "doc.doc"
+        path.write_bytes(data)
+        r = subprocess.run(["antiword", "-m", "UTF-8.txt", str(path)], capture_output=True, text=True)
+        return r.stdout if r.returncode == 0 else ""
 
 
 def text_of(data: bytes, url: str, pages: int = 2, turn: bool = False, psm: int | None = None) -> str:
     if url.lower().endswith(".docx") or data[:2] == b"PK":
         from izbori.stationlist import docx_text
         return docx_text(data)
+    if data[:8] == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1":  # an old Word .doc: antiword, where it's installed
+        return doc_text(data)
     if not data.startswith(b"%PDF"):
         return ""
     # turn: a report's scanned pages may lie sideways, and its small figures want a finer scan

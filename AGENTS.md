@@ -830,4 +830,10 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   are the report's; the stations' names come from the Belgrade round of the same day (567956).  Published: 115 stations, named from that round, its totals the commission's.  Zemun's publishing commit went out with two tests failing (the place pages of its gymnasium now show five
   elections, the local one among them): the run's result was piped through `tail`, which hid its exit code. Fixed in
   the next commit; test runs before a push are now checked by their exit code, not their last line.
+- **11 Nov 2026, links that failed.** A fork searched for the official sites of the municipalities whose documents
+  didn't download: none moved and none is dead (Bač's bac.rs answers again; it didn't during the night's run).
+  The 148 other documents fail by their links: 42 of Kanjiža's have backslashes in their path, 45 of Golubac's end
+  in "?lang=lat" (the site answers with a page), 21 are old Word .doc files. `local.download` now turns
+  backslashes into slashes and asks again without "?lang=" when a page comes back, and `.doc` is read by antiword
+  (installed in the local workflow).
 

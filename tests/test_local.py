@@ -481,3 +481,9 @@ def test_a_table_s_lines_are_taken_out(tmp_path):
     out = cv2.imread(str(path), 0)
     assert out[50, 450] == 255 and out[200, 300] == 255  # the lines are gone
     assert (out[80:125, 60:200] < 128).sum() > 200  # the figure stays
+
+
+def test_links_as_they_can_be_asked_for():
+    assert local.fetch_url("https://www.kanjiza.rs/data\\files\\docs\\izbori2024\\a.pdf") == \
+        "https://www.kanjiza.rs/data/files/docs/izbori2024/a.pdf"
+    assert local.fetch_url("https://p.rs/Решење.pdf?lang=lat").endswith("%D0%B5.pdf?lang=lat")
