@@ -45,7 +45,7 @@ def download(url: str, timeout: int = 90) -> bytes:
         return r.read(30_000_000)
 
 
-def text_of(data: bytes, url: str, pages: int = 2, turn: bool = False) -> str:
+def text_of(data: bytes, url: str, pages: int = 2, turn: bool = False, psm: int | None = None) -> str:
     if url.lower().endswith(".docx") or data[:2] == b"PK":
         from izbori.stationlist import docx_text
         return docx_text(data)
@@ -53,9 +53,9 @@ def text_of(data: bytes, url: str, pages: int = 2, turn: bool = False) -> str:
         return ""
     # turn: a report's scanned pages may lie sideways, and its small figures want a finer scan
     dpi = 300 if turn else 200
-    text = boards.pdf_text(data, max_pages=pages, turn=turn, dpi=dpi, to_end=turn)
+    text = boards.pdf_text(data, max_pages=pages, turn=turn, dpi=dpi, to_end=turn, psm=psm, ocr=psm is not None)
     if len(re.findall(r"[А-Яа-яA-Za-z]", text)) < 100:
-        text = boards.pdf_text(data, max_pages=pages, ocr=True, turn=turn, dpi=dpi, to_end=turn)
+        text = boards.pdf_text(data, max_pages=pages, ocr=True, turn=turn, dpi=dpi, to_end=turn, psm=psm)
     return text
 
 

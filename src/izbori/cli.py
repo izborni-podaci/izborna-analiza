@@ -693,11 +693,17 @@ def local_results(root: Path, code: str, date: str, name: str, args, log) -> dic
     best = None
     for u in cands:
         try:
-            text = local.text_of(local.download(u), u, pages=20, turn=True)
+            data = local.download(u)
+            text = local.text_of(data, u, pages=20, turn=True)
+            k, rows, aside = local.result_rows(text)
+            if not rows:  # a table Tesseract read column by column (Zemun 2024): again, as one block of rows
+                text2 = local.text_of(data, u, pages=20, turn=True, psm=6)
+                got = local.result_rows(text2)
+                if got[1]:
+                    text, (k, rows, aside) = text2, got
         except Exception as e:  # noqa: BLE001 - a report down: the next one
             log(f"{u.rsplit('/', 1)[-1][:60]}: {type(e).__name__}")
             continue
-        k, rows, aside = local.result_rows(text)
         log(f"{u.rsplit('/', 1)[-1][:60]}: {k} lists, {len(rows)} rows, {len(aside)} set aside")
         if not rows:  # what OCR made of it: lines of figures only (no word, so no name), the fullest first
             lines = text.split("\n")
