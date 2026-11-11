@@ -836,4 +836,13 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   in "?lang=lat" (the site answers with a page), 21 are old Word .doc files. `local.download` now turns
   backslashes into slashes and asks again without "?lang=" when a page comes back, and `.doc` is read by antiword
   (installed in the local workflow).
+- **11 Nov 2026, faster local rounds (Marko's go-ahead on the proposals).** (1) A draft is checked against the
+  commission's own totals, read from the reports (`totals_of`, `check_totals` into `meta.local.check`; "ready to
+  publish" when nothing is set aside and the sums match to the vote), so the totals no longer need reading by
+  eye; the swap Prokuplje's station 62 had (two lists off by a hundred each way, the row adding up) is what this
+  catches. (2) One run per municipality instead of three: a draft that isn't ready leaves its report's pages on
+  the temporary branch, and `results=day` takes every municipality with a report of that date not yet published.
+  (4) The overview counts as reports the documents classified as results and links with "rezultati", which it
+  missed for Zemun, Rača and Golubac. (3) — classifying again from masked first pages kept in the store — waits:
+  whether the masked text classifies as the full one does has to be measured on a real run first.
 

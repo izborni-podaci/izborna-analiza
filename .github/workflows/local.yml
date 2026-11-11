@@ -33,7 +33,7 @@ on:
         description: "Probe: characters of each masked layout logged"
         default: "1200"
       results:
-        description: "Results: municipality codes (comma-separated, one election day) whose local results reports to read into draft rounds (with kind boards: a local round id, e.g. L80314-20240602)"
+        description: "Results: municipality codes (comma-separated, one election day; day: every one with a report of date not yet published) whose local results reports to read into draft rounds (with kind boards: a local round id, e.g. L80314-20240602)"
         default: ""
       date:
         description: "Results: the local election's day (YYYY-MM-DD)"
@@ -156,7 +156,18 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # OpenCV takes a scanned table's ruled lines out before OCR (boards.unruled)
           uv run --with "numpy>=1.26" --with "opencv-python-headless>=4.9" \
-            izbori local --results "$RESULTS" --date "$DATE" --name "$NAME" --commit --push
+            izbori local --results "$RESULTS" --date "$DATE" --name "$NAME" --commit --push --out crops
+      - name: Keep the report pages to read on a temporary branch
+        # a draft that isn't ready (stations set aside, or sums that aren't the commission's totals) leaves its
+        # report's pages, cut above the signatures, in crops/: they go where the crops go, deleted once read
+        if: ${{ inputs.results != '' && inputs.kind != 'boards' }}
+        run: |
+          [ -d crops ] && [ -n "$(ls crops)" ] || exit 0
+          git checkout -q --orphan crops-tmp
+          git rm -rq --cached .
+          git add -f crops/
+          git commit -qm "Report pages to read by eye (temporary, deleted once read)"
+          git push -qf origin HEAD:refs/heads/crops-tmp
       - name: Crops
         if: ${{ inputs.code != '' && (inputs.kind == 'crops' || inputs.kind == 'pages') }}
         env:

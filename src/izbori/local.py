@@ -501,6 +501,77 @@ LIST_NAME = re.compile(r"(?:изборн[ауе]\s+лист[ауе]|izborn[aue]\
                        re.I)
 
 
+# --- the commission's totals, to check a draft against -----------------------------------------------------------
+# A report of the municipality's totals (on its own, or before a table of stations) gives registered, out, voted,
+# invalid and valid on labelled lines, then each list's votes with its share ("12.488 57,26%", "3747 61,35% 21").
+# The draft's sums must match them to the vote before it is published.
+NUMBER = r"\d{1,3}(?:(?:[.,]|\.\s)\d{3})+|\d+"
+TOTAL_FIELDS = (("registered", r"уписан|upisan"), ("out", r"изаш|izaš|izas"),
+                ("voted", r"гласали|glasali|гласало|glasalo"), ("invalid", r"неважећ|nevažeć|nevazec"),
+                ("valid", r"(?<![нН][еЕ])важећ|(?<![nN][eE])važeć|(?<![nN][eE])vazec"))
+LIST_VOTES = re.compile(r"(?<![\d.,])(" + NUMBER + r")\s+\(?\d{1,3}[.,]\d{1,2}\s*%?")
+
+
+def _number(tok: str) -> int:
+    return int(re.sub(r"[.,\s]", "", tok))
+
+
+def totals_of(text: str, k: int = 0) -> dict | None:
+    """The commission's totals from a report's text: registered, out, voted, invalid, valid and "v" (each list's
+    votes, when a run of figures with shares adds up to the valid votes, and is k long if k is given); None when
+    there are no valid and invalid votes, or the text is a report of a section per station."""
+    if len(SECTION.findall(text)) >= 3:
+        return None
+    got: dict = {}
+    end = 0
+    for m in re.finditer(r"[^\n]+", text):
+        line = m.group(0)
+        for key, word in TOTAL_FIELDS:
+            if key in got:
+                continue
+            hit = re.search(word, line, re.I)
+            if not hit or (key == "voted" and re.search(TOTAL_FIELDS[1][1], line, re.I)):
+                continue
+            nums = [n for n in re.finditer(NUMBER, line[hit.end():]) if not re.match(r"\s*%", line[hit.end() + n.end():])]
+            if nums:
+                got[key] = _number(nums[0].group(0))
+                end = m.end()
+            break
+        if "valid" in got and "invalid" in got and len(got) == len(TOTAL_FIELDS):
+            break
+    if "valid" not in got or "invalid" not in got:
+        return None
+    # a list's votes are the first figure with a share on its line (the seats and their share may follow)
+    votes = [_number(m.group(1)) for m in (LIST_VOTES.search(line) for line in text[end:].split("\n")) if m]
+    for i in range(len(votes)):
+        total = 0
+        for j in range(i, len(votes)):
+            total += votes[j]
+            if total == got["valid"] and (not k or j - i + 1 == k):
+                got["v"] = votes[i:j + 1]
+                return got
+            if total > got["valid"]:
+                break
+    return got
+
+
+def check_totals(rows: list[dict], totals: dict | None) -> dict:
+    """The draft's sums against the commission's totals: {"matches": bool, "differs": {field: [sums, totals]}}."""
+    if not totals:
+        return {"matches": False, "differs": {}, "why": "no totals read"}
+    sums = {"registered": sum(r["registered"] or 0 for r in rows), "out": sum(r["voted"] or 0 for r in rows),
+            "voted": sum(r["ballots"] for r in rows), "invalid": sum(r["invalid"] for r in rows),
+            "valid": sum(r["valid"] for r in rows)}
+    k = len(rows[0]["v"]) if rows else 0
+    sums["v"] = [sum(r["v"][j] for r in rows) for j in range(k)]
+    differs = {f: [sums[f], totals[f]] for f in ("registered", "voted", "invalid", "valid", "v") if f in totals
+               and sums[f] != totals[f]}
+    if "out" in totals and totals["out"] not in (sums["out"], sums["voted"]):
+        differs["out"] = [sums["out"], totals["out"]]
+    missing = [f for f in ("registered", "valid", "invalid", "v") if f not in totals]
+    return {"matches": not differs and not missing, "differs": differs, **({"missing": missing} if missing else {})}
+
+
 REPORT_AFTER = 40  # days after the election in which the commission's report is dated (Sečanj 2025: 21, after a repeat)
 
 
@@ -575,7 +646,8 @@ def hand_rows(root, rid: str, log=print) -> tuple[int, list[dict], list[dict], d
     return k, sorted(rows, key=lambda r: r["n"]), aside, links
 
 
-def build(root, code: str, day: str, name: str, report_url: str, text: str | None, lists: list[str], log=print) -> dict:
+def build(root, code: str, day: str, name: str, report_url: str, text: str | None, lists: list[str], log=print,
+          totals: dict | None = None) -> dict:
     """Write the draft round of a local election from its report's text, or, with no text, from the stations read
     by eye from the boards' minutes (data/local_hand.csv); returns a summary."""
     import csv
@@ -605,12 +677,15 @@ def build(root, code: str, day: str, name: str, report_url: str, text: str | Non
     def contestant(i):
         c = lists[i] if i < len(lists) else f"Изборна листа {i + 1}"
         return c if isinstance(c, dict) else {"name": c}
+    check = check_totals(rows, totals)
+    check["ready"] = check["matches"] and not aside
     meta = {"contest": {}, "contestants": [contestant(i) for i in range(k)],
             "date": day, "kind": "local", "rik_type": 3, "source": "commission",
             "title": f"Локални {day[:4]} - {name}",
             "local": {"municipality": code, "report": report_url, "stations_from": src_round,
                       **({"from": "minutes"} if text is None else {}),
                       "aside": [{"n": a["n"], "why": a["why"]} for a in aside],
+                      "check": check,
                       "notes": {str(r["n"]): r["note"] for r in rows if r["note"]}}}
     (out / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     if src_round:  # the same stations, so the same census settlements as the round they were named from
@@ -622,9 +697,12 @@ def build(root, code: str, day: str, name: str, report_url: str, text: str | Non
     summary = {"round": rid, "lists": k, "rows": len(rows), "aside": len(aside), "totals": totals,
                "valid": sum(r["valid"] for r in rows), "invalid": sum(r["invalid"] for r in rows),
                "registered": sum(r["registered"] or 0 for r in rows), "stations_from": src_round}
+    summary["ready"] = check["ready"]
     log(f"{rid}: {summary}")
     for a in aside:
         log(f"  set aside: station {a['n']}: {a['why']}")
+    log(f"  totals: {'match the commission’s' if check['matches'] else check}" +
+        ("; ready to publish" if check["ready"] else ""))
     return summary
 
 
@@ -1142,7 +1220,9 @@ def overview(root, log=print, fetch=None, read=True) -> list[dict]:
             near = {u: v for u, v in docs.items() if v.get("e") in ("local", None) and v.get("d")
                     and first <= v["d"] <= last}
             kinds = Counter(v["k"] for v in near.values())
-            reports = sorted(u for u in near if re.search(r"izvest|izvjest", watch.fold(urllib.parse.unquote(u))))
+            # a report: its link says so, or its first page was classified as results (Zemun 2024's "Rezultati …")
+            reports = sorted(u for u, v in near.items() if v.get("k") == "results"
+                             or re.search(r"izvest|izvjest|rezultat", watch.fold(urllib.parse.unquote(u))))
             best = 0
             if read:
                 for u in reports:

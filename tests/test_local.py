@@ -487,3 +487,55 @@ def test_links_as_they_can_be_asked_for():
     assert local.fetch_url("https://www.kanjiza.rs/data\\files\\docs\\izbori2024\\a.pdf") == \
         "https://www.kanjiza.rs/data/files/docs/izbori2024/a.pdf"
     assert local.fetch_url("https://p.rs/Решење.pdf?lang=lat").endswith("%D0%B5.pdf?lang=lat")
+
+
+PROKUPLJE_TOTALS = """ЗБИРНИ ИЗВЕШТАЈ
+1. Број бирача уписаних у бирачки списак 35.951
+2. Број бирача који је изашао на изборе 21.812
+3. Број бирача који су гласали 21.809
+4. Број неважећих гласачких листића 575
+5. Број важећих гласачких листића 21.234
+6. Број и проценат гласова које је добила свака изборна листа:
+12.488 57,26%
+1. ПРВА ЛИСТА
+1.819 8,34%
+2. ДРУГА ЛИСТА
+1.212 5,56%
+537 2,46%
+610 2,8%
+859 3,49%
+3.709 17,01%
+Члан 2.
+"""
+ZEMUN_TOTALS = """4. Број бирача уписаних у бирачки списак 169.069
+5. Број и проценат бирача који су изашли на изборе 77,463 (45,82%)
+6. Број гласачких листића који нису убачени у гласачке кутије 48
+7. Број бирача који су гласали 77. 415
+8. Број и проценат неважећих гласачких листића 1.770 (2,29%)
+9. Број и проценат важећих гласачких листића 75.645 (97,71%)
+1 ПРВА 43,122 55.70 35 61.40
+2 ДРУГА 1,899 2.45 0 0.00
+3 ТРЕЋА 1,309 1.69 0 0.00
+4 ЧЕТВРТА 16,942 21.88 14 24.56
+5 ПЕТА 1,039 1.34 0 0.00
+6 ШЕСТА 1,078 1.39 1 1.75
+7 СЕДМА 2,777 3.59 2 3.51
+8 ОСМА 6,316 8.16 5 8.77
+9 ДЕВЕТА 1,163 1.50 0 0.00
+"""
+
+
+def test_the_commission_s_totals():
+    t = local.totals_of(PROKUPLJE_TOTALS)
+    assert t == {"registered": 35951, "out": 21812, "voted": 21809, "invalid": 575, "valid": 21234,
+                 "v": [12488, 1819, 1212, 537, 610, 859, 3709]}
+    z = local.totals_of(ZEMUN_TOTALS, 9)
+    assert (z["registered"], z["out"], z["voted"], z["invalid"], z["valid"]) == (169069, 77463, 77415, 1770, 75645)
+    assert z["v"] == [43122, 1899, 1309, 16942, 1039, 1078, 2777, 6316, 1163]
+    assert local.totals_of(SECTIONS) is None  # a report by station's sections holds no totals
+    rows = [{"registered": 35951, "voted": 21812, "ballots": 21809, "invalid": 575, "valid": 21234,
+             "v": [12488, 1819, 1212, 537, 610, 859, 3709]}]
+    assert local.check_totals(rows, t) == {"matches": True, "differs": {}}
+    rows[0]["v"] = [12388, 1919, 1212, 537, 610, 859, 3709]  # two lists swapped a hundred: the rows add up, not the lists
+    assert local.check_totals(rows, t)["differs"] == {"v": [rows[0]["v"], t["v"]]}
+    assert local.check_totals(rows, None)["matches"] is False

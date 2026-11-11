@@ -657,6 +657,12 @@ def cmd_local(args) -> int:
         return 0
     if args.results:  # local elections' results from the commissions' reports, as draft rounds
         codes = [c.strip() for c in args.results.split(",") if c.strip()]
+        if codes == ["day"]:  # every municipality with a report of that day's local election not yet published
+            store = local.load_store(root)
+            codes = sorted(c for c in {v["m"] for v in store["docs"].values()}
+                           if local.report_candidates(store, c, args.date)
+                           and not (root / "rounds" / local.round_id(c, args.date)).exists())
+            log(f"{args.date}: {len(codes)} municipalities with a report: {', '.join(codes)}")
         names_of = {r["municipality_code"]: r["name"] for r in csv.DictReader(
             open(root / watch.SITES_FILE, encoding="utf-8"))}
         made = []
@@ -687,10 +693,18 @@ def local_results(root: Path, code: str, date: str, name: str, args, log) -> dic
         report = next((u for u in cands if "ukup" in watch.fold(urllib.parse.unquote(u))), cands[0] if cands else "")
         names = [] if local.hand_names(root, local.round_id(code, date)) else \
             local.list_names(watch.load_store(root)["docs"], store, code, date)
-        return local.build(root, code, date, name, report, None, [n for n, _ in names], log)
+        totals = None
+        for u in ([report] if report else []) + [c for c in cands if c != report]:
+            try:
+                totals = local.totals_of(local.text_of(local.download(u), u, pages=4, turn=True))
+            except Exception as e:  # noqa: BLE001 - a report down: the draft is left unchecked
+                log(f"{u.rsplit('/', 1)[-1][:60]}: {type(e).__name__}")
+            if totals and "v" in totals:
+                break
+        return local.build(root, code, date, name, report, None, [n for n, _ in names], log, totals=totals)
     if args.url:
         cands = [args.url]
-    best = None
+    best, totals = None, None
     for u in cands:
         try:
             data = local.download(u)
@@ -711,6 +725,9 @@ def local_results(root: Path, code: str, date: str, name: str, args, log) -> dic
             log(f"  {len(lines)} lines, {sum(1 for x in lines if len(re.findall(chr(92) + 'd+', x)) >= 10)} with ten figures")
             for line in full:
                 log("  " + re.sub(r"[^\d\s|!]+", "x", line)[:200])
+        tot = local.totals_of(text, k)
+        if tot and (totals is None or ("v" in tot and "v" not in totals)):
+            totals = tot
         if rows and (best is None or len(rows) > best[2]):
             best = (u, text, len(rows))
     if not best:
@@ -719,7 +736,11 @@ def local_results(root: Path, code: str, date: str, name: str, args, log) -> dic
     names = local.list_names(watch.load_store(root)["docs"], store, code, date)
     for i, (nm, u) in enumerate(names, 1):
         log(f"  list {i}: proclaimed in {u.rsplit('/', 1)[-1][:80]}")
-    return local.build(root, code, date, name, best[0], best[1], [n for n, _ in names], log)
+    summary = local.build(root, code, date, name, best[0], best[1], [n for n, _ in names], log, totals=totals)
+    if not summary["ready"]:  # the report's pages to read by eye, in the same run (the workflow keeps them)
+        made = local.report_pages(local.download(best[0]), Path(args.out), f"{code}-{local.safe_stem(best[0])}")
+        log(f"  {len(made)} page(s) of the report kept to read by eye")
+    return summary
 
 
 def cmd_watch(args) -> int:
