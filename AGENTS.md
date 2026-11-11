@@ -859,5 +859,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
 - **11 Nov 2026, a dry run of the reader.** `kind` check with `results` runs the reader as it would on a report
   never read before: no corrections, nothing committed, the report's pages kept if the draft isn't ready. It is
   how the totals check and the pages in the same run were tried on Prokuplje 2023, whose station 62 the reader
-  reads wrong while the row adds up.
+  reads wrong while the row adds up.  The dry run read 84 of Prokuplje's stations (2 set aside, 5 lost) where the first reading had 87 (3 aside): turning
+  and taking the lines out, which Zemun needed, costs Prokuplje's cleaner scan. So a report is now read both as it
+  is and turned (and as one block when neither gives a row), keeping the reading with most stations.
 

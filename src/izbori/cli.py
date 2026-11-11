@@ -728,28 +728,36 @@ def local_results(root: Path, code: str, date: str, name: str, args, log) -> dic
         cands = [args.url]
     best, totals = None, None
     for u in cands:
+        # Each scan reads best one way: Prokuplje's as it is (87 stations against 84 turned and without its lines),
+        # Zemun's turned, without lines and as one block of rows (61 against none). So it is read as it is and
+        # turned, as one block too when neither gives a row, and the reading with most stations is kept (fewest
+        # set aside on a tie); their totals count from any of them.
+        readings = []
         try:
             data = local.download(u)
-            text = local.text_of(data, u, pages=20, turn=True)
-            k, rows, aside = local.result_rows(text)
-            if not rows:  # a table Tesseract read column by column (Zemun 2024): again, as one block of rows
-                text2 = local.text_of(data, u, pages=20, turn=True, psm=6)
-                got = local.result_rows(text2)
-                if got[1]:
-                    text, (k, rows, aside) = text2, got
+            for how, kw in (("as it is", {}), ("turned", {"turn": True}), ("turned, one block", {"turn": True, "psm": 6})):
+                if how == "turned, one block" and any(r[2][1] for r in readings):
+                    break
+                text = local.text_of(data, u, pages=20, **kw)
+                got = local.result_rows(text)
+                log(f"{u.rsplit('/', 1)[-1][:60]} ({how}): {got[0]} lists, {len(got[1])} rows, {len(got[2])} set aside")
+                readings.append((how, text, got))
+                tot = local.totals_of(text, got[0])
+                if tot and (totals is None or ("v" in tot and "v" not in totals)):
+                    totals = tot
         except Exception as e:  # noqa: BLE001 - a report down: the next one
             log(f"{u.rsplit('/', 1)[-1][:60]}: {type(e).__name__}")
-            continue
-        log(f"{u.rsplit('/', 1)[-1][:60]}: {k} lists, {len(rows)} rows, {len(aside)} set aside")
+            if not readings:
+                continue
+        how, text, (k, rows, aside) = max(readings, key=lambda r: (len(r[2][1]), -len(r[2][2])))
+        if rows and len(readings) > 1:
+            log(f"  kept: read {how}")
         if not rows:  # what OCR made of it: lines of figures only (no word, so no name), the fullest first
             lines = text.split("\n")
             full = sorted(lines, key=lambda x: -len(re.findall(r"\d+", x)))[:6]
             log(f"  {len(lines)} lines, {sum(1 for x in lines if len(re.findall(chr(92) + 'd+', x)) >= 10)} with ten figures")
             for line in full:
                 log("  " + re.sub(r"[^\d\s|!]+", "x", line)[:200])
-        tot = local.totals_of(text, k)
-        if tot and (totals is None or ("v" in tot and "v" not in totals)):
-            totals = tot
         if rows and (best is None or len(rows) > best[2]):
             best = (u, text, len(rows))
     if not best:
