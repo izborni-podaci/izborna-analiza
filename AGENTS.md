@@ -827,5 +827,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   numbers OCR gives are not to be trusted where it drops rows, and every station was read by eye from the turned
   pages into `data/local_corrections.csv`: each row adds up, and the sums are the commission's totals to the vote
   (169,069 registered, 77,463 out, 77,415 voted, 1,770 invalid, 75,645 valid, all nine lists). The lists' names
-  are the report's; the stations' names come from the Belgrade round of the same day (567956).  Published: 115 stations, named from that round, its totals the commission's.
+  are the report's; the stations' names come from the Belgrade round of the same day (567956).  Published: 115 stations, named from that round, its totals the commission's.  Zemun's publishing commit went out with two tests failing (the place pages of its gymnasium now show five
+  elections, the local one among them): the run's result was piped through `tail`, which hid its exit code. Fixed in
+  the next commit; test runs before a push are now checked by their exit code, not their last line.
 

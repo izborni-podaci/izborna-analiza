@@ -131,4 +131,5 @@ def test_real_archive(archive):
     for rid, stations in rounds:
         assert all(places.of(rid, s.key).stations[rid].key == s.key for s in stations)
     zemun = next(p for p in places.places if p.id == "70157-14")
-    assert [zemun.stations[r].number for r in zemun.rounds] == ["14", "14", "10", "10"]
+    # Zemun's local election of 2024 (from its commission's report) is the fifth, on the same day as Belgrade's
+    assert [zemun.stations[r].number for r in zemun.rounds] == ["14", "14", "14", "10", "10"]

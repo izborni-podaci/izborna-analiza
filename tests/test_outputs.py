@@ -549,14 +549,15 @@ def test_place_across_elections(site):
     rows = re.findall(r'<a href="\.\./\.\./r/(\d+)/m/70157\.html#bm-(\d+)">', page)
     assert rows == [("680072", "14"), ("567956", "14"), ("341140", "10"), ("42732", "10")]
     assert "isto mesto po nazivu" in page
-    # the latest election is open at the top, the three earlier ones fold into the same block, each with its result
-    assert page.count('class="el el-latest"') == 1 and page.count('<details class="el el-fold"') == 3
-    assert page.count('class="el-results"') == 4 and page.count('class="res-row"') >= 12
+    assert "../../r/L70157-20240602/m/70157.html#bm-14" in page  # Zemun's own local election of 2024 too
+    # the latest election is open at the top, the four earlier ones fold into the same block, each with its result
+    assert page.count('class="el el-latest"') == 1 and page.count('<details class="el el-fold"') == 4
+    assert page.count('class="el-results"') == 5 and page.count('class="res-row"') >= 15
     assert page.index('class="el el-latest"') < page.index('<section class="analysis"') < page.index('el-fold')
     # the analysis: flags and invalid ballots, turnout, most votes, then how the place changed
     analysis = re.search(r'<section class="analysis".*?</section>', page, re.S).group(0)
     assert "Najnoviji izbori: Parlamentarni 2026 · poređenje sa opštinom" in analysis
-    order = [analysis.index(x) for x in ("<dt>Upozorenja</dt>", "Bez upozorenja ni na jednim od 4 izbora", "Nevažeći ",
+    order = [analysis.index(x) for x in ("<dt>Upozorenja</dt>", "Bez upozorenja ni na jednim od 5 izbora", "Nevažeći ",
                                          "<dt>Izlaznost</dt>", "70,4% · ", "Studentska lista 71,8%",
                                          "Ranije BM 10 (Parlamentarni 2023, Predsednički 2022)")]
     assert order == sorted(order)
