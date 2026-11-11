@@ -546,3 +546,9 @@ def test_a_report_found_twice_is_read_once():
     store = {"docs": {"https://bac.rs/a/izvestaj.pdf": {"m": "80055", "e": "local", "d": "2024-06-06"},
                       "https://www.bac.rs/a/izvestaj.pdf": {"m": "80055", "e": "local", "d": "2024-06-06"}}}
     assert local.report_candidates(store, "80055", "2024-06-02") == ["https://bac.rs/a/izvestaj.pdf"]
+
+
+def test_a_link_s_variants():
+    assert local.link_variants("https://g.rs/2020/05/SOG 1.docx?lang=lat") == [
+        "https://g.rs/2020/05/SOG 1.docx?lang=lat", "https://g.rs/2020/05/SOG 1.docx", "https://g.rs/2020/05/SOG-1.docx"]
+    assert local.link_variants("https://g.rs/a.pdf") == ["https://g.rs/a.pdf"]

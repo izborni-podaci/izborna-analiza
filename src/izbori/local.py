@@ -44,13 +44,37 @@ def fetch_url(url: str) -> str:
     return urllib.parse.quote(url.replace("\\", "/"), safe="/:?&=%@+,;~!$'()*")
 
 
+def link_variants(url: str) -> list[str]:
+    """The ways a link from a municipality's page may be asked for, first as it is: without a "?lang=" the page
+    added (Golubac's "…/SOG 1.docx?lang=lat"), and with the spaces of its file name as WordPress keeps them on
+    disk, hyphens."""
+    out = [url]
+    bare = re.sub(r"[?&]lang=[^&]*$", "", url)
+    if bare != url:
+        out.append(bare)
+    head, _, name = bare.rpartition("/")
+    if " " in name:
+        out.append(f"{head}/{re.sub(r' +', '-', name)}")
+    return out
+
+
 def download(url: str, timeout: int = 90) -> bytes:
-    req = urllib.request.Request(fetch_url(url), headers={"User-Agent": watch.AGENT})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        data = r.read(30_000_000)
-        page = "html" in (r.headers.get("Content-Type") or "")
-    if page and re.search(r"[?&]lang=", url):  # Golubac's "?lang=lat" answers with a page: the file without it
-        return download(re.sub(r"[?&]lang=[^&]*", "", url), timeout)
+    """A document by its link, or by link_variants when the link as it is gives "not found" or a page."""
+    import urllib.error
+    variants = link_variants(url)
+    for i, u in enumerate(variants):
+        req = urllib.request.Request(fetch_url(u), headers={"User-Agent": watch.AGENT})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = r.read(30_000_000)
+                page = "html" in (r.headers.get("Content-Type") or "")
+        except urllib.error.HTTPError as e:
+            if e.code in (403, 404) and i + 1 < len(variants):
+                continue
+            raise
+        if page and i + 1 < len(variants):  # a page instead of the file
+            continue
+        return data
     return data
 
 
