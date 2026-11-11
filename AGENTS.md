@@ -898,5 +898,7 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   up, and the sums are the commission's totals to the vote (22,901 registered, 16,457 out, 16,454 voted, 429
   invalid, 16,025 valid, all eleven lists). The report says it is to be published on RIK's site: since the law of
   2022 (art. 59), each local commission's report by station should be among RIK's documents — a source for every
-  municipality's local elections, not yet read.
+  municipality's local elections, not yet read.  Published, 58 stations named from the parliamentary round of the same day (341140). The totals check couldn't
+  confirm it by itself: the report writes thousands with a space ("22 901"), now read, and gives the lists' votes
+  without shares, which `totals_of` doesn't take; the sums were checked against the report by eye.
 
