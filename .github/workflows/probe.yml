@@ -3,6 +3,11 @@ name: probe
 
 on:
   workflow_dispatch:
+    inputs:
+      register:
+        description: "Also list what RIK's register of commissions' documents holds for local elections"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -10,7 +15,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,3 +25,4 @@ jobs:
         run: |
           pip install uv && uv sync --frozen
           uv run izbori rounds
+          if [ "${{ inputs.register }}" = "true" ]; then uv run izbori register; fi

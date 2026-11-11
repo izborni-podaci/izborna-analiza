@@ -100,6 +100,48 @@ def heartbeat(data: Path) -> None:
 
 # --- commands -------------------------------------------------------------------------------
 
+def cmd_register(args) -> int:
+    """What RIK's register of the electoral commissions' documents holds for local elections: its rounds (as its
+    page offers them), and per local round how many commission decisions, polling-station acts and board decisions
+    it lists, with the commissions' reports of results (their titles and links; a report names no one but lists)."""
+    import re
+    from collections import Counter
+    from izbori import boards, watch
+    client = Client()
+    body, _ = client._request("/dokumenta/41985/document-type-1/election-round-0/additional-document-0/"
+                              "municipality-id-0/election-station-0")
+    html = body.decode("utf-8", "replace")
+    options = re.findall(r'<option[^>]*value="(\d+)"[^>]*>\s*([^<]+?)\s*</option>', html)
+    rounds = [(v, n) for v, n in options if re.search(r"Локал|Lokal|Парламент|Покрајин|Председ", n)]
+    for v, n in rounds:
+        print(f"round {v}: {latin(n)}")
+    for v, n in rounds:
+        if not re.search(r"Локал|Lokal", n) or (args.round and v != args.round):
+            continue
+        for doc_type, what in ((1, "commission"), (3, "stations"), (4, "boards")):
+            try:
+                first = client.get_json(boards.index_query(1, v, 3, doc_type)) or {}
+            except Exception as e:  # noqa: BLE001 - one round's oddity must not stop the rest
+                print(f"  {latin(n)} {what}: {type(e).__name__}")
+                continue
+            pages = boards.last_page(first.get("pagination", ""))
+            recs = list(first.get("records") or [])
+            if doc_type == 1:  # every page: the reports are among the commissions' decisions
+                for page in range(2, pages + 1):
+                    recs += (client.get_json(boards.index_query(page, v, 3, doc_type)) or {}).get("records") or []
+            print(f"  {latin(n)} {what}: {pages} page(s)" + (f", {len(recs)} documents" if doc_type == 1 else ""))
+            if doc_type != 1:
+                continue
+            per = Counter((r.get("municipality_display_name") or "").strip() for r in recs)
+            reports = [r for r in recs if re.search(r"izvest|rezultat", watch.fold(r.get("document_name") or ""))]
+            print(f"    {len(per)} municipalities; {len(reports)} reports of results")
+            for r in reports:
+                links = re.findall(r'href="([^"]+)"', " ".join(r.get("extfiles_link") or []))
+                print(f"    {latin((r.get('municipality_display_name') or '').strip())} | "
+                      f"{latin((r.get('document_name') or '').strip())[:90]} | {links[0] if links else ''}")
+    return 0
+
+
 def cmd_rounds(args) -> int:
     archive = Archive(args.data)
     found = Client().all_rounds()
@@ -1053,6 +1095,9 @@ def main(argv: list[str] | None = None) -> int:
     sub = p.add_subparsers(dest="command", required=True)
 
     sub.add_parser("rounds", help="list the elections and rounds RIK offers").set_defaults(fn=cmd_rounds)
+    rg = sub.add_parser("register", help="what RIK's register of commissions' documents holds for local elections")
+    rg.add_argument("--round", default="", help="only this register round")
+    rg.set_defaults(fn=cmd_register)
 
     f = sub.add_parser("fetch", help="download one round now and archive it if it changed")
     f.add_argument("round")
