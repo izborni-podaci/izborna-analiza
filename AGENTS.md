@@ -914,3 +914,9 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   by station (Vlasotince's, 3 pages) as often as totals (Temerin's, 3 pages). Of the 36 with a text layer, 19 have
   15 or more rows of figures (Prokuplje 2023: 103). A scan's first two pages are now read by OCR as a report's are
   (upright, ruled lines out, psm 6) and their rows of figures counted, four reports at a time.
+  With OCR: of 184 local elections with a total report, 30 have 15 or more rows of figures on their first pages
+  (their text layer or OCR) — a table by station: Kraljevo 2023, Jagodina, Subotica, Ruma, Šid, Bečej 2024,
+  Lazarevac, Čukarica, Stari grad, Palilula 2024 and others — and 40 more have 5 to 14. The count misses known
+  tables: Vlasotince's and Zemun's (1 and 2 rows: their scans are hard to read), Rača's (a section per station), so
+  it is a floor, not a sorting; which of the rest are by station needs each first page seen.
+
