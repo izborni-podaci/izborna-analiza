@@ -2,7 +2,7 @@
 
 A public site in Serbian (Latin and Cyrillic; every string also exists in English, but the English pages are not built, see Languages). It saves every results file that Serbia's Republic Electoral Commission (RIK) publishes. It checks every polling station by the same rules, whoever the candidates and lists are. It shows observers and journalists where to look.
 
-**Site:** https://izbornipodaci.rs/ (the old address, izborni-podaci.github.io/izborna-analiza, redirects there)
+**Site:** https://izbornipodaci.rs/ (the repository is javni-uvid/izborna-analiza; the organization was izborni-podaci until 12 Nov 2026)
 
 **Status:** first version, being tested.
 - **Working:**

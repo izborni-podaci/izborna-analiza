@@ -197,7 +197,8 @@ These are the project's promises to its readers. Never change them without the m
     place's page.
 - **Hosting:** GitHub Pages through Actions at **izbornipodaci.rs** (since 8 Nov 2026); the previous build is kept
   in the Actions cache. The domain is registered at Loopia; its DNS has the four GitHub Pages A records for the
-  apex and `www` as a CNAME to izborni-podaci.github.io. The custom domain is set in the repository's Pages
+  apex and `www` as a CNAME to javni-uvid.github.io (izborni-podaci.github.io until the organization's rename on 12 Nov
+  2026). The custom domain is set in the repository's Pages
   settings (an Actions deployment needs no CNAME file). `SITE_URL` in config.py is the only place the address
   lives in code: feeds, the 404 page, the mail and the map image's source line all take it from there.
   - Possible later: Cloudflare in front for visitor counts at the edge.
@@ -919,4 +920,8 @@ A run started with `GITHUB_TOKEN` can dispatch another workflow (`gh workflow ru
   Lazarevac, Čukarica, Stari grad, Palilula 2024 and others — and 40 more have 5 to 14. The count misses known
   tables: Vlasotince's and Zemun's (1 and 2 rows: their scans are hard to read), Rača's (a section per station), so
   it is a floor, not a sorting; which of the rest are by station needs each first page seen.
+- **12 Nov 2026, the organization is javni-uvid.** The GitHub organization izborni-podaci was renamed javni-uvid.
+  The repository's link (config's `REPO_URL`, shown on every page and in the user agent RIK and the geocoder see),
+  the remote and the notes now name javni-uvid/izborna-analiza; GitHub redirects the old links meanwhile. The
+  domain's `www` CNAME has to point to javni-uvid.github.io.
 

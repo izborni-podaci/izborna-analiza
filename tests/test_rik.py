@@ -64,7 +64,7 @@ def test_rounds_summary_and_export():
     body, name = c.export("700001")
     assert name == "21:10:00_20.12.2026.csv"
     ua = [h for _, _, h in opener.calls if "User-agent" in h]
-    assert ua and "izborni-podaci" in ua[0]["User-agent"]
+    assert ua and "javni-uvid/izborna-analiza" in ua[0]["User-agent"]
 
 
 def test_export_that_is_not_csv_fails():

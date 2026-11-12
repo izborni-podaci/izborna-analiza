@@ -28,7 +28,7 @@ QUERY = """[out:json][timeout:900];
   relation["boundary"="administrative"]["ref:RS:grad"];
 );
 out geom;"""
-AGENT = "izborna-analiza (https://github.com/izborni-podaci/izborna-analiza)"
+AGENT = "izborna-analiza (https://github.com/javni-uvid/izborna-analiza)"
 ATTRIBUTION = "© OpenStreetMap contributors"
 LICENSE = "ODbL 1.0, https://opendatacommons.org/licenses/odbl/1-0/ (data: https://www.openstreetmap.org/copyright)"
 TOLERANCE = 0.003  # degrees, about 250 m: a pixel or less on a map of the whole country
